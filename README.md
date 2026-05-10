@@ -16,10 +16,11 @@ behavior, seed scripts, MCP tool names, views, tests, and SEO paths
 all key off these.
 
 This starter is intentionally fixed-manifest during bootstrap. The
-first-run installer should ask for public copy and seed home/about/
-contact/welcome content, not redesign the Schema/View/Procedure/
-Trigger model. Custom workflow design belongs in `starters/blank` or
-a later starter family.
+first-run installer should ask for public copy and, only after owner
+approval, create initial home/about/contact/article content through
+the normal MCP/admin authoring path. It should not redesign the
+Schema/View/Procedure/Trigger model. Custom workflow design belongs
+in a blank starter or a later starter family.
 
 ## What it exercises
 
@@ -52,8 +53,10 @@ a later starter family.
   R2-backed uploads are an explicit opt-in add-on, not part of first-run
   provisioning.
 - **Full admin SPA**. v0.1.0 ships a minimal owner landing at `/admin`.
-  First public content is seeded by `pnpm run seed:initial`; ongoing
-  content operations use MCP after owner bootstrap.
+  Real-user first content is created after provisioning, through
+  agent interview + MCP/admin authoring. `fixture` and `seed:initial`
+  are for tests and OSS contributor local dev, not the production
+  onboarding path.
 
 ## Quickstart
 
@@ -68,8 +71,9 @@ pnpm fixture       # seeds dev D1/KV with demo content (no staff row)
 pnpm dev
 ```
 
-The public site (rendered publication routes, contact form, MCP transport
-auth) is already runnable at this point — no OAuth setup required.
+The fixture is optional and intentionally demo-shaped. Use it only when
+you want a local contributor preview or smoke test. Real user sites
+should not inherit fixture copy.
 
 ### Signing in at /admin
 
@@ -121,18 +125,11 @@ its own port (8788), so it never collides with `pnpm dev` running on
 the default profile (`.wrangler/`, port 8787). Both can run in
 parallel.
 
-For production onboarding, do not run the fixture. The install Skill
-asks for public copy, writes `initial-seed.json`, and provision applies
-it directly to remote D1/KV:
-
-```bash
-pnpm run seed:initial -- --seed-file initial-seed.json --origin "<worker_url>" --remote
-```
-
-The seed writes home/about/contact/welcome entries to D1 and rendered
-HTML, markdown mirrors, post lists, and `llms.txt` to KV. It is the
-only first-run direct-D1 content path; after owner sign-in, MCP handles
-normal content operations.
+For production onboarding, do not run the fixture and do not run
+`seed:initial --remote`. Provision first, then interview the site owner
+for public copy and ask whether they want help drafting initial content.
+If they approve, create content through MCP/admin authoring so the same
+operation path is exercised from day one.
 
 ## Smoke test (curl)
 
@@ -193,7 +190,7 @@ src/
   handlers/       # ref handlers (CAPTCHA stub, Slack stub)
   theme.default/  # hono/jsx HTML for entry/list/home/contact + chrome
 scripts/
-  seed-initial-content.ts # renders initial-seed.json into D1 SQL + KV bulk puts
+  seed-initial-content.ts # contributor/test seed utility, not real-user provisioning
   run-integration.mjs     # spawns wrangler --env test --persist-to .wrangler-test,
                           # applies test fixture, runs smokes, tears down
 test/fixture/
@@ -238,7 +235,8 @@ Prerequisites:
 
 1. **Bootstrap from prompt.** Paste [`docs/prompts/publication.en.md`](../../docs/prompts/publication.en.md) (or `publication.zh-TW.md`) into Claude Code / Cursor / Codex with placeholders filled in. The agent reads the install Skill, copies the starter, runs `setup:site`, and reports back a clean `pnpm validate` + `pnpm typecheck`.
 
-2. **Local smoke.** Before any Cloudflare provisioning:
+2. **Contributor local smoke.** Before any Cloudflare provisioning,
+   optionally use the fixture to verify the template itself:
 
    ```bash
    pnpm fixture
@@ -249,7 +247,8 @@ Prerequisites:
    pnpm test:integration                                             # mcp-smoke + view-smoke
    ```
 
-   All four must succeed. If `test:integration` fails, fix locally before continuing.
+   All four must succeed for template release work. Do not treat this
+   fixture content as user content.
 
 3. **Provision Cloudflare resources** via the [provision Skill](../../skills/provision/SKILL.md). Creates D1 + render KV and writes their IDs into `wrangler.toml`. Verify `wrangler dev --remote` boots without binding errors.
 
@@ -269,26 +268,29 @@ Prerequisites:
    pnpm wrangler secret put TURNSTILE_SECRET_KEY   # real Turnstile secret
    ```
 
-6. **Initial seed against production** — write home/about/contact/welcome content directly:
+6. **Owner bootstrap + content interview.** Sign in as the owner, then
+   connect an MCP-capable agent to the Staff MCP URL. The agent should
+   ask the owner what initial content they want and whether it should
+   write a first pass.
 
-   ```bash
-   pnpm run seed:initial -- --seed-file initial-seed.json --origin "<worker_url>" --remote
-   ```
-
-   The agent should have produced `initial-seed.json` during install with localized public copy.
+   Do not apply fixture or seed data to production. `seed:initial` is
+   reserved for tests and contributor local dev.
 
 7. **Public smoke against deployed worker.**
 
    ```bash
-   curl -s "<worker_url>/en/posts/welcome" | head -5
-   curl -s "<worker_url>/en/posts/welcome.md" | head -5    # markdown mirror
+   curl -s "<worker_url>/<locale>/posts/<slug>" | head -5
+   curl -s "<worker_url>/<locale>/posts/<slug>.md" | head -5    # markdown mirror
    curl -s "<worker_url>/api/views/recent-posts" | jq '.data.rows[] | {slug, title}'
    curl -s "<worker_url>/llms.txt"
    curl -s "<worker_url>/en/llms.txt"
    curl -s "<worker_url>/sitemap.xml" | head -10
    ```
 
-   All HTML routes return 200; the View REST endpoint returns the seeded posts; both llms.txt variants exist; sitemap lists every locale × every published entry.
+   Use the slug the owner approved in step 6. All authored HTML routes
+   return 200; the View REST endpoint returns the authored posts; both
+   llms.txt variants exist; sitemap lists every locale × every
+   published entry.
 
 8. **Owner sign-in.** Visit `<worker_url>/admin` in a browser, sign in with GitHub. `ensureBootstrapOwner` promotes you to `owner` on first login because `ADMIN_GITHUB_LOGIN` matches.
 
@@ -320,5 +322,5 @@ Prerequisites:
 ### When this fails
 
 - Step 2 fails: bug in the SDK or starter. File against the SDK; don't try to patch the consumer project.
-- Step 6 (initial seed) fails: `initial-seed.json` is malformed; agent needs to re-run install's public-copy intake step.
+- Step 6 content authoring fails: verify owner sign-in and Staff MCP auth first, then ask the owner whether to retry with a smaller first draft.
 - Step 9 (MCP) fails: most likely the OAuth consent flow — verify the OAuth App's callback URL matches `<worker_url>/admin/auth/github/callback` exactly, no trailing slash mismatch.
