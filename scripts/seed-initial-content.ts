@@ -1,10 +1,9 @@
 /**
- * Production-oriented first-content seed.
+ * Contributor/test initial-content utility.
  *
- * The install/provision Skills ask the site owner for public copy and
- * write `initial-seed.json`; this script applies that seed directly to
- * D1 and KV so the first deployed site is immediately useful. MCP is
- * intentionally reserved for ongoing operations after owner bootstrap.
+ * Real-user provisioning should not apply seed content. Use this script for
+ * deterministic local/dev smoke or automated tests; production content should
+ * be created after owner approval through MCP/admin authoring.
  */
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";

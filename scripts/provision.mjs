@@ -11,11 +11,11 @@
  *
  *   GITHUB_CLIENT_SECRET=... pnpm run provision:up -- \
  *       --project-name X --github-username Y --client-id Z \
- *       [--client-secret W] [--seed-file initial-seed.json]
+ *       [--client-secret W]
  *     Creates D1 + render KV + Turnstile widget via CF API, writes
  *     wrangler.toml + site defaults, deploys, sets worker
- *     secrets, optionally syncs/applies initial-seed.json, and prints
- *     the final handoff. CLOUDFLARE_API_TOKEN must be exported.
+ *     secrets, and prints the final handoff. It never seeds production
+ *     content. CLOUDFLARE_API_TOKEN must be exported.
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
@@ -46,11 +46,18 @@ async function up(args) {
   const githubUsername = requireArg(args, "github-username");
   const clientId = requireArg(args, "client-id");
   const clientSecret = requireSecretArg(args, "client-secret", "GITHUB_CLIENT_SECRET");
-  const seedFile = args["seed-file"];
+  if (args["seed-file"]) {
+    throw new Error(
+      [
+        "provision:up no longer applies seed files.",
+        "Provision first, ask the site owner what initial content they want, then create content through MCP/admin authoring.",
+        "seed:initial and fixture data are for tests and OSS contributor local dev only.",
+      ].join(" "),
+    );
+  }
   const token = requireToken();
 
   const ctx = await fetchContext(token, projectName);
-  const seedSite = seedFile ? readSeedSite(seedFile, ctx.workerUrl) : null;
   console.log(`Provisioning ${projectName} → ${ctx.workerUrl}`);
 
   console.log("\n[1/5] Creating Cloudflare resources...");
@@ -68,18 +75,7 @@ async function up(args) {
     turnstileSiteKey: widget.sitekey,
     publicOrigin: ctx.workerUrl,
   });
-  if (seedSite) {
-    updateSeedOrigin(seedFile, ctx.workerUrl);
-    runSetupSite({
-      projectName,
-      brand: seedSite.brand,
-      description: seedSite.description,
-      locales: seedSite.locales,
-      origin: ctx.workerUrl,
-    });
-  } else {
-    updateOrigin(ctx.workerUrl);
-  }
+  updateOrigin(ctx.workerUrl);
 
   console.log("\n[3/5] Deploying worker...");
   execFileSync("pnpm", ["run", "deploy"], { stdio: "inherit" });
@@ -91,16 +87,8 @@ async function up(args) {
   pipeSecret("BETTER_AUTH_SECRET", randomBytes(32).toString("base64url"));
   pipeSecret("TURNSTILE_SECRET_KEY", widget.secret);
 
-  if (seedFile) {
-    console.log("\n[5/5] Seeding initial content to remote D1/KV...");
-    execFileSync(
-      "pnpm",
-      ["run", "seed:initial", "--", "--seed-file", seedFile, "--origin", ctx.workerUrl, "--remote"],
-      { stdio: "inherit" },
-    );
-  } else {
-    console.log("\n[5/5] No --seed-file given; skipping initial seed.");
-  }
+  console.log("\n[5/5] Initial content intentionally skipped.");
+  console.log("  Ask the site owner what to publish first, then use MCP/admin authoring.");
 
   printHandoff(ctx, names);
 }
@@ -198,68 +186,6 @@ function updateOrigin(workerUrl) {
   writeFileSync(path, next);
 }
 
-function readSeedSite(seedFile, workerUrl) {
-  const raw = JSON.parse(readFileSync(seedFile, "utf8"));
-  const brand = requiredJsonString(raw.brand, `${seedFile}: brand`);
-  const description = firstJsonString(raw.tagline, raw.description) ?? `Notes, updates, and essays from ${brand}.`;
-  const locales = normalizeSeedLocales(raw.locales, seedFile);
-  return {
-    brand,
-    description,
-    origin: workerUrl,
-    locales,
-  };
-}
-
-function updateSeedOrigin(seedFile, workerUrl) {
-  const raw = JSON.parse(readFileSync(seedFile, "utf8"));
-  raw.origin = workerUrl;
-  writeFileSync(seedFile, `${JSON.stringify(raw, null, 2)}\n`);
-}
-
-function runSetupSite({ projectName, brand, description, locales, origin }) {
-  execFileSync("pnpm", [
-    "run",
-    "setup:site",
-    "--",
-    "--project-name",
-    projectName,
-    "--brand",
-    brand,
-    "--description",
-    description,
-    "--locales",
-    locales.join(","),
-    "--origin",
-    origin,
-  ], { stdio: "inherit" });
-}
-
-function normalizeSeedLocales(input, seedFile) {
-  if (!Array.isArray(input)) throw new Error(`${seedFile}: locales must be an array`);
-  const locales = input.map((v) => {
-    if (typeof v !== "string" || v.trim() === "") {
-      throw new Error(`${seedFile}: locales must contain non-empty strings`);
-    }
-    return v.trim();
-  });
-  const unique = [...new Set(locales)];
-  if (unique.length === 0) throw new Error(`${seedFile}: locales must not be empty`);
-  return unique;
-}
-
-function requiredJsonString(input, field) {
-  if (typeof input !== "string" || input.trim() === "") throw new Error(`${field} is required`);
-  return input.trim();
-}
-
-function firstJsonString(...values) {
-  for (const value of values) {
-    if (typeof value === "string" && value.trim() !== "") return value.trim();
-  }
-  return null;
-}
-
 function replaceInBlock(text, table, bindingLine, key, value) {
   const header = `[[${table}]]`;
   const start = text.indexOf(`${header}\n${bindingLine}`);
@@ -320,8 +246,7 @@ embedded in shell history or visible command logs:
   pnpm run provision:up -- \\
     --project-name ${names.projectName} \\
     --github-username <your-github-login> \\
-    --client-id <client-id> \\
-    --seed-file initial-seed.json
+    --client-id <client-id>
 
 Fallback for automation-only environments: pass --client-secret explicitly.
 `);
