@@ -1,0 +1,10 @@
+{
+  "archetypes": {
+    "presence":    { "path": "publication" },
+    "publication": { "path": "publication" },
+    "intake":      { "path": "publication", "overlays": ["intake"] },
+    "blank":       { "path": "blank" }
+  },
+  "themes": {},
+  "roadmap": ["transaction", "reservation", "community", "membership"]
+}
