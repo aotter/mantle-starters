@@ -1,0 +1,56 @@
+---
+archetype: {{ARCHETYPE}}
+brand: {{BRAND}}
+description: {{DESCRIPTION}}
+locales: {{LOCALES}}
+canonical_locale: {{CANONICAL_LOCALE}}
+site_url: {{SITE_URL}}
+github_owner: {{GITHUB_OWNER}}
+specifics: []
+futures: []
+dont_touch: []
+dates: []
+revisions:
+  - at: {{INSTALL_TIMESTAMP}}
+    by: install
+    summary: {{INSTALL_SUMMARY}}
+---
+
+## site
+> purpose: 一段話講這站是什麼、為什麼存在。用 user 自己的語言寫。
+
+<!-- Mantle: write here from interview. reflect, don't ennoble. one paragraph. -->
+
+## voice
+> purpose: 站點怎麼說話。從 interview 抽出 register。
+
+<!-- Mantle: a few lines. specific markers, not generic words. e.g. "短句、避免感嘆號" beats "friendly tone". -->
+
+## welcome
+> purpose: /admin first-visit 5-card letter. exactly 5 cards. register hints in archetype skill.
+
+### card1
+<!-- Mantle: hotel-manager note. one specific reflect (something user said). — Mantle + {{INSTALL_TIMESTAMP}} -->
+
+### card2
+<!-- Mantle: claude mcp add command + expected output line. -->
+
+### card3
+<!-- Mantle: first Editor prompt. archetype-specific. -->
+
+### card4
+<!-- Mantle: memory URL + one specific future from frontmatter.futures. -->
+
+### card5
+<!-- Mantle: admin sidebar pointer + closing signature. -->
+
+## editor
+> purpose: handoff cues for the daily content agent.
+
+first_prompt: |
+  <!-- Mantle: card3 body as plain text. -->
+
+## history
+> purpose: Mantle's worklog. Each return appends one paragraph.
+
+<!-- Mantle: first install line. one paragraph: what was decided, what the user said, what's open. -->
