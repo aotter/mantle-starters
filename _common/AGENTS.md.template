@@ -1,0 +1,28 @@
+# This site
+
+A {{ARCHETYPE}} site built with @aotter/mantle on Cloudflare Workers.
+Public site: {{SITE_URL}}  (placeholder until provision)
+
+## Commands
+
+- `pnpm dev`          local preview (wrangler dev on :8787)
+- `pnpm validate`     manifest validation
+- `pnpm typecheck`    TypeScript check
+- `pnpm test`         vitest
+- `pnpm deploy`       deploy Worker (after provision)
+
+## For agents working on this site
+
+- Site intent, voice, install-time decisions, and Mantle's worklog:
+  [`mantle/site.md`](mantle/site.md). Read whole, edit sections, write
+  whole; never partial mutation.
+- Daily content authoring: use the Editor MCP at
+  `<SITE_URL>/staff/mcp`. Do not write directly to D1 / KV.
+- To rebuild site logic, change archetype, or rework prose: invoke the
+  Mantle install skill again (URL in `mantle/site.md` frontmatter).
+
+## Setup
+
+GitHub OAuth + Better Auth backed admin at `<SITE_URL>/admin/sign-in`.
+The bootstrap owner is set via the `ADMIN_GITHUB_LOGIN` Worker secret;
+its current value is `{{GITHUB_OWNER}}`.

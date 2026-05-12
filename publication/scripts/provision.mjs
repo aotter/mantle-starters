@@ -17,7 +17,7 @@
  *     secrets, and prints the final handoff. It never seeds production
  *     content. CLOUDFLARE_API_TOKEN must be exported.
  */
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 
@@ -87,8 +87,11 @@ async function up(args) {
   pipeSecret("BETTER_AUTH_SECRET", randomBytes(32).toString("base64url"));
   pipeSecret("TURNSTILE_SECRET_KEY", widget.secret);
 
-  console.log("\n[5/5] Initial content intentionally skipped.");
+  console.log("\n[5/6] Initial content intentionally skipped.");
   console.log("  Ask the site owner what to publish first, then use MCP/admin authoring.");
+
+  console.log("\n[6/6] Updating mantle/site.md + AGENTS.md...");
+  updateSiteSemanticLayer(ctx.workerUrl);
 
   printHandoff(ctx, names);
 }
@@ -186,6 +189,56 @@ function updateOrigin(workerUrl) {
   writeFileSync(path, next);
 }
 
+/**
+ * Rewrites the site_url placeholder and appends a `revisions:` entry to
+ * mantle/site.md and AGENTS.md per ADR-0016. Skipped if the files do
+ * not exist (legacy installs predating the site-semantic-layer).
+ */
+function updateSiteSemanticLayer(workerUrl) {
+  const isoNow = new Date().toISOString();
+  if (existsSync("mantle/site.md")) {
+    const before = readFileSync("mantle/site.md", "utf8");
+    let after = before.replace(
+      /^site_url: .*$/m,
+      `site_url: ${workerUrl}`,
+    );
+    after = appendRevision(after, isoNow, "provision", `deployed to ${workerUrl}`);
+    if (after === before) {
+      console.log("  mantle/site.md unchanged (no frontmatter site_url to update)");
+    } else {
+      writeFileSync("mantle/site.md", after);
+      console.log("  mantle/site.md: site_url + revisions entry updated");
+    }
+  }
+  if (existsSync("AGENTS.md")) {
+    const before = readFileSync("AGENTS.md", "utf8");
+    const after = before.replace(
+      /^Public site: .*$/m,
+      `Public site: ${workerUrl}`,
+    );
+    if (after === before) {
+      console.log("  AGENTS.md unchanged (no Public site line to update)");
+    } else {
+      writeFileSync("AGENTS.md", after);
+      console.log("  AGENTS.md: Public site URL updated");
+    }
+  }
+}
+
+/**
+ * Adds `- at: <iso>` / `by:` / `summary:` items at the end of the
+ * `revisions:` YAML list in frontmatter. The list must already exist
+ * (the install template seeds it with the install entry).
+ */
+function appendRevision(text, isoNow, by, summary) {
+  if (!text.startsWith("---\n")) return text;
+  const closeIdx = text.indexOf("\n---", 4);
+  if (closeIdx === -1) return text;
+  if (text.slice(0, closeIdx).indexOf("\nrevisions:") === -1) return text;
+  const block = `  - at: ${isoNow}\n    by: ${by}\n    summary: ${JSON.stringify(summary)}`;
+  return `${text.slice(0, closeIdx)}\n${block}${text.slice(closeIdx)}`;
+}
+
 function replaceInBlock(text, table, bindingLine, key, value) {
   const header = `[[${table}]]`;
   const start = text.indexOf(`${header}\n${bindingLine}`);
@@ -265,6 +318,10 @@ Sign in:     ${ctx.workerUrl}/admin/sign-in
 
 Cloudflare resources are scoped to ${names.projectName}; manage at
 https://dash.cloudflare.com/${ctx.accountId}.
+
+I wrote these URLs into mantle/site.md (frontmatter site_url + a
+revisions entry). Next time you want me back, paste the contents of
+mantle/site.md into the conversation — I read it whole on return.
 
 Reminder: revoke the CLOUDFLARE_API_TOKEN you used for provisioning at
 https://dash.cloudflare.com/profile/api-tokens.
