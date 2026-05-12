@@ -1,10 +1,15 @@
 {
   "archetypes": {
-    "presence":    { "path": "publication" },
+    "presence":    { "path": "presence" },
     "publication": { "path": "publication" },
-    "intake":      { "path": "publication", "overlays": ["intake"] },
+    "intake":      { "path": "intake" },
     "blank":       { "path": "blank" }
   },
-  "themes": {},
+  "themes": {
+    "l4-minimal-ink":       { "path": "themes/l4-minimal-ink" },
+    "l4-editorial-warm":    { "path": "themes/l4-editorial-warm" },
+    "l4-editorial-journal": { "path": "themes/l4-editorial-journal" },
+    "l4-playful-pop":       { "path": "themes/l4-playful-pop" }
+  },
   "roadmap": ["transaction", "reservation", "community", "membership"]
 }

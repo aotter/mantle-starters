@@ -1,0 +1,169 @@
+apiVersion: cms.mantle.aotter.net/v1
+kind: Schema
+metadata:
+  name: leads
+spec:
+  title: Leads
+  description: |
+    Structured intake from public visitors. Anonymous-with-email
+    pattern (no member system in v0.1.0): visitor supplies name +
+    email + the question/request the form is built around. CAPTCHA
+    token rides on the input but is dropped from the row by the
+    builtin op's projection — the `before_create` lifecycle hook
+    reads it via `ctx.event.originalInput`, calls Turnstile
+    siteverify, and aborts the create on failure.
+
+    Bigger field set than `contact-messages` so an intake site can
+    capture what the lead actually wants (company / use-case /
+    timeline / budget — adjust freely for your archetype). Status
+    field is staff-side only; visitors never set it.
+  schema:
+    type: object
+    required:
+      - name
+      - email
+      - need
+    properties:
+      name:
+        type: string
+      email:
+        type: string
+        format: email
+      company:
+        type: string
+        description: Optional — drop or repurpose if your intake isn't B2B-shaped.
+      need:
+        type: string
+        description: |
+          What the visitor is asking for. Free-text; the form decides
+          the prompt label (e.g. "Tell us about your project", "What
+          are you signing up for", "Pick a date").
+      timeline:
+        type: string
+        description: Optional — when do they need this? (e.g. "ASAP", "this quarter").
+      status:
+        type: string
+        description: |
+          Staff-only field. Convention: `new` (default — set by
+          submit-lead), `qualified`, `contacted`, `won`, `lost`. Not
+          enforced as enum; promote to closed enum once the team
+          settles on the lifecycle.
+      createdAt:
+        type: number
+        x-mantle-bind: now
+  lifecycle: simple
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: View
+metadata:
+  name: leads-recent
+spec:
+  from: leads
+  fields: [name, email, company, need, timeline, status, createdAt]
+  filter:
+    eq: { field: status, value: new }
+  orderBy:
+    - { field: createdAt, direction: desc }
+  limit: 50
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Procedure
+metadata:
+  name: submit-lead
+spec:
+  input:
+    type: object
+    required:
+      - name
+      - email
+      - need
+      - turnstileToken
+    properties:
+      name: { type: string }
+      email: { type: string, format: email }
+      company: { type: string }
+      need: { type: string, minLength: 1 }
+      timeline: { type: string }
+      turnstileToken:
+        type: string
+        description: |
+          Cloudflare Turnstile token from the widget. Side-channel
+          field — declared on the input so the before_create hook
+          can read it via ctx.event.originalInput. The builtin op's
+          projection drops it from the persisted leads row.
+  output:
+    type: object
+  handler:
+    kind: builtin
+    op: create
+    schema: leads
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Procedure
+metadata:
+  name: leads-captcha-check
+spec:
+  input:
+    type: object
+    properties:
+      turnstileToken:
+        type: string
+  output:
+    type: object
+  handler:
+    kind: ref
+    ref: captchaCheck
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Procedure
+metadata:
+  name: leads-slack-notify
+spec:
+  input:
+    type: object
+    properties:
+      name: { type: string }
+      email: { type: string }
+      need: { type: string }
+  output:
+    type: object
+  handler:
+    kind: ref
+    ref: slackNotify
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Trigger
+metadata:
+  name: submit-lead-http
+spec:
+  source:
+    kind: http
+    method: POST
+    path: /api/leads
+  target:
+    procedure: submit-lead
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Trigger
+metadata:
+  name: 010-leads-captcha-guard
+spec:
+  source:
+    kind: lifecycle
+    schema: leads
+    on: [before_create]
+    errorPolicy: abort
+  target:
+    procedure: leads-captcha-check
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Trigger
+metadata:
+  name: 020-leads-slack-notify
+spec:
+  source:
+    kind: lifecycle
+    schema: leads
+    on: [after_create]
+  target:
+    procedure: leads-slack-notify
