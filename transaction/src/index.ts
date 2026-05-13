@@ -93,14 +93,17 @@ export default {
    *
    * Real consumer implementations land in PR 2 + PR 3; this file
    * just signals the shape to wrangler.toml.
+   *
+   * Scaffold behavior: `ackAll` (drop) rather than throw. The cron
+   * trigger fires every 5min and would otherwise burn through the
+   * default 3-retry budget before the DLQ-less queue silently drops
+   * the batch anyway. ack-and-warn keeps PR 1 dev sessions quiet.
    */
   async queue(batch: MessageBatch<unknown>, _env: Env, _ctx: ExecutionContext): Promise<void> {
     console.warn(
-      `[transaction PR 1 scaffold] queue '${batch.queue}' has ${batch.messages.length} message(s); ` +
-        `consumer not implemented yet — messages will retry per wrangler config.`,
+      `[transaction PR 1 scaffold] queue '${batch.queue}' received ${batch.messages.length} message(s); ` +
+        `consumer not implemented yet — acking to drop. Real consumer lands in PR 2/3.`,
     );
-    // Throw so messages remain in queue + retry; do not ack. Real
-    // consumers in PR 2/3 will branch on batch.queue.
-    throw new Error("queue consumer not implemented (PR 1 scaffold)");
+    batch.ackAll();
   },
 };

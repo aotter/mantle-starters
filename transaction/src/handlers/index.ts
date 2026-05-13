@@ -22,17 +22,21 @@ export interface HandlerEnv {
  *   - PR 3: enqueueOrderConfirmed, snapshotInventory, restockProduct
  *     (downstream + staff)
  */
+const REF_HANDLER_NAMES = [
+  "addToCart",
+  "checkoutStart",
+  "checkoutConfirm",
+  "checkoutReturn",
+  "readOrderStatus",
+  "enqueueOrderConfirmed",
+  "snapshotInventory",
+  "restockProduct",
+] as const;
+
 export function buildHandlers(_env: HandlerEnv): Readonly<Record<string, AnyHandler>> {
-  return {
-    addToCart: notImplemented("addToCart"),
-    checkoutStart: notImplemented("checkoutStart"),
-    checkoutConfirm: notImplemented("checkoutConfirm"),
-    checkoutReturn: notImplemented("checkoutReturn"),
-    readOrderStatus: notImplemented("readOrderStatus"),
-    enqueueOrderConfirmed: notImplemented("enqueueOrderConfirmed"),
-    snapshotInventory: notImplemented("snapshotInventory"),
-    restockProduct: notImplemented("restockProduct"),
-  };
+  return Object.fromEntries(
+    REF_HANDLER_NAMES.map((name) => [name, notImplemented(name)]),
+  );
 }
 
 function notImplemented(name: string): AnyHandler {
