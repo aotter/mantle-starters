@@ -15,12 +15,53 @@ Follow the [Mantle install brief](https://raw.githubusercontent.com/AotterClam/c
 
 A site that publishes — articles, notes, project updates, a docs-lite section, plus a basic contact form. The `publication` starter carries the Schemas (`posts`, `post-translations`, `pages`, `contact-messages`), the public read path via KV, and the lifecycle/Procedure scaffolding for CAPTCHA + Slack-notify.
 
-## Interview probes to emphasize
+## Interview probes (pickers — present one at a time, not all at once)
 
-- Are you the only author, or will there be more later? (Affects how the bootstrap-owner-only constraint reads.)
-- Publishing rhythm — irregular, weekly, daily? Often informs voice.
-- Is the contact form actually wanted, or is presence enough? (Skip if not — the form takes Turnstile config.)
-- Do you write in two languages? Which is canonical? (`post-translations` joins on slug.)
+Each probe is a multiple-choice picker the user picks from. Ask one, react to the answer, then move to the next — multi-round conversation, not a flat checklist. The install Skill's "Multi-round purpose discovery" stance orchestrates this.
+
+### 1. Purpose — what's this publication for? (ask first)
+
+> "A few shapes this could be — pick what fits, or tell me something else:"
+
+- **Personal log / journal** — training, parenting, hobbies, ongoing personal project
+- **Subject-matter writing** — essays, analysis, tutorials, deep dives in a domain
+- **Project / team news** — release notes, updates, changelog-as-blog
+- **Brand-voice diary** — building in public, founder log, behind-the-scenes
+- **Mixed** — multiple streams under one site
+- **Something else** (let user describe)
+
+### 2. Author shape (after purpose)
+
+> "Who's writing? Just you, or a team?"
+
+- **Solo author** — just me, period
+- **Solo for now, maybe invite guests later** — bootstrap-owner-only constraint reads as "for now"
+- **Multi-author team from day one** — multiple GitHub identities will need access
+
+### 3. Publishing cadence (informs voice register)
+
+> "What rhythm do you imagine?"
+
+- **Irregular** — when there's something to say
+- **Weekly-ish** — a regular slot but flexible
+- **Daily / near-daily** — high frequency
+- **Project-tied** — drops when something ships, otherwise quiet
+
+### 4. Contact form (the publication starter scaffolds it; user opts in or out)
+
+> "There's a contact form scaffolded — readers can reach you directly. Want it?"
+
+- **Yes, keep it** — provision will wire up Turnstile + Slack notify
+- **Skip — presence + social links is enough** — we'll remove the form during scaffold
+- **Add later** — leave the scaffold, route through extend Skill post-deploy
+
+### 5. Multilingual content modeling (separate from audience-scope / UI locale)
+
+> "Will posts get translated, or is each post written in one language only?"
+
+- **One language only** — no translation needed; `post-translations` schema unused
+- **Selective translation** — some posts translated, primary language is canonical (`post-translations` joins on slug)
+- **Full bilingual / multilingual content** — every post written in two-plus languages
 
 ## Site defaults
 
