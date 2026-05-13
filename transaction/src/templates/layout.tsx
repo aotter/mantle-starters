@@ -1,0 +1,142 @@
+/** @jsxImportSource hono/jsx */
+import { raw } from "hono/html";
+
+/**
+ * Minimal HTML doc envelope for the customer-facing storefront.
+ *
+ * Deliberately plain — no theme tokens, no SEO machinery, no
+ * sidebar/header chrome. Reference templates that adopters will
+ * replace with their own brand. Inline CSS keeps the entire
+ * shipping surface readable; no external CSS bundle to track.
+ *
+ * Cart state lives in localStorage on the client (key `cartId` =
+ * uuid stored on first visit) and in KV server-side
+ * (`cart:<cartId>`); the server's view of the cart is authoritative
+ * after addToCart, but the template renders subtotal client-side
+ * while the user shops to avoid round-trips.
+ */
+
+const INLINE_CSS = `
+  :root {
+    --fg: #1a1a1a;
+    --bg: #fafaf7;
+    --muted: #666;
+    --accent: #2a4d3a;
+    --border: #d6d3cb;
+    --card: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    line-height: 1.5;
+    color: var(--fg);
+    background: var(--bg);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  header.site {
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--card);
+  }
+  header.site .brand { font-weight: 600; font-size: 1.05rem; }
+  header.site nav a { margin-left: 1rem; color: var(--fg); }
+  main { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem; }
+  h1, h2, h3 { margin-top: 0; }
+  .product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.25rem;
+  }
+  .product-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1rem;
+  }
+  .product-card .price { color: var(--accent); font-weight: 600; margin-top: 0.5rem; }
+  .price-tag { font-size: 1.5rem; color: var(--accent); font-weight: 600; }
+  form.checkout { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 1.5rem; max-width: 480px; }
+  form.checkout label { display: block; margin-top: 1rem; font-weight: 500; }
+  form.checkout input, form.checkout textarea {
+    width: 100%; padding: 0.5rem; margin-top: 0.25rem;
+    border: 1px solid var(--border); border-radius: 4px;
+    font-family: inherit; font-size: 1rem;
+  }
+  button.primary, .btn-primary {
+    background: var(--accent); color: white; border: 0;
+    padding: 0.65rem 1.25rem; border-radius: 4px;
+    font-size: 1rem; font-weight: 500; cursor: pointer;
+    margin-top: 1rem;
+  }
+  button.primary:hover, .btn-primary:hover { opacity: 0.92; }
+  button.primary:disabled { opacity: 0.5; cursor: wait; }
+  table.cart {
+    width: 100%; border-collapse: collapse; margin-top: 1rem;
+    background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+  }
+  table.cart th, table.cart td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+  table.cart tfoot td { font-weight: 600; }
+  .muted { color: var(--muted); font-size: 0.9rem; }
+  .notice {
+    padding: 0.75rem 1rem; border-radius: 4px; margin: 1rem 0;
+    background: #f3f0e8; border: 1px solid var(--border);
+  }
+  .notice.success { background: #e7f0e9; border-color: var(--accent); }
+  .notice.error { background: #f7e8e8; border-color: #b84545; color: #8b2f2f; }
+  .empty { text-align: center; padding: 3rem 1rem; color: var(--muted); }
+  footer.site {
+    text-align: center; padding: 2rem 1rem; color: var(--muted);
+    font-size: 0.85rem; border-top: 1px solid var(--border); margin-top: 4rem;
+  }
+`;
+
+const CART_BOOTSTRAP_JS = `
+  // Per-browser cart id. The server holds the actual cart state in
+  // KV (cart:<cartId>); this just gives us a stable identifier.
+  if (!localStorage.getItem("cartId")) {
+    localStorage.setItem("cartId", "c_" + crypto.randomUUID());
+  }
+  window.__cartId = localStorage.getItem("cartId");
+`;
+
+export interface LayoutContext {
+  readonly title: string;
+  readonly children: unknown;
+  /** Optional brand name; falls back to "Shop". */
+  readonly brand?: string;
+}
+
+export function Layout(props: LayoutContext) {
+  const brand = props.brand ?? "Shop";
+  return (
+    <html lang="en">
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>{props.title}</title>
+        <style>{raw(INLINE_CSS)}</style>
+      </head>
+      <body>
+        <header class="site">
+          <a href="/" class="brand">{brand}</a>
+          <nav>
+            <a href="/">Shop</a>
+            <a href="/cart">Cart</a>
+          </nav>
+        </header>
+        <main>{props.children}</main>
+        <footer class="site">
+          Reference storefront — replace with your brand.
+        </footer>
+        <script>{raw(CART_BOOTSTRAP_JS)}</script>
+      </body>
+    </html>
+  );
+}
+
+export function renderHtml(tree: unknown): string {
+  return "<!doctype html>" + String(tree);
+}
