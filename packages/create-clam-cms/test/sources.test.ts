@@ -12,18 +12,23 @@ import {
 } from "../src/sources.js";
 
 describe("resolveSource (back-compat, stale fallback)", () => {
-  it("returns presence → publication starter (no overlay)", () => {
+  it("returns presence → presence starter (1:1, no overlay)", () => {
     const s = resolveSource("presence");
     expect(s.kind).toBe("public");
     expect(s.repo).toBe("AotterClam/clam-cms-starters");
-    expect(s.path).toBe("publication");
+    expect(s.path).toBe("presence");
     expect(s.overlays).toBeUndefined();
   });
 
-  it("returns intake → publication starter with intake overlay", () => {
+  it("returns intake → intake starter (1:1, no overlay)", () => {
     const s = resolveSource("intake");
-    expect(s.path).toBe("publication");
-    expect(s.overlays).toEqual(["intake"]);
+    expect(s.path).toBe("intake");
+    expect(s.overlays).toBeUndefined();
+  });
+
+  it("returns transaction → transaction starter", () => {
+    const s = resolveSource("transaction");
+    expect(s.path).toBe("transaction");
   });
 
   it("returns blank → blank starter", () => {
@@ -70,18 +75,20 @@ describe("resolveArchetype (live sources)", () => {
       presence: { path: "presence" },
       publication: { path: "publication" },
       intake: { path: "intake" },
+      transaction: { path: "transaction" },
       blank: { path: "blank" },
     },
     themes: {
       "l4-minimal-ink": { path: "themes/l4-minimal-ink" },
     },
-    roadmap: ["transaction"],
+    roadmap: ["reservation"],
   };
 
   it("resolves against the supplied SourcesJson (1:1 paths)", () => {
     expect(resolveArchetype("presence", live).path).toBe("presence");
     expect(resolveArchetype("intake", live).path).toBe("intake");
     expect(resolveArchetype("intake", live).overlays).toBeUndefined();
+    expect(resolveArchetype("transaction", live).path).toBe("transaction");
   });
 
   it("returns repo = STARTERS_REPO and kind = public", () => {
@@ -91,7 +98,7 @@ describe("resolveArchetype (live sources)", () => {
   });
 
   it("throws for roadmap archetype in the supplied sources", () => {
-    expect(() => resolveArchetype("transaction", live)).toThrow(/roadmap-only/);
+    expect(() => resolveArchetype("reservation", live)).toThrow(/roadmap-only/);
   });
 
   it("throws for unknown archetype with sources.archetypes list", () => {
@@ -147,7 +154,7 @@ describe("fetchSourcesJson", () => {
     const payload: SourcesJson = {
       archetypes: { publication: { path: "publication" } },
       themes: { "l4-minimal-ink": { path: "themes/l4-minimal-ink" } },
-      roadmap: ["transaction"],
+      roadmap: ["reservation"],
     };
     vi.spyOn(globalThis, "fetch").mockResolvedValue({
       ok: true,

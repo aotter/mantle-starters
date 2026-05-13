@@ -79,6 +79,7 @@ With a theme applied:
     "presence":    { "path": "presence" },
     "publication": { "path": "publication" },
     "intake":      { "path": "intake" },
+    "transaction": { "path": "transaction" },
     "blank":       { "path": "blank" }
   },
   "themes": {
@@ -87,7 +88,7 @@ With a theme applied:
     "l4-editorial-journal": { "path": "themes/l4-editorial-journal" },
     "l4-playful-pop":       { "path": "themes/l4-playful-pop" }
   },
-  "roadmap": ["transaction", "reservation", "community", "membership"]
+  "roadmap": ["reservation", "community", "membership"]
 }
 ```
 

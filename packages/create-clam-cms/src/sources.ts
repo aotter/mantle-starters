@@ -43,16 +43,18 @@ export interface ArchetypeSource extends ArchetypeSourceEntry {
 }
 
 /**
- * Bundled stale snapshot of `sources.json`. Archetype paths are
- * intentionally conservative for offline installs, but theme keys
- * should stay current so `--theme <key>` can still resolve when GH is
- * unreachable.
+ * Bundled stale snapshot of `sources.json`. Tracks the live
+ * `sources.json` shape (1:1 archetype-to-directory mapping post-split,
+ * `transaction` ready as of PR #29). Theme keys stay current so
+ * `--theme <key>` can still resolve when GH is unreachable. Refresh
+ * whenever the live shape evolves significantly.
  */
 export const STALE_FALLBACK_SOURCES: SourcesJson = {
   archetypes: {
-    presence: { path: "publication" },
+    presence: { path: "presence" },
     publication: { path: "publication" },
-    intake: { path: "publication", overlays: ["intake"] },
+    intake: { path: "intake" },
+    transaction: { path: "transaction" },
     blank: { path: "blank" },
   },
   themes: {
@@ -61,7 +63,7 @@ export const STALE_FALLBACK_SOURCES: SourcesJson = {
     "l4-editorial-journal": { path: "themes/l4-editorial-journal" },
     "l4-playful-pop": { path: "themes/l4-playful-pop" },
   },
-  roadmap: ["transaction", "reservation", "community", "membership"],
+  roadmap: ["reservation", "community", "membership"],
 };
 
 /**
