@@ -73,9 +73,9 @@ export function buildCmsConfig(env: Env, auth: Auth): CmsConfig {
     handlers: buildHandlers(env),
     templates: buildTemplates(),
     siteDefaults: {
-      brand: "Mantle Publication",
-      title: "Mantle Publication",
-      description: "Reference starter for mantle — localized posts + contact form.",
+      brand: "{{BRAND}}",
+      title: "{{BRAND}}",
+      description: "{{DESCRIPTION}}",
       origin: "https://example.com",
       // `{{LOCALES}}` is substituted by @aotter/create-mantle at install
       // time (ADR-0016). JSON.parse keeps this file TS-valid pre-substitution
