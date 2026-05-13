@@ -22,6 +22,9 @@ const NOW = 1_730_000_000_000;
 const SEED_PRODUCT_ID = "entry_smoke_product";
 const SEED_TRANSLATION_ID = "entry_smoke_product_en";
 const SEED_PRODUCT_SLUG = "smoke-product";
+const SEED_TRACKED_ID = "entry_tracked_product";
+const SEED_TRACKED_TR_ID = "entry_tracked_product_en";
+const SEED_TRACKED_SLUG = "tracked-out-of-stock";
 
 function buildFixtureSql(): string {
   const lines: string[] = [];
@@ -62,6 +65,34 @@ function buildFixtureSql(): string {
       `'${SEED_TRANSLATION_ID}', 'product-translations', 'published', 1, ` +
       `'${JSON.stringify(translationData).replace(/'/g, "''")}', ${NOW}, ${NOW});`,
   );
+
+  lines.push("-- 4. one tracked product with zero stock (for insufficient-stock smoke)");
+  const trackedData = {
+    slug: SEED_TRACKED_SLUG,
+    sku: "TRK-001",
+    priceMinor: 2500,
+    currency: "USD",
+    inventoryMode: "tracked",
+    createdAt: NOW,
+  };
+  const trackedTrData = {
+    slug: SEED_TRACKED_SLUG,
+    locale: "en",
+    title: "Tracked (out of stock)",
+    shortDescription: "Inventory-tracked product seeded with zero stock; smoke verifies reserve rejects.",
+    body: "Body.",
+  };
+  lines.push(
+    `INSERT OR IGNORE INTO entries (id, collection, status, version, data, created_at, updated_at) VALUES (` +
+      `'${SEED_TRACKED_ID}', 'products', 'published', 1, ` +
+      `'${JSON.stringify(trackedData).replace(/'/g, "''")}', ${NOW}, ${NOW});`,
+  );
+  lines.push(
+    `INSERT OR IGNORE INTO entries (id, collection, status, version, data, created_at, updated_at) VALUES (` +
+      `'${SEED_TRACKED_TR_ID}', 'product-translations', 'published', 1, ` +
+      `'${JSON.stringify(trackedTrData).replace(/'/g, "''")}', ${NOW}, ${NOW});`,
+  );
+
   return lines.join("\n");
 }
 
