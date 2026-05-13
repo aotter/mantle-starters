@@ -195,6 +195,20 @@ describe("installFromExtractedRoot", () => {
       join(extractedRoot, "themes", "l4-test", "src", "theme", "tokens.ts"),
       `export const TOKENS_CSS = "--paper: #fff; --ink: #111;";\n`,
     );
+    writeFile(
+      join(extractedRoot, "themes", "l4-test", "src", "theme", "index.ts"),
+      [
+        `import type { ThemeOverride } from "../Theme.js";`,
+        `import { TOKENS_CSS as ForkedTokens } from "./tokens.js";`,
+        ``,
+        `const overrides: ThemeOverride = {`,
+        `  tokens: ForkedTokens,`,
+        `};`,
+        ``,
+        `export default overrides;`,
+        ``,
+      ].join("\n"),
+    );
 
     const destination = join(tempRoot, "out-theme");
     mkdirSync(destination, { recursive: true });
@@ -229,6 +243,12 @@ describe("installFromExtractedRoot", () => {
     expect(
       existsSync(join(destination, "src", "theme", "tokens.ts")),
     ).toBe(true);
+    const themeIndex = readFileSync(
+      join(destination, "src", "theme", "index.ts"),
+      "utf8",
+    );
+    expect(themeIndex).toContain('from "./tokens.js"');
+    expect(themeIndex).toContain("tokens: ForkedTokens");
   });
 
   it("reports theme: null and theme_source: null when no theme requested", () => {
