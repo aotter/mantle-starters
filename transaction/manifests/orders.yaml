@@ -157,6 +157,13 @@ spec:
     kind: ref
     ref: enqueueOrderConfirmed
 ---
+# NOTE: Inactive in v0.1.0 — the `paymentCallbackConsumer` writes the
+# order row directly to D1 (INSERT OR IGNORE on a deterministic id, for
+# once-and-only-once semantics), which bypasses the runtime's
+# createEntry lifecycle. This Trigger lights up for staff-side or
+# MCP-driven order creation paths (anything that DOES route through
+# `runtime.createEntry.execute()`). The callback consumer enqueues the
+# `order.confirmed` message inline; the deduper handles double-fire.
 apiVersion: cms.clam.ai/v1
 kind: Trigger
 metadata:
