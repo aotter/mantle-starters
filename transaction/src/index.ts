@@ -144,4 +144,34 @@ export default {
     const dispatch = buildQueueDispatcher(env);
     return dispatch(batch, env, ctx);
   },
+
+  /**
+   * Cron handler — fires per `wrangler.toml [triggers].crons`.
+   * Current schedule: every 5 minutes. Drops an
+   * `inventory.reconcile.tick` onto ORDER_WORK_QUEUE; the consumer
+   * (`orderWorkConsumer.handleReconcileTick`) sweeps stale
+   * InventoryActor locks + re-snapshots tracked products.
+   *
+   * Sweeper + snapshot run in the queue consumer (not here)
+   * intentionally — same retry semantics as every other queue
+   * message; same max_concurrency:1 serialization.
+   */
+  async scheduled(
+    _controller: ScheduledController,
+    env: Env,
+    ctx: ExecutionContext,
+  ): Promise<void> {
+    if (!env.BETTER_AUTH_SECRET) {
+      console.warn(
+        `[transaction scheduled] env not ready (no BETTER_AUTH_SECRET); skipping tick`,
+      );
+      return;
+    }
+    ctx.waitUntil(
+      env.ORDER_WORK_QUEUE.send({
+        type: "inventory.reconcile.tick",
+        at: Date.now(),
+      }),
+    );
+  },
 };
