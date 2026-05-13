@@ -82,13 +82,13 @@ export class InventoryActor implements DurableObject {
    */
   async tryAcquire(_workId: string): Promise<AcquireResult> {
     void this.state;
-    throw new Error("not implemented (planning sketch)");
+    throw new Error(stubMessage("InventoryActor.tryAcquire", "PR 2"));
   }
 
   /** Flip `workId` to completed. Idempotent — multiple calls allowed. */
   async markCompleted(_workId: string): Promise<void> {
     void this.state;
-    throw new Error("not implemented");
+    throw new Error(stubMessage("InventoryActor.markCompleted", "PR 2"));
   }
 
   /**
@@ -102,45 +102,45 @@ export class InventoryActor implements DurableObject {
    */
   async sweepStaleLocks(): Promise<{ readonly resetCount: number }> {
     void this.state;
-    throw new Error("not implemented");
+    throw new Error(stubMessage("InventoryActor.sweepStaleLocks", "PR 3"));
   }
 
   // --- inventory surface ---------------------------------------------
 
   async reserve(_req: ReserveRequest): Promise<ReserveResult | ReserveFailure> {
     void this.state;
-    throw new Error("not implemented");
+    throw new Error(stubMessage("InventoryActor.reserve", "PR 2"));
   }
 
   async commit(_reservationId: string): Promise<{
     readonly committed: ReadonlyArray<{ productSlug: string; qty: number }>;
   }> {
     void this.state;
-    throw new Error("not implemented");
+    throw new Error(stubMessage("InventoryActor.commit", "PR 2"));
   }
 
   async release(_reservationId: string): Promise<void> {
     void this.state;
-    throw new Error("not implemented");
+    throw new Error(stubMessage("InventoryActor.release", "PR 2"));
   }
 
   async snapshot(
     _productSlug: string,
   ): Promise<{ available: number; reserved: number }> {
     void this.state;
-    throw new Error("not implemented");
+    throw new Error(stubMessage("InventoryActor.snapshot", "PR 3"));
   }
 
   async restock(_productSlug: string, _addQty: number): Promise<void> {
     void this.state;
-    throw new Error("not implemented");
+    throw new Error(stubMessage("InventoryActor.restock", "PR 3"));
   }
 
   // --- DO infrastructure --------------------------------------------
 
   /** JSON-RPC envelope over fetch. */
   async fetch(_request: Request): Promise<Response> {
-    throw new Error("not implemented");
+    throw new Error(stubMessage("InventoryActor.fetch", "PR 2"));
   }
 
   /**
@@ -150,8 +150,15 @@ export class InventoryActor implements DurableObject {
    */
   async alarm(): Promise<void> {
     void this.state;
-    throw new Error("not implemented");
+    throw new Error(stubMessage("InventoryActor.alarm", "PR 2"));
   }
+}
+
+function stubMessage(symbol: string, pr: "PR 2" | "PR 3"): string {
+  return (
+    `transaction-starter: ${symbol} is a PR 1 scaffold stub; ` +
+    `live implementation lands in ${pr}.`
+  );
 }
 
 void PENDING_LOCK_TTL_MS;

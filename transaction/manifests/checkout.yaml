@@ -116,9 +116,21 @@ spec:
   output:
     type: object
     description: |
-      { orderId, status: "pending" | "placed" | "failed" }
-      Frontend polls this after the customer returns from the provider
-      until status flips from "pending" → "placed" (callback processed).
+      Read shape:
+        { orderId, exists: boolean, orderStatus?: <orders.orderStatus enum> }
+
+      `exists` is false when the async provider callback has not yet
+      processed this orderId (the order row hasn't been written yet).
+      `exists` is true once the callback consumer commits the order;
+      `orderStatus` then carries the live value from the `orders`
+      Schema's enum (placed / fulfilling / shipped / completed /
+      cancelled / refunded) — no separate frontend-only vocabulary.
+
+      Frontend polls after the customer returns from the provider:
+      - !exists → render "processing your order…" and poll again
+      - exists && orderStatus === "placed" → render "we got it" page
+      - exists && orderStatus === "cancelled" / "refunded" → render
+        the corresponding state.
   handler:
     kind: ref
     ref: readOrderStatus
