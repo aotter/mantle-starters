@@ -68,6 +68,13 @@ const ORDER_STATUS_JS = `
   }
 
   function render(data) {
+    // Order is placed — drop the per-browser cart id so the customer
+    // starts a fresh cart on their next visit. The server-side cart
+    // KV entry was already TTL-bounded; we don't need a clear API.
+    if (data.orderStatus === "placed" || data.orderStatus === "fulfilling" ||
+        data.orderStatus === "shipped" || data.orderStatus === "completed") {
+      try { localStorage.removeItem("cartId"); } catch (_) {}
+    }
     let html = statusBanner(data.orderStatus);
     html += '<p class="muted">Order id: <code>' + esc(orderId) + '</code></p>';
     if (data.customerEmail) {
