@@ -1,6 +1,6 @@
 {
   "name": "mantle-starter-blank",
-  "version": "0.0.7-alpha",
+  "version": "0.0.8-alpha",
   "private": true,
   "description": "Headless CMS starter for mantle — API + MCP only, no public HTML rendering. Bring your own frontend.",
   "type": "module",
@@ -16,9 +16,9 @@
     "setup:site": "node scripts/setup-site.mjs"
   },
   "dependencies": {
-    "@aotter/mantle-spec": "0.0.7-alpha",
-    "@aotter/mantle-runtime": "0.0.7-alpha",
-    "@aotter/mantle-cloudflare": "0.0.7-alpha",
+    "@aotter/mantle-spec": "0.0.8-alpha",
+    "@aotter/mantle-runtime": "0.0.8-alpha",
+    "@aotter/mantle-cloudflare": "0.0.8-alpha",
     "hono": "^4.6.20"
   },
   "devDependencies": {
