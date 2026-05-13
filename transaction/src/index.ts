@@ -10,7 +10,7 @@ import {
 } from "@aotterclam/clam-cms-cloudflare";
 import { buildCmsConfig, type Env } from "./clamConfig.js";
 import { invokeHandler } from "./handlers/_context.js";
-import { buildQueueDispatcher } from "./handlers/orderConsumer.js";
+import { buildQueueDispatcher, sendOrderWork } from "./handlers/orderConsumer.js";
 import { buildReadOrderStatus } from "./handlers/readOrderStatus.js";
 import { buildCheckoutReturn } from "./handlers/checkoutReturn.js";
 
@@ -163,7 +163,7 @@ export default {
       return;
     }
     ctx.waitUntil(
-      env.ORDER_WORK_QUEUE.send({
+      sendOrderWork(env.ORDER_WORK_QUEUE, {
         type: "inventory.reconcile.tick",
         at: Date.now(),
       }),

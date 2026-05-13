@@ -14,6 +14,7 @@
 
 import type { AnyHandler } from "@aotterclam/clam-cms-runtime";
 import { defineHandler } from "./_context.js";
+import { sendOrderWork } from "./orderConsumer.js";
 
 export interface EnqueueOrderConfirmedEnv {
   readonly ORDER_WORK_QUEUE: Queue;
@@ -40,7 +41,7 @@ export function buildEnqueueOrderConfirmed(
       if (!orderId) {
         throw new Error("enqueueOrderConfirmed: missing orderId / data.orderNumber");
       }
-      await env.ORDER_WORK_QUEUE.send({ type: "order.confirmed", orderId });
+      await sendOrderWork(env.ORDER_WORK_QUEUE, { type: "order.confirmed", orderId });
       return { enqueued: true, orderId };
     },
   );
