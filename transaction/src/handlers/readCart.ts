@@ -11,8 +11,9 @@
  * order_items snapshot from checkoutStart's enriched cart).
  */
 
-import type { AnyHandler, CmsRuntime } from "@aotterclam/clam-cms-runtime";
+import type { AnyHandler } from "@aotterclam/clam-cms-runtime";
 import { defineHandler } from "./_context.js";
+import { loadProductCatalog } from "./_productEnrichment.js";
 
 interface CartState {
   items: { productSlug: string; qty: number }[];
@@ -55,81 +56,33 @@ export function buildReadCart(env: ReadCartEnv): AnyHandler {
         subtotalMinor: 0,
       } satisfies ReadCartOutput;
     }
-    const enriched = await enrichItems(ctx.runtime, cart.items);
-    const subtotalMinor = enriched.reduce(
-      (acc, i) => acc + i.priceMinor * i.qty,
-      0,
-    );
-    const currency = enriched[0]?.currency;
+    const catalog = await loadProductCatalog(ctx.runtime);
+    const items: ReadCartOutput["items"][number][] = [];
+    let subtotalMinor = 0;
+    let currency: string | undefined;
+    for (const cartItem of cart.items) {
+      const product = catalog.bySlug.get(cartItem.productSlug);
+      // Drop unknown products from the displayed cart — they were
+      // unpublished after the user added them. addToCart will refuse
+      // re-adds. KV record stays untouched so an admin can recover.
+      if (!product) continue;
+      const lineTotalMinor = product.priceMinor * cartItem.qty;
+      subtotalMinor += lineTotalMinor;
+      currency ??= product.currency;
+      items.push({
+        productSlug: product.slug,
+        qty: cartItem.qty,
+        priceMinor: product.priceMinor,
+        title: product.title,
+        lineTotalMinor,
+      });
+    }
     return {
       cartId: input.cartId,
       exists: true,
-      items: enriched.map((i) => ({
-        productSlug: i.productSlug,
-        qty: i.qty,
-        priceMinor: i.priceMinor,
-        title: i.title,
-        lineTotalMinor: i.priceMinor * i.qty,
-      })),
+      items,
       subtotalMinor,
       currency,
     } satisfies ReadCartOutput;
   });
-}
-
-async function enrichItems(
-  runtime: CmsRuntime,
-  items: ReadonlyArray<{ productSlug: string; qty: number }>,
-): Promise<
-  Array<{
-    productSlug: string;
-    qty: number;
-    priceMinor: number;
-    currency: string;
-    title: string;
-  }>
-> {
-  const products = await runtime.listEntries.execute({
-    collection: "products",
-    status: "published",
-    limit: 1000,
-  });
-  const translations = await runtime.listEntries.execute({
-    collection: "product-translations",
-    status: "published",
-    limit: 5000,
-  });
-  const out: Array<{
-    productSlug: string;
-    qty: number;
-    priceMinor: number;
-    currency: string;
-    title: string;
-  }> = [];
-  for (const item of items) {
-    const product = products.find(
-      (p) => (p.data as { slug?: string }).slug === item.productSlug,
-    );
-    if (!product) {
-      // Drop unknown products from the displayed cart — they were
-      // unpublished after the user added them. addToCart will refuse
-      // re-adds. Keeping them in the KV record (untouched here) so
-      // an admin can recover state if needed.
-      continue;
-    }
-    const d = product.data as { slug: string; priceMinor: number; currency: string };
-    const tr = translations.find(
-      (t) => (t.data as { slug?: string }).slug === item.productSlug,
-    );
-    const title =
-      (tr?.data as { title?: string } | undefined)?.title ?? item.productSlug;
-    out.push({
-      productSlug: d.slug,
-      qty: item.qty,
-      priceMinor: d.priceMinor,
-      currency: d.currency,
-      title,
-    });
-  }
-  return out;
 }

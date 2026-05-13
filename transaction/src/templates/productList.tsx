@@ -19,13 +19,12 @@ export interface ProductListItem {
 }
 
 export interface ProductListContext {
-  readonly brand?: string;
   readonly products: ReadonlyArray<ProductListItem>;
 }
 
 export function renderProductList(ctx: ProductListContext): string {
   const tree = (
-    <Layout brand={ctx.brand} title={`Shop — ${ctx.brand ?? "Storefront"}`}>
+    <Layout title="Shop">
       <h1>Shop</h1>
       {ctx.products.length === 0 ? (
         <div class="empty">
