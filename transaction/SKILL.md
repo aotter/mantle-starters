@@ -1,6 +1,6 @@
 ---
 archetype: transaction
-status: roadmap
+status: ready
 starter_repo: aotter/mantle-starters
 starter_path: transaction
 overlays: []

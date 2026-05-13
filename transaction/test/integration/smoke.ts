@@ -532,6 +532,56 @@ check(
   },
 );
 
+// ── public storefront templates (PR 5) ───────────────────────────────
+
+check("GET / renders product list with seeded product", async () => {
+  const res = await expectStatus("/", 200);
+  const contentType = res.headers.get("content-type") ?? "";
+  if (!contentType.includes("text/html")) {
+    fail(`expected HTML; got content-type=${contentType}`);
+  }
+  const html = await res.text();
+  if (!html.includes("<!doctype html>") && !html.includes("<!DOCTYPE html>")) {
+    fail(`expected doctype in HTML; got: ${html.slice(0, 200)}`);
+  }
+  if (!html.includes("smoke-product")) {
+    fail(`product list should mention seeded product slug; got: ${html.slice(0, 500)}`);
+  }
+});
+
+check("GET /product/:slug renders product detail with Add-to-Cart", async () => {
+  const res = await expectStatus("/product/smoke-product", 200);
+  const html = await res.text();
+  if (!html.includes("smoke-product")) {
+    fail(`product detail should mention the slug`);
+  }
+  if (!/add[- ]?to[- ]?cart/i.test(html)) {
+    fail(`product detail should expose the Add-to-Cart button`);
+  }
+});
+
+check("GET /product/:slug for unknown slug → 404", async () => {
+  await expectStatus("/product/does-not-exist-xyz", 404);
+});
+
+check("GET /cart, /checkout, /order/:id render HTML shells", async () => {
+  for (const path of ["/cart", "/checkout", "/order/o_smoke"]) {
+    const res = await expectStatus(path, 200);
+    const ct = res.headers.get("content-type") ?? "";
+    if (!ct.includes("text/html")) {
+      fail(`${path} expected HTML; got content-type=${ct}`);
+    }
+    const html = await res.text();
+    if (!html.includes("<!doctype html>") && !html.includes("<!DOCTYPE html>")) {
+      fail(`${path} missing doctype`);
+    }
+  }
+});
+
+check("GET /api/cart/get?cartId=… returns empty 404 for unknown cart", async () => {
+  await expectStatus("/api/cart/get?cartId=nonexistent-cart-z", 404);
+});
+
 // ── runner ────────────────────────────────────────────────────────────
 
 runAll().catch((err: unknown) => {

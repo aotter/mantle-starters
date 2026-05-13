@@ -12,8 +12,14 @@ import { buildCmsConfig, type Env } from "./mantleConfig.js";
 import { invokeHandler } from "./handlers/_context.js";
 import { buildQueueDispatcher, sendOrderWork } from "./handlers/orderConsumer.js";
 import { buildReadOrderStatus } from "./handlers/readOrderStatus.js";
+import { buildReadCart } from "./handlers/readCart.js";
 import { buildCheckoutReturn } from "./handlers/checkoutReturn.js";
 import { restockProductCore } from "./handlers/restockProduct.js";
+import { renderProductList } from "./templates/productList.js";
+import { renderProductDetail } from "./templates/productDetail.js";
+import { renderCart } from "./templates/cart.js";
+import { renderCheckout } from "./templates/checkout.js";
+import { renderOrderStatus } from "./templates/orderStatus.js";
 
 // Re-export DurableObject classes so Workers can resolve them by name
 // from the `[[durable_objects.bindings]]` entries in wrangler.toml.
@@ -84,6 +90,7 @@ function getApp(env: Env): { app: Hono; cms: CmsRuntimeRef } {
   // and POST Triggers. The duplication here is just to expose them
   // via GET, which v0.1's Trigger.source.method enum doesn't cover.
   const readOrderStatus = buildReadOrderStatus();
+  const readCart = buildReadCart(env);
   const checkoutReturn = buildCheckoutReturn(env);
 
   app.get("/api/order/status", async (c) => {
@@ -117,6 +124,131 @@ function getApp(env: Env): { app: Hono; cms: CmsRuntimeRef } {
       return c.json({ error: msg }, 500);
     }
   });
+
+  app.get("/api/cart/get", async (c) => {
+    const cartId = c.req.query("cartId") ?? "";
+    if (!cartId) return c.json({ error: "missing cartId" }, 400);
+    try {
+      const runtime = await cms.get();
+      const result = (await invokeHandler<{ cartId: string }, unknown>(
+        readCart,
+        { cartId },
+        { runtime },
+      )) as { exists?: boolean };
+      // 404 on missing cart so the client can branch without parsing.
+      if (result.exists === false) {
+        return c.json(result as Record<string, unknown>, 404);
+      }
+      return c.json(result as Record<string, unknown>);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return c.json({ error: msg }, 500);
+    }
+  });
+
+  // ── Public storefront HTML routes ────────────────────────────────
+  // Reference templates. Adopters typically replace these with their
+  // own branded pages; the URL contract (paths + query strings) is
+  // what the API layer assumes, not the HTML shape.
+  //
+  // Templates render with a default "Storefront" brand label. Wire a
+  // real brand by passing { brand } from your site_config — see the
+  // Layout component in src/templates/layout.tsx.
+
+  app.get("/", async (c) => {
+    try {
+      const runtime = await cms.get();
+      const productEntries = await runtime.listEntries.execute({
+        collection: "products",
+        status: "published",
+        limit: 1000,
+      });
+      const translations = await runtime.listEntries.execute({
+        collection: "product-translations",
+        status: "published",
+        limit: 5000,
+      });
+      const products = productEntries.map((p) => {
+        const d = p.data as {
+          slug?: string;
+          priceMinor?: number;
+          currency?: string;
+          inventoryMode?: "tracked" | "untracked";
+        };
+        const tr = translations.find(
+          (t) => (t.data as { slug?: string }).slug === d.slug,
+        );
+        const title =
+          (tr?.data as { title?: string } | undefined)?.title ?? d.slug ?? "";
+        return {
+          slug: d.slug ?? "",
+          title,
+          priceMinor: d.priceMinor ?? 0,
+          currency: d.currency ?? "USD",
+          inventoryMode: d.inventoryMode ?? "untracked",
+        };
+      });
+      return c.html(renderProductList({ products }));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return c.text(`error: ${msg}`, 500);
+    }
+  });
+
+  app.get("/product/:slug", async (c) => {
+    const slug = c.req.param("slug");
+    try {
+      const runtime = await cms.get();
+      const productEntries = await runtime.listEntries.execute({
+        collection: "products",
+        status: "published",
+        limit: 1000,
+      });
+      const product = productEntries.find(
+        (p) => (p.data as { slug?: string }).slug === slug,
+      );
+      if (!product) {
+        return c.text("not found", 404);
+      }
+      const translations = await runtime.listEntries.execute({
+        collection: "product-translations",
+        status: "published",
+        limit: 5000,
+      });
+      const tr = translations.find(
+        (t) => (t.data as { slug?: string }).slug === slug,
+      );
+      const d = product.data as {
+        slug?: string;
+        priceMinor?: number;
+        currency?: string;
+        inventoryMode?: "tracked" | "untracked";
+        description?: string;
+      };
+      const trd = tr?.data as { title?: string; description?: string } | undefined;
+      return c.html(
+        renderProductDetail({
+          product: {
+            slug: d.slug ?? slug,
+            title: trd?.title ?? d.slug ?? slug,
+            description: trd?.description ?? d.description,
+            priceMinor: d.priceMinor ?? 0,
+            currency: d.currency ?? "USD",
+            inventoryMode: d.inventoryMode ?? "untracked",
+          },
+        }),
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return c.text(`error: ${msg}`, 500);
+    }
+  });
+
+  app.get("/cart", (c) => c.html(renderCart({})));
+  app.get("/checkout", (c) => c.html(renderCheckout({})));
+  app.get("/order/:orderId", (c) =>
+    c.html(renderOrderStatus({ orderId: c.req.param("orderId") })),
+  );
 
   // Test-only bypass: seed InventoryActor stock without going through
   // the staff-gated `/staff/api/restock` (which needs a real session
