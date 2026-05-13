@@ -75,7 +75,7 @@ function checkSectionWritten(section, name) {
     fail(`mantle/site.md is missing the ## ${name} section`);
   }
   // Strip template chrome — the `> purpose:` callout line and any HTML
-  // comments — then check the remaining body for prose.
+  // comments — leaving just the agent-written prose.
   const stripped = section
     .replace(/^>\s+purpose:.*$/gm, "")
     .replace(/<!--[\s\S]*?-->/g, "")
@@ -88,7 +88,7 @@ function checkSectionWritten(section, name) {
         `interview transcript.`,
     );
   }
-  return section;
+  return stripped;
 }
 
 async function fetchArchetypeHint(archetype) {
