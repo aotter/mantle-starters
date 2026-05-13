@@ -31,6 +31,20 @@ export type OrderWorkMessage =
   | { readonly type: "inventory.snapshot.requested"; readonly productSlug: string }
   | { readonly type: "inventory.reconcile.tick"; readonly at: number };
 
+/**
+ * Typed wrapper around `queue.send()` — producers must pass an
+ * `OrderWorkMessage`, so a typo'd `type` string is a compile error at
+ * the call site instead of a silent runtime no-op. Pair with the
+ * consumer's switch-default → DLQ for any malformed message that
+ * slips in from outside the type system (e.g. an upstream worker).
+ */
+export async function sendOrderWork(
+  queue: Queue,
+  msg: OrderWorkMessage,
+): Promise<void> {
+  await queue.send(msg);
+}
+
 export interface ConsumerEnv {
   readonly DB: D1Database;
   readonly INVENTORY_ACTOR: DurableObjectNamespace;
@@ -188,11 +202,11 @@ async function commitOrder(
 
   // Enqueue the downstream work. Safe to send twice — PR 3's
   // orderWorkConsumer dedups via the order row's
-  // `confirmation_emailed_at` (or similar) marker.
-  await env.ORDER_WORK_QUEUE.send({
+  // `confirmation_emailed_at` marker.
+  await sendOrderWork(env.ORDER_WORK_QUEUE, {
     type: "order.confirmed",
     orderId: event.orderId,
-  } satisfies OrderWorkMessage);
+  });
 }
 
 /**
@@ -303,6 +317,20 @@ async function handleOrderConfirmed(
     return;
   }
 
+  // Mark BEFORE side effect — at-most-once for notifications. If the
+  // marker write succeeds and the Slack post fails, the queue retries,
+  // sees the marker, and skips. We accept the rare lost-notification
+  // case to guarantee no duplicate-notification case. The reverse
+  // ordering would re-fire Slack on every retry between Slack-success
+  // and marker-write — unacceptable once Slack becomes email.
+  const now = Date.now();
+  const next = { ...parsed, confirmation_emailed_at: now };
+  await env.DB.prepare(
+    `UPDATE entries SET data = ?, updated_at = ? WHERE id = ? AND collection = ?`,
+  )
+    .bind(JSON.stringify(next), now, orderEntryId(orderId), "orders")
+    .run();
+
   // v0.1 placeholder side effects: log + optional Slack webhook.
   // Real email integration is downstream of EMAIL_API_KEY + a
   // provider SDK; intentionally left to the adopter.
@@ -319,19 +347,11 @@ async function handleOrderConfirmed(
         }),
       });
     } catch (err) {
-      // Don't fail the whole message on Slack outages — that would
-      // re-fire the order notification forever.
+      // Don't fail the whole message on Slack outages — the marker
+      // is already written, so retrying wouldn't re-send anyway.
       console.warn(`[order-work-consumer] slack notify failed:`, err);
     }
   }
-
-  const now = Date.now();
-  const next = { ...parsed, confirmation_emailed_at: now };
-  await env.DB.prepare(
-    `UPDATE entries SET data = ?, updated_at = ? WHERE id = ? AND collection = ?`,
-  )
-    .bind(JSON.stringify(next), now, orderEntryId(orderId), "orders")
-    .run();
 }
 
 async function handleSnapshotRequested(
@@ -367,7 +387,7 @@ async function handleReconcileTick(
   for (const r of rows.results ?? []) {
     const p = JSON.parse(r.data) as { slug?: string; inventoryMode?: string };
     if (p.inventoryMode === "tracked" && p.slug) {
-      await env.ORDER_WORK_QUEUE.send({
+      await sendOrderWork(env.ORDER_WORK_QUEUE, {
         type: "inventory.snapshot.requested",
         productSlug: p.slug,
       });

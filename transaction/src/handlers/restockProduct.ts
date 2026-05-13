@@ -11,11 +11,19 @@
  *     gate rejects unauthenticated callers BEFORE this handler runs.
  *   - input schema declares `productSlug: string`, `addQty: integer
  *     minimum: 1` — invalid shapes are rejected pre-dispatch.
+ *
+ * The `MAX_RESTOCK_ADD_QTY` cap below is defense-in-depth — if a fork
+ * copies this handler into an ungated Procedure or the manifest gate
+ * is dropped, the cap prevents unbounded `inv.restock()`. Manifest
+ * cap and handler cap are intentional duplication across layers.
  */
 
 import type { AnyHandler } from "@aotter/mantle-runtime";
 import { defineHandler } from "./_context.js";
 import { getInventoryActor } from "../durableObjects/InventoryActor.js";
+import { sendOrderWork } from "./orderConsumer.js";
+
+const MAX_RESTOCK_ADD_QTY = 100_000;
 
 export interface RestockProductEnv {
   readonly INVENTORY_ACTOR: DurableObjectNamespace;
@@ -35,9 +43,14 @@ export interface RestockProductOutput {
 
 export function buildRestockProduct(env: RestockProductEnv): AnyHandler {
   return defineHandler<RestockProductInput, RestockProductOutput>(async (input) => {
+    if (input.addQty > MAX_RESTOCK_ADD_QTY) {
+      throw new Error(
+        `restockProduct: addQty ${input.addQty} exceeds cap ${MAX_RESTOCK_ADD_QTY}`,
+      );
+    }
     const inv = getInventoryActor(env);
     await inv.restock(input.productSlug, input.addQty);
-    await env.ORDER_WORK_QUEUE.send({
+    await sendOrderWork(env.ORDER_WORK_QUEUE, {
       type: "inventory.snapshot.requested",
       productSlug: input.productSlug,
     });
