@@ -251,14 +251,21 @@ async function commitOrder(
  * testability + so the cart-missing fallback path stays obvious.
  *
  * The cart can be missing in two cases:
- *   1. The KV TTL (24h) elapsed before the callback fired (unusual
- *      but legitimate for async payment methods like bank transfers).
+ *   1. The KV TTL (7d) elapsed before the callback fired — possible
+ *      for very-slow bank-transfer methods.
  *   2. The callback fired AFTER a prior successful commit (idempotent
  *      retry) — the first commit already deleted the stash.
  *
  * In case 1, we lose line-item granularity but still record the
- * payment + amount. In case 2, INSERT OR IGNORE upstream means this
- * `data` is never written. We don't distinguish the cases here.
+ * payment + amount + customer email. In case 2, INSERT OR IGNORE
+ * upstream means this `data` is never written. We don't distinguish
+ * the cases here.
+ *
+ * NOTE: failed/expired callbacks do NOT delete the stash (see
+ * `releaseIfReserved`). Stripe payment intents can transition through
+ * `requires_payment_method` (a `failed`-shaped event) and back to
+ * `succeeded` with a new event_id; we want the retry to still find
+ * the cart so the eventual order row has line items.
  */
 function buildOrderRowData(
   event: PaymentCallbackMessage,
@@ -301,14 +308,21 @@ export function orderEntryId(orderId: string): string {
 async function releaseIfReserved(
   event: PaymentCallbackMessage,
   inv: InventoryActorClient,
-  env: ConsumerEnv,
+  _env: ConsumerEnv,
 ): Promise<void> {
   // Reservation is keyed by orderId (see InventoryActor); release is
   // idempotent — no-op if the reservation was already released by
   // the 10-min TTL alarm OR by a prior failed/expired callback for
-  // the same order. Also clears the cart stash so KV doesn't leak.
+  // the same order.
+  //
+  // We deliberately do NOT delete the KV cart stash here. Stripe
+  // payment intents can move through `failed`-shaped events (e.g.
+  // `requires_payment_method` after a declined card) and later
+  // `succeed` with a fresh event_id on the same orderId; the eventual
+  // commitOrder still needs the cart for line-item granularity. The
+  // 7-day TTL on the stash bounds the leak; if nothing succeeds in
+  // that window the stash expires on its own.
   await inv.release(event.orderId);
-  await deleteOrderCart(env.KV, event.orderId);
 }
 
 /**

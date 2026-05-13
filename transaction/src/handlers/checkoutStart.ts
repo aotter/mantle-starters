@@ -193,9 +193,10 @@ async function enrichItems(
 }
 
 function generateOrderId(): string {
-  // Short-ish, sortable-ish, collision-resistant. Not crypto-secure;
-  // the security boundary is the payment-provider verification, not
-  // orderId guessability.
-  return `o_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  // orderId is the reservation key + the KV cart-stash key + the
+  // order-row entry id. Collisions silently overwrite the prior
+  // reservation, stranding stock. randomUUID() gives 122 bits of
+  // CSPRNG entropy — collision-resistant in practice.
+  return `o_${crypto.randomUUID()}`;
 }
 
