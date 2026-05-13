@@ -1,0 +1,66 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-attach:
+    name: build scaffolder tarball + attach to release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: packages/create-mantle/pnpm-lock.yaml
+
+      - name: Install scaffolder deps
+        working-directory: packages/create-mantle
+        run: pnpm install --frozen-lockfile
+
+      - name: Build scaffolder
+        working-directory: packages/create-mantle
+        run: pnpm build
+
+      - name: Pack tarball
+        working-directory: packages/create-mantle
+        run: pnpm pack
+
+      - name: Stage release assets
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF#refs/tags/}"
+          VER="${TAG#v}"
+          TARBALL=$(ls packages/create-mantle/aotterclam-create-mantle-*.tgz | head -n 1)
+          if [ -z "$TARBALL" ]; then
+            echo "::error::pnpm pack did not produce a tarball"
+            exit 1
+          fi
+          # Versioned + 'latest' aliases. The 'latest' alias powers:
+          # npx https://github.com/AotterClam/mantle-starters/releases/latest/download/aotterclam-create-mantle.tgz
+          mkdir -p out
+          cp "$TARBALL" "out/aotterclam-create-mantle-${VER}.tgz"
+          cp "$TARBALL" "out/aotterclam-create-mantle.tgz"
+          (cd out && sha256sum aotterclam-create-mantle-${VER}.tgz > aotterclam-create-mantle-${VER}.tgz.sha256)
+          (cd out && sha256sum aotterclam-create-mantle.tgz > aotterclam-create-mantle.tgz.sha256)
+          ls -la out/
+
+      - name: Attach to GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF#refs/tags/}"
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "$TAG" --generate-notes
+          fi
+          gh release upload "$TAG" out/* --clobber
