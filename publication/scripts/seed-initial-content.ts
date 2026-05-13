@@ -1,9 +1,13 @@
 /**
- * Contributor/test initial-content utility.
+ * Contributor/test initial-content utility. NOT a user-facing install
+ * step — package.json no longer exposes it as `seed:initial` (#10);
+ * invoke directly with `tsx scripts/seed-initial-content.ts` from
+ * automated tests / contributor smoke flows that bring their own
+ * `initial-seed.json`.
  *
- * Real-user provisioning should not apply seed content. Use this script for
- * deterministic local/dev smoke or automated tests; production content should
- * be created after owner approval through MCP/admin authoring.
+ * Real-user provisioning does not apply seed content. After deploy,
+ * the site owner signs in at /admin and creates the first page/post
+ * through Staff MCP / admin authoring.
  */
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";

@@ -126,10 +126,11 @@ the default profile (`.wrangler/`, port 8787). Both can run in
 parallel.
 
 For production onboarding, do not run the fixture and do not run
-`seed:initial --remote`. Provision first, then interview the site owner
-for public copy and ask whether they want help drafting initial content.
-If they approve, create content through MCP/admin authoring so the same
-operation path is exercised from day one.
+`seed-initial-content.ts` against `--remote`. Provision first, then
+interview the site owner for public copy and ask whether they want
+help drafting initial content. If they approve, create content
+through MCP/admin authoring so the same operation path is exercised
+from day one.
 
 ## Smoke test (curl)
 
@@ -273,8 +274,10 @@ Prerequisites:
    ask the owner what initial content they want and whether it should
    write a first pass.
 
-   Do not apply fixture or seed data to production. `seed:initial` is
-   reserved for tests and contributor local dev.
+   Do not apply fixture or seed data to production. The
+   `scripts/seed-initial-content.ts` helper is reserved for tests
+   and contributor local dev — no longer exposed as a user-facing
+   `pnpm` script.
 
 7. **Public smoke against deployed worker.**
 
