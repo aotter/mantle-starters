@@ -2,7 +2,7 @@
   "name": "clam-cms-starter-intake",
   "version": "0.0.8-alpha",
   "private": true,
-  "description": "Intake starter for clam-cms v0.1.0 — publication shape (landing + articles + contact) plus a structured `leads` Schema with leads-recent View and CAPTCHA + Slack-notify lifecycle. Runs on wrangler dev with local D1 + KV.",
+  "description": "Intake starter for clam-cms v0.1.0 \u2014 publication shape (landing + articles + contact) plus a structured `leads` Schema with leads-recent View and CAPTCHA + Slack-notify lifecycle. Runs on wrangler dev with local D1 + KV.",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
@@ -11,6 +11,7 @@
     "mcp-smoke": "tsx test/integration/mcp-smoke.ts",
     "view-smoke": "tsx test/integration/view-rest-smoke.ts",
     "validate": "clam-cms validate",
+    "mantle:prompt": "node scripts/mantle.mjs prompt",
     "introspect": "clam-cms introspect",
     "emit-openapi": "clam-cms emit-openapi > openapi.json",
     "emit-types": "clam-cms emit-types --namespace IntakeCms > clam-types.d.ts",

@@ -2,11 +2,12 @@
   "name": "clam-cms-starter-presence",
   "version": "0.0.8-alpha",
   "private": true,
-  "description": "Presence starter for clam-cms v0.1.0 — landing page, secondary pages, contact form. Localized pages via translates; contact form via builtin + lifecycle hooks. No article list. Runs on wrangler dev with local D1 + KV.",
+  "description": "Presence starter for clam-cms v0.1.0 \u2014 landing page, secondary pages, contact form. Localized pages via translates; contact form via builtin + lifecycle hooks. No article list. Runs on wrangler dev with local D1 + KV.",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
     "validate": "clam-cms validate",
+    "mantle:prompt": "node scripts/mantle.mjs prompt",
     "introspect": "clam-cms introspect",
     "emit-openapi": "clam-cms emit-openapi > openapi.json",
     "emit-types": "clam-cms emit-types --namespace PresenceCms > clam-types.d.ts",

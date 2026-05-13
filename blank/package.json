@@ -2,11 +2,12 @@
   "name": "clam-cms-starter-blank",
   "version": "0.0.8-alpha",
   "private": true,
-  "description": "Headless CMS starter for clam-cms — API + MCP only, no public HTML rendering. Bring your own frontend.",
+  "description": "Headless CMS starter for clam-cms \u2014 API + MCP only, no public HTML rendering. Bring your own frontend.",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
     "validate": "clam-cms validate",
+    "mantle:prompt": "node scripts/mantle.mjs prompt",
     "introspect": "clam-cms introspect",
     "emit-openapi": "clam-cms emit-openapi > openapi.json",
     "emit-types": "clam-cms emit-types --namespace BlankCms > clam-types.d.ts",

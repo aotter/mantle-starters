@@ -2,7 +2,7 @@
   "name": "clam-cms-starter-publication",
   "version": "0.0.8-alpha",
   "private": true,
-  "description": "Reference publication starter for clam-cms v0.1.0 — owner-published content (articles / pages / docs-lite / basic contact form). Localized posts via translates; contact form via builtin + lifecycle hooks. Runs on wrangler dev with local D1 + KV.",
+  "description": "Reference publication starter for clam-cms v0.1.0 \u2014 owner-published content (articles / pages / docs-lite / basic contact form). Localized posts via translates; contact form via builtin + lifecycle hooks. Runs on wrangler dev with local D1 + KV.",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
@@ -11,6 +11,7 @@
     "mcp-smoke": "tsx test/integration/mcp-smoke.ts",
     "view-smoke": "tsx test/integration/view-rest-smoke.ts",
     "validate": "clam-cms validate",
+    "mantle:prompt": "node scripts/mantle.mjs prompt",
     "introspect": "clam-cms introspect",
     "emit-openapi": "clam-cms emit-openapi > openapi.json",
     "emit-types": "clam-cms emit-types --namespace PublicationCms > clam-types.d.ts",
