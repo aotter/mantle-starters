@@ -23,7 +23,7 @@ import { defineHandler } from "./_context.js";
 import { getInventoryActor } from "../durableObjects/InventoryActor.js";
 import { sendOrderWork } from "./orderConsumer.js";
 
-const MAX_RESTOCK_ADD_QTY = 100_000;
+export const MAX_RESTOCK_ADD_QTY = 100_000;
 
 export interface RestockProductEnv {
   readonly INVENTORY_ACTOR: DurableObjectNamespace;
@@ -41,23 +41,37 @@ export interface RestockProductOutput {
   readonly snapshotQueued: true;
 }
 
-export function buildRestockProduct(env: RestockProductEnv): AnyHandler {
-  return defineHandler<RestockProductInput, RestockProductOutput>(async (input) => {
-    if (input.addQty > MAX_RESTOCK_ADD_QTY) {
-      throw new Error(
-        `restockProduct: addQty ${input.addQty} exceeds cap ${MAX_RESTOCK_ADD_QTY}`,
-      );
-    }
-    const inv = getInventoryActor(env);
-    await inv.restock(input.productSlug, input.addQty);
-    await sendOrderWork(env.ORDER_WORK_QUEUE, {
-      type: "inventory.snapshot.requested",
-      productSlug: input.productSlug,
-    });
-    return {
-      productSlug: input.productSlug,
-      addQty: input.addQty,
-      snapshotQueued: true,
-    };
+/**
+ * Core restock side effect — cap check + InventoryActor.restock +
+ * snapshot enqueue. Shared by `buildRestockProduct` (the staff-gated
+ * Procedure) and the test-only `/__test/restock` bypass in
+ * `src/index.ts`. The bypass skips the auth gate (gated separately
+ * by `FAKE_PAYMENT_PROVIDER=1`); it does NOT skip the cap.
+ */
+export async function restockProductCore(
+  env: RestockProductEnv,
+  input: RestockProductInput,
+): Promise<RestockProductOutput> {
+  if (input.addQty > MAX_RESTOCK_ADD_QTY) {
+    throw new Error(
+      `restockProduct: addQty ${input.addQty} exceeds cap ${MAX_RESTOCK_ADD_QTY}`,
+    );
+  }
+  const inv = getInventoryActor(env);
+  await inv.restock(input.productSlug, input.addQty);
+  await sendOrderWork(env.ORDER_WORK_QUEUE, {
+    type: "inventory.snapshot.requested",
+    productSlug: input.productSlug,
   });
+  return {
+    productSlug: input.productSlug,
+    addQty: input.addQty,
+    snapshotQueued: true,
+  };
+}
+
+export function buildRestockProduct(env: RestockProductEnv): AnyHandler {
+  return defineHandler<RestockProductInput, RestockProductOutput>(
+    (input) => restockProductCore(env, input),
+  );
 }

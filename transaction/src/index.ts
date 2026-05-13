@@ -13,7 +13,7 @@ import { invokeHandler } from "./handlers/_context.js";
 import { buildQueueDispatcher, sendOrderWork } from "./handlers/orderConsumer.js";
 import { buildReadOrderStatus } from "./handlers/readOrderStatus.js";
 import { buildCheckoutReturn } from "./handlers/checkoutReturn.js";
-import { getInventoryActor } from "./durableObjects/InventoryActor.js";
+import { restockProductCore } from "./handlers/restockProduct.js";
 
 // Re-export DurableObject classes so Workers can resolve them by name
 // from the `[[durable_objects.bindings]]` entries in wrangler.toml.
@@ -126,6 +126,10 @@ function getApp(env: Env): { app: Hono; cms: CmsRuntimeRef } {
   // payments). Anyone copying this starter and removing the gate is
   // making the same mistake as removing the gate on FakeProvider —
   // not subtle. See test/integration/smoke.ts for the only caller.
+  //
+  // Delegates to `restockProductCore` so the cap + snapshot-enqueue
+  // stay in sync with the staff-gated handler — only the auth gate
+  // is skipped.
   if (env.FAKE_PAYMENT_PROVIDER === "1") {
     app.post("/__test/restock", async (c) => {
       const body = (await c.req.json()) as {
@@ -135,9 +139,16 @@ function getApp(env: Env): { app: Hono; cms: CmsRuntimeRef } {
       if (!body.productSlug || !body.addQty || body.addQty < 1) {
         return c.json({ error: "missing productSlug / addQty" }, 400);
       }
-      const inv = getInventoryActor(env);
-      await inv.restock(body.productSlug, body.addQty);
-      return c.json({ ok: true });
+      try {
+        const result = await restockProductCore(env, {
+          productSlug: body.productSlug,
+          addQty: body.addQty,
+        });
+        return c.json({ ok: true, ...result });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return c.json({ error: msg }, 400);
+      }
     });
   }
 

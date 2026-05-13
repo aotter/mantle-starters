@@ -37,6 +37,44 @@ export type OrderWorkMessage =
   | { readonly type: "inventory.reconcile.tick"; readonly at: number };
 
 /**
+ * Persisted line item on the order row. `priceMinorAtPurchase` is the
+ * snapshot of `priceMinor` from the cart stash at commit time — once
+ * the order row is written it stays stable even if product price
+ * changes later.
+ */
+export interface OrderLineItem {
+  readonly productSlug: string;
+  readonly qty: number;
+  readonly priceMinorAtPurchase: number;
+  readonly title?: string;
+}
+
+/**
+ * Canonical shape of the `data` field on an `orders` collection entry.
+ * Single source of truth — `commitOrder` writes it, `readOrderStatus`
+ * + `handleOrderConfirmed` read subsets of it. Adding a field is one
+ * place; all consumers see it via this interface.
+ *
+ * Optional everywhere because parsed D1 rows may legitimately predate
+ * a schema change; readers fall back per-field.
+ */
+export interface OrderRowData {
+  readonly orderNumber?: string;
+  readonly orderStatus?: string;
+  readonly currency?: string;
+  readonly totalMinor?: number;
+  readonly subtotalMinor?: number;
+  readonly taxMinor?: number;
+  readonly customerEmail?: string;
+  readonly customerName?: string;
+  readonly paymentProvider?: string;
+  readonly paymentIntentId?: string;
+  readonly items?: ReadonlyArray<OrderLineItem>;
+  readonly placedAt?: number;
+  readonly confirmation_emailed_at?: number;
+}
+
+/**
  * Typed wrapper around `queue.send()` — producers must pass an
  * `OrderWorkMessage`, so a typo'd `type` string is a compile error at
  * the call site instead of a silent runtime no-op. Pair with the
@@ -177,9 +215,6 @@ async function commitOrder(
   const now = Date.now();
   const entryId = orderEntryId(event.orderId);
   const orderData = buildOrderRowData(event, cart, now);
-  // INSERT OR IGNORE makes this idempotent on retries — second arrival
-  // of the same event sees the entry already exists; the INSERT is a
-  // no-op (D1's SQLite INSERT OR IGNORE returns 0 changes silently).
   await env.DB.prepare(
     `INSERT OR IGNORE INTO entries
        (id, collection, status, version, data, created_at, updated_at)
@@ -196,19 +231,15 @@ async function commitOrder(
     )
     .run();
 
-  // Commit the inventory reservation. Keyed by orderId — see
-  // InventoryActor docblock for why deterministic keying.
-  // Idempotent: a no-op if already committed or never reserved
-  // (untracked products carry no reservation).
+  // inv.commit + deleteOrderCart are idempotent (no-op if the
+  // reservation / stash were already cleared by a prior attempt or
+  // by the 10-min reservation alarm). Untracked products carry no
+  // reservation, so commit is also a no-op for them.
   await inv.commit(event.orderId);
-
-  // Drop the KV stash now that the order row owns the line items.
-  // Idempotent (kv.delete on missing key is a no-op).
   await deleteOrderCart(env.KV, event.orderId);
 
-  // Enqueue the downstream work. Safe to send twice —
-  // orderWorkConsumer dedups via the order row's
-  // `confirmation_emailed_at` marker.
+  // Safe to send twice — orderWorkConsumer dedups via the order
+  // row's `confirmation_emailed_at` marker.
   await sendOrderWork(env.ORDER_WORK_QUEUE, {
     type: "order.confirmed",
     orderId: event.orderId,
@@ -233,8 +264,8 @@ function buildOrderRowData(
   event: PaymentCallbackMessage,
   cart: OrderCart | null,
   now: number,
-): Record<string, unknown> {
-  const items =
+): OrderRowData {
+  const items: OrderLineItem[] =
     cart?.items.map((i) => ({
       productSlug: i.productSlug,
       qty: i.qty,
@@ -335,13 +366,6 @@ export async function orderWorkConsumer(
   }
 }
 
-interface StoredOrderData {
-  readonly confirmation_emailed_at?: number;
-  readonly customerEmail?: string;
-  readonly totalMinor?: number;
-  readonly currency?: string;
-}
-
 async function handleOrderConfirmed(
   orderId: string,
   env: ConsumerEnv,
@@ -357,7 +381,7 @@ async function handleOrderConfirmed(
     // backoff handles the race if it does.
     throw new Error(`handleOrderConfirmed: order entry not found for ${orderId}; retry`);
   }
-  const parsed = JSON.parse(row.data) as StoredOrderData;
+  const parsed = JSON.parse(row.data) as OrderRowData;
   if (parsed.confirmation_emailed_at) {
     // Idempotent skip — duplicate message after the first run.
     return;

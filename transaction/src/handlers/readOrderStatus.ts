@@ -11,7 +11,7 @@
 
 import type { AnyHandler } from "@aotterclam/clam-cms-runtime";
 import { defineHandler } from "./_context.js";
-import { orderEntryId } from "./orderConsumer.js";
+import { orderEntryId, type OrderLineItem, type OrderRowData } from "./orderConsumer.js";
 
 export interface ReadOrderStatusInput {
   readonly orderId: string;
@@ -26,28 +26,7 @@ export interface ReadOrderStatusOutput {
   readonly customerEmail?: string;
   readonly paymentProvider?: string;
   readonly paymentIntentId?: string;
-  readonly items?: ReadonlyArray<{
-    readonly productSlug: string;
-    readonly qty: number;
-    readonly priceMinorAtPurchase: number;
-    readonly title?: string;
-  }>;
-}
-
-interface StoredOrderData {
-  orderNumber?: string;
-  orderStatus?: string;
-  currency?: string;
-  totalMinor?: number;
-  customerEmail?: string;
-  paymentProvider?: string;
-  paymentIntentId?: string;
-  items?: ReadonlyArray<{
-    productSlug: string;
-    qty: number;
-    priceMinorAtPurchase: number;
-    title?: string;
-  }>;
+  readonly items?: ReadonlyArray<OrderLineItem>;
 }
 
 export function buildReadOrderStatus(): AnyHandler {
@@ -60,7 +39,7 @@ export function buildReadOrderStatus(): AnyHandler {
         id: orderEntryId(input.orderId),
         collection: "orders",
       });
-      const d = row.data as StoredOrderData;
+      const d = row.data as OrderRowData;
       return {
         orderId: d.orderNumber ?? input.orderId,
         exists: true,
