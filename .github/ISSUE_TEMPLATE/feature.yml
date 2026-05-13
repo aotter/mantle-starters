@@ -1,0 +1,56 @@
+name: Feature request
+description: Request a concrete new capability for a starter or the scaffolder.
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user or agent job is blocked? (For *new archetype* requests, use the "New starter archetype" template instead.)
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: What should the starter or scaffolder do?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - starter:blank
+        - starter:publication
+        - starter:presence
+        - starter:intake
+        - starter:transaction
+        - area:scaffolder
+        - area:themes
+        - area:_common
+        - area:sources-json
+        - area:ci
+        - area:docs
+        - unknown
+    validations:
+      required: true
+  - type: textarea
+    id: agent_dx
+    attributes:
+      label: AI-author DX
+      description: How does this make agent-scaffolded projects safer or clearer?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: gates
+    attributes:
+      label: Gates
+      options:
+        - label: This is not converged and needs `needs-discussion`.
+        - label: This depends on a change in the parent `mantle` engine.
