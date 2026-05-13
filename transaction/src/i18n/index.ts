@@ -4,18 +4,23 @@ import overrides from "../theme/index.js";
 
 /**
  * Single source of truth for every UI string the templates render.
- * Schema-stored content (post bodies, page bodies, post titles) stays
- * in the runtime; this is starter chrome (nav, headings, error copy,
- * form labels) that doesn't fit a CMS-row shape.
+ * Schema-stored content (product titles, product descriptions, order
+ * data) stays in the runtime; this is starter chrome (locale + theme
+ * switcher labels) that doesn't fit a CMS-row shape.
  *
- * Adding a fourth locale (e.g. `ja`):
+ * PR 1 scaffold ships with the MINIMUM bundle the locale+theme
+ * switchers need. Page-specific strings (product list / cart /
+ * checkout / order receipt) land alongside their templates in PR 4 —
+ * extend `en.json` / `zh-TW.json` with the same shape then.
+ *
+ * Adding a third locale (e.g. `ja`):
  *   1. Create `./ja.json` mirroring the en/zh-TW shape (TypeScript
  *      will complain on shape divergence — every locale must satisfy
  *      `I18nBundle`).
  *   2. Import + register in `BASELINE_BUNDLES` below.
  *   3. Add `"ja"` to `siteDefaults.locales` in `src/mantleConfig.ts`.
- *   4. Add Schema entries (post-translations / page-translations) for
- *      that locale via fixture or admin.
+ *   4. Add Schema entries (product-translations etc.) for that locale
+ *      via fixture or admin.
  *
  * `theme/index.ts:i18n.<locale>` is deep-merged OVER the baseline
  * bundle for that locale, so a consumer can retitle a single string
