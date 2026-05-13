@@ -8,7 +8,7 @@
  * Usage:
  *   pnpm theme:reset tokens.ts
  *   pnpm theme:reset components/Header.tsx
- *   pnpm theme:reset templates/post.tsx
+ *   pnpm theme:reset templates/page.tsx
  *   pnpm theme:reset i18n/en.json
  *   pnpm theme:reset icons.ts
  */

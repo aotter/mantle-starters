@@ -115,7 +115,6 @@ async function renderHome(ctx: PublicRouteContext): Promise<Response> {
       intro: data.intro,
       body: data.body ?? "",
     },
-    recentPosts: [],
   });
   return new Response(html, {
     status: 200,

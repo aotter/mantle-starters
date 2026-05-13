@@ -7,7 +7,7 @@ import { icon } from "../icons.js";
 export interface HeaderProps {
   readonly site: SiteConfig;
   readonly locale: string;
-  readonly current?: "home" | "posts" | "about" | "contact";
+  readonly current?: "home" | "about" | "contact";
 }
 
 export function Header(props: HeaderProps) {
@@ -22,9 +22,6 @@ export function Header(props: HeaderProps) {
         {site.brand}
       </a>
       <nav class="site-nav" aria-label="Primary">
-        <a href={`/${locale}/posts`} aria-current={current === "posts" ? "page" : undefined}>
-          {t.header.posts}
-        </a>
         <a href={`/${locale}/pages/about`} aria-current={current === "about" ? "page" : undefined}>
           {t.header.about}
         </a>

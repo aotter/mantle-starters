@@ -1,7 +1,6 @@
 {
   "label": "English",
   "header": {
-    "posts": "Posts",
     "about": "About",
     "contact": "Contact"
   },
@@ -15,12 +14,7 @@
     "ariaLabel": "Language"
   },
   "home": {
-    "eyebrow": "Welcome",
-    "recent": "Recent posts"
-  },
-  "postList": {
-    "title": "Posts",
-    "eyebrow": "All posts"
+    "eyebrow": "Welcome"
   },
   "notFound": {
     "title": "Page not found",

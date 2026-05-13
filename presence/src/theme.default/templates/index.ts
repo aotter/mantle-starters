@@ -19,7 +19,7 @@ export const contactTemplate = overrides.templates?.contact ?? baseContact;
  *
  * `homeTemplate`, `notFoundTemplate`, and `contactTemplate` are NOT
  * registered here — all three are request-time only:
- *   - homeTemplate composes the home page (no recent-posts list);
+ *   - homeTemplate composes the home page from a `home` slug;
  *   - notFoundTemplate runs on KV-miss + global notFound;
  *   - contactTemplate needs the live Turnstile site key from env.
  * Each is called directly from a worker route handler.

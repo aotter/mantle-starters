@@ -1,7 +1,6 @@
 {
   "label": "繁體中文",
   "header": {
-    "posts": "文章",
     "about": "關於",
     "contact": "聯絡"
   },
@@ -15,12 +14,7 @@
     "ariaLabel": "語言"
   },
   "home": {
-    "eyebrow": "歡迎",
-    "recent": "最新文章"
-  },
-  "postList": {
-    "title": "文章",
-    "eyebrow": "所有文章"
+    "eyebrow": "歡迎"
   },
   "notFound": {
     "title": "找不到頁面",

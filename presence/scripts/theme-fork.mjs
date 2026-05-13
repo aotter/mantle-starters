@@ -8,7 +8,7 @@
  *   pnpm theme:fork tokens.ts
  *   pnpm theme:fork icons.ts                 (writes a stub, not a copy)
  *   pnpm theme:fork components/Header.tsx
- *   pnpm theme:fork templates/post.tsx
+ *   pnpm theme:fork templates/page.tsx
  *   pnpm theme:fork i18n/en.json
  *
  * Idempotency:
@@ -33,7 +33,7 @@ import {
 const path = process.argv[2];
 if (!path) {
   console.error("usage: pnpm theme:fork <relative-path>");
-  console.error("examples: tokens.ts, components/Header.tsx, templates/post.tsx, i18n/en.json, icons.ts");
+  console.error("examples: tokens.ts, components/Header.tsx, templates/page.tsx, i18n/en.json, icons.ts");
   process.exit(2);
 }
 

@@ -16,7 +16,7 @@ module init:
 | Icons | `icons.ts` (8 lucide-style SVG paths) | Spread your map over baseline in `theme/index.ts:icons` (same name → override; new name → addition) |
 | i18n strings | `../i18n/{en,zh-TW}.json` | Deep-merge a partial bundle in `theme/index.ts:i18n` |
 | Header / Footer chrome | `components/{Header,Footer}.tsx` | Replace whole component in `theme/index.ts:components` |
-| Page templates | `templates/{post,postList,page,home,contact,notFound}.tsx` | Replace render function in `theme/index.ts:templates` |
+| Page templates | `templates/{page,home,contact,notFound}.tsx` | Replace render function in `theme/index.ts:templates` |
 
 `Layout.tsx` is intentionally NOT a slot — changing the whole page
 envelope means picking a different starter. Override Header and
