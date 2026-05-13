@@ -42,6 +42,21 @@ describe("resolveSource (back-compat, stale fallback)", () => {
     expect(() => resolveSource("does-not-exist")).toThrow(/blank/);
   });
 
+  it("keeps public L4 theme keys in the stale fallback", () => {
+    expect(resolveTheme("l4-minimal-ink", STALE_FALLBACK_SOURCES)).toEqual({
+      path: "themes/l4-minimal-ink",
+    });
+    expect(resolveTheme("l4-editorial-warm", STALE_FALLBACK_SOURCES)).toEqual({
+      path: "themes/l4-editorial-warm",
+    });
+    expect(resolveTheme("l4-editorial-journal", STALE_FALLBACK_SOURCES)).toEqual({
+      path: "themes/l4-editorial-journal",
+    });
+    expect(resolveTheme("l4-playful-pop", STALE_FALLBACK_SOURCES)).toEqual({
+      path: "themes/l4-playful-pop",
+    });
+  });
+
   it("every roadmap archetype is absent from SOURCES", () => {
     for (const k of ROADMAP_ARCHETYPES) {
       expect(SOURCES[k]).toBeUndefined();

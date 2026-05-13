@@ -20,6 +20,7 @@ conflict against archetype defaults.
 ```
 themes/<key>/
 ├── src/theme/tokens.ts         ← required: CSS var overrides
+├── src/theme/index.ts          ← required: registers tokens in ThemeOverride
 ├── src/theme/components/       ← optional: Header / Footer / PageShell
 ├── src/theme/templates/        ← optional: per-page templates
 ├── src/theme/icons.ts          ← optional: icon registry overrides
@@ -27,10 +28,24 @@ themes/<key>/
 └── README.md                   ← what this theme overrides
 ```
 
-Only `tokens.ts` is required. Component / template / icon / i18n
-overrides slot into the same paths the [`customize-design`
+`tokens.ts` and `index.ts` are required together: the first declares
+the CSS var override, and the second registers it as
+`ThemeOverride.tokens` so the generated site actually appends it after
+the baseline. Component / template / icon / i18n overrides slot into
+the same paths the [`customize-design`
 skill](https://github.com/AotterClam/clam-cms/blob/main/skills/customize-design/SKILL.md)
 documents.
+
+Removing an install-time token theme in a generated project should be
+reversible with:
+
+```bash
+pnpm theme:reset tokens.ts
+```
+
+That removes `src/theme/tokens.ts` and strips the `tokens` registration
+from `src/theme/index.ts`, leaving the locked `src/theme.default/`
+baseline untouched.
 
 ## v0.0.9 stubs
 
@@ -41,10 +56,10 @@ documents.
 | `l4-editorial-journal` | literary journal — Fraunces + vermilion; ported from retired editorial-blog ref | stub (tokens + body type behavior) |
 | `l4-playful-pop` | bright / hot-pink / sans / wider measure | stub |
 
-All four override tokens only (the editorial-journal stub additionally
-sets body-level type behavior — base size, line-height, OpenType
-feature flags). Artist component / template deliverables ship
-separately.
+All four override L1 tokens only (the editorial-journal stub
+additionally sets body-level type behavior — base size, line-height,
+OpenType feature flags). Artist component / template deliverables
+ship separately.
 
 `l4-editorial-journal` has the richest design provenance: it ports the
 visual system documented at
