@@ -9,6 +9,7 @@ import {
   type CreateAuthConfig,
 } from "@aotter/mantle-cloudflare";
 import { buildCmsConfig, type Env } from "./mantleConfig.js";
+import { invokeHandler } from "./handlers/_context.js";
 import { buildQueueDispatcher } from "./handlers/orderConsumer.js";
 import { buildReadOrderStatus } from "./handlers/readOrderStatus.js";
 import { buildCheckoutReturn } from "./handlers/checkoutReturn.js";
@@ -89,10 +90,11 @@ function getApp(env: Env): { app: Hono; cms: CmsRuntimeRef } {
     if (!orderId) return c.json({ error: "missing orderId" }, 400);
     try {
       const runtime = await cms.get();
-      const result = await (readOrderStatus as unknown as (
-        input: { orderId: string },
-        ctx: { runtime: typeof runtime },
-      ) => Promise<unknown>)({ orderId }, { runtime });
+      const result = await invokeHandler<{ orderId: string }, unknown>(
+        readOrderStatus,
+        { orderId },
+        { runtime },
+      );
       return c.json(result as Record<string, unknown>);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -103,10 +105,11 @@ function getApp(env: Env): { app: Hono; cms: CmsRuntimeRef } {
   app.get("/api/payment/return", async (c) => {
     try {
       const runtime = await cms.get();
-      const result = await (checkoutReturn as unknown as (
-        input: { requestUrl: string },
-        ctx: { runtime: typeof runtime },
-      ) => Promise<unknown>)({ requestUrl: c.req.url }, { runtime });
+      const result = await invokeHandler<{ requestUrl: string }, unknown>(
+        checkoutReturn,
+        { requestUrl: c.req.url },
+        { runtime },
+      );
       return c.json(result as Record<string, unknown>);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

@@ -32,6 +32,7 @@
 
 import type { AnyHandler } from "@aotter/mantle-runtime";
 import { buildPaymentProvider, type PaymentEnv } from "../payment/index.js";
+import { defineHandler } from "./_context.js";
 
 export interface CheckoutConfirmEnv extends PaymentEnv {
   readonly PAYMENT_CALLBACK_QUEUE: Queue;
@@ -50,22 +51,20 @@ export interface CheckoutConfirmInput {
 }
 
 export function buildCheckoutConfirm(env: CheckoutConfirmEnv): AnyHandler {
-  return (async (input: CheckoutConfirmInput) => {
-    const provider = buildPaymentProvider(env);
-    const req = new Request(input.requestUrl, {
-      method: input.requestMethod ?? "POST",
-      headers: input.requestHeaders,
-      body: input.requestBody,
-    });
-    // verifySignature → parseEvent. Throws on bad signature, which
-    // surfaces as a 500 to the provider; some providers will retry,
-    // some will give up. Either way we did the right thing.
-    const event = await provider.parseCallback(req);
-    await env.PAYMENT_CALLBACK_QUEUE.send(event);
-    return { ack: true, eventId: event.eventId };
-  }) as unknown as AnyHandler;
+  return defineHandler<CheckoutConfirmInput, { ack: true; eventId: string }>(
+    async (input) => {
+      const provider = buildPaymentProvider(env);
+      const req = new Request(input.requestUrl, {
+        method: input.requestMethod ?? "POST",
+        headers: input.requestHeaders,
+        body: input.requestBody,
+      });
+      // verifySignature → parseEvent. Throws on bad signature, which
+      // surfaces as a 500 to the provider; some providers will retry,
+      // some will give up. Either way we did the right thing.
+      const event = await provider.parseCallback(req);
+      await env.PAYMENT_CALLBACK_QUEUE.send(event);
+      return { ack: true, eventId: event.eventId };
+    },
+  );
 }
-
-type Queue = {
-  send<T>(message: T): Promise<unknown>;
-};

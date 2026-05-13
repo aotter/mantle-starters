@@ -3,9 +3,15 @@
  * from the provider. Returns { orderId, exists, orderStatus? } so
  * the UI can detect when the async callback consumer has placed
  * the order. See manifests/checkout.yaml for the output contract.
+ *
+ * Uses `runtime.getEntry` against the deterministic
+ * `entry_<orderId>` id — direct lookup, no 1000-row scan + no
+ * silent miss past the limit cap.
  */
 
-import type { AnyHandler, CmsRuntime } from "@aotter/mantle-runtime";
+import type { AnyHandler } from "@aotter/mantle-runtime";
+import { defineHandler } from "./_context.js";
+import { orderEntryId } from "./orderConsumer.js";
 
 export interface ReadOrderStatusInput {
   readonly orderId: string;
@@ -18,30 +24,45 @@ export interface ReadOrderStatusOutput {
 }
 
 export function buildReadOrderStatus(): AnyHandler {
-  return (async (input: ReadOrderStatusInput, ctx: HandlerContext) => {
+  return defineHandler<ReadOrderStatusInput, ReadOrderStatusOutput>(async (input, ctx) => {
     if (!input.orderId) {
       throw new Error("readOrderStatus: missing orderId");
     }
-    const orders = await ctx.runtime.listEntries.execute({
-      collection: "orders",
-      status: "published",
-      limit: 1000,
-    });
-    const hit = orders.find(
-      (o) => (o.data as { orderNumber?: string }).orderNumber === input.orderId,
-    );
-    if (!hit) {
-      return { orderId: input.orderId, exists: false } satisfies ReadOrderStatusOutput;
+    try {
+      const row = await ctx.runtime.getEntry.execute({
+        id: orderEntryId(input.orderId),
+        collection: "orders",
+      });
+      const d = row.data as { orderNumber?: string; orderStatus?: string };
+      return {
+        orderId: d.orderNumber ?? input.orderId,
+        exists: true,
+        orderStatus: d.orderStatus ?? "placed",
+      } satisfies ReadOrderStatusOutput;
+    } catch (err) {
+      // getEntry throws DiagnosticError on not-found. For our caller
+      // not-found just means "the async callback hasn't placed the
+      // order yet" — exists: false is the right shape.
+      if (isNotFoundError(err)) {
+        return {
+          orderId: input.orderId,
+          exists: false,
+        } satisfies ReadOrderStatusOutput;
+      }
+      throw err;
     }
-    const d = hit.data as { orderNumber?: string; orderStatus?: string };
-    return {
-      orderId: d.orderNumber ?? input.orderId,
-      exists: true,
-      orderStatus: d.orderStatus ?? "placed",
-    } satisfies ReadOrderStatusOutput;
-  }) as unknown as AnyHandler;
+  });
 }
 
-interface HandlerContext {
-  readonly runtime: CmsRuntime;
+function isNotFoundError(err: unknown): boolean {
+  if (err instanceof Error) {
+    // DiagnosticError carries a `diagnostic` field; not-found
+    // diagnostics surface with `code: "ENTRY_NOT_FOUND"`. Defensive
+    // string-match keeps this independent of the import surface.
+    const message = err.message ?? "";
+    if (/not.?found|ENTRY_NOT_FOUND/i.test(message)) return true;
+    const diag = (err as { diagnostic?: { code?: string } }).diagnostic;
+    if (diag && diag.code === "ENTRY_NOT_FOUND") return true;
+  }
+  return false;
 }

@@ -16,8 +16,8 @@
  * add).
  */
 
-import type { AnyHandler } from "@aotter/mantle-runtime";
-import type { CmsRuntime } from "@aotter/mantle-runtime";
+import type { AnyHandler, CmsRuntime } from "@aotter/mantle-runtime";
+import { defineHandler } from "./_context.js";
 
 interface CartState {
   items: { productSlug: string; qty: number }[];
@@ -57,7 +57,7 @@ export interface AddToCartOutput {
 }
 
 export function buildAddToCart(env: AddToCartEnv): AnyHandler {
-  return (async (input: AddToCartInput, ctx: HandlerContext) => {
+  return defineHandler<AddToCartInput, AddToCartOutput>(async (input, ctx) => {
     if (!input.cartId || !input.productSlug || !input.qty) {
       throw new Error("addToCart: missing cartId / productSlug / qty");
     }
@@ -104,7 +104,7 @@ export function buildAddToCart(env: AddToCartEnv): AnyHandler {
       subtotalMinor,
       currency: product.currency,
     } satisfies AddToCartOutput;
-  }) as unknown as AnyHandler;
+  });
 }
 
 function coalesce(
@@ -151,11 +151,3 @@ async function lookupProduct(
   };
 }
 
-// ── type stubs ───────────────────────────────────────────────────────
-type KVNamespace = {
-  get<T>(key: string, type: "json"): Promise<T | null>;
-  put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
-};
-interface HandlerContext {
-  readonly runtime: CmsRuntime;
-}

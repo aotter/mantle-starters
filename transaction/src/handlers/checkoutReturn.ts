@@ -15,6 +15,8 @@
 
 import type { AnyHandler, CmsRuntime } from "@aotter/mantle-runtime";
 import { buildPaymentProvider, type PaymentEnv } from "../payment/index.js";
+import { defineHandler } from "./_context.js";
+import { orderEntryId } from "./orderConsumer.js";
 
 export interface CheckoutReturnEnv extends PaymentEnv {
   readonly DB: D1Database;
@@ -38,7 +40,7 @@ export interface CheckoutReturnOutput {
 }
 
 export function buildCheckoutReturn(env: CheckoutReturnEnv): AnyHandler {
-  return (async (input: CheckoutReturnInput, ctx: HandlerContext) => {
+  return defineHandler<CheckoutReturnInput, CheckoutReturnOutput>(async (input, ctx) => {
     if (!input.requestUrl && !input.orderId) {
       throw new Error(
         "checkoutReturn: provide either requestUrl (with signed params) or orderId",
@@ -66,7 +68,7 @@ export function buildCheckoutReturn(env: CheckoutReturnEnv): AnyHandler {
       exists: existing !== null,
       ...(existing ? { orderStatus: existing.orderStatus } : {}),
     } satisfies CheckoutReturnOutput;
-  }) as unknown as AnyHandler;
+  });
 }
 
 async function lookupOrder(
@@ -74,24 +76,30 @@ async function lookupOrder(
   orderId: string,
 ): Promise<{ orderId: string; orderStatus: string } | null> {
   if (!orderId) return null;
-  const orders = await runtime.listEntries.execute({
-    collection: "orders",
-    status: "published",
-    limit: 1000,
-  });
-  const hit = orders.find(
-    (o) => (o.data as { orderNumber?: string }).orderNumber === orderId,
-  );
-  if (!hit) return null;
-  const d = hit.data as { orderNumber?: string; orderStatus?: string };
-  return {
-    orderId: d.orderNumber ?? orderId,
-    orderStatus: d.orderStatus ?? "placed",
-  };
+  try {
+    const row = await runtime.getEntry.execute({
+      id: orderEntryId(orderId),
+      collection: "orders",
+    });
+    const d = row.data as { orderNumber?: string; orderStatus?: string };
+    return {
+      orderId: d.orderNumber ?? orderId,
+      orderStatus: d.orderStatus ?? "placed",
+    };
+  } catch (err) {
+    // Not-found is the expected "callback hasn't fired yet" case.
+    if (isNotFoundError(err)) return null;
+    throw err;
+  }
 }
 
-// ── type stubs ───────────────────────────────────────────────────────
-type D1Database = unknown;
-interface HandlerContext {
-  readonly runtime: CmsRuntime;
+function isNotFoundError(err: unknown): boolean {
+  if (err instanceof Error) {
+    const message = err.message ?? "";
+    if (/not.?found|ENTRY_NOT_FOUND/i.test(message)) return true;
+    const diag = (err as { diagnostic?: { code?: string } }).diagnostic;
+    if (diag && diag.code === "ENTRY_NOT_FOUND") return true;
+  }
+  return false;
 }
+
