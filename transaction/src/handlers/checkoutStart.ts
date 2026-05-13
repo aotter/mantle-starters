@@ -20,6 +20,7 @@
 import type { AnyHandler, CmsRuntime } from "@aotterclam/clam-cms-runtime";
 import { inventoryActorClient } from "../durableObjects/InventoryActor.js";
 import { buildPaymentProvider, type PaymentEnv } from "../payment/index.js";
+import { defineHandler } from "./_context.js";
 import { verifyTurnstile } from "./turnstile.js";
 
 interface CartState {
@@ -47,7 +48,7 @@ export interface CheckoutStartOutput {
 }
 
 export function buildCheckoutStart(env: CheckoutStartEnv): AnyHandler {
-  return (async (input: CheckoutStartInput, ctx: HandlerContext) => {
+  return defineHandler<CheckoutStartInput, CheckoutStartOutput>(async (input, ctx) => {
     if (!input.cartId || !input.customerEmail) {
       throw new Error("checkoutStart: missing cartId / customerEmail");
     }
@@ -116,7 +117,7 @@ export function buildCheckoutStart(env: CheckoutStartEnv): AnyHandler {
       notifyUrl: `${origin}/api/payment/callback`,
     });
     return { orderId, result } satisfies CheckoutStartOutput;
-  }) as unknown as AnyHandler;
+  });
 }
 
 async function enrichItems(
@@ -180,18 +181,3 @@ function generateOrderId(): string {
   return `o_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
-// ── type stubs ───────────────────────────────────────────────────────
-interface HandlerContext {
-  readonly runtime: CmsRuntime;
-}
-type KVNamespace = {
-  get<T>(key: string, type: "json"): Promise<T | null>;
-};
-interface DurableObjectNamespace {
-  idFromName(name: string): DurableObjectId;
-  get(id: DurableObjectId): DurableObjectStub;
-}
-interface DurableObjectId {}
-interface DurableObjectStub {
-  fetch(input: string | URL | Request, init?: RequestInit): Promise<Response>;
-}

@@ -100,26 +100,36 @@ async function processCallback(
 ): Promise<void> {
   const lock = await inv.tryAcquire(event.eventId);
   if (!lock.acquired) {
-    // Already processed (or another consumer holds — shouldn't happen
-    // under max_concurrency:1, but defensive).
-    return;
-  }
-  try {
-    switch (event.status) {
-      case "succeeded":
-        await commitOrder(event, inv, env);
-        break;
-      case "failed":
-      case "expired":
-        await releaseIfReserved(event, inv, env);
-        break;
+    if (lock.alreadyCompleted) {
+      // Work already finished; nothing to do. Outer loop acks.
+      return;
     }
-    await inv.markCompleted(event.eventId);
-  } catch (err) {
-    // Lock stays pending; sweeper will reset it later. Re-throw so
-    // the queue retries the message.
-    throw err;
+    // `pending` state — a previous attempt crashed mid-work, OR
+    // the sweeper hasn't cleared a stale lock yet. Falling through
+    // and re-doing the side effects is SAFE because they're idempotent:
+    //   - commitOrder uses INSERT OR IGNORE on a deterministic
+    //     entries.id derived from event.orderId
+    //   - releaseIfReserved is a no-op (PR 2 doesn't carry
+    //     reservationId through provider metadata)
+    //   - the downstream ORDER_WORK_QUEUE.send is OK to fire twice
+    //     (orderWorkConsumer in PR 3 dedups its own work)
+    // After re-doing the work we re-call markCompleted; the second
+    // write is overwrite-same-state (storage.put is unconditional),
+    // which closes the loop.
+    console.warn(
+      `[payment-callback-consumer] event=${event.eventId} lock pending — retrying work (previous attempt likely crashed)`,
+    );
   }
+  switch (event.status) {
+    case "succeeded":
+      await commitOrder(event, inv, env);
+      break;
+    case "failed":
+    case "expired":
+      await releaseIfReserved(event, inv, env);
+      break;
+  }
+  await inv.markCompleted(event.eventId);
 }
 
 async function commitOrder(
@@ -133,10 +143,18 @@ async function commitOrder(
   // a no-op if it was never tracked, and the InventoryActor handles
   // the case where no reservation matches.
   //
-  // The order row is written deterministically from event.id. Two
-  // arrivals of the same event.id INSERT OR IGNORE to the same row.
+  // The order row's id is derived from event.orderId (NOT event.id)
+  // so:
+  //   - Two arrivals of the SAME event.id → INSERT OR IGNORE same
+  //     entry, no dupe.
+  //   - Two DIFFERENT events for the same order (e.g. a retried
+  //     webhook with a fresh event.id, same payment_intent / orderId)
+  //     → still no dupe; the deterministic id deduplicates at the
+  //     order level, not the event level.
+  //   - This also enables direct getEntry lookup in readOrderStatus
+  //     and checkoutReturn (no 1000-row scan).
   const now = Date.now();
-  const entryId = `entry_${event.eventId}`;
+  const entryId = orderEntryId(event.orderId);
   const orderData = {
     orderNumber: event.orderId,
     orderStatus: "placed",
@@ -176,6 +194,16 @@ async function commitOrder(
     type: "order.confirmed",
     orderId: event.orderId,
   } satisfies OrderWorkMessage);
+}
+
+/**
+ * Build the deterministic D1 entry id for an order. Used by
+ * `commitOrder` to write + by `readOrderStatus` / `checkoutReturn`
+ * to look up. Keeping the rule in one place — if it changes, every
+ * site that does a direct lookup needs to follow.
+ */
+export function orderEntryId(orderId: string): string {
+  return `entry_${orderId}`;
 }
 
 async function releaseIfReserved(
@@ -241,37 +269,3 @@ export function buildQueueDispatcher(env: ConsumerEnv): (
   };
 }
 
-// ── Type stubs (real types come from @cloudflare/workers-types) ──────
-interface DurableObjectNamespace {
-  idFromName(name: string): DurableObjectId;
-  get(id: DurableObjectId): DurableObjectStub;
-}
-interface DurableObjectId {}
-interface DurableObjectStub {
-  fetch(input: string | URL | Request, init?: RequestInit): Promise<Response>;
-}
-interface D1Database {
-  prepare(query: string): D1PreparedStatement;
-}
-interface D1PreparedStatement {
-  bind(...values: unknown[]): D1PreparedStatement;
-  run(): Promise<unknown>;
-  first<T = unknown>(): Promise<T | null>;
-}
-// Aliased to the workers-types `Queue<T>` shape — send returns
-// QueueSendResponse, not void.
-type Queue = {
-  send<T>(message: T): Promise<unknown>;
-};
-interface MessageBatch<T> {
-  readonly queue: string;
-  readonly messages: ReadonlyArray<{
-    body: T;
-    id: string;
-    ack(): void;
-    retry(): void;
-  }>;
-}
-interface ExecutionContext {
-  waitUntil(promise: Promise<unknown>): void;
-}

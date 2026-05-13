@@ -344,27 +344,6 @@ export class InventoryActor implements DurableObject {
   }
 }
 
-// ── Type stubs (real types come from @cloudflare/workers-types) ─────
-interface DurableObjectStub {
-  fetch(input: string | URL | Request, init?: RequestInit): Promise<Response>;
-}
-type DurableObject = {
-  fetch(request: Request): Promise<Response>;
-  alarm?(): Promise<void>;
-};
-interface DurableObjectState {
-  readonly storage: DurableObjectStorage;
-}
-interface DurableObjectStorage {
-  get<T>(key: string): Promise<T | undefined>;
-  get<T>(keys: ReadonlyArray<string>): Promise<Map<string, T>>;
-  put<T>(key: string, value: T): Promise<void>;
-  delete(key: string): Promise<boolean>;
-  list<T>(options?: { prefix?: string }): Promise<Map<string, T>>;
-  getAlarm(): Promise<number | null>;
-  setAlarm(scheduledTime: number): Promise<void>;
-}
-
 // ── Typed RPC client (used by handlers + queue consumers) ────────────
 
 export interface InventoryActorClient {
