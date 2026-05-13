@@ -53,6 +53,20 @@ binding = "PAYMENT_CALLBACK_QUEUE"
 queue = "payment_callback_queue"
 max_concurrency = 1
 max_batch_size = 1
+# Retry budget intentionally exceeds InventoryActor.PENDING_LOCK_TTL_MS
+# (10 min). The lock-stuck-in-pending recovery path requires the
+# sweeper to reset the lock + a queue retry to land *after* that.
+# 30 retries × 30s delay = ~15 min — covers the sweeper window plus
+# headroom for the consumer's actual work. Defaults (3 retries / 0s
+# delay) would exhaust in <1 min and silently DLQ the message before
+# recovery could happen.
+max_retries = 30
+retry_delay = 30
+dead_letter_queue = "payment_callback_dlq"
+
+[[queues.producers]]
+queue = "payment_callback_dlq"
+binding = "PAYMENT_CALLBACK_DLQ"
 
 # order_work_queue: downstream effects (email, fulfillment notify,
 # inventory snapshot, reconcile tick). Driven by both the
@@ -65,6 +79,15 @@ binding = "ORDER_WORK_QUEUE"
 queue = "order_work_queue"
 max_concurrency = 1
 max_batch_size = 1
+# Same retry-budget rationale; PR 3 may dial this down once we
+# know each work-type's retry profile.
+max_retries = 30
+retry_delay = 30
+dead_letter_queue = "order_work_dlq"
+
+[[queues.producers]]
+queue = "order_work_dlq"
+binding = "ORDER_WORK_DLQ"
 
 # Cron: inventory reconcile + stale-lock sweep. Sends an
 # `inventory.reconcile.tick` to order_work_queue which calls
@@ -108,6 +131,16 @@ fallthrough = true
 
 [env.test.vars]
 TURNSTILE_SITE_KEY = "1x00000000000000000000AA"
+TURNSTILE_SECRET_KEY = "dev-stub"
+# Wires the in-process FakeProvider (src/payment/providers/_templates/fake.ts)
+# so the integration smoke can exercise the happy path without a real
+# provider account. NEVER set in production.
+FAKE_PAYMENT_PROVIDER = "1"
+PUBLIC_ORIGIN = "http://localhost:8788"
+# Worker needs a BETTER_AUTH_SECRET to boot; the test profile uses a
+# fixed value because it's the same shape across runs and not a real
+# secret.
+BETTER_AUTH_SECRET = "test-better-auth-secret-32+-bytes-random-fixed"
 
 [[env.test.d1_databases]]
 binding = "DB"

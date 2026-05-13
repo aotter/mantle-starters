@@ -1,77 +1,70 @@
 /**
- * checkoutConfirm — async callback / webhook handler.
+ * checkoutConfirm — async callback / webhook handler. HTTP-side
+ * thin wrapper:
  *
- * Flow uses two pieces of infrastructure for once-and-only-once:
+ *   1. PaymentProvider.parseCallback(request) verifies signature.
+ *      Throws on bad signature → 400 to provider.
+ *   2. env.PAYMENT_CALLBACK_QUEUE.send(parsedEvent) — defers heavy
+ *      work to the queue consumer (paymentCallbackConsumer in
+ *      orderConsumer.ts). Queue is `max_concurrency: 1` so callback
+ *      processing is strictly serial.
+ *   3. Return 200 in <10 ms; provider stops retrying.
  *
- *   1. **Queue with max_concurrency=1 / max_batch_size=1** — webhooks
- *      from the payment provider land on `payment_callback_queue`;
- *      we never process two callbacks concurrently. This eliminates
- *      the "two retries in flight" race entirely; lock contention is
- *      gone before it starts. HTTP handler (this file) verifies
- *      signature then ships to queue + returns 200 to the provider
- *      in ~10ms.
+ * Heavy work (lock acquire → order INSERT → inventory commit →
+ * mark completed) lives in `paymentCallbackConsumer`. Two pieces of
+ * infrastructure protect against once-and-only-once failures:
  *
- *   2. **Find-and-modify lock on InventoryActor** — `tryAcquire` is
- *      the gate. First processing of an event.id gets `acquired:true`;
- *      retries (queue redelivery if consumer threw, or duplicate
- *      events from the provider itself) get `acquired:false`. Sweeper
- *      (10min) resets stale `pending` so a crashed consumer doesn't
- *      strand work.
- *
- * Side effects MUST be idempotent — sweeper is a backstop, not a
- * substitute for idempotency. Specifically:
- *   - order INSERT keyed on `orderId` with `ON CONFLICT IGNORE` (or
- *     equivalent — D1 has no ON CONFLICT IGNORE syntax for this; use
- *     SELECT-then-INSERT or `INSERT OR IGNORE`).
- *   - inventory commit keyed on `reservationId` — idempotent in
- *     InventoryActor.commit().
- *   - queue.send of "order.confirmed" — okay to send twice; the
- *     `orderConsumer` dedupes its own work via the order's
- *     `confirmation_emailed_at` column or similar.
+ *   - Queue serialization eliminates "two retries in flight" race.
+ *   - InventoryActor.tryAcquire find-and-modify lock dedups by
+ *     event.id. Sweeper (10-min `pending` TTL, cron every 5 min)
+ *     recovers if the consumer crashes mid-work — but consumer-side
+ *     side effects MUST be idempotent for sweeper to be safe (order
+ *     INSERT uses INSERT OR IGNORE; inventory commit no-ops if the
+ *     reservation is already consumed).
  *
  * Bug class this prevents: customer charged but order missing. The
- * cause would be marking event seen → side effect throws → return
- * 500 → provider retries → sees "already seen" → no-op → order
- * never written. With this design the lock holds in `pending`, not
- * `completed`, until side effects succeed.
- *
- * Note: this file is the HTTP handler that queues the callback. The
- * queue consumer that does the actual work lives in `orderConsumer.ts`.
+ * naive fix ("mark seen on first arrival, skip on retry") loses the
+ * order if step 3 throws mid-work. With the queue + lock layout,
+ * the consumer's throw → queue retries → lock still `pending` →
+ * sweeper or next attempt re-acquires → idempotent side effects
+ * succeed second time around.
  */
 
 import type { AnyHandler } from "@aotter/mantle-runtime";
+import { buildPaymentProvider, type PaymentEnv } from "../payment/index.js";
+import { defineHandler } from "./_context.js";
 
-export interface CheckoutConfirmEnv {
-  readonly INVENTORY_ACTOR: DurableObjectNamespace;
+export interface CheckoutConfirmEnv extends PaymentEnv {
   readonly PAYMENT_CALLBACK_QUEUE: Queue;
-  readonly DB: D1Database;
-  // Plus the provider's own env vars; see src/payment/index.ts
 }
 
-/**
- * HTTP-side: verify the provider's callback signature, ship the
- * verified envelope to the callback queue, return 200 to the provider.
- *
- * The actual side effects (lock acquire → order write → inventory
- * commit → mark completed) happen in `orderConsumer.ts` against the
- * `payment_callback_queue` topic.
- */
-export const checkoutConfirm: AnyHandler = (async (_input: unknown, _ctx: unknown) => {
-  // PR 2 fills this in. The flow (per the header doc):
-  //   1. const event = await paymentProvider.parseCallback(request);
-  //      // throws on bad signature → 400 to provider
-  //   2. await env.PAYMENT_CALLBACK_QUEUE.send(event);
-  //   3. return 200 (the JSON-RPC Procedure return).
-  // Provider stops retrying once it sees 200. The heavy work
-  // (lock acquire → order INSERT → inventory commit → mark completed)
-  // runs in `orderConsumer.ts:paymentCallbackConsumer` against the
-  // queue, NOT here.
-  throw new Error(
-    "transaction-starter: ref handler 'checkoutConfirm' is a PR 1 scaffold stub; " +
-      "live implementation lands in PR 2.",
-  );
-}) as unknown as AnyHandler;
+export interface CheckoutConfirmInput {
+  /** Raw request URL — the provider's callback path. */
+  readonly requestUrl: string;
+  /** Provider sends a signed body (form-urlencoded or JSON). */
+  readonly requestBody: string;
+  /** Verbatim headers from the inbound webhook (signature header
+   *  lives here for Stripe-style providers). */
+  readonly requestHeaders: Record<string, string>;
+  /** HTTP method. Most providers POST. */
+  readonly requestMethod?: string;
+}
 
-type DurableObjectNamespace = unknown;
-type Queue = unknown;
-type D1Database = unknown;
+export function buildCheckoutConfirm(env: CheckoutConfirmEnv): AnyHandler {
+  return defineHandler<CheckoutConfirmInput, { ack: true; eventId: string }>(
+    async (input) => {
+      const provider = buildPaymentProvider(env);
+      const req = new Request(input.requestUrl, {
+        method: input.requestMethod ?? "POST",
+        headers: input.requestHeaders,
+        body: input.requestBody,
+      });
+      // verifySignature → parseEvent. Throws on bad signature, which
+      // surfaces as a 500 to the provider; some providers will retry,
+      // some will give up. Either way we did the right thing.
+      const event = await provider.parseCallback(req);
+      await env.PAYMENT_CALLBACK_QUEUE.send(event);
+      return { ack: true, eventId: event.eventId };
+    },
+  );
+}

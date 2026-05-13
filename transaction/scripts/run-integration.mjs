@@ -92,12 +92,15 @@ async function main() {
     await waitForReady();
     log(`wrangler ready on ${BASE_URL}`);
 
-    // PR 1 ships a single smoke that exercises view REST + HTTP
-    // Trigger dispatch + MCP auth gates. No test fixture — the
-    // products-public View test runs against an empty collection
-    // (which is the realistic install-time state anyway).
-    // PR 2/3 add more smokes (live payment provider against a fake
-    // env, queue consumer behavior, DO lock pattern).
+    // PR 2 smoke exercises the live happy path against FakeProvider.
+    // The fixture step applies CANONICAL_MIGRATIONS + seeds one
+    // untracked product; the smoke drives addToCart → checkoutStart →
+    // checkoutConfirm → readOrderStatus + idempotency.
+    runStep(
+      "apply test fixture",
+      "pnpm",
+      ["exec", "tsx", "test/fixture/apply-test.ts"],
+    );
     runStep(
       "smoke",
       "pnpm",
