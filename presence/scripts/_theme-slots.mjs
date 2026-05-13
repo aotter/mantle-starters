@@ -41,8 +41,6 @@ export const INDEX_PATH = join(THEME_DIR, "index.ts");
 // document-envelope decisions cross the starter-family line.
 const SUPPORTED_COMPONENT_SLOTS = new Set(["Header", "Footer", "PageShell"]);
 const SUPPORTED_TEMPLATE_SLOTS = new Set([
-  "post",
-  "postList",
   "page",
   "home",
   "contact",

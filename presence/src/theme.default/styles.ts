@@ -208,8 +208,7 @@ img { max-width: 100%; height: auto; display: block; }
   flex: 1 0 auto;
   padding: clamp(2rem, 6vw, 4rem) var(--gutter);
   /* Tight column — just wider than --measure (38rem) so the editorial
-   * single-column layout doesn't leave a dead zone on the right. The
-   * recent-posts grid (date 7rem + title 1fr) still fits comfortably. */
+   * single-column layout doesn't leave a dead zone on the right. */
   max-width: 48rem;
   width: 100%;
   margin: 0 auto;
@@ -276,35 +275,6 @@ article header.post-meta h1 { margin-bottom: 0.5rem; }
 }
 .hero .intro { font-size: 1.15rem; color: var(--mute); }
 .hero .body { font-size: 1.05rem; }
-
-/* — Recent posts list — */
-
-.entry-list { list-style: none; padding: 0; margin: 0; }
-.entry-list li {
-  border-bottom: 1px solid var(--rule);
-  padding: 1.3rem 0;
-  display: grid;
-  grid-template-columns: 7rem 1fr;
-  gap: 1.5rem;
-  align-items: baseline;
-}
-.entry-list li:last-child { border-bottom: none; }
-.entry-list time { padding-top: 0.3em; }
-.entry-list a {
-  font-family: var(--font-display);
-  font-size: 1.2rem;
-  font-weight: 600;
-  text-decoration: none;
-  letter-spacing: -0.005em;
-  line-height: 1.3;
-}
-.entry-list a:hover { color: var(--accent); }
-.entry-list .excerpt { color: var(--mute); margin-top: 0.4rem; font-size: 0.95rem; }
-
-@media (max-width: 540px) {
-  .entry-list li { grid-template-columns: 1fr; gap: 0.4rem; }
-  .entry-list time { padding-top: 0; }
-}
 
 /* — Footer — */
 

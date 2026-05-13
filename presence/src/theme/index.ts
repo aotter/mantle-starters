@@ -5,7 +5,7 @@ import type { ThemeOverride } from "../Theme.js";
 //
 // import HeaderOverride from "./components/Header.js";
 // import FooterOverride from "./components/Footer.js";
-// import postOverride from "./templates/post.js";
+// import pageOverride from "./templates/page.js";
 // import enOverride from "./i18n/en.json";
 // import zhTwOverride from "./i18n/zh-TW.json";
 

@@ -33,9 +33,9 @@ export interface Env {
    *  `dev-stub` short-circuits; any other value triggers real
    *  siteverify (`wrangler secret put TURNSTILE_SECRET_KEY`). */
   readonly TURNSTILE_SECRET_KEY?: string;
-  /** Local-dev live-render flag. `1` bypasses KV for post / postList
-   *  / page routes — every request re-renders via the registered
-   *  templates against the current D1 state. Don't set in production. */
+  /** Local-dev live-render flag. `1` bypasses KV for page routes —
+   *  every request re-renders via the registered templates against
+   *  the current D1 state. Don't set in production. */
   readonly MANTLE_LOCAL_DEV?: string;
   /** Optional **public** R2 media bucket. When bound (in `wrangler.toml`'s
    *  `[[r2_buckets]] binding = "MEDIA"`), the runtime registers
@@ -73,9 +73,9 @@ export function buildCmsConfig(env: Env, auth: Auth): CmsConfig {
     handlers: buildHandlers(env),
     templates: buildTemplates(),
     siteDefaults: {
-      brand: "Mantle Publication",
-      title: "Mantle Publication",
-      description: "Reference starter for mantle — localized posts + contact form.",
+      brand: "Mantle Presence",
+      title: "Mantle Presence",
+      description: "Reference starter for mantle — localized pages + contact form.",
       origin: "https://example.com",
       locales: ["en", "zh-TW"],
     },

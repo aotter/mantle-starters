@@ -20,7 +20,7 @@
  * PageShell covers body-layout variation inside the publication
  * family without forking every template.
  */
-import type { EntryContext, ListContext } from "@aotter/mantle-runtime";
+import type { EntryContext } from "@aotter/mantle-runtime";
 import type { I18nBundle } from "./i18n/index.js";
 import type { Header } from "./theme.default/components/Header.js";
 import type { Footer } from "./theme.default/components/Footer.js";
@@ -84,8 +84,6 @@ export interface ThemeOverride {
    *  imply the consumer takes responsibility for the layout +
    *  chrome the template renders. */
   templates?: {
-    post?: (ctx: EntryContext) => string;
-    postList?: (ctx: ListContext) => string;
     page?: (ctx: EntryContext) => string;
     home?: (ctx: HomeContext) => string;
     contact?: (ctx: ContactContext) => string;
