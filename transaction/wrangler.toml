@@ -1,0 +1,141 @@
+name = "clam-transaction"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# Cloudflare Turnstile site key (public — embedded in the checkout
+# form bot-check). Default is CF's "always passes" test key — good
+# for `pnpm dev`. Production: provision your own at
+# dash.cloudflare.com/?to=/:account/turnstile and replace.
+TURNSTILE_SITE_KEY = "1x00000000000000000000AA"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "clam-transaction-local"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+# Render KV — shared by the runtime for entry HTML / `.md` mirror /
+# llms.txt. Also used for cart state at key `cart:<sessionId>` (no
+# per-session DO; KV's 60s eventual consistency is fine at the
+# ≤100 orders/day scale this starter is sized for).
+[[kv_namespaces]]
+binding = "KV"
+id = "kv-clam-transaction-local"
+
+# InventoryActor DurableObject — single instance per tenant. Holds
+# find-and-modify locks for once-and-only-once webhook processing
+# AND atomic inventory reserve/commit/release. See
+# src/durableObjects/InventoryActor.ts for the contract.
+[[durable_objects.bindings]]
+name = "INVENTORY_ACTOR"
+class_name = "InventoryActor"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["InventoryActor"]
+
+# ── Queues ───────────────────────────────────────────────────────────
+# Both queues run at max_concurrency: 1 / max_batch_size: 1 — serial
+# processing. The transaction starter is sized for ≤100 orders/day;
+# serialization eliminates entire classes of race condition (two
+# webhook retries racing each other, two checkout reservations
+# racing the same inventory) at acceptable latency.
+
+# payment_callback_queue: HTTP handler verifies provider signature
+# and ships the verified envelope here. Consumer does the heavy work
+# under the InventoryActor lock.
+[[queues.producers]]
+queue = "payment_callback_queue"
+binding = "PAYMENT_CALLBACK_QUEUE"
+
+[[queues.consumers]]
+queue = "payment_callback_queue"
+max_concurrency = 1
+max_batch_size = 1
+
+# order_work_queue: downstream effects (email, fulfillment notify,
+# inventory snapshot, reconcile tick). Driven by both the
+# orders.after_create lifecycle Trigger and the cron tick below.
+[[queues.producers]]
+queue = "order_work_queue"
+binding = "ORDER_WORK_QUEUE"
+
+[[queues.consumers]]
+queue = "order_work_queue"
+max_concurrency = 1
+max_batch_size = 1
+
+# Cron: inventory reconcile + stale-lock sweep. Sends an
+# `inventory.reconcile.tick` to order_work_queue which calls
+# InventoryActor.sweepStaleLocks() and snapshots inventory state.
+[triggers]
+crons = ["*/5 * * * *"]  # every 5 minutes
+
+# Bundle YAML manifests as inline text strings — TS imports them via
+# raw text, esbuild resolves to a string export at build time.
+[[rules]]
+type = "Text"
+globs = ["**/*.yaml"]
+fallthrough = true
+
+# Payment provider secrets — set per the chosen provider via
+# `wrangler secret put` during provision. The starter ships with NO
+# provider impl wired; Mantle adds the right secrets list during
+# install. Examples (uncomment + set the ones you need):
+#
+# Hosted-checkout pattern (e.g. Stripe / Paddle / Lemon Squeezy):
+#   wrangler secret put PROVIDER_SECRET_KEY
+#   wrangler secret put PROVIDER_WEBHOOK_SECRET
+#
+# Merchant-form pattern (e.g. ECPay / PayUni / NewebPay):
+#   wrangler secret put PROVIDER_MERCHANT_ID
+#   wrangler secret put PROVIDER_HASH_KEY
+#   wrangler secret put PROVIDER_HASH_IV
+
+# ── Test profile ──────────────────────────────────────────────────────
+# Activated by `wrangler dev --env test`. Used by
+# scripts/run-integration.mjs to run the PR 1 smoke against a clean
+# .wrangler-test/ miniflare state — won't pollute the dev profile
+# (.wrangler/).
+#
+# Bindings are duplicated rather than inherited because wrangler does
+# NOT merge env-scoped bindings with the top-level ones (top-level
+# bindings disappear once any [env.*] block exists for that resource).
+# IDs match dev — same miniflare simulation — but state is isolated by
+# `--persist-to=.wrangler-test`.
+[env.test]
+
+[env.test.vars]
+TURNSTILE_SITE_KEY = "1x00000000000000000000AA"
+
+[[env.test.d1_databases]]
+binding = "DB"
+database_name = "clam-transaction-test"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[[env.test.kv_namespaces]]
+binding = "KV"
+id = "kv-clam-transaction-test"
+
+[[env.test.durable_objects.bindings]]
+name = "INVENTORY_ACTOR"
+class_name = "InventoryActor"
+
+[[env.test.queues.producers]]
+queue = "payment_callback_queue_test"
+binding = "PAYMENT_CALLBACK_QUEUE"
+
+[[env.test.queues.consumers]]
+queue = "payment_callback_queue_test"
+max_concurrency = 1
+max_batch_size = 1
+
+[[env.test.queues.producers]]
+queue = "order_work_queue_test"
+binding = "ORDER_WORK_QUEUE"
+
+[[env.test.queues.consumers]]
+queue = "order_work_queue_test"
+max_concurrency = 1
+max_batch_size = 1

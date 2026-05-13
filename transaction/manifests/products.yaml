@@ -1,0 +1,123 @@
+apiVersion: cms.clam.ai/v1
+kind: Schema
+metadata:
+  name: products
+spec:
+  title: Products
+  description: |
+    Language-neutral product parent. Holds SKU-like fields (id, slug,
+    SKU code, price in minor units, currency, inventory tracking
+    behavior). Per-locale title + body + image alt live in
+    `product-translations` (translates → products on slug).
+
+    Price is stored as integer minor units (`priceMinor: 1250` for
+    $12.50 USD) per the standard money-as-integer pattern; no
+    floating-point money. `currency` is the BCP 47-style ISO 4217
+    code; v0.2.0 ships fixed-currency-per-site (declared in site
+    config), so this field is read-only after first publish.
+
+    `inventoryMode` controls how `InventoryActor` treats the product:
+      - `tracked`   — decrement on reserve, recommit / release on
+                       checkout state changes; reject orders past zero
+      - `untracked` — unlimited (digital goods, made-to-order, etc.)
+
+    `status` is the ContentState reserved column (draft / review /
+    published / archived) — do not redefine.
+  schema:
+    type: object
+    required: [slug, sku, priceMinor, currency, inventoryMode]
+    properties:
+      slug:
+        type: string
+        pattern: "^[a-z0-9-]+$"
+        description: URL slug. Must match across product-translations.
+      sku:
+        type: string
+        description: Operator-facing SKU. Stable across translations.
+      priceMinor:
+        type: integer
+        minimum: 0
+        description: Price in minor units (cents for USD, etc.).
+      currency:
+        type: string
+        pattern: "^[A-Z]{3}$"
+        description: ISO 4217 code. Must match site_config.currency.
+      inventoryMode:
+        type: string
+        enum: [tracked, untracked]
+      coverUrl:
+        type: string
+        format: uri
+        x-mcp-hint: media-image
+      createdAt:
+        type: number
+        x-clam-bind: now
+  lifecycle: simple
+---
+apiVersion: cms.clam.ai/v1
+kind: Schema
+metadata:
+  name: product-translations
+spec:
+  title: Product translations
+  description: |
+    Per-locale display content for a product. Joined to `products`
+    via `slug`. Title + short description + body markdown + optional
+    image alt text. Mirrors `post-translations` shape — same
+    `translates` pattern from the publication starter.
+  schema:
+    type: object
+    required: [slug, locale, title]
+    properties:
+      slug:
+        type: string
+        pattern: "^[a-z0-9-]+$"
+      locale:
+        type: string
+      title:
+        type: string
+      shortDescription:
+        type: string
+      body:
+        type: string
+        x-mcp-hint: markdown
+      coverAlt:
+        type: string
+  localized: true
+  translates:
+    parent: products
+    on: slug
+  lifecycle: simple
+---
+apiVersion: cms.clam.ai/v1
+kind: View
+metadata:
+  name: products-public
+spec:
+  from: product-translations
+  fields: [slug, locale, title, shortDescription]
+  filter:
+    eq: { field: status, value: published }
+  orderBy:
+    - { field: updatedAt, direction: desc }
+  limit: 100
+---
+apiVersion: cms.clam.ai/v1
+kind: View
+metadata:
+  name: product-by-slug
+spec:
+  from: product-translations
+  fields: [slug, locale, title, shortDescription, body, coverAlt]
+  params:
+    type: object
+    required: [slug, locale]
+    properties:
+      slug: { type: string }
+      locale: { type: string }
+  filter:
+    and:
+      - eq: { field: status, value: published }
+      - eq: { field: slug, value: { $param: slug } }
+      - eq: { field: locale, value: { $param: locale } }
+  limit: 1
