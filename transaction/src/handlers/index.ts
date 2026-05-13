@@ -5,6 +5,9 @@ import { buildCheckoutStart } from "./checkoutStart.js";
 import { buildCheckoutConfirm } from "./checkoutConfirm.js";
 import { buildCheckoutReturn } from "./checkoutReturn.js";
 import { buildReadOrderStatus } from "./readOrderStatus.js";
+import { buildEnqueueOrderConfirmed } from "./enqueueOrderConfirmed.js";
+import { buildSnapshotInventory } from "./snapshotInventory.js";
+import { buildRestockProduct } from "./restockProduct.js";
 
 export type HandlerEnv = Env;
 
@@ -13,37 +16,25 @@ export type HandlerEnv = Env;
  * `Procedure.handler.ref` by name against this map at boot;
  * `pnpm validate` warns at CLI time if any ref name is missing.
  *
- * Status as of PR 2:
+ * All 8 handlers live as of PR 3:
  *   - addToCart, checkoutStart, checkoutConfirm, checkoutReturn,
- *     readOrderStatus → live, exercised by integration smoke.
- *   - enqueueOrderConfirmed, snapshotInventory, restockProduct →
- *     still PR-1-style stubs; PR 3 fills them in.
+ *     readOrderStatus — customer-facing flow (PR 2)
+ *   - enqueueOrderConfirmed — orders.after_create lifecycle target
+ *     (PR 3); currently inactive because commitOrder bypasses the
+ *     lifecycle, but live for when staff-side order creation routes
+ *     through the runtime.
+ *   - snapshotInventory — order_work_queue branch + sweeper fan-out
+ *   - restockProduct — staff-gated POST /staff/api/restock
  */
-const PR3_PENDING: Readonly<Record<string, true>> = {
-  "enqueueOrderConfirmed": true,
-  "snapshotInventory": true,
-  "restockProduct": true,
-};
-
 export function buildHandlers(env: HandlerEnv): Readonly<Record<string, AnyHandler>> {
-  const live: Record<string, AnyHandler> = {
+  return {
     "addToCart": buildAddToCart(env),
     "checkoutStart": buildCheckoutStart(env),
     "checkoutConfirm": buildCheckoutConfirm(env),
     "checkoutReturn": buildCheckoutReturn(env),
     "readOrderStatus": buildReadOrderStatus(),
+    "enqueueOrderConfirmed": buildEnqueueOrderConfirmed(env),
+    "snapshotInventory": buildSnapshotInventory(env),
+    "restockProduct": buildRestockProduct(env),
   };
-  const pending: Record<string, AnyHandler> = Object.fromEntries(
-    Object.keys(PR3_PENDING).map((name) => [name, notImplemented(name, "PR 3")]),
-  );
-  return { ...live, ...pending };
-}
-
-function notImplemented(name: string, pr: "PR 3"): AnyHandler {
-  return (async () => {
-    throw new Error(
-      `transaction-starter: ref handler '${name}' is a PR 1/2 scaffold stub; ` +
-        `live implementation lands in ${pr}.`,
-    );
-  }) as unknown as AnyHandler;
 }

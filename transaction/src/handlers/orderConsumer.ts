@@ -222,20 +222,187 @@ async function releaseIfReserved(
 }
 
 /**
- * order_work_queue consumer — PR 3 wires real branches. PR 2 leaves
- * a clear stub that acks the message + warns so the cron doesn't
- * burn retries.
+ * order_work_queue consumer — real branches per message type.
+ *
+ *   - `order.confirmed` (PR 3): send the confirmation email +
+ *     fulfillment notify; mark `confirmation_emailed_at` on the
+ *     order row to dedup.
+ *   - `inventory.snapshot.requested` (PR 3): InventoryActor.snapshot
+ *     → upsert inventory_snapshots row in D1 (so staff Views see
+ *     fresh totals).
+ *   - `inventory.reconcile.tick` (PR 3): cron-driven. Walks tracked
+ *     products in D1; enqueues per-product snapshot.requested.
+ *     Also calls InventoryActor.sweepStaleLocks() to recover any
+ *     stuck `pending` locks (10-min TTL).
+ *
+ * Throwing skips msg.ack — the queue retries with the configured
+ * budget (wrangler.toml: 30 retries × 30s delay). On terminal
+ * failure messages land in the `order_work_dlq` for observability.
  */
 export async function orderWorkConsumer(
   batch: MessageBatch<OrderWorkMessage>,
-  _env: ConsumerEnv,
-  _ctx: ExecutionContext,
+  env: ConsumerEnv,
+  ctx: ExecutionContext,
 ): Promise<void> {
+  void ctx;
+  const stub = env.INVENTORY_ACTOR.get(
+    env.INVENTORY_ACTOR.idFromName("singleton"),
+  );
+  const inv = inventoryActorClient(stub);
+
   for (const msg of batch.messages) {
-    console.warn(
-      `[order-work-consumer] PR 2 stub — type=${msg.body.type}; PR 3 wires real branches.`,
+    try {
+      switch (msg.body.type) {
+        case "order.confirmed":
+          await handleOrderConfirmed(msg.body.orderId, env);
+          break;
+        case "inventory.snapshot.requested":
+          await handleSnapshotRequested(msg.body.productSlug, inv, env);
+          break;
+        case "inventory.reconcile.tick":
+          await handleReconcileTick(inv, env);
+          break;
+      }
+      msg.ack();
+    } catch (err) {
+      console.error(
+        `[order-work-consumer] type=${msg.body.type} threw:`,
+        err,
+      );
+      msg.retry();
+    }
+  }
+}
+
+async function handleOrderConfirmed(
+  orderId: string,
+  env: ConsumerEnv,
+): Promise<void> {
+  // Look up the order's current state — if `confirmation_emailed_at`
+  // is non-null, we already processed this message; skip.
+  // The row is keyed by `entry_${orderId}` (PR 2 fix #3).
+  const row = await env.DB.prepare(
+    `SELECT data FROM entries WHERE id = ? AND collection = ? LIMIT 1`,
+  )
+    .bind(orderEntryId(orderId), "orders")
+    .first<{ data: string } | null>();
+  if (!row) {
+    // Order not yet written — could happen if the order-confirmed
+    // message arrives before the payment-callback consumer commits
+    // (shouldn't, given max_concurrency:1 + per-queue ordering, but
+    // defensive). Retry; the queue's backoff handles it.
+    throw new Error(
+      `handleOrderConfirmed: order entry not found for ${orderId}; retry`,
     );
-    msg.ack();
+  }
+  const parsed = JSON.parse(row.data) as {
+    confirmation_emailed_at?: number;
+    customerEmail?: string;
+    totalMinor?: number;
+    currency?: string;
+  };
+  if (parsed.confirmation_emailed_at) {
+    // Already done; idempotent skip.
+    return;
+  }
+
+  // v0.1 placeholders: log + (optional) Slack webhook. Real email
+  // integration requires EMAIL_API_KEY + a provider SDK; v0.1 keeps
+  // this surface intentionally narrow. If the user has a Slack
+  // webhook configured, drop a note.
+  console.log(
+    `[order-work-consumer] order.confirmed orderId=${orderId} total=${parsed.totalMinor} ${parsed.currency}`,
+  );
+  if (env.SLACK_WEBHOOK_URL) {
+    try {
+      await fetch(env.SLACK_WEBHOOK_URL, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          text: `New order ${orderId}: ${parsed.totalMinor} ${parsed.currency}`,
+        }),
+      });
+    } catch (err) {
+      // Don't fail the whole message if Slack is down; log and
+      // proceed to mark emailed so we don't infinite-loop.
+      console.warn(`[order-work-consumer] slack notify failed:`, err);
+    }
+  }
+
+  // Mark the order so a duplicate `order.confirmed` is a no-op.
+  const now = Date.now();
+  const next = { ...parsed, confirmation_emailed_at: now };
+  await env.DB.prepare(
+    `UPDATE entries SET data = ?, updated_at = ? WHERE id = ? AND collection = ?`,
+  )
+    .bind(JSON.stringify(next), now, orderEntryId(orderId), "orders")
+    .run();
+}
+
+async function handleSnapshotRequested(
+  productSlug: string,
+  inv: InventoryActorClient,
+  env: ConsumerEnv,
+): Promise<void> {
+  const { available, reserved } = await inv.snapshot(productSlug);
+  const now = Date.now();
+  const entryId = `entry_inv_${productSlug}`;
+  const data = JSON.stringify({
+    productSlug,
+    available,
+    reserved,
+    updatedAt: now,
+  });
+  await env.DB.prepare(
+    `INSERT OR REPLACE INTO entries
+       (id, collection, status, version, data, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?,
+             COALESCE((SELECT created_at FROM entries WHERE id = ?), ?),
+             ?)`,
+  )
+    .bind(
+      entryId,
+      "inventory_snapshots",
+      "published",
+      1,
+      data,
+      entryId,
+      now,
+      now,
+    )
+    .run();
+}
+
+async function handleReconcileTick(
+  inv: InventoryActorClient,
+  env: ConsumerEnv,
+): Promise<void> {
+  // 1. Sweep stale `pending` locks — recovers from any crashed
+  //    payment-callback consumer that left a lock past the TTL.
+  const swept = await inv.sweepStaleLocks();
+  if (swept.resetCount > 0 || swept.gcCount > 0) {
+    console.log(
+      `[order-work-consumer] sweep: reset=${swept.resetCount} gc=${swept.gcCount}`,
+    );
+  }
+
+  // 2. Walk tracked products + enqueue per-product snapshot.
+  //    Untracked products skipped — their snapshot is meaningless.
+  const rows = await env.DB.prepare(
+    `SELECT data FROM entries WHERE collection = ? AND status = ?`,
+  )
+    .bind("products", "published")
+    .all<{ data: string }>();
+  const products = (rows.results ?? []).map((r) =>
+    JSON.parse(r.data) as { slug?: string; inventoryMode?: string },
+  );
+  for (const p of products) {
+    if (p.inventoryMode === "tracked" && p.slug) {
+      await env.ORDER_WORK_QUEUE.send({
+        type: "inventory.snapshot.requested",
+        productSlug: p.slug,
+      });
+    }
   }
 }
 
