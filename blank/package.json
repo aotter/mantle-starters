@@ -2,11 +2,12 @@
   "name": "mantle-starter-blank",
   "version": "0.0.8-alpha",
   "private": true,
-  "description": "Headless CMS starter for mantle — API + MCP only, no public HTML rendering. Bring your own frontend.",
+  "description": "Headless CMS starter for mantle \u2014 API + MCP only, no public HTML rendering. Bring your own frontend.",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
     "validate": "mantle validate",
+    "mantle:prompt": "node scripts/mantle.mjs prompt",
     "introspect": "mantle introspect",
     "emit-openapi": "mantle emit-openapi > openapi.json",
     "emit-types": "mantle emit-types --namespace BlankCms > mantle-types.d.ts",
