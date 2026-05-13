@@ -17,10 +17,11 @@
  * can poll readOrderStatus while waiting for the async callback.
  */
 
-import type { AnyHandler, CmsRuntime } from "@aotterclam/clam-cms-runtime";
+import type { AnyHandler } from "@aotterclam/clam-cms-runtime";
 import { getInventoryActor } from "../durableObjects/InventoryActor.js";
 import { buildPaymentProvider, type PaymentEnv } from "../payment/index.js";
 import { defineHandler } from "./_context.js";
+import { loadProductCatalog } from "./_productEnrichment.js";
 import { stashOrderCart } from "./orderCart.js";
 import { verifyTurnstile } from "./turnstile.js";
 
@@ -64,7 +65,21 @@ export function buildCheckoutStart(env: CheckoutStartEnv): AnyHandler {
     }
 
     // 3. Look up prices + currency
-    const enrichedItems = await enrichItems(ctx.runtime, cart.items);
+    const catalog = await loadProductCatalog(ctx.runtime);
+    const enrichedItems = cart.items.map((item) => {
+      const product = catalog.bySlug.get(item.productSlug);
+      if (!product) {
+        throw new Error(`checkoutStart: unknown product ${item.productSlug}`);
+      }
+      return {
+        productSlug: product.slug,
+        qty: item.qty,
+        priceMinor: product.priceMinor,
+        currency: product.currency,
+        inventoryMode: product.inventoryMode,
+        title: product.title,
+      };
+    });
     const currency = enrichedItems[0]?.currency;
     if (!currency) {
       throw new Error("checkoutStart: cart items have no currency");
@@ -138,59 +153,6 @@ export function buildCheckoutStart(env: CheckoutStartEnv): AnyHandler {
   });
 }
 
-async function enrichItems(
-  runtime: CmsRuntime,
-  cartItems: ReadonlyArray<{ productSlug: string; qty: number }>,
-): Promise<
-  Array<{
-    productSlug: string;
-    qty: number;
-    priceMinor: number;
-    currency: string;
-    inventoryMode: "tracked" | "untracked";
-    title: string;
-  }>
-> {
-  const products = await runtime.listEntries.execute({
-    collection: "products",
-    status: "published",
-    limit: 1000,
-  });
-  const translations = await runtime.listEntries.execute({
-    collection: "product-translations",
-    status: "published",
-    limit: 5000,
-  });
-  return cartItems.map((item) => {
-    const product = products.find(
-      (p) => (p.data as { slug?: string }).slug === item.productSlug,
-    );
-    if (!product) {
-      throw new Error(`checkoutStart: unknown product ${item.productSlug}`);
-    }
-    const d = product.data as {
-      slug: string;
-      priceMinor: number;
-      currency: string;
-      inventoryMode: "tracked" | "untracked";
-    };
-    // First matching translation; locale picking is the front-end's
-    // concern; for the Stripe line-item label we just need a string.
-    const tr = translations.find(
-      (t) => (t.data as { slug?: string }).slug === item.productSlug,
-    );
-    const title =
-      (tr?.data as { title?: string } | undefined)?.title ?? item.productSlug;
-    return {
-      productSlug: d.slug,
-      qty: item.qty,
-      priceMinor: d.priceMinor,
-      currency: d.currency,
-      inventoryMode: d.inventoryMode,
-      title,
-    };
-  });
-}
 
 function generateOrderId(): string {
   // orderId is the reservation key + the KV cart-stash key + the
