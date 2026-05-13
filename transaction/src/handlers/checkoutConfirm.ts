@@ -57,11 +57,19 @@ export interface CheckoutConfirmEnv {
  * `payment_callback_queue` topic.
  */
 export const checkoutConfirm: AnyHandler = (async (_input: unknown, _ctx: unknown) => {
-  // 1. const event = await paymentProvider.parseCallback(request);  // throws on bad signature
-  // 2. await env.PAYMENT_CALLBACK_QUEUE.send(event);
-  // 3. return 200 (HTTP layer; the JSON-RPC Procedure return).
-  // Provider stops retrying once it sees 200.
-  throw new Error("not implemented (PR 1 scaffold)");
+  // PR 2 fills this in. The flow (per the header doc):
+  //   1. const event = await paymentProvider.parseCallback(request);
+  //      // throws on bad signature → 400 to provider
+  //   2. await env.PAYMENT_CALLBACK_QUEUE.send(event);
+  //   3. return 200 (the JSON-RPC Procedure return).
+  // Provider stops retrying once it sees 200. The heavy work
+  // (lock acquire → order INSERT → inventory commit → mark completed)
+  // runs in `orderConsumer.ts:paymentCallbackConsumer` against the
+  // queue, NOT here.
+  throw new Error(
+    "transaction-starter: ref handler 'checkoutConfirm' is a PR 1 scaffold stub; " +
+      "live implementation lands in PR 2.",
+  );
 }) as unknown as AnyHandler;
 
 type DurableObjectNamespace = unknown;

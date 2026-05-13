@@ -74,7 +74,10 @@ export async function paymentCallbackConsumer(
   void batch;
   void env;
   void ctx;
-  throw new Error("not implemented (planning sketch)");
+  throw new Error(
+    "transaction-starter: paymentCallbackConsumer is a PR 1 scaffold stub; " +
+      "live implementation lands in PR 2.",
+  );
 }
 
 /**
@@ -98,7 +101,10 @@ export async function orderWorkConsumer(
   void batch;
   void env;
   void ctx;
-  throw new Error("not implemented (planning sketch)");
+  throw new Error(
+    "transaction-starter: orderWorkConsumer is a PR 1 scaffold stub; " +
+      "live implementation lands in PR 3.",
+  );
 }
 
 /**

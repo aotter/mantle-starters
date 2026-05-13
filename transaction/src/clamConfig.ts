@@ -65,6 +65,24 @@ export interface Env {
   /** Opt-in flag for SVG uploads. Defaults off — object stores don't
    *  sanitize SVG payloads. */
   readonly MEDIA_ALLOW_SVG?: string;
+
+  // ── Transaction starter bindings (declared in wrangler.toml) ──────
+
+  /** Inventory + lock authority. One DO per tenant. See
+   *  `src/durableObjects/InventoryActor.ts` for the contract. PR 2/3
+   *  handlers + queue consumers route through this; PR 1 only declares
+   *  the binding so wrangler can resolve the class at boot. */
+  readonly INVENTORY_ACTOR: DurableObjectNamespace;
+
+  /** Payment provider async callback queue. HTTP handler verifies
+   *  provider signature then `queue.send`s the envelope; consumer
+   *  (PR 2) does the actual work under the InventoryActor lock. */
+  readonly PAYMENT_CALLBACK_QUEUE: Queue;
+
+  /** Downstream-work queue. orders.after_create lifecycle producer +
+   *  cron `inventory.reconcile.tick` producer + (PR 3) sweeper +
+   *  email/notify consumer. */
+  readonly ORDER_WORK_QUEUE: Queue;
 }
 
 export function buildCmsConfig(env: Env, auth: Auth): CmsConfig {
