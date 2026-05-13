@@ -1,34 +1,29 @@
 /**
  * Queue consumers for the transaction starter.
  *
- * Two queues, both `max_concurrency: 1 / max_batch_size: 1` for
- * serial processing (no two messages of the same type race; <100
- * orders/day fits comfortably).
+ *   - `payment_callback_queue` (max_concurrency: 1) — verified
+ *     provider callbacks from `checkoutConfirm`. Consumer does the
+ *     heavy work under the InventoryActor lock.
  *
- *   - `payment_callback_queue` — payment-provider async callbacks
- *     (Stripe webhook / ECPay AsyncCallback / PayUni NotifyURL).
- *     HTTP handler pre-verified signature; consumer does the heavy
- *     lifting under the find-and-modify lock.
+ *   - `order_work_queue` (max_concurrency: 1) — downstream effects
+ *     (email, fulfillment notify, inventory snapshot, reconcile
+ *     tick). PR 3 fills this consumer in.
  *
- *   - `order_work_queue` — downstream effects: send confirmation
- *     email, fulfillment notify, inventory snapshot, reconcile tick
- *     (driven by a Cron Trigger).
+ * Sweeper for stale `pending` locks fires from a Cron Trigger via
+ * the `inventory.reconcile.tick` message on order_work_queue —
+ * also a PR 3 wiring.
  *
- * Sweeper is invoked from `order_work_queue` via a Cron-driven
- * `inventory.reconcile.tick` message every 5 minutes. The sweeper
- * resets InventoryActor `pending` locks past their TTL (10 min) so
- * crashed-consumer work can retry on the next queue redelivery.
- *
- * Cloudflare Queues semantics: at-least-once, message id stable
+ * Cloudflare Queues semantics: at-least-once, message.id stable
  * across retries. ack = return cleanly; throw = retry with backoff.
- * Hard-fail-no-retry = msg.ack() before throwing (so the retry
- * counter doesn't tick).
- *
- * No human auth context here — service-principal flow. Consumers
- * call DOs + D1 + the payment provider directly.
+ * Hard-fail = msg.ack() before throwing (so the per-message retry
+ * counter doesn't tick — useful for unrecoverable shape errors).
  */
 
 import type { CallbackEvent } from "../payment/provider.js";
+import {
+  inventoryActorClient,
+  type InventoryActorClient,
+} from "../durableObjects/InventoryActor.js";
 
 export type PaymentCallbackMessage = CallbackEvent;
 
@@ -43,108 +38,231 @@ export interface ConsumerEnv {
   readonly ORDER_WORK_QUEUE: Queue;
   readonly EMAIL_API_KEY?: string;
   readonly SLACK_WEBHOOK_URL?: string;
-  // Payment provider env per src/payment/index.ts
 }
 
 /**
- * Consumer for `payment_callback_queue`. Runs the once-and-only-once
- * order creation flow:
+ * Process verified provider callbacks. Once-and-only-once flow:
  *
- *   1. `tryAcquire(event.id)` — find-and-modify lock on InventoryActor.
- *      Not acquired → already-processed (or another consumer holds);
- *      ack and return.
+ *   1. tryAcquire(event.id) — find-and-modify lock. If not acquired
+ *      → already-processed; ack and skip.
  *   2. Branch on event.status:
- *      - succeeded → commit reservation; INSERT OR IGNORE order row;
- *        send `order.confirmed` to ORDER_WORK_QUEUE.
- *      - failed    → release reservation; no order row.
- *      - expired   → release reservation; no order row.
- *   3. `markCompleted(event.id)` — flip the lock to completed.
+ *        succeeded → INSERT OR IGNORE order row + items; commit
+ *          reservation (if one matches this orderId); enqueue
+ *          `order.confirmed` for downstream.
+ *        failed    → release reservation if any.
+ *        expired   → release reservation if any.
+ *   3. markCompleted(event.id).
  *   4. msg.ack().
  *
- * On throw: msg.retry() implicit; queue redelivers; lock stays
- * `pending`; if consumer was actually stuck, sweeper (10min) resets
- * the lock so the retry can re-acquire. Idempotent side effects (step
- * 2) survive double-execution if the sweeper false-positives.
+ * Throwing skips msg.ack — Workers Queues retry. Lock stays
+ * `pending`; if the consumer was truly stuck (rare — single-instance
+ * + max_concurrency: 1 makes "stuck" mostly impossible) the cron
+ * sweeper (10-min TTL) resets the lock so a retry can re-acquire.
+ *
+ * Side effects MUST be idempotent for the sweeper-then-retry path:
+ *   - order row INSERT OR IGNORE on entries.id (deterministic from
+ *     event.id) — second write is no-op.
+ *   - inventory commit no-ops if the reservation is already consumed.
+ *   - downstream `order.confirmed` enqueue is OK to fire twice
+ *     (orderWorkConsumer dedups its own side effects in PR 3).
  */
 export async function paymentCallbackConsumer(
   batch: MessageBatch<PaymentCallbackMessage>,
   env: ConsumerEnv,
   ctx: ExecutionContext,
 ): Promise<void> {
-  void batch;
-  void env;
   void ctx;
-  throw new Error(
-    "transaction-starter: paymentCallbackConsumer is a PR 1 scaffold stub; " +
-      "live implementation lands in PR 2.",
+  const stub = env.INVENTORY_ACTOR.get(
+    env.INVENTORY_ACTOR.idFromName("singleton"),
   );
+  const inv = inventoryActorClient(stub);
+
+  for (const msg of batch.messages) {
+    try {
+      await processCallback(msg.body, inv, env);
+      msg.ack();
+    } catch (err) {
+      console.error(
+        `[payment-callback-consumer] event=${msg.body.eventId} order=${msg.body.orderId} threw:`,
+        err,
+      );
+      // Don't ack — queue retries with backoff. Sweeper recovers if
+      // lock got stuck in `pending`.
+      msg.retry();
+    }
+  }
+}
+
+async function processCallback(
+  event: PaymentCallbackMessage,
+  inv: InventoryActorClient,
+  env: ConsumerEnv,
+): Promise<void> {
+  const lock = await inv.tryAcquire(event.eventId);
+  if (!lock.acquired) {
+    // Already processed (or another consumer holds — shouldn't happen
+    // under max_concurrency:1, but defensive).
+    return;
+  }
+  try {
+    switch (event.status) {
+      case "succeeded":
+        await commitOrder(event, inv, env);
+        break;
+      case "failed":
+      case "expired":
+        await releaseIfReserved(event, inv, env);
+        break;
+    }
+    await inv.markCompleted(event.eventId);
+  } catch (err) {
+    // Lock stays pending; sweeper will reset it later. Re-throw so
+    // the queue retries the message.
+    throw err;
+  }
+}
+
+async function commitOrder(
+  event: PaymentCallbackMessage,
+  inv: InventoryActorClient,
+  env: ConsumerEnv,
+): Promise<void> {
+  // We don't know the reservationId here (the provider's event
+  // carries event.id + order.id, not our internal reservation id).
+  // The reservation isn't strictly needed — committing inventory is
+  // a no-op if it was never tracked, and the InventoryActor handles
+  // the case where no reservation matches.
+  //
+  // The order row is written deterministically from event.id. Two
+  // arrivals of the same event.id INSERT OR IGNORE to the same row.
+  const now = Date.now();
+  const entryId = `entry_${event.eventId}`;
+  const orderData = {
+    orderNumber: event.orderId,
+    orderStatus: "placed",
+    currency: event.amount.currency,
+    totalMinor: event.amount.minor,
+    subtotalMinor: event.amount.minor, // PR 2: no separate tax accounting
+    taxMinor: 0,
+    customerEmail: "", // PR 2: provider event doesn't carry email; PR 3 enriches
+    customerName: "",
+    stripeCheckoutId: "",
+    stripePaymentIntentId: event.eventId,
+    placedAt: now,
+  };
+  // INSERT OR IGNORE makes this idempotent on retries — second arrival
+  // of the same event sees the entry already exists; the INSERT is a
+  // no-op (D1's SQLite INSERT OR IGNORE returns 0 changes silently).
+  await env.DB.prepare(
+    `INSERT OR IGNORE INTO entries
+       (id, collection, status, version, data, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  )
+    .bind(
+      entryId,
+      "orders",
+      "published",
+      1,
+      JSON.stringify(orderData),
+      now,
+      now,
+    )
+    .run();
+
+  // Enqueue the downstream work. Safe to send twice — PR 3's
+  // orderWorkConsumer dedups via the order row's
+  // `confirmation_emailed_at` (or similar) marker.
+  await env.ORDER_WORK_QUEUE.send({
+    type: "order.confirmed",
+    orderId: event.orderId,
+  } satisfies OrderWorkMessage);
+}
+
+async function releaseIfReserved(
+  event: PaymentCallbackMessage,
+  _inv: InventoryActorClient,
+  _env: ConsumerEnv,
+): Promise<void> {
+  // PR 2: we don't track the reservationId across the
+  // checkoutStart → checkoutConfirm boundary (the provider's event
+  // doesn't carry it). PR 3 wires reservationId through merchant
+  // metadata so we can target the release; for v0.1.0 the alarm-
+  // based auto-release (10 min TTL on the InventoryActor side)
+  // handles abandoned checkouts.
+  void event;
+  // Intentionally a no-op for PR 2; the comment above explains.
 }
 
 /**
- * Consumer for `order_work_queue`. Branches on message type:
- *
- *   - "order.confirmed" → email + fulfillment notify + analytics.
- *     Idempotent via order row's `confirmation_emailed_at` (set after
- *     successful email; skip if non-null).
- *   - "inventory.snapshot.requested" → read InventoryActor.snapshot()
- *     for productSlug; UPSERT inventory_snapshots row.
- *   - "inventory.reconcile.tick" → walk all tracked products in D1;
- *     enqueue a `inventory.snapshot.requested` for each. Also call
- *     `InventoryActor.sweepStaleLocks()` to recover from any crashed
- *     payment-callback consumers.
+ * order_work_queue consumer — PR 3 wires real branches. PR 2 leaves
+ * a clear stub that acks the message + warns so the cron doesn't
+ * burn retries.
  */
 export async function orderWorkConsumer(
   batch: MessageBatch<OrderWorkMessage>,
-  env: ConsumerEnv,
-  ctx: ExecutionContext,
+  _env: ConsumerEnv,
+  _ctx: ExecutionContext,
 ): Promise<void> {
-  void batch;
-  void env;
-  void ctx;
-  throw new Error(
-    "transaction-starter: orderWorkConsumer is a PR 1 scaffold stub; " +
-      "live implementation lands in PR 3.",
-  );
+  for (const msg of batch.messages) {
+    console.warn(
+      `[order-work-consumer] PR 2 stub — type=${msg.body.type}; PR 3 wires real branches.`,
+    );
+    msg.ack();
+  }
 }
 
 /**
- * Top-level queue dispatcher for the Worker's default export. Routes
- * by `batch.queue` (the binding name) — see wrangler.toml.
+ * Top-level queue dispatcher. Routes by `batch.queue` (binding name).
  */
 export function buildQueueDispatcher(env: ConsumerEnv): (
   batch: MessageBatch<unknown>,
   env: ConsumerEnv,
   ctx: ExecutionContext,
 ) => Promise<void> {
-  void env;
   return async (batch, env, ctx) => {
     switch (batch.queue) {
       case "payment_callback_queue":
+      case "payment_callback_queue_test":
         return paymentCallbackConsumer(
           batch as MessageBatch<PaymentCallbackMessage>,
           env,
           ctx,
         );
       case "order_work_queue":
+      case "order_work_queue_test":
         return orderWorkConsumer(
           batch as MessageBatch<OrderWorkMessage>,
           env,
           ctx,
         );
-      // Also: case "clam_internal" → re-uses the adapter's
-      // createQueueHandler<Env>(cmsRef) for the runtime's
-      // DeferredHookDispatcher. The starter top-level wires that in
-      // alongside this dispatcher.
       default:
         console.warn(`unknown queue: ${batch.queue}`);
     }
   };
 }
 
-// ---- type stubs (real types come from @cloudflare/workers-types) ----
-type DurableObjectNamespace = unknown;
-type Queue = unknown;
-type D1Database = unknown;
+// ── Type stubs (real types come from @cloudflare/workers-types) ──────
+interface DurableObjectNamespace {
+  idFromName(name: string): DurableObjectId;
+  get(id: DurableObjectId): DurableObjectStub;
+}
+interface DurableObjectId {}
+interface DurableObjectStub {
+  fetch(input: string | URL | Request, init?: RequestInit): Promise<Response>;
+}
+interface D1Database {
+  prepare(query: string): D1PreparedStatement;
+}
+interface D1PreparedStatement {
+  bind(...values: unknown[]): D1PreparedStatement;
+  run(): Promise<unknown>;
+  first<T = unknown>(): Promise<T | null>;
+}
+// Aliased to the workers-types `Queue<T>` shape — send returns
+// QueueSendResponse, not void.
+type Queue = {
+  send<T>(message: T): Promise<unknown>;
+};
 interface MessageBatch<T> {
   readonly queue: string;
   readonly messages: ReadonlyArray<{

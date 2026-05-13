@@ -108,6 +108,16 @@ fallthrough = true
 
 [env.test.vars]
 TURNSTILE_SITE_KEY = "1x00000000000000000000AA"
+TURNSTILE_SECRET_KEY = "dev-stub"
+# Wires the in-process FakeProvider (src/payment/providers/_templates/fake.ts)
+# so the integration smoke can exercise the happy path without a real
+# provider account. NEVER set in production.
+FAKE_PAYMENT_PROVIDER = "1"
+PUBLIC_ORIGIN = "http://localhost:8788"
+# Worker needs a BETTER_AUTH_SECRET to boot; the test profile uses a
+# fixed value because it's the same shape across runs and not a real
+# secret.
+BETTER_AUTH_SECRET = "test-better-auth-secret-32+-bytes-random-fixed"
 
 [[env.test.d1_databases]]
 binding = "DB"
