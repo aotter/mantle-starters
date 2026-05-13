@@ -7,7 +7,7 @@
  *     Output the filled Mantle subagent prompt to stdout. Reads
  *     mantle/site.md (frontmatter + ## site / ## voice / ## history),
  *     fetches the archetype hint from mantle-starters, substitutes
- *     {{MANTLE_*}} placeholders in mantle-subagent-prompt.md, writes
+ *     <<MANTLE_*>> placeholders in mantle-subagent-prompt.md, writes
  *     to stdout. The install agent pipes this into the Agent tool to
  *     dispatch the Mantle subagent that writes the 5-card welcome
  *     letter.
@@ -135,14 +135,14 @@ async function runPrompt() {
   const template = readFileSync(templatePath, "utf8");
 
   const filled = template
-    .replace(/\{\{MANTLE_BRAND\}\}/g, brand)
-    .replace(/\{\{MANTLE_LOCALES\}\}/g, locales)
-    .replace(/\{\{MANTLE_GITHUB_IDENTITY\}\}/g, githubOwner)
-    .replace(/\{\{MANTLE_PURPOSE_NOTES\}\}/g, siteSection.trim())
-    .replace(/\{\{MANTLE_VOICE_NOTES\}\}/g, voiceSection.trim())
-    .replace(/\{\{MANTLE_HISTORY_NOTES\}\}/g, historySection.trim())
-    .replace(/\{\{MANTLE_ARCHETYPE_HINT\}\}/g, archetypeHint.trim())
-    .replace(/\{\{MANTLE_SCAFFOLD_PATH\}\}/g, resolve("."));
+    .replace(/<<MANTLE_BRAND>>/g, brand)
+    .replace(/<<MANTLE_LOCALES>>/g, locales)
+    .replace(/<<MANTLE_GITHUB_IDENTITY>>/g, githubOwner)
+    .replace(/<<MANTLE_PURPOSE_NOTES>>/g, siteSection.trim())
+    .replace(/<<MANTLE_VOICE_NOTES>>/g, voiceSection.trim())
+    .replace(/<<MANTLE_HISTORY_NOTES>>/g, historySection.trim())
+    .replace(/<<MANTLE_ARCHETYPE_HINT>>/g, archetypeHint.trim())
+    .replace(/<<MANTLE_SCAFFOLD_PATH>>/g, resolve("."));
 
   process.stdout.write(filled);
 }
