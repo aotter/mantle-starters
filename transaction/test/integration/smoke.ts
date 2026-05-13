@@ -204,6 +204,230 @@ check("MCP auth: POST /staff/mcp unauthenticated returns 401", async () => {
   });
 });
 
+check("MCP auth: POST /mcp (user surface) unauthenticated returns 401", async () => {
+  await expectStatus("/mcp", 401, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }),
+  });
+});
+
+// ── cart edge cases ──────────────────────────────────────────────────
+
+check("addToCart: unknown productSlug → 500 with clear message", async () => {
+  const res = await fetch(`${BASE_URL}/api/cart/add`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      cartId: "edge-cart-1",
+      productSlug: "does-not-exist",
+      qty: 1,
+    }),
+  });
+  if (res.status === 200) {
+    fail("expected non-200 for unknown product, got 200");
+  }
+  const txt = await res.text();
+  if (!txt.includes("does-not-exist")) {
+    fail(`error body should mention the bad slug; got ${txt.slice(0, 200)}`);
+  }
+});
+
+check("addToCart: qty 0 → rejected", async () => {
+  const res = await fetch(`${BASE_URL}/api/cart/add`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      cartId: "edge-cart-2",
+      productSlug: "smoke-product",
+      qty: 0,
+    }),
+  });
+  if (res.status === 200) fail("expected non-200 for qty=0");
+});
+
+check("addToCart: same product twice coalesces (1 + 2 = 3, not 2 lines)", async () => {
+  await fetch(`${BASE_URL}/api/cart/add`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      cartId: "coalesce-cart",
+      productSlug: "smoke-product",
+      qty: 1,
+    }),
+  });
+  const res = await fetch(`${BASE_URL}/api/cart/add`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      cartId: "coalesce-cart",
+      productSlug: "smoke-product",
+      qty: 2,
+    }),
+  });
+  if (res.status !== 200) fail(`expected 200, got ${res.status}`);
+  const body = await jsonBody<{
+    items: Array<{ productSlug: string; qty: number }>;
+    subtotalMinor: number;
+  }>(res);
+  const lines = body.items.filter((i) => i.productSlug === "smoke-product");
+  if (lines.length !== 1 || lines[0]?.qty !== 3) {
+    fail(`expected 1 line at qty=3; got ${JSON.stringify(body.items)}`);
+  }
+  if (body.subtotalMinor !== 3000) {
+    fail(`expected subtotalMinor=3000, got ${body.subtotalMinor}`);
+  }
+});
+
+// ── checkout edge cases ──────────────────────────────────────────────
+
+check("checkoutStart: unknown cartId → 500 (cart expired/missing)", async () => {
+  const res = await fetch(`${BASE_URL}/api/checkout/start`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      cartId: "nonexistent-cart-id-12345",
+      customerEmail: "test@example.com",
+    }),
+  });
+  if (res.status === 200) fail("expected non-200 for missing cart");
+  const txt = await res.text();
+  if (!/empty|expired|missing/i.test(txt)) {
+    fail(`error should mention empty/expired/missing; got ${txt.slice(0, 200)}`);
+  }
+});
+
+check(
+  "checkoutStart: tracked product with 0 stock → 500 insufficient_stock",
+  async () => {
+    // Build a cart with the tracked-out-of-stock product.
+    await fetch(`${BASE_URL}/api/cart/add`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        cartId: "tracked-cart",
+        productSlug: "tracked-out-of-stock",
+        qty: 1,
+      }),
+    });
+    const res = await fetch(`${BASE_URL}/api/checkout/start`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        cartId: "tracked-cart",
+        customerEmail: "test@example.com",
+      }),
+    });
+    if (res.status === 200) fail("expected non-200 for out-of-stock");
+    const txt = await res.text();
+    if (!/insufficient|stock/i.test(txt)) {
+      fail(`error should mention insufficient stock; got ${txt.slice(0, 200)}`);
+    }
+  },
+);
+
+// ── callback failure paths ───────────────────────────────────────────
+
+check("paymentCallback: status=failed → no order row created", async () => {
+  const failedEventId = "evt_smoke_failed_1";
+  const failedOrderId = "o_failed_smoke";
+  const res = await fetch(`${BASE_URL}/api/payment/callback`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      eventId: failedEventId,
+      orderId: failedOrderId,
+      status: "failed",
+      amount: { minor: 1000, currency: "USD" },
+    }),
+  });
+  if (res.status !== 200) fail(`expected 200, got ${res.status}`);
+  // Wait for the consumer to process.
+  await new Promise((r) => setTimeout(r, 2000));
+  const ordRes = await expectStatus(
+    `/api/order/status?orderId=${encodeURIComponent(failedOrderId)}`,
+    200,
+  );
+  const body = await jsonBody<{ exists: boolean }>(ordRes);
+  if (body.exists) {
+    fail(
+      `failed callback should not create an order, but orderId=${failedOrderId} exists in D1`,
+    );
+  }
+});
+
+check("paymentCallback: status=expired → no order row created", async () => {
+  const expiredEventId = "evt_smoke_expired_1";
+  const expiredOrderId = "o_expired_smoke";
+  const res = await fetch(`${BASE_URL}/api/payment/callback`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      eventId: expiredEventId,
+      orderId: expiredOrderId,
+      status: "expired",
+      amount: { minor: 1000, currency: "USD" },
+    }),
+  });
+  if (res.status !== 200) fail(`expected 200, got ${res.status}`);
+  await new Promise((r) => setTimeout(r, 2000));
+  const ordRes = await expectStatus(
+    `/api/order/status?orderId=${encodeURIComponent(expiredOrderId)}`,
+    200,
+  );
+  const body = await jsonBody<{ exists: boolean }>(ordRes);
+  if (body.exists) {
+    fail(
+      `expired callback should not create an order, but orderId=${expiredOrderId} exists`,
+    );
+  }
+});
+
+// ── read order status edge cases ─────────────────────────────────────
+
+check("readOrderStatus: unknown orderId → exists=false (200)", async () => {
+  const res = await expectStatus(
+    "/api/order/status?orderId=nonexistent-xyz-123",
+    200,
+  );
+  const body = await jsonBody<{ exists: boolean; orderId: string }>(res);
+  if (body.exists !== false) {
+    fail(`expected exists=false; got ${JSON.stringify(body)}`);
+  }
+});
+
+check("readOrderStatus: missing orderId query → 400", async () => {
+  await expectStatus("/api/order/status", 400);
+});
+
+// ── checkout return ──────────────────────────────────────────────────
+
+check(
+  "GET /api/payment/return?orderId=X&status=succeeded returns providerStatus + order shape",
+  async () => {
+    if (!savedOrderId) fail("no savedOrderId");
+    const res = await expectStatus(
+      `/api/payment/return?orderId=${encodeURIComponent(savedOrderId!)}&status=succeeded`,
+      200,
+    );
+    const body = await jsonBody<{
+      orderId: string;
+      providerStatus: string;
+      exists: boolean;
+      orderStatus?: string;
+    }>(res);
+    if (body.orderId !== savedOrderId) {
+      fail(`expected orderId=${savedOrderId}; got ${body.orderId}`);
+    }
+    if (body.providerStatus !== "succeeded") {
+      fail(`expected providerStatus=succeeded; got ${body.providerStatus}`);
+    }
+    if (!body.exists || body.orderStatus !== "placed") {
+      fail(`expected exists=true, orderStatus=placed; got ${JSON.stringify(body)}`);
+    }
+  },
+);
+
 // ── runner ────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
