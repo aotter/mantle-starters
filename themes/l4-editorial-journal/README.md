@@ -56,7 +56,15 @@ and `src/theme/templates/` per the
 
 ## Status
 
-Stub. Mechanism-only — tokens land at `src/theme/tokens.ts` in the
-user's project. Mechanism is wired; component-level visual deliverables
-pending. Track at
+Stub. Mechanism-only — tokens land at `src/theme/tokens.ts` and are
+registered by `src/theme/index.ts` in the user's project. Mechanism is
+wired; component-level visual deliverables pending.
+
+To remove it after install:
+
+```bash
+pnpm theme:reset tokens.ts
+```
+
+The locked `src/theme.default/` baseline remains untouched. Track at
 [Epic aotter/mantle#116](https://github.com/aotter/mantle/issues/116).

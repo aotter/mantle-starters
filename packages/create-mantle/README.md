@@ -82,8 +82,10 @@ With a theme applied:
     "blank":       { "path": "blank" }
   },
   "themes": {
-    "l4-minimal-ink":    { "path": "themes/l4-minimal-ink" },
-    "l4-editorial-warm": { "path": "themes/l4-editorial-warm" }
+    "l4-minimal-ink":       { "path": "themes/l4-minimal-ink" },
+    "l4-editorial-warm":    { "path": "themes/l4-editorial-warm" },
+    "l4-editorial-journal": { "path": "themes/l4-editorial-journal" },
+    "l4-playful-pop":       { "path": "themes/l4-playful-pop" }
   },
   "roadmap": ["transaction", "reservation", "community", "membership"]
 }

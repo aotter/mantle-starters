@@ -25,7 +25,18 @@ Dark mode adjusted in parallel (deep warm-brown paper, ember accent).
 ## Status
 
 Stub. Mechanism-only — when consumed by `create-mantle`, this
-overlay lands at `src/theme/tokens.ts` in the user's project.
+overlay lands at `src/theme/tokens.ts` plus `src/theme/index.ts` in the
+user's project. `index.ts` registers the token CSS as
+`ThemeOverride.tokens`, so the override is concatenated after baseline
+tokens; only the vars declared above change.
+
+To remove it after install:
+
+```bash
+pnpm theme:reset tokens.ts
+```
+
+The locked `src/theme.default/` baseline remains untouched.
 
 Real artist content lands separately. Track at
 [Epic aotter/mantle#116](https://github.com/aotter/mantle/issues/116).

@@ -8,8 +8,8 @@
  *
  * Fetch failures fall back to a bundled snapshot (`STALE_FALLBACK_SOURCES`)
  * so installs can still complete in offline / GH-unreachable cases. The
- * snapshot tracks the current starter monorepo layout and is updated
- * whenever the live shape evolves significantly.
+ * snapshot tracks the current public starter + theme keys and is
+ * updated whenever the live shape evolves significantly.
  */
 
 export const STARTERS_REPO = "aotter/mantle-starters";
@@ -43,14 +43,10 @@ export interface ArchetypeSource extends ArchetypeSourceEntry {
 }
 
 /**
- * Bundled stale snapshot of `sources.json`. Matches the **current**
- * `mantle-starters` layout: publication starter shared across the
- * presence / publication / intake archetypes, with `intake` carrying
- * a layered overlay. After the 1:1 starter split lands in
- * `mantle-starters` (Epic #116 sub-issue #6), the live
- * `sources.json` will drop overlays and add 1:1 dirs — runtime fetch
- * picks that up automatically; this fallback only matters when GH
- * is unreachable.
+ * Bundled stale snapshot of `sources.json`. Archetype paths are
+ * intentionally conservative for offline installs, but theme keys
+ * should stay current so `--theme <key>` can still resolve when GH is
+ * unreachable.
  */
 export const STALE_FALLBACK_SOURCES: SourcesJson = {
   archetypes: {
@@ -59,7 +55,12 @@ export const STALE_FALLBACK_SOURCES: SourcesJson = {
     intake: { path: "publication", overlays: ["intake"] },
     blank: { path: "blank" },
   },
-  themes: {},
+  themes: {
+    "l4-minimal-ink": { path: "themes/l4-minimal-ink" },
+    "l4-editorial-warm": { path: "themes/l4-editorial-warm" },
+    "l4-editorial-journal": { path: "themes/l4-editorial-journal" },
+    "l4-playful-pop": { path: "themes/l4-playful-pop" },
+  },
   roadmap: ["transaction", "reservation", "community", "membership"],
 };
 
