@@ -19,11 +19,20 @@
  *      staff Views. The DO holds the canonical state; D1 row is a
  *      query-friendly mirror.
  *
+ * Reservation keying: reservations are keyed by `orderId` (not a
+ * random reservationId). Rationale — the provider's callback event
+ * always carries orderId, but provider-metadata round-tripping a
+ * reservationId is fragile (Stripe metadata maps, ECPay CustomField,
+ * etc.). Deterministic keying lets commit/release work without any
+ * provider-side state, at the cost of forbidding more than one
+ * concurrent reservation per orderId — fine for the checkout flow,
+ * since orderId is generated fresh per checkoutStart.
+ *
  * Storage keys (in `state.storage`):
  *
  *   lock:<workId>             { state: "pending" | "completed", at: ms }
  *   product:<slug>            { available: number, reserved: number }
- *   reservation:<id>          { items: [{slug, qty}], orderId, expiresAt }
+ *   reservation:<orderId>     { items: [{slug, qty}], expiresAt }
  *
  * Method calls arrive via JSON-RPC over `stub.fetch(...)`. Single-
  * threaded per instance → no internal locks needed inside method
@@ -43,7 +52,7 @@ export interface ReserveRequest {
 
 export interface ReserveResult {
   readonly ok: true;
-  readonly reservationId: string;
+  readonly orderId: string;
   readonly expiresAt: number;
 }
 
@@ -69,7 +78,6 @@ interface ProductInventory {
 
 interface ReservationEntry {
   readonly items: ReadonlyArray<{ productSlug: string; qty: number }>;
-  readonly orderId: string;
   readonly expiresAt: number;
 }
 
@@ -106,11 +114,10 @@ export class InventoryActor implements DurableObject {
   }
 
   /**
-   * Sweeper — invoked from a queue tick (PR 3 wires the cron path).
-   * Walks `lock:*` keys; resets stale `pending` (older than TTL) by
-   * deleting the lock so a queue redelivery can re-acquire and the
-   * idempotent work side effects run again. Also garbage-collects
-   * `completed` locks past retention.
+   * Sweeper — invoked from a queue tick. Walks `lock:*` keys; resets
+   * stale `pending` (older than TTL) by deleting the lock so a queue
+   * redelivery can re-acquire and the idempotent work side effects
+   * run again. Also garbage-collects `completed` locks past retention.
    */
   async sweepStaleLocks(): Promise<{ resetCount: number; gcCount: number }> {
     const now = Date.now();
@@ -164,9 +171,6 @@ export class InventoryActor implements DurableObject {
     // reservation record. Single DO instance → no race; this whole
     // method body is atomic.
     const now = Date.now();
-    const reservationId = `r_${now.toString(36)}_${Math.random()
-      .toString(36)
-      .slice(2, 10)}`;
     const expiresAt = now + RESERVATION_TTL_MS;
     const updates = new Map<string, ProductInventory>();
     for (const item of req.items) {
@@ -179,9 +183,8 @@ export class InventoryActor implements DurableObject {
     for (const [key, value] of updates) {
       await this.state.storage.put(key, value);
     }
-    await this.state.storage.put<ReservationEntry>(`reservation:${reservationId}`, {
+    await this.state.storage.put<ReservationEntry>(`reservation:${req.orderId}`, {
       items: req.items,
-      orderId: req.orderId,
       expiresAt,
     });
 
@@ -193,19 +196,19 @@ export class InventoryActor implements DurableObject {
       await this.state.storage.setAlarm(expiresAt);
     }
 
-    return { ok: true, reservationId, expiresAt };
+    return { ok: true, orderId: req.orderId, expiresAt };
   }
 
   async commit(
-    reservationId: string,
+    orderId: string,
   ): Promise<{ committed: ReadonlyArray<{ productSlug: string; qty: number }> }> {
     const reservation = await this.state.storage.get<ReservationEntry>(
-      `reservation:${reservationId}`,
+      `reservation:${orderId}`,
     );
     if (!reservation) {
-      // Idempotent: already committed (or never existed). Return empty
-      // — caller should rely on its own dedup (e.g. INSERT OR IGNORE
-      // on order row) instead of this method's side effects.
+      // Idempotent: already committed (or never reserved — untracked
+      // products). Return empty so the caller's INSERT OR IGNORE on
+      // the order row remains the source-of-truth dedup signal.
       return { committed: [] };
     }
     const updates = new Map<string, ProductInventory>();
@@ -223,13 +226,13 @@ export class InventoryActor implements DurableObject {
     for (const [key, value] of updates) {
       await this.state.storage.put(key, value);
     }
-    await this.state.storage.delete(`reservation:${reservationId}`);
+    await this.state.storage.delete(`reservation:${orderId}`);
     return { committed: reservation.items.map((i) => ({ ...i })) };
   }
 
-  async release(reservationId: string): Promise<void> {
+  async release(orderId: string): Promise<void> {
     const reservation = await this.state.storage.get<ReservationEntry>(
-      `reservation:${reservationId}`,
+      `reservation:${orderId}`,
     );
     if (!reservation) return; // already released (idempotent)
     for (const item of reservation.items) {
@@ -246,7 +249,7 @@ export class InventoryActor implements DurableObject {
         },
       );
     }
-    await this.state.storage.delete(`reservation:${reservationId}`);
+    await this.state.storage.delete(`reservation:${orderId}`);
   }
 
   async snapshot(
@@ -302,9 +305,9 @@ export class InventoryActor implements DurableObject {
       case "reserve":
         return this.reserve(args as ReserveRequest);
       case "commit":
-        return this.commit((args as { reservationId: string }).reservationId);
+        return this.commit((args as { orderId: string }).orderId);
       case "release":
-        await this.release((args as { reservationId: string }).reservationId);
+        await this.release((args as { orderId: string }).orderId);
         return null;
       case "snapshot":
         return this.snapshot((args as { productSlug: string }).productSlug);
@@ -320,9 +323,9 @@ export class InventoryActor implements DurableObject {
   }
 
   /**
-   * Alarm fires when the earliest pending reservation expires. We
-   * walk all reservations, release the expired ones, and reschedule
-   * the alarm to the next-earliest deadline (if any).
+   * Alarm fires when the earliest pending reservation expires. Walk
+   * all reservations, release the expired ones, and reschedule to the
+   * next-earliest deadline (if any).
    */
   async alarm(): Promise<void> {
     const now = Date.now();
@@ -332,8 +335,8 @@ export class InventoryActor implements DurableObject {
     let nextDeadline: number | null = null;
     for (const [key, reservation] of entries) {
       if (reservation.expiresAt <= now) {
-        const reservationId = key.slice("reservation:".length);
-        await this.release(reservationId);
+        const orderId = key.slice("reservation:".length);
+        await this.release(orderId);
       } else if (nextDeadline === null || reservation.expiresAt < nextDeadline) {
         nextDeadline = reservation.expiresAt;
       }
@@ -351,10 +354,10 @@ export interface InventoryActorClient {
   markCompleted(workId: string): Promise<void>;
   sweepStaleLocks(): Promise<{ resetCount: number; gcCount: number }>;
   reserve(req: ReserveRequest): Promise<ReserveResult | ReserveFailure>;
-  commit(reservationId: string): Promise<{
+  commit(orderId: string): Promise<{
     committed: ReadonlyArray<{ productSlug: string; qty: number }>;
   }>;
-  release(reservationId: string): Promise<void>;
+  release(orderId: string): Promise<void>;
   snapshot(productSlug: string): Promise<{ available: number; reserved: number }>;
   restock(productSlug: string, addQty: number): Promise<void>;
 }
@@ -392,8 +395,8 @@ export function inventoryActorClient(stub: DurableObjectStub): InventoryActorCli
     markCompleted: (workId) => call("markCompleted", { workId }),
     sweepStaleLocks: () => call("sweepStaleLocks"),
     reserve: (req) => call<ReserveResult | ReserveFailure>("reserve", req),
-    commit: (reservationId) => call("commit", { reservationId }),
-    release: (reservationId) => call("release", { reservationId }),
+    commit: (orderId) => call("commit", { orderId }),
+    release: (orderId) => call("release", { orderId }),
     snapshot: (productSlug) => call("snapshot", { productSlug }),
     restock: (productSlug, addQty) => call("restock", { productSlug, addQty }),
   };

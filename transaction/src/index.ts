@@ -13,6 +13,7 @@ import { invokeHandler } from "./handlers/_context.js";
 import { buildQueueDispatcher, sendOrderWork } from "./handlers/orderConsumer.js";
 import { buildReadOrderStatus } from "./handlers/readOrderStatus.js";
 import { buildCheckoutReturn } from "./handlers/checkoutReturn.js";
+import { getInventoryActor } from "./durableObjects/InventoryActor.js";
 
 // Re-export DurableObject classes so Workers can resolve them by name
 // from the `[[durable_objects.bindings]]` entries in wrangler.toml.
@@ -116,6 +117,29 @@ function getApp(env: Env): { app: Hono; cms: CmsRuntimeRef } {
       return c.json({ error: msg }, 500);
     }
   });
+
+  // Test-only bypass: seed InventoryActor stock without going through
+  // the staff-gated `/staff/api/restock` (which needs a real session
+  // cookie). Gated on the SAME flag that gates FakeProvider, so this
+  // is impossible to hit in production unless an operator explicitly
+  // sets FAKE_PAYMENT_PROVIDER=1 (which would also disable real
+  // payments). Anyone copying this starter and removing the gate is
+  // making the same mistake as removing the gate on FakeProvider —
+  // not subtle. See test/integration/smoke.ts for the only caller.
+  if (env.FAKE_PAYMENT_PROVIDER === "1") {
+    app.post("/__test/restock", async (c) => {
+      const body = (await c.req.json()) as {
+        productSlug?: string;
+        addQty?: number;
+      };
+      if (!body.productSlug || !body.addQty || body.addQty < 1) {
+        return c.json({ error: "missing productSlug / addQty" }, 400);
+      }
+      const inv = getInventoryActor(env);
+      await inv.restock(body.productSlug, body.addQty);
+      return c.json({ ok: true });
+    });
+  }
 
   appCache = { app, cms };
   return appCache;

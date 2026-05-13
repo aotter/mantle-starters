@@ -80,9 +80,15 @@ export interface Env {
   readonly PAYMENT_CALLBACK_QUEUE: Queue;
 
   /** Downstream-work queue. orders.after_create lifecycle producer +
-   *  cron `inventory.reconcile.tick` producer + (PR 3) sweeper +
-   *  email/notify consumer. */
+   *  cron `inventory.reconcile.tick` producer + sweeper + email /
+   *  notify consumer. */
   readonly ORDER_WORK_QUEUE: Queue;
+
+  /** Test-only — when "1" (set by `[env.test.vars]` in wrangler.toml),
+   *  the worker mounts FakeProvider AND the `/__test/restock` bypass
+   *  used by the integration smoke. NEVER set in production. Reads as
+   *  optional so the runtime type-checks cleanly when unset. */
+  readonly FAKE_PAYMENT_PROVIDER?: string;
 }
 
 export function buildCmsConfig(env: Env, auth: Auth): CmsConfig {

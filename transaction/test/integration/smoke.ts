@@ -393,6 +393,117 @@ check("readOrderStatus: missing orderId query → 400", async () => {
   await expectStatus("/api/order/status", 400);
 });
 
+// ── tracked-inventory end-to-end (PR 4 commerce correctness) ─────────
+
+check(
+  "tracked e2e: restock → checkout → succeeded callback → inventory committed + order line items",
+  async () => {
+    // 1. Seed stock via the test bypass (/__test/restock mounted only
+    //    when FAKE_PAYMENT_PROVIDER=1; same flag that gates the fake
+    //    provider, so this is also disabled in prod).
+    const restockRes = await fetch(`${BASE_URL}/__test/restock`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ productSlug: "tracked-out-of-stock", addQty: 3 }),
+    });
+    if (restockRes.status !== 200) {
+      fail(`/__test/restock → ${restockRes.status}: ${(await restockRes.text()).slice(0, 200)}`);
+    }
+
+    // 2. Build a fresh cart and check out.
+    const cartId = `e2e-tracked-${Date.now()}`;
+    await fetch(`${BASE_URL}/api/cart/add`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        cartId,
+        productSlug: "tracked-out-of-stock",
+        qty: 2,
+      }),
+    });
+    const startRes = await fetch(`${BASE_URL}/api/checkout/start`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        cartId,
+        customerEmail: "e2e@example.com",
+      }),
+    });
+    if (startRes.status !== 200) {
+      fail(`/api/checkout/start (tracked) → ${startRes.status}: ${(await startRes.text()).slice(0, 200)}`);
+    }
+    const startBody = await jsonBody<{ orderId: string }>(startRes);
+    const orderId = startBody.orderId;
+    if (!orderId) fail("no orderId from tracked checkoutStart");
+
+    // 3. Drive the provider callback.
+    const cbRes = await fetch(`${BASE_URL}/api/payment/callback`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        eventId: `evt_e2e_${orderId}`,
+        orderId,
+        status: "succeeded",
+        amount: { minor: 2000, currency: "USD" },
+        paymentIntentId: `pi_e2e_${orderId}`,
+        customerEmail: "e2e@example.com",
+      }),
+    });
+    if (cbRes.status !== 200) {
+      fail(`tracked callback → ${cbRes.status}: ${(await cbRes.text()).slice(0, 200)}`);
+    }
+
+    // 4. Poll for the order row to appear with items + customerEmail.
+    const order = await poll<{
+      exists: boolean;
+      orderStatus?: string;
+      customerEmail?: string;
+      items?: Array<{ productSlug: string; qty: number; priceMinorAtPurchase: number }>;
+      paymentProvider?: string;
+      paymentIntentId?: string;
+    }>(
+      async () => {
+        const res = await fetch(
+          `${BASE_URL}/api/order/status?orderId=${encodeURIComponent(orderId)}`,
+        );
+        if (res.status !== 200) return null;
+        const body = await jsonBody<{
+          exists: boolean;
+          orderStatus?: string;
+          customerEmail?: string;
+          items?: Array<{ productSlug: string; qty: number; priceMinorAtPurchase: number }>;
+          paymentProvider?: string;
+          paymentIntentId?: string;
+        }>(res);
+        if (body.exists && body.orderStatus === "placed") return body;
+        return null;
+      },
+      10_000,
+      `tracked order ${orderId} to flip to placed`,
+    );
+
+    if (order.customerEmail !== "e2e@example.com") {
+      fail(`expected customerEmail=e2e@example.com; got ${order.customerEmail}`);
+    }
+    if (!order.items || order.items.length !== 1) {
+      fail(`expected 1 line item; got ${JSON.stringify(order.items)}`);
+    }
+    const line = order.items[0]!;
+    if (line.productSlug !== "tracked-out-of-stock" || line.qty !== 2) {
+      fail(`line item shape wrong: ${JSON.stringify(line)}`);
+    }
+    if (typeof line.priceMinorAtPurchase !== "number" || line.priceMinorAtPurchase <= 0) {
+      fail(`expected priceMinorAtPurchase > 0; got ${line.priceMinorAtPurchase}`);
+    }
+    if (order.paymentProvider !== "fake") {
+      fail(`expected paymentProvider=fake; got ${order.paymentProvider}`);
+    }
+    if (order.paymentIntentId !== `pi_e2e_${orderId}`) {
+      fail(`expected paymentIntentId=pi_e2e_${orderId}; got ${order.paymentIntentId}`);
+    }
+  },
+);
+
 // ── checkout return ──────────────────────────────────────────────────
 
 check(

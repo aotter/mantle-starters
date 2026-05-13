@@ -21,6 +21,33 @@ export interface ReadOrderStatusOutput {
   readonly orderId: string;
   readonly exists: boolean;
   readonly orderStatus?: string;
+  readonly currency?: string;
+  readonly totalMinor?: number;
+  readonly customerEmail?: string;
+  readonly paymentProvider?: string;
+  readonly paymentIntentId?: string;
+  readonly items?: ReadonlyArray<{
+    readonly productSlug: string;
+    readonly qty: number;
+    readonly priceMinorAtPurchase: number;
+    readonly title?: string;
+  }>;
+}
+
+interface StoredOrderData {
+  orderNumber?: string;
+  orderStatus?: string;
+  currency?: string;
+  totalMinor?: number;
+  customerEmail?: string;
+  paymentProvider?: string;
+  paymentIntentId?: string;
+  items?: ReadonlyArray<{
+    productSlug: string;
+    qty: number;
+    priceMinorAtPurchase: number;
+    title?: string;
+  }>;
 }
 
 export function buildReadOrderStatus(): AnyHandler {
@@ -33,11 +60,17 @@ export function buildReadOrderStatus(): AnyHandler {
         id: orderEntryId(input.orderId),
         collection: "orders",
       });
-      const d = row.data as { orderNumber?: string; orderStatus?: string };
+      const d = row.data as StoredOrderData;
       return {
         orderId: d.orderNumber ?? input.orderId,
         exists: true,
         orderStatus: d.orderStatus ?? "placed",
+        currency: d.currency,
+        totalMinor: d.totalMinor,
+        customerEmail: d.customerEmail,
+        paymentProvider: d.paymentProvider,
+        paymentIntentId: d.paymentIntentId,
+        items: d.items,
       } satisfies ReadOrderStatusOutput;
     } catch (err) {
       // getEntry throws DiagnosticError on not-found. For our caller

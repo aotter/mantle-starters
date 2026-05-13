@@ -59,10 +59,12 @@ export class FakeProvider implements PaymentProvider {
       orderId?: string;
       status?: "succeeded" | "failed" | "expired";
       amount?: { minor?: number; currency?: string };
+      paymentIntentId?: string;
+      customerEmail?: string;
     };
     if (!body.eventId || !body.orderId || !body.status || !body.amount) {
       throw new Error(
-        "FakeProvider.parseCallback: missing field — body must be { eventId, orderId, status, amount: { minor, currency } }",
+        "FakeProvider.parseCallback: missing field — body must be { eventId, orderId, status, amount: { minor, currency }, paymentIntentId?, customerEmail? }",
       );
     }
     return {
@@ -73,6 +75,9 @@ export class FakeProvider implements PaymentProvider {
         minor: body.amount.minor ?? 0,
         currency: body.amount.currency ?? "USD",
       },
+      paymentIntentId: body.paymentIntentId ?? body.eventId,
+      customerEmail: body.customerEmail,
+      provider: "fake",
     };
   }
 
