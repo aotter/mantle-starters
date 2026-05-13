@@ -507,27 +507,21 @@ check(
 // ── checkout return ──────────────────────────────────────────────────
 
 check(
-  "GET /api/payment/return?orderId=X&status=succeeded returns providerStatus + order shape",
+  "GET /api/payment/return?orderId=X&status=succeeded → 302 /order/X",
   async () => {
     if (!savedOrderId) fail("no savedOrderId");
-    const res = await expectStatus(
-      `/api/payment/return?orderId=${encodeURIComponent(savedOrderId!)}&status=succeeded`,
-      200,
+    const res = await fetch(
+      `${BASE_URL}/api/payment/return?orderId=${encodeURIComponent(
+        savedOrderId!,
+      )}&status=succeeded`,
+      { redirect: "manual" },
     );
-    const body = await jsonBody<{
-      orderId: string;
-      providerStatus: string;
-      exists: boolean;
-      orderStatus?: string;
-    }>(res);
-    if (body.orderId !== savedOrderId) {
-      fail(`expected orderId=${savedOrderId}; got ${body.orderId}`);
+    if (res.status !== 302) {
+      fail(`expected 302; got ${res.status}: ${(await res.text()).slice(0, 200)}`);
     }
-    if (body.providerStatus !== "succeeded") {
-      fail(`expected providerStatus=succeeded; got ${body.providerStatus}`);
-    }
-    if (!body.exists || body.orderStatus !== "placed") {
-      fail(`expected exists=true, orderStatus=placed; got ${JSON.stringify(body)}`);
+    const loc = res.headers.get("location") ?? "";
+    if (!loc.includes(`/order/${encodeURIComponent(savedOrderId!)}`)) {
+      fail(`expected Location to point at /order/${savedOrderId}; got ${loc}`);
     }
   },
 );

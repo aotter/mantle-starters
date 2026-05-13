@@ -49,6 +49,16 @@ Pick the closer template based on the provider's docs. Both templates implement 
 
 Per-product setting via the `inventoryMode` Schema field: `tracked` or `untracked`.
 
+**Compatibility constraint — tracked + provider type:** Tracked inventory relies on the `InventoryActor`'s 10-minute reservation TTL. If the customer pays via an **immediate-capture** flow (Stripe Checkout cards, Paddle, Lemon Squeezy, ECPay credit-card, PayUni credit-card — anything where the success callback fires within seconds), tracked mode works as advertised: reservation holds until `commit(orderId)` lands.
+
+If the customer pays via a **delayed-settlement** flow (Stripe ACH / SEPA / Bacs / iDEAL bank transfer, ECPay ATM转账, PayUni ATM, BLIK delayed) the success callback can land **hours or days later** — past the 10-minute reservation window. By then the reservation has been auto-released; `commit(orderId)` becomes a no-op and the order row is created without decrementing stock. Result: stock oversells.
+
+If the user's provider answer includes delayed-settlement methods AND they want tracked inventory, either:
+  1. Disable the delayed methods at the provider dashboard (cards only), OR
+  2. Mark inventory as `untracked` and gate availability some other way (manual restock on each order, batch processing, etc.).
+
+This constraint lifts in `commerce-pro` (roadmap) which models a `pending → reserved → committed` order state separate from the inventory reservation.
+
 ### 4. Currency
 
 > "Which currency? (USD / TWD / JPY / EUR / ...)"
