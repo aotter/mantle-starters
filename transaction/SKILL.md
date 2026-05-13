@@ -1,6 +1,6 @@
 ---
 archetype: transaction
-status: roadmap
+status: ready
 starter_repo: AotterClam/clam-cms-starters
 starter_path: transaction
 overlays: []
