@@ -53,13 +53,21 @@ export interface ProductDetailContext {
     readonly currency: string;
     readonly description?: string;
     readonly inventoryMode: "tracked" | "untracked";
-    readonly available?: number;
   };
 }
 
+/**
+ * The Add-to-Cart button is unconditionally rendered. Stock
+ * authority lives server-side: `/api/cart/add` (and ultimately
+ * `/api/checkout/start` → `InventoryActor.reserve`) is the gate. If
+ * the customer clicks Add for a tracked product with no available
+ * stock, the cart-add response surfaces the error inline. We do NOT
+ * surface a server-rendered "Out of stock" state because the product
+ * page is cacheable / shared between visitors; stock state can flip
+ * between render time and click time.
+ */
 export function renderProductDetail(ctx: ProductDetailContext): string {
   const p = ctx.product;
-  const outOfStock = p.inventoryMode === "tracked" && (p.available ?? 0) <= 0;
   const tree = (
     <Layout title={p.title}>
       <p>
@@ -68,24 +76,20 @@ export function renderProductDetail(ctx: ProductDetailContext): string {
       <h1>{p.title}</h1>
       <p class="price-tag">{formatPrice(p.priceMinor, p.currency)}</p>
       {p.description ? <p>{p.description}</p> : null}
-      {outOfStock ? (
-        <div class="notice error">Out of stock</div>
-      ) : (
-        <div>
-          <label for="qty">Quantity</label>
-          <input id="qty" type="number" min="1" max="10" value="1" style="width: 5rem" />
-          <br />
-          <button
-            id="add-to-cart"
-            class="primary"
-            data-slug={p.slug}
-            type="button"
-          >
-            Add to Cart
-          </button>
-          <div id="add-result"></div>
-        </div>
-      )}
+      <div>
+        <label for="qty">Quantity</label>
+        <input id="qty" type="number" min="1" max="10" value="1" style="width: 5rem" />
+        <br />
+        <button
+          id="add-to-cart"
+          class="primary"
+          data-slug={p.slug}
+          type="button"
+        >
+          Add to Cart
+        </button>
+        <div id="add-result"></div>
+      </div>
       <script>{raw(ADD_TO_CART_JS)}</script>
     </Layout>
   );

@@ -123,18 +123,36 @@ function getApp(env: Env): { app: Hono; cms: CmsRuntimeRef } {
     }
   });
 
+  // Provider return — the customer's browser lands here after the
+  // provider redirects them post-payment. checkoutReturn verifies any
+  // provider-signed query params (mandatory for merchant-form
+  // providers like ECPay / PayUni; trust-the-webhook for hosted
+  // checkout). On success, 302 to /order/:orderId so the customer
+  // sees the receipt. If the provider's return params are bad we
+  // still redirect — the order page polls /api/order/status and
+  // surfaces whatever state actually persisted.
   app.get("/api/payment/return", async (c) => {
     try {
       const runtime = await cms.get();
-      const result = await invokeHandler<{ requestUrl: string }, unknown>(
+      const result = (await invokeHandler<{ requestUrl: string }, unknown>(
         checkoutReturn,
         { requestUrl: c.req.url },
         { runtime },
-      );
-      return c.json(result as Record<string, unknown>);
+      )) as { orderId?: string };
+      const orderId = result.orderId ?? c.req.query("orderId") ?? "";
+      if (!orderId) {
+        return c.text("missing orderId after return", 400);
+      }
+      return c.redirect(`/order/${encodeURIComponent(orderId)}`, 302);
     } catch (err) {
+      // Failed signature verification or transient error. Still try
+      // to land the customer on a useful page rather than a JSON 500.
+      const orderId = c.req.query("orderId") ?? "";
+      if (orderId) {
+        return c.redirect(`/order/${encodeURIComponent(orderId)}`, 302);
+      }
       const msg = err instanceof Error ? err.message : String(err);
-      return c.json({ error: msg }, 500);
+      return c.text(`payment return error: ${msg}`, 500);
     }
   });
 
