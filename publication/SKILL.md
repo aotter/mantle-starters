@@ -66,16 +66,13 @@ Each probe is a multiple-choice picker the user picks from. Ask one, react to th
 ## Site defaults
 
 - **Mood default:** editorial / playful. Heavier than `presence` but still grounded.
-- **card1 verb register:** active. (zh-TW illustrative: "開站", "上線", "可以開始寫了"; pick the natural verb that says "this is open to publish".)
+- **card1 verb register:** active. Pick a verb in the user's language that says "this site is open to publish" / "the writing surface is live" — translate the register, don't transliterate.
 - **Avoid:** SEO-marketing voice. The user almost never opened with "I want to rank for X."
 
 ## Editor first-prompt template (becomes card3 body)
 
-```text
-打開後台，列出 posts collection（應該還空著）。然後幫我起一篇 "Hello, {{BRAND}}" 的草稿：一段話介紹這站、一段話講為什麼存在。語氣參考 mantle/site.md 的 voice。先存成 draft，我看過再發佈。
-```
+Template is in EN as a placeholder. The install Skill's step that fills `## editor first_prompt:` renders it in the user's language with `{{BRAND}}` substituted.
 
-(EN illustrative:)
 ```text
 Open the admin and list the posts collection (should be empty). Draft a "Hello, {{BRAND}}" post: one paragraph introducing the site, one paragraph on why it exists. Match the voice in mantle/site.md. Leave as draft so I can review before publishing.
 ```
