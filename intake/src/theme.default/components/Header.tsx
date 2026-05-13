@@ -33,35 +33,37 @@ export function Header(props: HeaderProps) {
         </a>
       </nav>
       <div class="site-controls">
-        <div class="popover" data-popover-root="lang">
-          <button
-            type="button"
-            class="popover-trigger popover-trigger-text"
-            data-popover-trigger="lang"
-            aria-haspopup="menu"
-            aria-expanded="false"
-            aria-label={t.lang.ariaLabel}
-          >
-            {raw(icon("globe", { size: 14 }))}
-            <span class="popover-trigger-label">{localeLabel(locale)}</span>
-            {raw(icon("chevron-down", { size: 12 }))}
-          </button>
-          <div class="popover-menu" role="menu" data-popover-menu="lang" hidden>
-            {localesAvailable.map((loc) => (
-              <button
-                type="button"
-                class="popover-item"
-                role="menuitemradio"
-                data-value={loc}
-                data-current-locale={locale}
-                aria-checked={loc.toLowerCase() === locale.toLowerCase() ? "true" : "false"}
-              >
-                <span class="popover-item-label">{localeLabel(loc)}</span>
-                <span class="popover-item-check">{raw(icon("check"))}</span>
-              </button>
-            ))}
+        {localesAvailable.length > 1 && (
+          <div class="popover" data-popover-root="lang">
+            <button
+              type="button"
+              class="popover-trigger popover-trigger-text"
+              data-popover-trigger="lang"
+              aria-haspopup="menu"
+              aria-expanded="false"
+              aria-label={t.lang.ariaLabel}
+            >
+              {raw(icon("globe", { size: 14 }))}
+              <span class="popover-trigger-label">{localeLabel(locale)}</span>
+              {raw(icon("chevron-down", { size: 12 }))}
+            </button>
+            <div class="popover-menu" role="menu" data-popover-menu="lang" hidden>
+              {localesAvailable.map((loc) => (
+                <button
+                  type="button"
+                  class="popover-item"
+                  role="menuitemradio"
+                  data-value={loc}
+                  data-current-locale={locale}
+                  aria-checked={loc.toLowerCase() === locale.toLowerCase() ? "true" : "false"}
+                >
+                  <span class="popover-item-label">{localeLabel(loc)}</span>
+                  <span class="popover-item-check">{raw(icon("check"))}</span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
         <div class="popover" data-popover-root="theme">
           <button
             type="button"
