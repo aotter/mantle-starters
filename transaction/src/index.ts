@@ -9,6 +9,7 @@ import {
   type CreateAuthConfig,
 } from "@aotterclam/clam-cms-cloudflare";
 import { buildCmsConfig, type Env } from "./clamConfig.js";
+import { csrfGuard } from "./csrf.js";
 import { invokeHandler } from "./handlers/_context.js";
 import { buildQueueDispatcher, sendOrderWork } from "./handlers/orderConsumer.js";
 import { loadProductCatalog } from "./handlers/_productEnrichment.js";
@@ -73,6 +74,17 @@ function getApp(env: Env): { app: Hono; cms: CmsRuntimeRef } {
   const cms = createCmsRef(buildCmsConfig(env, auth));
   const app = new Hono();
   app.all("/api/auth/*", (c) => auth.handler(c.req.raw));
+
+  // CSRF gate on browser-origin POSTs. Mounted BEFORE
+  // mountServerEndpoints so the middleware fires before the manifest-
+  // declared handlers. Provider webhook (/api/payment/callback) is
+  // intentionally NOT gated — it's signed via the provider's own
+  // scheme and is cross-origin by design. See src/csrf.ts for the
+  // gating rationale.
+  app.use("/api/cart/add", csrfGuard);
+  app.use("/api/checkout/start", csrfGuard);
+  app.use("/staff/api/restock", csrfGuard);
+
   mountServerEndpoints(app, cms);
   mountMcp(app, cms, {
     path: "/staff/mcp",

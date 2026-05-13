@@ -582,6 +582,42 @@ check("GET /api/cart/get?cartId=… returns empty 404 for unknown cart", async (
   await expectStatus("/api/cart/get?cartId=nonexistent-cart-z", 404);
 });
 
+// ── CSRF gate (PR 5 review) ──────────────────────────────────────────
+
+check("CSRF: cross-site POST /api/cart/add → 403", async () => {
+  const res = await fetch(`${BASE_URL}/api/cart/add`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      // Browser-supplied signal for a third-party-origin form post.
+      "sec-fetch-site": "cross-site",
+      origin: "https://attacker.example",
+    },
+    body: JSON.stringify({
+      cartId: "csrf-victim",
+      productSlug: "smoke-product",
+      qty: 1,
+    }),
+  });
+  if (res.status !== 403) {
+    fail(`expected 403 on cross-site POST; got ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  }
+});
+
+check("CSRF: origin-mismatch POST /api/checkout/start → 403", async () => {
+  const res = await fetch(`${BASE_URL}/api/checkout/start`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://attacker.example",
+    },
+    body: JSON.stringify({ cartId: "x", customerEmail: "x@example.com" }),
+  });
+  if (res.status !== 403) {
+    fail(`expected 403 on origin-mismatch; got ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  }
+});
+
 // ── runner ────────────────────────────────────────────────────────────
 
 runAll().catch((err: unknown) => {
