@@ -1,51 +1,48 @@
 import type { AnyHandler } from "@aotter/mantle-runtime";
-import { checkoutConfirm } from "./checkoutConfirm.js";
+import type { Env } from "../mantleConfig.js";
+import { buildAddToCart } from "./addToCart.js";
+import { buildCheckoutStart } from "./checkoutStart.js";
+import { buildCheckoutConfirm } from "./checkoutConfirm.js";
+import { buildCheckoutReturn } from "./checkoutReturn.js";
+import { buildReadOrderStatus } from "./readOrderStatus.js";
 
-export interface HandlerEnv {
-  // Provider secrets are declared per the chosen provider in
-  // src/payment/index.ts; the actual ref-handler implementations
-  // close over env at boot — see the per-handler files.
-}
+export type HandlerEnv = Env;
 
 /**
- * Stub handler registry — PR 1 scaffold. Every Procedure declared
- * with `handler.kind: ref` resolves through this map; in PR 1 each
- * slot is a `notImplemented` stub that throws on invoke (the runtime
- * only checks at boot that every ref name is registered, not that
- * the handler actually does anything). `pnpm validate` + `pnpm
- * typecheck` pass; runtime calls fail loud with a message that names
- * the handler + the PR that lands its real implementation.
+ * Procedure ref-handler registry. The runtime resolves
+ * `Procedure.handler.ref` by name against this map at boot;
+ * `pnpm validate` warns at CLI time if any ref name is missing.
  *
- * `checkoutConfirm` is the one exception — it's imported from its
- * own module (`./checkoutConfirm.ts`) because the flow doc lives
- * there too (idempotency hazard + "seen-processing → completed"
- * sweeper pattern). PR 2 fills in the body of that one file without
- * touching this registry.
+ * Status as of PR 2:
+ *   - addToCart, checkoutStart, checkoutConfirm, checkoutReturn,
+ *     readOrderStatus → live, exercised by integration smoke.
+ *   - enqueueOrderConfirmed, snapshotInventory, restockProduct →
+ *     still PR-1-style stubs; PR 3 fills them in.
  */
-const HANDLER_TO_PR: Readonly<Record<string, "PR 2" | "PR 3">> = {
-  "addToCart": "PR 2",
-  "checkoutStart": "PR 2",
-  "checkoutConfirm": "PR 2",
-  "checkoutReturn": "PR 2",
-  "readOrderStatus": "PR 2",
-  "enqueueOrderConfirmed": "PR 3",
-  "snapshotInventory": "PR 3",
-  "restockProduct": "PR 3",
+const PR3_PENDING: Readonly<Record<string, true>> = {
+  "enqueueOrderConfirmed": true,
+  "snapshotInventory": true,
+  "restockProduct": true,
 };
 
-export function buildHandlers(_env: HandlerEnv): Readonly<Record<string, AnyHandler>> {
-  return Object.fromEntries(
-    Object.entries(HANDLER_TO_PR).map(([name, pr]) => [
-      name,
-      name === "checkoutConfirm" ? checkoutConfirm : notImplemented(name, pr),
-    ]),
+export function buildHandlers(env: HandlerEnv): Readonly<Record<string, AnyHandler>> {
+  const live: Record<string, AnyHandler> = {
+    "addToCart": buildAddToCart(env),
+    "checkoutStart": buildCheckoutStart(env),
+    "checkoutConfirm": buildCheckoutConfirm(env),
+    "checkoutReturn": buildCheckoutReturn(env),
+    "readOrderStatus": buildReadOrderStatus(),
+  };
+  const pending: Record<string, AnyHandler> = Object.fromEntries(
+    Object.keys(PR3_PENDING).map((name) => [name, notImplemented(name, "PR 3")]),
   );
+  return { ...live, ...pending };
 }
 
-function notImplemented(name: string, pr: "PR 2" | "PR 3"): AnyHandler {
+function notImplemented(name: string, pr: "PR 3"): AnyHandler {
   return (async () => {
     throw new Error(
-      `transaction-starter: ref handler '${name}' is a PR 1 scaffold stub; ` +
+      `transaction-starter: ref handler '${name}' is a PR 1/2 scaffold stub; ` +
         `live implementation lands in ${pr}.`,
     );
   }) as unknown as AnyHandler;

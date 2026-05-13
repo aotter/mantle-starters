@@ -1,41 +1,50 @@
 /**
- * Provider selector — INTENTIONALLY EMPTY in the shipped starter.
+ * Provider selector. Starter ships provider-blank — Mantle wires the
+ * real provider in `src/payment/providers/<name>.ts` during install
+ * (see `SKILL.md` § "Payment provider wiring"). Until that runs,
+ * this file fails loud.
  *
- * This starter is provider-blank: no Stripe / ECPay / PayUni
- * implementation ships. The transaction install Skill (lives at
- * `mantle-starters/transaction/SKILL.md` when this is the ready
- * archetype) tells Mantle to:
+ * One exception: integration tests can route through FakeProvider by
+ * setting `FAKE_PAYMENT_PROVIDER=1` (the test wrangler profile sets
+ * this). FakeProvider has no signature verification; throws if used
+ * outside test mode.
  *
- *   1. Ask the user which payment provider they want (Stripe /
- *      ECPay / PayUni / custom).
- *   2. Scaffold `src/payment/providers/<provider>.ts` inside the
- *      user's repo during install, implementing PaymentProvider
- *      against the provider's docs.
- *   3. Replace this file's export to instantiate the new provider.
- *   4. Document the required env vars in `mantle/site.md`; the user
- *      sets them via `wrangler secret put` during provision.
- *
- * Until Mantle runs the install step above, this file is a stub
- * that fails-loud at boot — `pnpm dev` (or first request) throws
- * with a clear "provider not configured" message rather than
- * pretending to work.
- *
- * Why no default impl: keeping the starter provider-agnostic means
- * no Stripe bias for non-US markets and no .example files that rot.
- * Adding a new provider doesn't need a starter PR — only a SKILL
- * update that teaches Mantle the new provider's shape.
+ * Mantle's install procedure replaces this whole file:
+ *   1. Pick a template (redirect-checkout / merchant-form) per the
+ *      user's provider choice.
+ *   2. Implement the real provider in src/payment/providers/<name>.ts.
+ *   3. Replace the import + instantiation below.
+ *   4. Update PaymentEnv to list the provider's secrets.
+ *   5. Declare the secrets in wrangler.toml + set via `wrangler secret put`.
  */
 
 import type { PaymentProvider } from "./provider.js";
+import { FakeProvider } from "./providers/_templates/fake.js";
 
 export interface PaymentEnv {
-  // Mantle replaces this when it wires the chosen provider.
-  // Example after Stripe wiring:
+  /** Test-only — when set ("1") in `[env.test]` wrangler.toml, the
+   *  FakeProvider wires up so smoke tests can drive the end-to-end
+   *  happy path without a real provider account. NEVER set this in
+   *  production. */
+  readonly FAKE_PAYMENT_PROVIDER?: string;
+  /** Worker public origin. Used by FakeProvider to point its
+   *  simulated redirect at the worker's own callback path. */
+  readonly PUBLIC_ORIGIN?: string;
+  // Mantle replaces this when wiring a real provider. Examples:
   //   readonly STRIPE_SECRET_KEY: string;
   //   readonly STRIPE_WEBHOOK_SECRET: string;
+  //   readonly ECPAY_MERCHANT_ID: string;
+  //   readonly ECPAY_HASH_KEY: string;
+  //   readonly ECPAY_HASH_IV: string;
 }
 
-export function buildPaymentProvider(_env: PaymentEnv): PaymentProvider {
+export function buildPaymentProvider(env: PaymentEnv): PaymentProvider {
+  if (env.FAKE_PAYMENT_PROVIDER === "1") {
+    const origin = env.PUBLIC_ORIGIN ?? "http://localhost:8788";
+    return new FakeProvider({
+      callbackUrl: `${origin}/api/payment/callback`,
+    });
+  }
   throw new Error(
     "PaymentProvider not configured. Run the install skill (Mantle) " +
       "to wire a provider, or implement PaymentProvider in " +

@@ -5,9 +5,13 @@ import {
   mountMcp,
   mountServerEndpoints,
   type Auth,
+  type CmsRuntimeRef,
   type CreateAuthConfig,
 } from "@aotter/mantle-cloudflare";
 import { buildCmsConfig, type Env } from "./mantleConfig.js";
+import { buildQueueDispatcher } from "./handlers/orderConsumer.js";
+import { buildReadOrderStatus } from "./handlers/readOrderStatus.js";
+import { buildCheckoutReturn } from "./handlers/checkoutReturn.js";
 
 // Re-export DurableObject classes so Workers can resolve them by name
 // from the `[[durable_objects.bindings]]` entries in wrangler.toml.
@@ -16,18 +20,19 @@ export { InventoryActor } from "./durableObjects/InventoryActor.js";
 /**
  * Transaction starter worker entrypoint.
  *
- * Mounts: Better Auth /api/auth/*, server endpoints (manifest-declared
- * HTTP Triggers + view REST), and the dual MCP surfaces.
+ * Mounts: Better Auth `/api/auth/*`, manifest-declared HTTP Triggers
+ * + view REST (via `mountServerEndpoints`), dual MCP (`/staff/mcp` +
+ * `/mcp`), plus two custom GET routes for the customer's payment-
+ * return + order-status poll (v0.1 Triggers can't express GET; the
+ * routes call into the `checkoutReturn` / `readOrderStatus`
+ * Procedures via the runtime — same code path MCP / POST-Trigger
+ * dispatch uses).
  *
- * Public HTML routes (product list, cart, checkout, order confirmation)
- * are NOT mounted in PR 1 — those land with templates in PR 4. For now
- * the customer-facing flow is the HTTP Trigger routes declared in
- * manifests/checkout.yaml (/api/cart/add, /api/checkout/start, etc.)
- * plus the public View REST at /api/views/products-public.
- *
- * Queue consumer + queue producer wiring: see end of file (`queue`).
+ * Queue consumer: routes `payment_callback_queue` +
+ * `order_work_queue` (both `max_concurrency: 1`) to the dispatcher
+ * in `src/handlers/orderConsumer.ts`.
  */
-let appCache: Hono | null = null;
+let appCache: { app: Hono; cms: CmsRuntimeRef } | null = null;
 
 const AUTH_NOT_CONFIGURED = {
   error: "auth_not_configured",
@@ -53,7 +58,7 @@ function buildAuthFromEnv(env: Env): Auth {
   });
 }
 
-function getApp(env: Env): Hono {
+function getApp(env: Env): { app: Hono; cms: CmsRuntimeRef } {
   if (appCache) return appCache;
   const auth = buildAuthFromEnv(env);
   const cms = createCmsRef(buildCmsConfig(env, auth));
@@ -70,8 +75,47 @@ function getApp(env: Env): Hono {
     surface: "public",
     requiredScope: "mcp:read",
   });
-  appCache = app;
-  return app;
+
+  // Build the GET-route handlers once at app boot; they close over
+  // env + runtime. The shared handler functions also live in the
+  // `handlers/index.ts` registry — same code reachable through MCP
+  // and POST Triggers. The duplication here is just to expose them
+  // via GET, which v0.1's Trigger.source.method enum doesn't cover.
+  const readOrderStatus = buildReadOrderStatus();
+  const checkoutReturn = buildCheckoutReturn(env);
+
+  app.get("/api/order/status", async (c) => {
+    const orderId = c.req.query("orderId") ?? "";
+    if (!orderId) return c.json({ error: "missing orderId" }, 400);
+    try {
+      const runtime = await cms.get();
+      const result = await (readOrderStatus as unknown as (
+        input: { orderId: string },
+        ctx: { runtime: typeof runtime },
+      ) => Promise<unknown>)({ orderId }, { runtime });
+      return c.json(result as Record<string, unknown>);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return c.json({ error: msg }, 500);
+    }
+  });
+
+  app.get("/api/payment/return", async (c) => {
+    try {
+      const runtime = await cms.get();
+      const result = await (checkoutReturn as unknown as (
+        input: { requestUrl: string },
+        ctx: { runtime: typeof runtime },
+      ) => Promise<unknown>)({ requestUrl: c.req.url }, { runtime });
+      return c.json(result as Record<string, unknown>);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return c.json({ error: msg }, 500);
+    }
+  });
+
+  appCache = { app, cms };
+  return appCache;
 }
 
 export default {
@@ -79,31 +123,22 @@ export default {
     if (!env.BETTER_AUTH_SECRET) {
       return Response.json(AUTH_NOT_CONFIGURED, { status: 503 });
     }
-    return getApp(env).fetch(req, env, ctx);
+    return getApp(env).app.fetch(req, env, ctx);
   },
 
-  /**
-   * Queue consumer dispatcher. Routes by `batch.queue` (binding name):
-   *
-   *   - `payment_callback_queue` → paymentCallbackConsumer
-   *     (verify-and-process payment provider async callbacks under
-   *      the find-and-modify lock on InventoryActor)
-   *   - `order_work_queue`       → orderWorkConsumer
-   *     (downstream effects: email, fulfillment, snapshot, reconcile)
-   *
-   * Real consumer implementations land in PR 2 + PR 3; this file
-   * just signals the shape to wrangler.toml.
-   *
-   * Scaffold behavior: `ackAll` (drop) rather than throw. The cron
-   * trigger fires every 5min and would otherwise burn through the
-   * default 3-retry budget before the DLQ-less queue silently drops
-   * the batch anyway. ack-and-warn keeps PR 1 dev sessions quiet.
-   */
-  async queue(batch: MessageBatch<unknown>, _env: Env, _ctx: ExecutionContext): Promise<void> {
-    console.warn(
-      `[transaction PR 1 scaffold] queue '${batch.queue}' received ${batch.messages.length} message(s); ` +
-        `consumer not implemented yet — acking to drop. Real consumer lands in PR 2/3.`,
-    );
-    batch.ackAll();
+  async queue(
+    batch: MessageBatch<unknown>,
+    env: Env,
+    ctx: ExecutionContext,
+  ): Promise<void> {
+    if (!env.BETTER_AUTH_SECRET) {
+      console.warn(
+        `[transaction queue] env not ready (no BETTER_AUTH_SECRET); acking batch '${batch.queue}'`,
+      );
+      batch.ackAll();
+      return;
+    }
+    const dispatch = buildQueueDispatcher(env);
+    return dispatch(batch, env, ctx);
   },
 };
