@@ -15,16 +15,6 @@ export type HandlerEnv = Env;
  * Procedure ref-handler registry. The runtime resolves
  * `Procedure.handler.ref` by name against this map at boot;
  * `pnpm validate` warns at CLI time if any ref name is missing.
- *
- * All 8 handlers live as of PR 3:
- *   - addToCart, checkoutStart, checkoutConfirm, checkoutReturn,
- *     readOrderStatus — customer-facing flow (PR 2)
- *   - enqueueOrderConfirmed — orders.after_create lifecycle target
- *     (PR 3); currently inactive because commitOrder bypasses the
- *     lifecycle, but live for when staff-side order creation routes
- *     through the runtime.
- *   - snapshotInventory — order_work_queue branch + sweeper fan-out
- *   - restockProduct — staff-gated POST /staff/api/restock
  */
 export function buildHandlers(env: HandlerEnv): Readonly<Record<string, AnyHandler>> {
   return {

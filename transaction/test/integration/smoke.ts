@@ -160,12 +160,10 @@ check("idempotency: same callback event again → no second order row", async ()
 check(
   "restockProduct: POST /staff/api/restock unauthenticated → rejected",
   async () => {
-    // Procedure declares requires.auth.all: [{ ctx.staff: [owner] }],
-    // so the runtime rejects before the handler runs. v0.1 surfaces
-    // auth-denied as a non-200; exact code varies by mount layer
-    // (Hono returns 401/403; the procedure dispatcher may return
-    // 200 with { ok:false, diagnostic } depending on path). Either
-    // way: NOT a 200 with the success shape.
+    // Auth-denied shape varies by mount layer in v0.1 — Hono may
+    // return 401/403, the procedure dispatcher may return 200 with
+    // `{ ok: false, diagnostic }`. Either is fine; the failure mode
+    // is a 200 with the success shape (`snapshotQueued: true`).
     const res = await fetch(`${BASE_URL}/staff/api/restock`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -181,16 +179,11 @@ check(
 );
 
 check("scheduled handler exists (miniflare /__scheduled trigger)", async () => {
-  // miniflare exposes /__scheduled to manually fire the worker's
-  // `scheduled()` export. The handler enqueues an
-  // `inventory.reconcile.tick`; we just verify it didn't throw.
-  // In production CF wakes us on cron schedule per wrangler.toml
-  // [triggers].crons.
+  // miniflare exposes /__scheduled to manually fire `scheduled()`.
+  // 200 = ran; 404 = route absent (older miniflare or non-miniflare
+  // runner) — either way we're just verifying the handler doesn't
+  // crash when invoked.
   const res = await fetch(`${BASE_URL}/__scheduled`);
-  // miniflare returns 200 on success; older versions or non-miniflare
-  // setups may return 404 (no /__scheduled route). Either is fine —
-  // we're just verifying our `scheduled()` handler doesn't crash
-  // *when* it's invoked.
   if (res.status !== 200 && res.status !== 404) {
     fail(`/__scheduled returned unexpected ${res.status}`);
   }
