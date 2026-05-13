@@ -1,16 +1,14 @@
 /**
  * enqueueOrderConfirmed — bound to `orders.after_create` lifecycle.
  *
- * Sends an `order.confirmed` message to ORDER_WORK_QUEUE. In PR 2
- * the payment-callback consumer does this inline (bypassing the
- * lifecycle hook because the order INSERT goes direct-to-D1 to avoid
- * needing a service-principal auth context). This handler exists so
- * that when consumers DO route through the runtime's CreateDraft
- * path (future provisioning flow / staff-side manual order entry /
- * etc.), the lifecycle hook still kicks off downstream work.
+ * Sends `order.confirmed` to ORDER_WORK_QUEUE. The payment-callback
+ * consumer also enqueues this inline (it writes the order row direct
+ * to D1, bypassing the lifecycle); this handler covers the path
+ * where order creation DOES route through the runtime — future
+ * staff-side manual entry, MCP create, etc.
  *
  * Idempotent — sending the same `order.confirmed` twice is safe;
- * `orderWorkConsumer` dedups its work via the order row's
+ * `orderWorkConsumer` dedups via the order row's
  * `confirmation_emailed_at` marker.
  */
 
@@ -22,11 +20,9 @@ export interface EnqueueOrderConfirmedEnv {
 }
 
 export interface EnqueueOrderConfirmedInput {
-  /** Lifecycle hook passes the just-created entry's data. The
-   *  orders Schema declares `orderNumber` as required, so it's safe
-   *  to assume non-null here. */
+  /** Lifecycle hook passes the created entry's data. */
   readonly data?: { orderNumber?: string };
-  /** Optional explicit override (handy if invoked from MCP). */
+  /** Explicit override when invoked directly (e.g. MCP). */
   readonly orderId?: string;
 }
 
@@ -42,14 +38,9 @@ export function buildEnqueueOrderConfirmed(
     async (input) => {
       const orderId = input.orderId ?? input.data?.orderNumber;
       if (!orderId) {
-        throw new Error(
-          "enqueueOrderConfirmed: missing orderId / data.orderNumber",
-        );
+        throw new Error("enqueueOrderConfirmed: missing orderId / data.orderNumber");
       }
-      await env.ORDER_WORK_QUEUE.send({
-        type: "order.confirmed",
-        orderId,
-      });
+      await env.ORDER_WORK_QUEUE.send({ type: "order.confirmed", orderId });
       return { enqueued: true, orderId };
     },
   );

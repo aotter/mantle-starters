@@ -7,11 +7,13 @@
  *
  * Idempotent — same productSlug repeatedly produces the same row
  * (upsert on entries.id derived from productSlug).
+ *
+ * Input shape enforced by the manifest (`required: [productSlug]`).
  */
 
 import type { AnyHandler } from "@aotterclam/clam-cms-runtime";
 import { defineHandler } from "./_context.js";
-import { inventoryActorClient } from "../durableObjects/InventoryActor.js";
+import { getInventoryActor } from "../durableObjects/InventoryActor.js";
 
 export interface SnapshotInventoryEnv {
   readonly INVENTORY_ACTOR: DurableObjectNamespace;
@@ -32,50 +34,40 @@ export function inventorySnapshotEntryId(productSlug: string): string {
   return `entry_inv_${productSlug}`;
 }
 
+/**
+ * Upsert one inventory_snapshots row. INSERT OR REPLACE keeps the
+ * row id stable so a follow-up getEntry finds the latest snapshot;
+ * COALESCE preserves the original created_at across replacements.
+ * Shared by this handler and the orderWorkConsumer's
+ * `inventory.snapshot.requested` branch.
+ */
+export async function upsertInventorySnapshot(
+  db: D1Database,
+  productSlug: string,
+  available: number,
+  reserved: number,
+): Promise<void> {
+  const now = Date.now();
+  const entryId = inventorySnapshotEntryId(productSlug);
+  const data = JSON.stringify({ productSlug, available, reserved, updatedAt: now });
+  await db
+    .prepare(
+      `INSERT OR REPLACE INTO entries
+         (id, collection, status, version, data, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?,
+               COALESCE((SELECT created_at FROM entries WHERE id = ?), ?),
+               ?)`,
+    )
+    .bind(entryId, "inventory_snapshots", "published", 1, data, entryId, now, now)
+    .run();
+}
+
 export function buildSnapshotInventory(env: SnapshotInventoryEnv): AnyHandler {
   return defineHandler<SnapshotInventoryInput, SnapshotInventoryOutput>(
     async (input) => {
-      if (!input.productSlug) {
-        throw new Error("snapshotInventory: missing productSlug");
-      }
-      const stub = env.INVENTORY_ACTOR.get(
-        env.INVENTORY_ACTOR.idFromName("singleton"),
-      );
-      const inv = inventoryActorClient(stub);
+      const inv = getInventoryActor(env);
       const { available, reserved } = await inv.snapshot(input.productSlug);
-
-      const now = Date.now();
-      const entryId = inventorySnapshotEntryId(input.productSlug);
-      const data = {
-        productSlug: input.productSlug,
-        available,
-        reserved,
-        updatedAt: now,
-      };
-      const dataJson = JSON.stringify(data);
-
-      // Upsert — first run creates; later runs update available /
-      // reserved / updatedAt. INSERT OR REPLACE keeps the row id
-      // stable so a returning getEntry call finds the latest snapshot.
-      await env.DB.prepare(
-        `INSERT OR REPLACE INTO entries
-           (id, collection, status, version, data, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?,
-                 COALESCE((SELECT created_at FROM entries WHERE id = ?), ?),
-                 ?)`,
-      )
-        .bind(
-          entryId,
-          "inventory_snapshots",
-          "published",
-          1,
-          dataJson,
-          entryId,
-          now,
-          now,
-        )
-        .run();
-
+      await upsertInventorySnapshot(env.DB, input.productSlug, available, reserved);
       return { productSlug: input.productSlug, available, reserved };
     },
   );

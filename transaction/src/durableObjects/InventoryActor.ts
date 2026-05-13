@@ -360,6 +360,20 @@ export interface InventoryActorClient {
 }
 
 /**
+ * Resolve the singleton InventoryActor and return its typed RPC
+ * client. The transaction starter uses one DO per tenant (see file
+ * docblock); this helper centralizes the `idFromName("singleton")`
+ * acquisition so callers stay one-liner.
+ */
+export function getInventoryActor(env: {
+  readonly INVENTORY_ACTOR: DurableObjectNamespace;
+}): InventoryActorClient {
+  return inventoryActorClient(
+    env.INVENTORY_ACTOR.get(env.INVENTORY_ACTOR.idFromName("singleton")),
+  );
+}
+
+/**
  * Wrap a DO stub in the typed RPC client. All handlers + consumers
  * use this; direct stub.fetch() calls go through here.
  */

@@ -146,15 +146,10 @@ export default {
   },
 
   /**
-   * Cron handler — fires per `wrangler.toml [triggers].crons`.
-   * Current schedule: every 5 minutes. Drops an
-   * `inventory.reconcile.tick` onto ORDER_WORK_QUEUE; the consumer
-   * (`orderWorkConsumer.handleReconcileTick`) sweeps stale
-   * InventoryActor locks + re-snapshots tracked products.
-   *
-   * Sweeper + snapshot run in the queue consumer (not here)
-   * intentionally — same retry semantics as every other queue
-   * message; same max_concurrency:1 serialization.
+   * Cron handler — fires per `wrangler.toml [triggers].crons` (every
+   * 5 minutes). Enqueues `inventory.reconcile.tick`; the real work
+   * (sweep stale locks + re-snapshot tracked products) runs in the
+   * queue consumer so it inherits the queue's retry + serialization.
    */
   async scheduled(
     _controller: ScheduledController,
