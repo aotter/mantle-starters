@@ -1,0 +1,19 @@
+import { parseManifestsOrThrow, type Manifest } from "@aotterclam/clam-cms-spec";
+// Wrangler's `[[rules]] type = "Text"` for `*.yaml` (see wrangler.toml)
+// makes esbuild bundle these imports as inline string exports — the
+// manifests travel with the worker code, no FS access at runtime.
+import pagesYaml from "../manifests/pages.yaml";
+import contactYaml from "../manifests/contact.yaml";
+
+/**
+ * Parse + validate the starter's manifests at module-load time. Throws
+ * on parse failure so deploys fail fast — boot validation runs again
+ * via `runtime.bootInit()` for cross-manifest checks (handler refs,
+ * Trigger targets, locale invariants).
+ */
+export function loadManifests(): readonly Manifest[] {
+  return parseManifestsOrThrow(
+    [pagesYaml, contactYaml],
+    { context: "clam-cms-starter-presence" },
+  );
+}

@@ -1,8 +1,8 @@
 {
-  "name": "clam-cms-starter-publication",
+  "name": "clam-cms-starter-intake",
   "version": "0.0.8-alpha",
   "private": true,
-  "description": "Reference publication starter for clam-cms v0.1.0 — owner-published content (articles / pages / docs-lite / basic contact form). Localized posts via translates; contact form via builtin + lifecycle hooks. Runs on wrangler dev with local D1 + KV.",
+  "description": "Intake starter for clam-cms v0.1.0 — publication shape (landing + articles + contact) plus a structured `leads` Schema with leads-recent View and CAPTCHA + Slack-notify lifecycle. Runs on wrangler dev with local D1 + KV.",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
@@ -13,7 +13,7 @@
     "validate": "clam-cms validate",
     "introspect": "clam-cms introspect",
     "emit-openapi": "clam-cms emit-openapi > openapi.json",
-    "emit-types": "clam-cms emit-types --namespace PublicationCms > clam-types.d.ts",
+    "emit-types": "clam-cms emit-types --namespace IntakeCms > clam-types.d.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "check": "pnpm validate && pnpm typecheck",
     "deploy": "wrangler deploy",

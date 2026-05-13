@@ -1,6 +1,6 @@
 {
   "name": "clam-cms-starter-blank",
-  "version": "0.0.7-alpha",
+  "version": "0.0.8-alpha",
   "private": true,
   "description": "Headless CMS starter for clam-cms — API + MCP only, no public HTML rendering. Bring your own frontend.",
   "type": "module",
@@ -16,9 +16,9 @@
     "setup:site": "node scripts/setup-site.mjs"
   },
   "dependencies": {
-    "@aotterclam/clam-cms-spec": "0.0.7-alpha",
-    "@aotterclam/clam-cms-runtime": "0.0.7-alpha",
-    "@aotterclam/clam-cms-cloudflare": "0.0.7-alpha",
+    "@aotterclam/clam-cms-spec": "0.0.8-alpha",
+    "@aotterclam/clam-cms-runtime": "0.0.8-alpha",
+    "@aotterclam/clam-cms-cloudflare": "0.0.8-alpha",
     "hono": "^4.6.20"
   },
   "devDependencies": {

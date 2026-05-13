@@ -20,46 +20,39 @@ That repo mirrors `_common/`; sync strategy is TBD.
 ```
 clam-cms-starters/
 ├── _common/                   ← shared backbone, merged into every install
-│   ├── AGENTS.md.template     ← cross-tool agent entry (~30 lines)
+│   ├── AGENTS.md.template     ← cross-tool agent entry
 │   ├── mantle/
-│   │   └── site.md.template   ← Mantle's semantic layer (~300 lines)
+│   │   └── site.md.template   ← Mantle's semantic layer
 │   └── .gitignore.template
+├── presence/                  ← landing-page / brand-presence starter
 ├── publication/               ← owner-published-content starter
-│   ├── manifests/
-│   ├── scripts/
-│   ├── src/
-│   ├── package.json
-│   └── wrangler.toml
-└── blank/                     ← headless API + MCP starter
-    ├── manifests/
-    ├── scripts/
-    ├── src/
-    ├── package.json
-    └── wrangler.toml
+├── intake/                    ← publication + structured `leads` Schema
+├── blank/                     ← headless API + MCP starter
+├── themes/                    ← theme overlays (artist-designed; v0.0.9+)
+└── sources.json               ← archetype + theme dispatch (runtime-fetched)
 ```
+
+Each archetype has its own top-level directory — there is no shared base
++ archetype overlay. The 1:1 split keeps each starter independently
+readable, validatable, and forkable.
 
 ## Source map (`sources.json`)
 
 `sources.json` at the repo root is the authoritative dispatch from
-archetype / theme key → starter directory + overlays. `create-clam-cms`
-fetches it at runtime (`raw.githubusercontent.com/AotterClam/clam-cms-starters/<ref>/sources.json`)
+archetype / theme key → starter directory + theme overlays.
+`create-clam-cms` fetches it at runtime
+(`raw.githubusercontent.com/AotterClam/clam-cms-starters/<ref>/sources.json`)
 on every install. Adding an archetype or theme = update this file; no
 `create-clam-cms` republish needed unless merge logic changes.
 
-The current shape predates the 1:1 starter split — `presence` and
-`publication` both resolve to `publication/`, and `intake` carries an
-overlay that does not yet exist (the merger silently skips missing
-overlay paths). After the split lands the paths get updated; consumers
-pick up the change on the next install.
-
 ## Install merge order
 
-For each archetype, `create-clam-cms` extracts files in this order
+For each install, `create-clam-cms` extracts files in this order
 (later files overwrite earlier files on conflict):
 
 1. `_common/<file>` → `<file>` (`.template` suffix stripped)
 2. `<archetype>/<file>` → `<file>`
-3. Each overlay listed in the archetype's source-map entry, in order
+3. Each theme overlay listed in the request, in order
 
 Then `{{PLACEHOLDER}}` macros are substituted across the result. See
 [`AotterClam/clam-cms` ADR-0016](https://github.com/AotterClam/clam-cms/blob/develop/docs/adr/0016-site-semantic-layer.md)
@@ -67,16 +60,22 @@ for the macro list.
 
 ## Adding a starter
 
-1. Create a new top-level directory in this repo (e.g. `presence/`).
+1. Create a new top-level directory in this repo (e.g. `membership/`).
 2. Add the starter sources. Keep the directory standalone — no
    `workspace:*` deps; pin `@aotterclam/clam-cms-*` to the published
    version that this starter ships against.
-3. If the starter needs to extend `_common/AGENTS.md` or
-   `_common/mantle/site.md`, add `overlay/AGENTS.md.append` and/or
-   `overlay/mantle/site.md.append` per ADR-0016.
-4. Add a corresponding entry to `sources.json` at this repo's root.
-   Runtime fetch picks it up on the next install — no `create-clam-cms`
-   republish required unless merge logic changes.
+3. Add a corresponding entry to `sources.json` under `archetypes:`.
+   Runtime fetch picks it up on the next install — no
+   `create-clam-cms` republish required unless merge logic changes.
+
+## Adding a theme
+
+1. Create a new directory under `themes/<key>/` (e.g.
+   `themes/l4-minimal-ink/`).
+2. Add `src/theme/tokens.ts` and any optional component/template
+   overrides. The theme only contains files that go *under* `src/theme/`
+   — not a full starter scaffold.
+3. Add a corresponding entry to `sources.json` under `themes:`.
 
 ## Per-starter testing
 
