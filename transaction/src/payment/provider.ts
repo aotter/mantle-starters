@@ -52,6 +52,26 @@ export interface CallbackEvent {
   readonly orderId: string;
   readonly status: "succeeded" | "failed" | "expired";
   readonly amount: { readonly minor: number; readonly currency: string };
+  /**
+   * Provider's identifier for the payment record itself (Stripe
+   * payment_intent, ECPay TradeNo, etc.). May equal eventId for
+   * providers that don't separate event-stream IDs from payment IDs.
+   * Persisted to the order row for forensics + customer-service.
+   */
+  readonly paymentIntentId: string;
+  /**
+   * Customer email, when the provider carries it. Stripe / ECPay /
+   * PayUni all do; some local-rail providers may not. The starter
+   * reads its primary source from the checkoutStart cart stash; this
+   * field is a fallback when the cart stash has expired.
+   */
+  readonly customerEmail?: string;
+  /**
+   * Provider name (e.g. "stripe", "ecpay", "fake"). Set by the
+   * adapter; the consumer persists it on the order row for
+   * forensics / dashboards across providers.
+   */
+  readonly provider: string;
 }
 
 export interface ReturnVerification {

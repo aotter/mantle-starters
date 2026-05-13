@@ -81,6 +81,17 @@ export class RedirectCheckoutTemplate implements PaymentProvider {
     //
     // Extract orderId from event.data.object.metadata.orderId (or
     // wherever this provider stashes merchant-supplied metadata).
+    //
+    // Populate CallbackEvent:
+    //   - eventId: provider's event-stream id (Stripe `evt_...`)
+    //   - paymentIntentId: payment identifier (Stripe `pi_...`,
+    //     Paddle transaction id) — distinct from eventId so the order
+    //     row records the payment, not the webhook delivery.
+    //   - customerEmail: from event.data.object.customer_email (or
+    //     equivalent). Optional — the consumer falls back to the
+    //     stashed cart's email.
+    //   - provider: a stable name string ("stripe" / "paddle" / etc.)
+    //     used by the order row for forensics.
     throw new Error("redirect-checkout template — provider impl missing");
   }
 

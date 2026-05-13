@@ -23,6 +23,11 @@ import {
   type InventoryActorClient,
 } from "../durableObjects/InventoryActor.js";
 import { upsertInventorySnapshot } from "./snapshotInventory.js";
+import {
+  deleteOrderCart,
+  readOrderCart,
+  type OrderCart,
+} from "./orderCart.js";
 
 export type PaymentCallbackMessage = CallbackEvent;
 
@@ -47,6 +52,7 @@ export async function sendOrderWork(
 
 export interface ConsumerEnv {
   readonly DB: D1Database;
+  readonly KV: KVNamespace;
   readonly INVENTORY_ACTOR: DurableObjectNamespace;
   readonly ORDER_WORK_QUEUE: Queue;
   readonly EMAIL_API_KEY?: string;
@@ -74,10 +80,10 @@ export interface ConsumerEnv {
  *
  * Side effects MUST be idempotent for the sweeper-then-retry path:
  *   - order row INSERT OR IGNORE on entries.id (deterministic from
- *     event.id) — second write is no-op.
+ *     event.orderId) — second write is no-op.
  *   - inventory commit no-ops if the reservation is already consumed.
  *   - downstream `order.confirmed` enqueue is OK to fire twice
- *     (orderWorkConsumer dedups its own side effects in PR 3).
+ *     (orderWorkConsumer dedups via confirmation_emailed_at).
  */
 export async function paymentCallbackConsumer(
   batch: MessageBatch<PaymentCallbackMessage>,
@@ -122,10 +128,12 @@ async function processCallback(
     // and re-doing the side effects is SAFE because they're idempotent:
     //   - commitOrder uses INSERT OR IGNORE on a deterministic
     //     entries.id derived from event.orderId
-    //   - releaseIfReserved is a no-op (PR 2 doesn't carry
-    //     reservationId through provider metadata)
+    //   - inv.commit(orderId) + inv.release(orderId) are no-ops if
+    //     the reservation is already gone
+    //   - deleteOrderCart on KV is a no-op if the cart was already
+    //     dropped by a prior attempt
     //   - the downstream ORDER_WORK_QUEUE.send is OK to fire twice
-    //     (orderWorkConsumer in PR 3 dedups its own work)
+    //     (orderWorkConsumer dedups via confirmation_emailed_at)
     // After re-doing the work we re-call markCompleted; the second
     // write is overwrite-same-state (storage.put is unconditional),
     // which closes the loop.
@@ -150,37 +158,25 @@ async function commitOrder(
   inv: InventoryActorClient,
   env: ConsumerEnv,
 ): Promise<void> {
-  // We don't know the reservationId here (the provider's event
-  // carries event.id + order.id, not our internal reservation id).
-  // The reservation isn't strictly needed — committing inventory is
-  // a no-op if it was never tracked, and the InventoryActor handles
-  // the case where no reservation matches.
+  // Reads the checkoutStart cart stash from KV to write a full order
+  // row (line items, customer email, subtotal). The provider's event
+  // carries enough to do dedup (eventId) + amount validation, but the
+  // line items + email need a server-side source — the KV stash IS
+  // that source.
   //
-  // The order row's id is derived from event.orderId (NOT event.id)
-  // so:
-  //   - Two arrivals of the SAME event.id → INSERT OR IGNORE same
-  //     entry, no dupe.
-  //   - Two DIFFERENT events for the same order (e.g. a retried
-  //     webhook with a fresh event.id, same payment_intent / orderId)
-  //     → still no dupe; the deterministic id deduplicates at the
-  //     order level, not the event level.
-  //   - This also enables direct getEntry lookup in readOrderStatus
-  //     and checkoutReturn (no 1000-row scan).
+  // Once-and-only-once guarantees compose:
+  //   - tryAcquire(event.eventId) at the caller deduplicates webhook
+  //     retries (different eventIds for the same orderId still hit
+  //     INSERT OR IGNORE below).
+  //   - INSERT OR IGNORE on the deterministic entries.id derived from
+  //     event.orderId makes the order row write idempotent.
+  //   - inv.commit(orderId) is idempotent (no-op if already
+  //     committed).
+  //   - deleteOrderCart at the end is also a no-op on second arrival.
+  const cart = await readOrderCart(env.KV, event.orderId);
   const now = Date.now();
   const entryId = orderEntryId(event.orderId);
-  const orderData = {
-    orderNumber: event.orderId,
-    orderStatus: "placed",
-    currency: event.amount.currency,
-    totalMinor: event.amount.minor,
-    subtotalMinor: event.amount.minor, // PR 2: no separate tax accounting
-    taxMinor: 0,
-    customerEmail: "", // PR 2: provider event doesn't carry email; PR 3 enriches
-    customerName: "",
-    stripeCheckoutId: "",
-    stripePaymentIntentId: event.eventId,
-    placedAt: now,
-  };
+  const orderData = buildOrderRowData(event, cart, now);
   // INSERT OR IGNORE makes this idempotent on retries — second arrival
   // of the same event sees the entry already exists; the INSERT is a
   // no-op (D1's SQLite INSERT OR IGNORE returns 0 changes silently).
@@ -200,13 +196,65 @@ async function commitOrder(
     )
     .run();
 
-  // Enqueue the downstream work. Safe to send twice — PR 3's
+  // Commit the inventory reservation. Keyed by orderId — see
+  // InventoryActor docblock for why deterministic keying.
+  // Idempotent: a no-op if already committed or never reserved
+  // (untracked products carry no reservation).
+  await inv.commit(event.orderId);
+
+  // Drop the KV stash now that the order row owns the line items.
+  // Idempotent (kv.delete on missing key is a no-op).
+  await deleteOrderCart(env.KV, event.orderId);
+
+  // Enqueue the downstream work. Safe to send twice —
   // orderWorkConsumer dedups via the order row's
   // `confirmation_emailed_at` marker.
   await sendOrderWork(env.ORDER_WORK_QUEUE, {
     type: "order.confirmed",
     orderId: event.orderId,
   });
+}
+
+/**
+ * Build the order row's `data` field. Pure function — splits out for
+ * testability + so the cart-missing fallback path stays obvious.
+ *
+ * The cart can be missing in two cases:
+ *   1. The KV TTL (24h) elapsed before the callback fired (unusual
+ *      but legitimate for async payment methods like bank transfers).
+ *   2. The callback fired AFTER a prior successful commit (idempotent
+ *      retry) — the first commit already deleted the stash.
+ *
+ * In case 1, we lose line-item granularity but still record the
+ * payment + amount. In case 2, INSERT OR IGNORE upstream means this
+ * `data` is never written. We don't distinguish the cases here.
+ */
+function buildOrderRowData(
+  event: PaymentCallbackMessage,
+  cart: OrderCart | null,
+  now: number,
+): Record<string, unknown> {
+  const items =
+    cart?.items.map((i) => ({
+      productSlug: i.productSlug,
+      qty: i.qty,
+      priceMinorAtPurchase: i.priceMinor,
+      title: i.title,
+    })) ?? [];
+  return {
+    orderNumber: event.orderId,
+    orderStatus: "placed",
+    currency: event.amount.currency,
+    totalMinor: event.amount.minor,
+    subtotalMinor: cart?.subtotalMinor ?? event.amount.minor,
+    taxMinor: 0,
+    customerEmail: cart?.customerEmail ?? event.customerEmail ?? "",
+    customerName: "",
+    paymentProvider: event.provider,
+    paymentIntentId: event.paymentIntentId,
+    items,
+    placedAt: now,
+  };
 }
 
 /**
@@ -221,17 +269,15 @@ export function orderEntryId(orderId: string): string {
 
 async function releaseIfReserved(
   event: PaymentCallbackMessage,
-  _inv: InventoryActorClient,
-  _env: ConsumerEnv,
+  inv: InventoryActorClient,
+  env: ConsumerEnv,
 ): Promise<void> {
-  // PR 2: we don't track the reservationId across the
-  // checkoutStart → checkoutConfirm boundary (the provider's event
-  // doesn't carry it). PR 3 wires reservationId through merchant
-  // metadata so we can target the release; for v0.1.0 the alarm-
-  // based auto-release (10 min TTL on the InventoryActor side)
-  // handles abandoned checkouts.
-  void event;
-  // Intentionally a no-op for PR 2; the comment above explains.
+  // Reservation is keyed by orderId (see InventoryActor); release is
+  // idempotent — no-op if the reservation was already released by
+  // the 10-min TTL alarm OR by a prior failed/expired callback for
+  // the same order. Also clears the cart stash so KV doesn't leak.
+  await inv.release(event.orderId);
+  await deleteOrderCart(env.KV, event.orderId);
 }
 
 /**

@@ -102,6 +102,18 @@ export class MerchantFormTemplate implements PaymentProvider {
     // Extract orderId from the merchant-supplied field (usually
     // OrderID, CustomField1, MerTradeNo — whatever you set at
     // startCheckout).
+    //
+    // Populate CallbackEvent:
+    //   - eventId: provider's transaction reference (ECPay TradeNo,
+    //     PayUni TradeSeq). Used for once-and-only-once dedup so it
+    //     must be unique per callback delivery.
+    //   - paymentIntentId: usually same as eventId for merchant-form
+    //     providers (no separate event-stream id). Recorded on the
+    //     order row.
+    //   - customerEmail: from the provider's email field if it
+    //     surfaces in the notify body (varies). Optional — consumer
+    //     falls back to the stashed cart's email.
+    //   - provider: stable name string ("ecpay" / "payuni" / etc.).
     throw new Error("merchant-form template — provider impl missing");
   }
 

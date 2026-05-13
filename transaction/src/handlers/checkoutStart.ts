@@ -18,9 +18,10 @@
  */
 
 import type { AnyHandler, CmsRuntime } from "@aotterclam/clam-cms-runtime";
-import { inventoryActorClient } from "../durableObjects/InventoryActor.js";
+import { getInventoryActor } from "../durableObjects/InventoryActor.js";
 import { buildPaymentProvider, type PaymentEnv } from "../payment/index.js";
 import { defineHandler } from "./_context.js";
+import { stashOrderCart } from "./orderCart.js";
 import { verifyTurnstile } from "./turnstile.js";
 
 interface CartState {
@@ -80,10 +81,7 @@ export function buildCheckoutStart(env: CheckoutStartEnv): AnyHandler {
 
     // 4. Reserve inventory under a fresh orderId
     const orderId = generateOrderId();
-    const stub = env.INVENTORY_ACTOR.get(
-      env.INVENTORY_ACTOR.idFromName("singleton"),
-    );
-    const inv = inventoryActorClient(stub);
+    const inv = getInventoryActor(env);
     const reserveItems = enrichedItems.filter(
       (i) => i.inventoryMode === "tracked",
     );
@@ -100,7 +98,27 @@ export function buildCheckoutStart(env: CheckoutStartEnv): AnyHandler {
       }
     }
 
-    // 5. Hand off to the payment provider
+    // 5. Stash the enriched cart so the callback consumer can write
+    // order_items + customerEmail without re-running price lookup.
+    const subtotalMinor = enrichedItems.reduce(
+      (acc, i) => acc + i.priceMinor * i.qty,
+      0,
+    );
+    await stashOrderCart(env.KV, {
+      orderId,
+      customerEmail: input.customerEmail,
+      currency,
+      items: enrichedItems.map((i) => ({
+        productSlug: i.productSlug,
+        qty: i.qty,
+        priceMinor: i.priceMinor,
+        title: i.title,
+      })),
+      subtotalMinor,
+      createdAt: Date.now(),
+    });
+
+    // 6. Hand off to the payment provider
     const provider = buildPaymentProvider(env);
     const origin = env.PUBLIC_ORIGIN ?? "http://localhost:8788";
     const result = await provider.startCheckout({

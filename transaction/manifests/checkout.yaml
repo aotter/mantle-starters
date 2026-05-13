@@ -116,19 +116,30 @@ spec:
   output:
     type: object
     description: |
-      Read shape:
-        { orderId, exists: boolean, orderStatus?: <orders.orderStatus enum> }
+      Read shape (customer-facing order summary):
+        {
+          orderId, exists: boolean,
+          orderStatus?: <orders.orderStatus enum>,
+          currency?, totalMinor?, customerEmail?,
+          paymentProvider?, paymentIntentId?,
+          items?: [{ productSlug, qty, priceMinorAtPurchase, title? }]
+        }
 
       `exists` is false when the async provider callback has not yet
       processed this orderId (the order row hasn't been written yet).
       `exists` is true once the callback consumer commits the order;
       `orderStatus` then carries the live value from the `orders`
       Schema's enum (placed / fulfilling / shipped / completed /
-      cancelled / refunded) — no separate frontend-only vocabulary.
+      cancelled / refunded). The remaining fields surface the order
+      summary the customer expects on the confirmation page — items
+      purchased, total, payment reference. The orderId acts as the
+      shared secret: anyone with the id can read; reserve a real
+      auth flow for staff-only mutations.
 
       Frontend polls after the customer returns from the provider:
       - !exists → render "processing your order…" and poll again
-      - exists && orderStatus === "placed" → render "we got it" page
+      - exists && orderStatus === "placed" → render the receipt
+        (use items + totalMinor + customerEmail)
       - exists && orderStatus === "cancelled" / "refunded" → render
         the corresponding state.
   handler:

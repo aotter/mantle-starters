@@ -5,24 +5,26 @@ metadata:
 spec:
   title: Orders
   description: |
-    Source of truth for placed orders. Created by `checkout-confirm`
-    after Stripe payment_intent.succeeded webhook acks; never created
-    by visitors directly (carts → reservations → orders).
+    Source of truth for placed orders. Created by the payment-callback
+    consumer after the provider confirms payment; never created by
+    visitors directly (carts → reservations → orders).
 
     `orderStatus` is the **commerce** pipeline (NOT the reserved
     `status` ContentState column — that stays draft / published /
     archived per Entry semantics). Commerce pipeline values:
       placed → fulfilling → shipped → completed
                                   ↘ cancelled (from any state pre-shipped)
-                                  ↘ refunded  (manual via Stripe dashboard in v0.2.0)
+                                  ↘ refunded  (manual via provider dashboard)
 
     `customerEmail` is the buyer's contact (anonymous-with-email — no
-    member account in v0.2.0; see Epic notes). `stripeCheckoutId` +
-    `stripePaymentIntentId` are the cross-reference back to Stripe.
+    member account in v0.1; see Epic notes). `paymentProvider` +
+    `paymentIntentId` are the provider-neutral cross-reference back to
+    the payment record (Stripe pi_, ECPay TradeNo, etc.).
 
     Monetary fields are integer minor units. `totalMinor`,
     `subtotalMinor`, `taxMinor` are stored at write; if recompute is
-    needed, derive from order_items.
+    needed, derive from `items` array (snapshotted at commit so price
+    changes don't rewrite history).
   schema:
     type: object
     required:
@@ -33,8 +35,9 @@ spec:
       - taxMinor
       - totalMinor
       - customerEmail
-      - stripeCheckoutId
-      - stripePaymentIntentId
+      - paymentProvider
+      - paymentIntentId
+      - items
     properties:
       orderNumber:
         type: string
@@ -59,16 +62,38 @@ spec:
         format: email
       customerName:
         type: string
-        description: Optional — from Stripe Checkout customer_details.
+        description: Optional — set by the staff or admin UI when known.
       shippingAddress:
         type: object
-        description: Free-shape JSON from Stripe Checkout shipping_details.
-      stripeCheckoutId:
+        description: Free-shape JSON. Populated when the provider returns address data.
+      paymentProvider:
         type: string
-        description: cs_xxx id from Stripe Checkout Session.
-      stripePaymentIntentId:
+        description: |
+          Provider name ("stripe", "paddle", "ecpay", "payuni",
+          "fake", ...). Stable string used for forensics / multi-
+          provider dashboards.
+      paymentIntentId:
         type: string
-        description: pi_xxx id from Stripe payment_intent.
+        description: |
+          Provider's identifier for the payment record itself
+          (Stripe payment_intent, ECPay TradeNo). Distinct from the
+          callback eventId, which is the webhook-delivery id used
+          only for once-and-only-once dedup.
+      items:
+        type: array
+        description: |
+          Snapshotted line items at commit time. Each entry freezes
+          the price the customer paid so later product price changes
+          don't rewrite history. Mirrors the order_items schema for
+          adopters that prefer separate-row storage.
+        items:
+          type: object
+          required: [productSlug, qty, priceMinorAtPurchase]
+          properties:
+            productSlug: { type: string }
+            qty: { type: integer, minimum: 1 }
+            priceMinorAtPurchase: { type: integer, minimum: 0 }
+            title: { type: string }
       placedAt:
         type: number
         x-clam-bind: now
