@@ -16,6 +16,8 @@ import { raw } from "hono/html";
  * while the user shops to avoid round-trips.
  */
 
+const BRAND = "Storefront";
+
 const INLINE_CSS = `
   :root {
     --fg: #1a1a1a;
@@ -93,24 +95,30 @@ const INLINE_CSS = `
   }
 `;
 
-const CART_BOOTSTRAP_JS = `
-  // Per-browser cart id. The server holds the actual cart state in
-  // KV (cart:<cartId>); this just gives us a stable identifier.
+// Bootstraps two things every page needs in client JS:
+//   1. window.__cartId — stable per-browser uuid (server holds cart
+//      state in KV under `cart:<cartId>`; this is just the key).
+//   2. window.__escapeHtml — shared HTML-escape for all inline scripts
+//      so each template doesn't redefine it.
+const BOOTSTRAP_JS = `
   if (!localStorage.getItem("cartId")) {
     localStorage.setItem("cartId", "c_" + crypto.randomUUID());
   }
   window.__cartId = localStorage.getItem("cartId");
+  window.__escapeHtml = function (s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;",
+      '"': "&quot;", "'": "&#39;"
+    }[c]));
+  };
 `;
 
 export interface LayoutContext {
   readonly title: string;
   readonly children: unknown;
-  /** Optional brand name; falls back to "Shop". */
-  readonly brand?: string;
 }
 
 export function Layout(props: LayoutContext) {
-  const brand = props.brand ?? "Shop";
   return (
     <html lang="en">
       <head>
@@ -118,10 +126,15 @@ export function Layout(props: LayoutContext) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{props.title}</title>
         <style>{raw(INLINE_CSS)}</style>
+        {/*
+          Bootstrap lives in <head> so window.__cartId + window.__escapeHtml
+          are defined before any page-body inline script runs.
+        */}
+        <script>{raw(BOOTSTRAP_JS)}</script>
       </head>
       <body>
         <header class="site">
-          <a href="/" class="brand">{brand}</a>
+          <a href="/" class="brand">{BRAND}</a>
           <nav>
             <a href="/">Shop</a>
             <a href="/cart">Cart</a>
@@ -131,7 +144,6 @@ export function Layout(props: LayoutContext) {
         <footer class="site">
           Reference storefront — replace with your brand.
         </footer>
-        <script>{raw(CART_BOOTSTRAP_JS)}</script>
       </body>
     </html>
   );

@@ -11,6 +11,7 @@ import {
 import { buildCmsConfig, type Env } from "./mantleConfig.js";
 import { invokeHandler } from "./handlers/_context.js";
 import { buildQueueDispatcher, sendOrderWork } from "./handlers/orderConsumer.js";
+import { loadProductCatalog } from "./handlers/_productEnrichment.js";
 import { buildReadOrderStatus } from "./handlers/readOrderStatus.js";
 import { buildReadCart } from "./handlers/readCart.js";
 import { buildCheckoutReturn } from "./handlers/checkoutReturn.js";
@@ -150,45 +151,12 @@ function getApp(env: Env): { app: Hono; cms: CmsRuntimeRef } {
   // Reference templates. Adopters typically replace these with their
   // own branded pages; the URL contract (paths + query strings) is
   // what the API layer assumes, not the HTML shape.
-  //
-  // Templates render with a default "Storefront" brand label. Wire a
-  // real brand by passing { brand } from your site_config — see the
-  // Layout component in src/templates/layout.tsx.
 
   app.get("/", async (c) => {
     try {
       const runtime = await cms.get();
-      const productEntries = await runtime.listEntries.execute({
-        collection: "products",
-        status: "published",
-        limit: 1000,
-      });
-      const translations = await runtime.listEntries.execute({
-        collection: "product-translations",
-        status: "published",
-        limit: 5000,
-      });
-      const products = productEntries.map((p) => {
-        const d = p.data as {
-          slug?: string;
-          priceMinor?: number;
-          currency?: string;
-          inventoryMode?: "tracked" | "untracked";
-        };
-        const tr = translations.find(
-          (t) => (t.data as { slug?: string }).slug === d.slug,
-        );
-        const title =
-          (tr?.data as { title?: string } | undefined)?.title ?? d.slug ?? "";
-        return {
-          slug: d.slug ?? "",
-          title,
-          priceMinor: d.priceMinor ?? 0,
-          currency: d.currency ?? "USD",
-          inventoryMode: d.inventoryMode ?? "untracked",
-        };
-      });
-      return c.html(renderProductList({ products }));
+      const catalog = await loadProductCatalog(runtime);
+      return c.html(renderProductList({ products: catalog.rows }));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       return c.text(`error: ${msg}`, 500);
@@ -199,53 +167,18 @@ function getApp(env: Env): { app: Hono; cms: CmsRuntimeRef } {
     const slug = c.req.param("slug");
     try {
       const runtime = await cms.get();
-      const productEntries = await runtime.listEntries.execute({
-        collection: "products",
-        status: "published",
-        limit: 1000,
-      });
-      const product = productEntries.find(
-        (p) => (p.data as { slug?: string }).slug === slug,
-      );
-      if (!product) {
-        return c.text("not found", 404);
-      }
-      const translations = await runtime.listEntries.execute({
-        collection: "product-translations",
-        status: "published",
-        limit: 5000,
-      });
-      const tr = translations.find(
-        (t) => (t.data as { slug?: string }).slug === slug,
-      );
-      const d = product.data as {
-        slug?: string;
-        priceMinor?: number;
-        currency?: string;
-        inventoryMode?: "tracked" | "untracked";
-        description?: string;
-      };
-      const trd = tr?.data as { title?: string; description?: string } | undefined;
-      return c.html(
-        renderProductDetail({
-          product: {
-            slug: d.slug ?? slug,
-            title: trd?.title ?? d.slug ?? slug,
-            description: trd?.description ?? d.description,
-            priceMinor: d.priceMinor ?? 0,
-            currency: d.currency ?? "USD",
-            inventoryMode: d.inventoryMode ?? "untracked",
-          },
-        }),
-      );
+      const catalog = await loadProductCatalog(runtime);
+      const product = catalog.bySlug.get(slug);
+      if (!product) return c.text("not found", 404);
+      return c.html(renderProductDetail({ product }));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       return c.text(`error: ${msg}`, 500);
     }
   });
 
-  app.get("/cart", (c) => c.html(renderCart({})));
-  app.get("/checkout", (c) => c.html(renderCheckout({})));
+  app.get("/cart", (c) => c.html(renderCart()));
+  app.get("/checkout", (c) => c.html(renderCheckout()));
   app.get("/order/:orderId", (c) =>
     c.html(renderOrderStatus({ orderId: c.req.param("orderId") })),
   );

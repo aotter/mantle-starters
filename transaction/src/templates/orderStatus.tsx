@@ -16,6 +16,7 @@ import { Layout, renderHtml } from "./layout.js";
 
 const ORDER_STATUS_JS = `
 (function() {
+  const esc = window.__escapeHtml;
   const orderId = window.__orderId;
   const container = document.getElementById("order-content");
   if (!orderId) {
@@ -34,65 +35,60 @@ const ORDER_STATUS_JS = `
       const data = await res.json();
       if (data.exists && data.orderStatus) {
         render(data);
-        // Clear stale cart now that the order is placed.
-        if (window.__cartId) {
-          // Best-effort — don't block on this.
-          fetch("/api/cart/get?cartId=" + encodeURIComponent(window.__cartId))
-            .catch(() => {});
-        }
         return;
       }
       if (attempts >= MAX_ATTEMPTS) {
         container.innerHTML =
           '<div class="notice error">Your order is taking longer than ' +
           'usual to confirm. We\\'ll email you when it\\'s done. ' +
-          'Order id: <code>' + escapeHtml(orderId) + '</code></div>';
+          'Order id: <code>' + esc(orderId) + '</code></div>';
         return;
       }
       setTimeout(poll, 1000);
     } catch (err) {
       container.innerHTML = '<div class="notice error">Could not check ' +
-        'order status: ' + escapeHtml(err.message) + '</div>';
+        'order status: ' + esc(err.message) + '</div>';
+    }
+  }
+
+  function statusBanner(orderStatus) {
+    switch (orderStatus) {
+      case "placed":
+      case "fulfilling":
+      case "shipped":
+      case "completed":
+        return '<div class="notice success">Order received — thank you!</div>';
+      case "cancelled":
+        return '<div class="notice error">Order cancelled.</div>';
+      case "refunded":
+        return '<div class="notice">Order refunded.</div>';
+      default:
+        return '';
     }
   }
 
   function render(data) {
-    let html = '';
-    if (data.orderStatus === "placed" || data.orderStatus === "fulfilling" ||
-        data.orderStatus === "shipped" || data.orderStatus === "completed") {
-      html += '<div class="notice success">Order received — thank you!</div>';
-    } else if (data.orderStatus === "cancelled") {
-      html += '<div class="notice error">Order cancelled.</div>';
-    } else if (data.orderStatus === "refunded") {
-      html += '<div class="notice">Order refunded.</div>';
-    }
-    html += '<p class="muted">Order id: <code>' + escapeHtml(orderId) + '</code></p>';
+    let html = statusBanner(data.orderStatus);
+    html += '<p class="muted">Order id: <code>' + esc(orderId) + '</code></p>';
     if (data.customerEmail) {
       html += '<p>A receipt will be sent to <strong>' +
-        escapeHtml(data.customerEmail) + '</strong>.</p>';
+        esc(data.customerEmail) + '</strong>.</p>';
     }
     if (data.items && data.items.length > 0) {
       html += '<table class="cart"><thead><tr><th>Product</th><th>Qty</th>' +
         '<th>Line total</th></tr></thead><tbody>';
       for (const item of data.items) {
         const total = (item.priceMinorAtPurchase * item.qty / 100).toFixed(2);
-        html += '<tr><td>' + escapeHtml(item.title || item.productSlug) +
+        html += '<tr><td>' + esc(item.title || item.productSlug) +
           '</td><td>' + item.qty + '</td><td>' + total + ' ' +
-          escapeHtml(data.currency || '') + '</td></tr>';
+          esc(data.currency || '') + '</td></tr>';
       }
       html += '</tbody><tfoot><tr><td colspan="2">Total</td><td>' +
         (data.totalMinor / 100).toFixed(2) + ' ' +
-        escapeHtml(data.currency || '') + '</td></tr></tfoot></table>';
+        esc(data.currency || '') + '</td></tr></tfoot></table>';
     }
     html += '<p><a href="/">← Continue shopping</a></p>';
     container.innerHTML = html;
-  }
-
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, (c) => ({
-      "&": "&amp;", "<": "&lt;", ">": "&gt;",
-      '"': "&quot;", "'": "&#39;"
-    }[c]));
   }
 
   poll();
@@ -100,14 +96,13 @@ const ORDER_STATUS_JS = `
 `;
 
 export interface OrderStatusContext {
-  readonly brand?: string;
   readonly orderId: string;
 }
 
 export function renderOrderStatus(ctx: OrderStatusContext): string {
   const orderIdJson = JSON.stringify(ctx.orderId);
   const tree = (
-    <Layout brand={ctx.brand} title={`Order — ${ctx.brand ?? "Storefront"}`}>
+    <Layout title="Order">
       <h1>Order Confirmation</h1>
       <div id="order-content">
         <p class="muted">Checking your order status…</p>

@@ -19,6 +19,7 @@ import { Layout, renderHtml } from "./layout.js";
 
 const CART_BOOTSTRAP_JS = `
 (function() {
+  const esc = window.__escapeHtml;
   const tbody = document.getElementById("cart-rows");
   const totalCell = document.getElementById("cart-total");
   const emptyMsg = document.getElementById("cart-empty");
@@ -40,7 +41,7 @@ const CART_BOOTSTRAP_JS = `
       for (const item of data.items) {
         const tr = document.createElement("tr");
         tr.innerHTML =
-          "<td>" + escapeHtml(item.productSlug) + "</td>" +
+          "<td>" + esc(item.productSlug) + "</td>" +
           "<td>" + item.qty + "</td>";
         tbody.appendChild(tr);
       }
@@ -57,23 +58,13 @@ const CART_BOOTSTRAP_JS = `
     summary.style.display = "none";
     emptyMsg.style.display = "block";
   }
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, (c) => ({
-      "&": "&amp;", "<": "&lt;", ">": "&gt;",
-      '"': "&quot;", "'": "&#39;"
-    }[c]));
-  }
   render();
 })();
 `;
 
-export interface CartContext {
-  readonly brand?: string;
-}
-
-export function renderCart(ctx: CartContext): string {
+export function renderCart(): string {
   const tree = (
-    <Layout brand={ctx.brand} title={`Cart — ${ctx.brand ?? "Storefront"}`}>
+    <Layout title="Cart">
       <h1>Your Cart</h1>
       <div id="summary-loading">Loading…</div>
       <div id="cart-empty" class="empty" style="display: none">

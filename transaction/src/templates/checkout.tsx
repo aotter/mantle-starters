@@ -17,6 +17,7 @@ import { Layout, renderHtml } from "./layout.js";
 
 const CHECKOUT_JS = `
 (function() {
+  const esc = window.__escapeHtml;
   const cartId = window.__cartId;
   const summary = document.getElementById("summary");
   const form = document.getElementById("checkout-form");
@@ -43,17 +44,17 @@ const CHECKOUT_JS = `
       }
       let html = "<ul>";
       for (const item of data.items) {
-        html += "<li>" + escapeHtml(item.title) + " × " + item.qty +
+        html += "<li>" + esc(item.title) + " × " + item.qty +
           " — " + (item.lineTotalMinor / 100).toFixed(2) + " " +
-          escapeHtml(data.currency || "") + "</li>";
+          esc(data.currency || "") + "</li>";
       }
       html += "</ul><p><strong>Total: " +
         (data.subtotalMinor / 100).toFixed(2) + " " +
-        escapeHtml(data.currency || "") + "</strong></p>";
+        esc(data.currency || "") + "</strong></p>";
       summary.innerHTML = html;
     } catch (err) {
       summary.innerHTML = '<div class="notice error">Could not load cart: ' +
-        escapeHtml(err.message) + '</div>';
+        esc(err.message) + '</div>';
       submit.disabled = true;
     }
   }
@@ -71,7 +72,7 @@ const CHECKOUT_JS = `
       });
       if (!res.ok) {
         out.innerHTML = '<div class="notice error">' +
-          escapeHtml((await res.text()).slice(0, 300)) + '</div>';
+          esc((await res.text()).slice(0, 300)) + '</div>';
         submit.disabled = false;
         return;
       }
@@ -89,29 +90,18 @@ const CHECKOUT_JS = `
       }
     } catch (err) {
       out.innerHTML = '<div class="notice error">' +
-        escapeHtml(String(err)) + '</div>';
+        esc(String(err)) + '</div>';
       submit.disabled = false;
     }
   });
-
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, (c) => ({
-      "&": "&amp;", "<": "&lt;", ">": "&gt;",
-      '"': "&quot;", "'": "&#39;"
-    }[c]));
-  }
 
   loadCart();
 })();
 `;
 
-export interface CheckoutContext {
-  readonly brand?: string;
-}
-
-export function renderCheckout(ctx: CheckoutContext): string {
+export function renderCheckout(): string {
   const tree = (
-    <Layout brand={ctx.brand} title={`Checkout — ${ctx.brand ?? "Storefront"}`}>
+    <Layout title="Checkout">
       <h1>Checkout</h1>
       <div id="summary">Loading cart…</div>
       <form id="checkout-form" class="checkout">

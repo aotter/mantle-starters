@@ -30,29 +30,22 @@ const ADD_TO_CART_JS = `
       if (!res.ok) {
         const txt = await res.text();
         out.innerHTML = '<div class="notice error">' +
-          escapeHtml(txt.slice(0, 200)) + '</div>';
+          window.__escapeHtml(txt.slice(0, 200)) + '</div>';
         return;
       }
       out.innerHTML = '<div class="notice success">Added to cart. ' +
         '<a href="/cart">View cart →</a></div>';
     } catch (err) {
       out.innerHTML = '<div class="notice error">' +
-        escapeHtml(String(err)) + '</div>';
+        window.__escapeHtml(String(err)) + '</div>';
     } finally {
       btn.disabled = false;
     }
   });
-  function escapeHtml(s) {
-    return s.replace(/[&<>"']/g, (c) => ({
-      "&": "&amp;", "<": "&lt;", ">": "&gt;",
-      '"': "&quot;", "'": "&#39;"
-    }[c]));
-  }
 })();
 `;
 
 export interface ProductDetailContext {
-  readonly brand?: string;
   readonly product: {
     readonly slug: string;
     readonly title: string;
@@ -68,7 +61,7 @@ export function renderProductDetail(ctx: ProductDetailContext): string {
   const p = ctx.product;
   const outOfStock = p.inventoryMode === "tracked" && (p.available ?? 0) <= 0;
   const tree = (
-    <Layout brand={ctx.brand} title={`${p.title} — ${ctx.brand ?? "Storefront"}`}>
+    <Layout title={p.title}>
       <p>
         <a href="/">← Back to shop</a>
       </p>
