@@ -41,13 +41,14 @@ spec:
       timeline:
         type: string
         description: Optional — when do they need this? (e.g. "ASAP", "this quarter").
-      status:
+      leadStatus:
         type: string
         description: |
-          Staff-only field. Convention: `new` (default — set by
-          submit-lead), `qualified`, `contacted`, `won`, `lost`. Not
-          enforced as enum; promote to closed enum once the team
-          settles on the lifecycle.
+          Staff-only pipeline field. NOT the reserved `status`
+          column (ContentState — draft/review/.../published/archived).
+          Convention here: `new` (default), `qualified`, `contacted`,
+          `won`, `lost`. Stored as free string in v0.1; promote to a
+          closed enum once the team settles on the lifecycle.
       createdAt:
         type: number
         x-clam-bind: now
@@ -59,9 +60,7 @@ metadata:
   name: leads-recent
 spec:
   from: leads
-  fields: [name, email, company, need, timeline, status, createdAt]
-  filter:
-    eq: { field: status, value: new }
+  fields: [name, email, company, need, timeline, leadStatus, createdAt]
   orderBy:
     - { field: createdAt, direction: desc }
   limit: 50
