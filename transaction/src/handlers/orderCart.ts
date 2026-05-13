@@ -8,14 +8,21 @@
  * `amount` + `customerEmail` (via CallbackEvent); commitOrder reads
  * the stash to write the `order_items` array on the order row.
  *
- * TTL matches the reservation TTL (24h ceiling — much longer than the
- * 10-min reservation, because a provider can legitimately call us
- * back hours after checkoutStart for async payment methods). The
- * shorter reservation alarm handles abandoned carts; the KV entry's
- * 24h TTL is a guardrail against stash leakage.
+ * TTL sized for the slowest async settlement methods we expect to
+ * encounter: 7 days. ACH (Stripe Direct Debit), SEPA, Bacs, BLIK
+ * "delayed", iDEAL bank transfer all routinely settle in 3-5 days.
+ * 7 days covers the long tail; orders that settle past then fall to
+ * the event-only fallback in `commitOrder.buildOrderRowData` (no
+ * item granularity, but payment + total + email survive). The 10-min
+ * reservation alarm on the InventoryActor handles abandoned-cart
+ * inventory release independently of this stash.
+ *
+ * Caller contract: the cart stash is treated as a hint, not as
+ * source-of-truth. commitOrder MUST tolerate `null` from
+ * `readOrderCart` and fall back to the event payload.
  */
 
-export const ORDER_CART_TTL_SECONDS = 24 * 60 * 60;
+export const ORDER_CART_TTL_SECONDS = 7 * 24 * 60 * 60;
 
 export interface OrderCartLine {
   readonly productSlug: string;
