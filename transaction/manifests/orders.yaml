@@ -1,0 +1,170 @@
+apiVersion: cms.clam.ai/v1
+kind: Schema
+metadata:
+  name: orders
+spec:
+  title: Orders
+  description: |
+    Source of truth for placed orders. Created by `checkout-confirm`
+    after Stripe payment_intent.succeeded webhook acks; never created
+    by visitors directly (carts → reservations → orders).
+
+    `orderStatus` is the **commerce** pipeline (NOT the reserved
+    `status` ContentState column — that stays draft / published /
+    archived per Entry semantics). Commerce pipeline values:
+      placed → fulfilling → shipped → completed
+                                  ↘ cancelled (from any state pre-shipped)
+                                  ↘ refunded  (manual via Stripe dashboard in v0.2.0)
+
+    `customerEmail` is the buyer's contact (anonymous-with-email — no
+    member account in v0.2.0; see Epic notes). `stripeCheckoutId` +
+    `stripePaymentIntentId` are the cross-reference back to Stripe.
+
+    Monetary fields are integer minor units. `totalMinor`,
+    `subtotalMinor`, `taxMinor` are stored at write; if recompute is
+    needed, derive from order_items.
+  schema:
+    type: object
+    required:
+      - orderNumber
+      - orderStatus
+      - currency
+      - subtotalMinor
+      - taxMinor
+      - totalMinor
+      - customerEmail
+      - stripeCheckoutId
+      - stripePaymentIntentId
+    properties:
+      orderNumber:
+        type: string
+        description: Short human-shareable order code (8 chars). Generated at create.
+      orderStatus:
+        type: string
+        enum: [placed, fulfilling, shipped, completed, cancelled, refunded]
+      currency:
+        type: string
+        pattern: "^[A-Z]{3}$"
+      subtotalMinor:
+        type: integer
+        minimum: 0
+      taxMinor:
+        type: integer
+        minimum: 0
+      totalMinor:
+        type: integer
+        minimum: 0
+      customerEmail:
+        type: string
+        format: email
+      customerName:
+        type: string
+        description: Optional — from Stripe Checkout customer_details.
+      shippingAddress:
+        type: object
+        description: Free-shape JSON from Stripe Checkout shipping_details.
+      stripeCheckoutId:
+        type: string
+        description: cs_xxx id from Stripe Checkout Session.
+      stripePaymentIntentId:
+        type: string
+        description: pi_xxx id from Stripe payment_intent.
+      placedAt:
+        type: number
+        x-clam-bind: now
+      fulfilledAt:
+        type: number
+        description: Set by staff at "shipped" transition; null otherwise.
+  lifecycle: simple
+---
+apiVersion: cms.clam.ai/v1
+kind: Schema
+metadata:
+  name: order_items
+spec:
+  title: Order line items
+  description: |
+    Line items for an order. One row per product per order.
+    Snapshotted at order-creation time — `priceMinorAtPurchase`
+    freezes the price the customer paid, so later product price
+    changes don't rewrite history.
+  schema:
+    type: object
+    required: [orderNumber, productSlug, qty, priceMinorAtPurchase]
+    properties:
+      orderNumber:
+        type: string
+        description: FK to orders.orderNumber.
+      productSlug:
+        type: string
+        description: FK to products.slug at purchase time.
+      qty:
+        type: integer
+        minimum: 1
+      priceMinorAtPurchase:
+        type: integer
+        minimum: 0
+      lineTotalMinor:
+        type: integer
+        minimum: 0
+        description: qty * priceMinorAtPurchase, stored for query convenience.
+  lifecycle: simple
+---
+apiVersion: cms.clam.ai/v1
+kind: View
+metadata:
+  name: orders-recent
+spec:
+  from: orders
+  fields:
+    - orderNumber
+    - orderStatus
+    - currency
+    - totalMinor
+    - customerEmail
+    - placedAt
+  orderBy:
+    - { field: placedAt, direction: desc }
+  limit: 100
+---
+apiVersion: cms.clam.ai/v1
+kind: View
+metadata:
+  name: order-by-number
+spec:
+  from: orders
+  params:
+    type: object
+    required: [orderNumber]
+    properties:
+      orderNumber: { type: string }
+  filter:
+    eq: { field: orderNumber, value: { $param: orderNumber } }
+  limit: 1
+---
+apiVersion: cms.clam.ai/v1
+kind: Procedure
+metadata:
+  name: enqueue-order-confirmed
+spec:
+  input:
+    type: object
+    properties:
+      orderNumber: { type: string }
+  output:
+    type: object
+  handler:
+    kind: ref
+    ref: enqueueOrderConfirmed
+---
+apiVersion: cms.clam.ai/v1
+kind: Trigger
+metadata:
+  name: 010-orders-enqueue-confirmation
+spec:
+  source:
+    kind: lifecycle
+    schema: orders
+    on: [after_create]
+  target:
+    procedure: enqueue-order-confirmed
