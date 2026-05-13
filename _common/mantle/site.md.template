@@ -27,28 +27,23 @@ revisions:
 <!-- Mantle: a few lines. specific markers, not generic words. e.g. "短句、避免感嘆號" beats "friendly tone". -->
 
 ## welcome
-> purpose: /admin first-visit 5-card letter. exactly 5 cards. register hints in archetype skill.
+> purpose: /admin first-visit letter. Three voice cards persist here (card1 / card4 / card5); cards 2 (mcp install command) and 3 (editor first prompt) are mechanical and rendered by admin UI from frontmatter + the editor first_prompt at display time — they do not live in this file.
 
 ### card1
-<!-- Mantle: hotel-manager note. one specific reflect (something user said). — Mantle + {{INSTALL_TIMESTAMP}} -->
-
-### card2
-<!-- Mantle: claude mcp add command + expected output line. -->
-
-### card3
-<!-- Mantle: first Editor prompt. archetype-specific. -->
+<!-- Mantle: open with self-introduction (I'm Mantle; I was watching while you built this) then one specific reflect (something user said) paired with the design choice it implied. Signature — Mantle + {{INSTALL_TIMESTAMP}} -->
 
 ### card4
-<!-- Mantle: memory URL + one specific future from frontmatter.futures. -->
+<!-- Mantle: brief frame (editor handles content; Mantle handles site-shape). Memory URL <SITE_URL>/.well-known/mantle/. One specific future from frontmatter.futures (or interview observation if futures is empty). "Anyone you trust can paste this URL too." -->
 
 ### card5
-<!-- Mantle: admin sidebar pointer + closing signature. -->
+<!-- Mantle: admin sidebar pointer + where this note can be re-read (Settings → About this site) + closing line ("I'll be quiet now. Your editor takes it from here." equivalent in user's language) + final signature. -->
 
 ## editor
-> purpose: handoff cues for the daily content agent.
+> purpose: handoff cues for the daily content agent. `first_prompt:` is filled by the install agent (mechanical: archetype hint's `Editor first-prompt template` + brand sub).
 
 first_prompt: |
-  <!-- Mantle: card3 body as plain text. -->
+  <!-- install agent: copy the archetype hint's `Editor first-prompt template` here, substituting {{BRAND}}. Plain text, no markdown wrapping. -->
+
 
 ## history
 > purpose: Mantle's worklog. Each return appends one paragraph.
