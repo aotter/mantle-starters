@@ -1,0 +1,12 @@
+{
+  "label": "繁體中文",
+  "theme": {
+    "ariaLabel": "色彩主題",
+    "auto": "自動",
+    "light": "淺色",
+    "dark": "深色"
+  },
+  "lang": {
+    "ariaLabel": "語言"
+  }
+}

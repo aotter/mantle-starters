@@ -1,0 +1,179 @@
+apiVersion: cms.mantle.aotter.net/v1
+kind: Procedure
+metadata:
+  name: add-to-cart
+spec:
+  input:
+    type: object
+    required: [cartId, productSlug, qty]
+    properties:
+      cartId:
+        type: string
+        description: |
+          Opaque session id for the cart. Set as a first-party cookie
+          by the public route (no PII; just a random ID). The cart
+          row lives in KV at key `cart:<cartId>` — no per-session DO
+          (transaction is sized for ≤100 orders/day; KV is cheap
+          enough; 60s KV eventual consistency is a non-issue at this
+          scale).
+      productSlug: { type: string, pattern: "^[a-z0-9-]+$" }
+      qty: { type: integer, minimum: 1, maximum: 99 }
+  output:
+    type: object
+    description: |
+      { cartId, items: [{ productSlug, qty }], subtotalMinor }
+      The cart state after the add. Frontend uses this to update the
+      cart drawer.
+  handler:
+    kind: ref
+    ref: addToCart
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Procedure
+metadata:
+  name: checkout-start
+spec:
+  input:
+    type: object
+    required: [cartId, customerEmail]
+    properties:
+      cartId: { type: string }
+      customerEmail: { type: string, format: email }
+      turnstileToken:
+        type: string
+        description: |
+          Bot-check. Side-channel field; the handler verifies via
+          Turnstile siteverify before reserving inventory or invoking
+          the payment provider's startCheckout.
+  output:
+    type: object
+    description: |
+      Either:
+        { kind: "redirect", url: "https://..." }
+          — frontend does `window.location = url` (Stripe-style).
+        { kind: "form", html: "<form ...>" }
+          — frontend renders the HTML; form auto-submits onload
+            (ECPay / PayUni-style).
+      Return shape comes straight from PaymentProvider.startCheckout —
+      the handler is provider-agnostic.
+  handler:
+    kind: ref
+    ref: checkoutStart
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Procedure
+metadata:
+  name: checkout-confirm
+spec:
+  input:
+    type: object
+    description: |
+      Raw provider callback envelope. The handler:
+        1. PaymentProvider.parseCallback(request) — verifies signature.
+        2. PAYMENT_CALLBACK_QUEUE.send(parsedEvent) — defers heavy work.
+        3. Returns 200 quickly so the provider stops retrying.
+
+      Actual processing (lock acquire → order INSERT → inventory
+      commit → mark completed) happens in the queue consumer
+      (orderConsumer.ts:paymentCallbackConsumer).
+  output:
+    type: object
+  handler:
+    kind: ref
+    ref: checkoutConfirm
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Procedure
+metadata:
+  name: checkout-return
+spec:
+  input:
+    type: object
+    description: |
+      Customer's synchronous return from the payment provider. Used
+      to render the "thanks, we got it" / "payment failed" landing
+      page. Calls PaymentProvider.verifyReturn (which signature-
+      checks ECPay/PayUni return URL params; trusts the local D1 for
+      Stripe). The order row may not exist yet if the async callback
+      hasn't been processed — frontend renders "processing" in that
+      case and polls.
+  output:
+    type: object
+  handler:
+    kind: ref
+    ref: checkoutReturn
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Procedure
+metadata:
+  name: read-order-status
+spec:
+  input:
+    type: object
+    required: [orderId]
+    properties:
+      orderId: { type: string }
+  output:
+    type: object
+    description: |
+      Read shape:
+        { orderId, exists: boolean, orderStatus?: <orders.orderStatus enum> }
+
+      `exists` is false when the async provider callback has not yet
+      processed this orderId (the order row hasn't been written yet).
+      `exists` is true once the callback consumer commits the order;
+      `orderStatus` then carries the live value from the `orders`
+      Schema's enum (placed / fulfilling / shipped / completed /
+      cancelled / refunded) — no separate frontend-only vocabulary.
+
+      Frontend polls after the customer returns from the provider:
+      - !exists → render "processing your order…" and poll again
+      - exists && orderStatus === "placed" → render "we got it" page
+      - exists && orderStatus === "cancelled" / "refunded" → render
+        the corresponding state.
+  handler:
+    kind: ref
+    ref: readOrderStatus
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Trigger
+metadata:
+  name: add-to-cart-http
+spec:
+  source:
+    kind: http
+    method: POST
+    path: /api/cart/add
+  target:
+    procedure: add-to-cart
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Trigger
+metadata:
+  name: checkout-start-http
+spec:
+  source:
+    kind: http
+    method: POST
+    path: /api/checkout/start
+  target:
+    procedure: checkout-start
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Trigger
+metadata:
+  name: checkout-confirm-http
+spec:
+  source:
+    kind: http
+    method: POST
+    path: /api/payment/callback
+  target:
+    procedure: checkout-confirm
+# Note: GET endpoints for /api/payment/return and /api/order/status are
+# v0.1 Triggers can't use GET (kinds locked to POST/PUT/PATCH/DELETE).
+# The customer return URL and the order-status poll endpoint are mounted
+# as custom Hono routes in src/index.ts (PR 2) — they call the
+# checkoutReturn / readOrderStatus Procedures directly via the runtime.
+# This keeps the Procedure surface MCP-callable while still serving the
+# GET requests the customer-facing flow needs.
