@@ -77,7 +77,11 @@ export function buildCmsConfig(env: Env, auth: Auth): CmsConfig {
       title: "Clam Publication",
       description: "Reference starter for clam-cms — localized posts + contact form.",
       origin: "https://example.com",
-      locales: ["en", "zh-TW"],
+      // `{{LOCALES}}` is substituted by @aotterclam/create-clam-cms at install
+      // time (ADR-0016). JSON.parse keeps this file TS-valid pre-substitution
+      // so contributors can `pnpm typecheck` the starter directly; the runtime
+      // cost is one tiny parse at worker cold-start.
+      locales: JSON.parse('{{LOCALES}}') as readonly string[],
     },
     publicPathResolver: PUBLIC_PATH_RESOLVER,
     bindings: {
