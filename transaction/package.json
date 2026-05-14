@@ -2,7 +2,7 @@
   "name": "clam-cms-starter-transaction",
   "version": "0.0.8-alpha",
   "private": true,
-  "description": "Transaction starter for clam-cms v0.1.0 — small-scale shop (~100 orders/day): products + cart + payment + orders. Provider-agnostic by design; Mantle wires the actual payment provider (Stripe / ECPay / PayUni / custom) during install. DurableObject inventory authority + Workers Queues for serialized callback processing.",
+  "description": "Transaction starter for clam-cms v0.1.0 \u2014 small-scale shop (~100 orders/day): products + cart + payment + orders. Provider-agnostic by design; Mantle wires the actual payment provider (Stripe / ECPay / PayUni / custom) during install. DurableObject inventory authority + Workers Queues for serialized callback processing.",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
@@ -35,6 +35,9 @@
     "@types/node": "^20",
     "tsx": "^4.19.0",
     "typescript": "^5.6.3",
-    "wrangler": "^3.103.2"
+    "wrangler": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }
