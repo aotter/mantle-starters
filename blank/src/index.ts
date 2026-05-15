@@ -1,3 +1,7 @@
+/**
+ * Headless worker entrypoint — API + MCP only, no rendered UI.
+ * Wire your own frontend to /api/views/* + /mcp/staff + /mcp + /api/auth/*.
+ */
 import { Hono } from "hono";
 import {
   createAuth,
@@ -13,8 +17,6 @@ import { buildCmsConfig, type Env } from "./clamConfig.js";
 
 type CachedProvider = ReturnType<typeof createOAuthProvider>;
 
-/** Headless worker entrypoint — API + MCP only, no rendered UI.
- *  Wire your own frontend to /api/views/* + /mcp/staff + /mcp + /api/auth/*. */
 let providerCache: CachedProvider | null = null;
 
 const AUTH_NOT_CONFIGURED = {

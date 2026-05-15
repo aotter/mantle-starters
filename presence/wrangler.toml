@@ -24,7 +24,7 @@ id = "kv-clam-publication-local"
 # @cloudflare/workers-oauth-provider. Separate namespace from KV.
 [[kv_namespaces]]
 binding = "OAUTH_KV"
-id = "oauth-kv-clam-publication-local"
+id = "oauth-kv-clam-presence-local"
 
 # Bundle YAML manifests as inline text strings — TS imports them via
 # `?raw` query param, esbuild resolves to a string export at build time.
@@ -68,7 +68,7 @@ id = "kv-clam-publication-test"
 
 [[env.test.kv_namespaces]]
 binding = "OAUTH_KV"
-id = "oauth-kv-clam-publication-test"
+id = "oauth-kv-clam-presence-test"
 
 # Public media bucket. Reads bypass the Worker; in production the
 # bucket should have public access enabled, with `MEDIA_PUBLIC_URL_BASE`

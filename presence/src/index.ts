@@ -12,20 +12,20 @@ import {
   type PublicRouteContext,
 } from "@aotterclam/clam-cms-cloudflare";
 import { buildCmsConfig, type Env } from "./clamConfig.js";
-
-type CachedProvider = ReturnType<typeof createOAuthProvider>;
 import {
   contactTemplate,
   homeTemplate,
   notFoundTemplate,
 } from "./theme.default/templates/index.js";
 
-// Cache the assembled OAuthProvider per-isolate. The library injects
-// `env.OAUTH_PROVIDER` inside `provider.fetch(req, env, ctx)` before
-// dispatching, so wrapping it in `{ fetch }` is safe — the consent
-// handler still picks up the helper. We delay assembly until the
-// first request because `createCmsRef` + `buildAuthFromEnv` both
-// need env bindings that aren't available at module init.
+type CachedProvider = ReturnType<typeof createOAuthProvider>;
+
+// Assembly is deferred to the first request because `createCmsRef` +
+// `buildAuthFromEnv` both need env bindings that aren't available at
+// module init. The library injects `env.OAUTH_PROVIDER` inside
+// `provider.fetch(req, env, ctx)` before dispatching, so wrapping it
+// in `{ fetch }` is safe — the consent handler still picks up the
+// helper.
 let providerCache: CachedProvider | null = null;
 
 const AUTH_NOT_CONFIGURED = {
