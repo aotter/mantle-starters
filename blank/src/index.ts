@@ -2,16 +2,20 @@ import { Hono } from "hono";
 import {
   createAuth,
   createCmsRef,
-  mountMcp,
+  createMcpApiHandler,
+  createOAuthProvider,
+  mountAuthorize,
   mountServerEndpoints,
   type Auth,
-  type CreateAuthConfig,
+  type CmsRuntimeRef,
 } from "@aotterclam/clam-cms-cloudflare";
 import { buildCmsConfig, type Env } from "./clamConfig.js";
 
+type CachedProvider = ReturnType<typeof createOAuthProvider>;
+
 /** Headless worker entrypoint — API + MCP only, no rendered UI.
- *  Wire your own frontend to /api/views/* + /staff/mcp + /mcp + /api/auth/*. */
-let appCache: Hono | null = null;
+ *  Wire your own frontend to /api/views/* + /mcp/staff + /mcp + /api/auth/*. */
+let providerCache: CachedProvider | null = null;
 
 const AUTH_NOT_CONFIGURED = {
   error: "auth_not_configured",
@@ -21,41 +25,48 @@ const AUTH_NOT_CONFIGURED = {
 
 function buildAuthFromEnv(env: Env): Auth {
   const baseURL = env.PUBLIC_ORIGIN ?? "http://localhost:8787";
-  const github: CreateAuthConfig["github"] =
-    env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET
-      ? {
-          clientId: env.GITHUB_CLIENT_ID,
-          clientSecret: env.GITHUB_CLIENT_SECRET,
-        }
-      : undefined;
   return createAuth({
     database: env.DB,
     baseURL,
     secret: env.BETTER_AUTH_SECRET,
-    github,
-    adminGithubLogin: env.ADMIN_GITHUB_LOGIN,
+    methods:
+      env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET
+        ? [
+            {
+              kind: "social",
+              provider: "github",
+              clientId: env.GITHUB_CLIENT_ID,
+              clientSecret: env.GITHUB_CLIENT_SECRET,
+            },
+          ]
+        : [],
+    bootstrapOwner: env.ADMIN_GITHUB_LOGIN
+      ? { match: "github-login", value: env.ADMIN_GITHUB_LOGIN }
+      : undefined,
   });
 }
 
-function getApp(env: Env): Hono {
-  if (appCache) return appCache;
-  const auth = buildAuthFromEnv(env);
-  const cms = createCmsRef(buildCmsConfig(env, auth));
+function buildApp(auth: Auth, cms: CmsRuntimeRef): Hono {
   const app = new Hono();
   app.all("/api/auth/*", (c) => auth.handler(c.req.raw));
   mountServerEndpoints(app, cms);
-  mountMcp(app, cms, {
-    path: "/staff/mcp",
-    surface: "staff",
-    requiredScope: "mcp:staff",
-  });
-  mountMcp(app, cms, {
-    path: "/mcp",
-    surface: "public",
-    requiredScope: "mcp:read",
-  });
-  appCache = app;
+  mountAuthorize(app, { auth });
   return app;
+}
+
+function getProvider(env: Env): CachedProvider {
+  if (providerCache) return providerCache;
+  const auth = buildAuthFromEnv(env);
+  const cms = createCmsRef(buildCmsConfig(env, auth));
+  const app = buildApp(auth, cms);
+  providerCache = createOAuthProvider({
+    defaultHandler: { fetch: (req, e, ctx) => app.fetch(req, e, ctx) },
+    apiHandlers: {
+      "/mcp/staff": createMcpApiHandler({ ref: cms, surface: "staff" }),
+      "/mcp": createMcpApiHandler({ ref: cms, surface: "public" }),
+    },
+  });
+  return providerCache;
 }
 
 export default {
@@ -63,6 +74,6 @@ export default {
     if (!env.BETTER_AUTH_SECRET) {
       return Response.json(AUTH_NOT_CONFIGURED, { status: 503 });
     }
-    return getApp(env).fetch(req, env, ctx);
+    return getProvider(env).fetch(req, env, ctx);
   },
 };

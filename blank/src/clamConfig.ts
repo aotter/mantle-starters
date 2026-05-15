@@ -11,6 +11,10 @@ import { loadManifests } from "./loadManifests.js";
 export interface Env {
   readonly DB: D1Database;
   readonly KV: KVNamespace;
+  /** OAuth provider storage — clients / grants / tokens issued by
+   *  @cloudflare/workers-oauth-provider. Separate namespace from KV.
+   *  Required for the carve-out auth surface. */
+  readonly OAUTH_KV: KVNamespace;
   readonly ASSETS?: Fetcher;
   readonly GITHUB_CLIENT_ID?: string;
   readonly GITHUB_CLIENT_SECRET?: string;

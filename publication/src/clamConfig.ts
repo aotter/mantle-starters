@@ -15,6 +15,11 @@ import { buildTemplates } from "./theme.default/templates/index.js";
 export interface Env {
   readonly DB: D1Database;
   readonly KV: KVNamespace;
+  /** OAuth provider storage — clients / grants / tokens issued by
+   *  `@cloudflare/workers-oauth-provider`. Separate namespace so a
+   *  future "rotate all tokens" sweep can wipe it independently from
+   *  the main KV. Required for the carve-out auth surface. */
+  readonly OAUTH_KV: KVNamespace;
   readonly ASSETS?: Fetcher;
   /** GitHub OAuth App client_id — provision at github.com/settings/developers. */
   readonly GITHUB_CLIENT_ID?: string;

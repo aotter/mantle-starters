@@ -12,6 +12,12 @@ database_id = "00000000-0000-0000-0000-000000000000"
 binding = "KV"
 id = "kv-clam-blank-local"
 
+# OAuth provider storage — clients / grants / tokens issued by
+# @cloudflare/workers-oauth-provider. Separate namespace from KV.
+[[kv_namespaces]]
+binding = "OAUTH_KV"
+id = "oauth-kv-clam-blank-local"
+
 # Bundle YAML manifests as inline text strings.
 [[rules]]
 type = "Text"

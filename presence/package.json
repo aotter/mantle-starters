@@ -21,9 +21,9 @@
     "theme:reset": "node scripts/theme-reset.mjs"
   },
   "dependencies": {
-    "@aotterclam/clam-cms-cloudflare": "0.0.8-alpha",
-    "@aotterclam/clam-cms-runtime": "0.0.8-alpha",
-    "@aotterclam/clam-cms-spec": "0.0.8-alpha",
+    "@aotterclam/clam-cms-cloudflare": "0.0.9-alpha",
+    "@aotterclam/clam-cms-runtime": "0.0.9-alpha",
+    "@aotterclam/clam-cms-spec": "0.0.9-alpha",
     "aws4fetch": "^1.0.20",
     "hono": "^4.6.20",
     "marked": "^14.1.3",

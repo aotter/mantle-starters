@@ -23,6 +23,12 @@ database_id = "00000000-0000-0000-0000-000000000000"
 binding = "KV"
 id = "kv-clam-transaction-local"
 
+# OAuth provider storage — clients / grants / tokens issued by
+# @cloudflare/workers-oauth-provider. Separate namespace from KV.
+[[kv_namespaces]]
+binding = "OAUTH_KV"
+id = "oauth-kv-clam-transaction-local"
+
 # InventoryActor DurableObject — single instance per tenant. Holds
 # find-and-modify locks for once-and-only-once webhook processing
 # AND atomic inventory reserve/commit/release. See
@@ -150,6 +156,10 @@ database_id = "00000000-0000-0000-0000-000000000000"
 [[env.test.kv_namespaces]]
 binding = "KV"
 id = "kv-clam-transaction-test"
+
+[[env.test.kv_namespaces]]
+binding = "OAUTH_KV"
+id = "oauth-kv-clam-transaction-test"
 
 [[env.test.durable_objects.bindings]]
 name = "INVENTORY_ACTOR"

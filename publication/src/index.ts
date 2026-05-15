@@ -3,21 +3,31 @@ import type { Entry } from "@aotterclam/clam-cms-spec";
 import {
   createAuth,
   createCmsRef,
-  mountMcp,
+  createMcpApiHandler,
+  createOAuthProvider,
+  mountAuthorize,
   mountPublicRoutes,
   mountServerEndpoints,
   type Auth,
-  type CreateAuthConfig,
+  type CmsRuntimeRef,
   type PublicRouteContext,
 } from "@aotterclam/clam-cms-cloudflare";
 import { buildCmsConfig, type Env } from "./clamConfig.js";
+
+type CachedProvider = ReturnType<typeof createOAuthProvider>;
 import {
   contactTemplate,
   homeTemplate,
   notFoundTemplate,
 } from "./theme.default/templates/index.js";
 
-let appCache: Hono | null = null;
+// Cache the assembled OAuthProvider per-isolate. The library injects
+// `env.OAUTH_PROVIDER` inside `provider.fetch(req, env, ctx)` before
+// dispatching, so wrapping it in `{ fetch }` is safe — the consent
+// handler still picks up the helper. We delay assembly until the
+// first request because `createCmsRef` + `buildAuthFromEnv` both
+// need env bindings that aren't available at module init.
+let providerCache: CachedProvider | null = null;
 
 const AUTH_NOT_CONFIGURED = {
   error: "auth_not_configured",
@@ -27,30 +37,32 @@ const AUTH_NOT_CONFIGURED = {
 
 function buildAuthFromEnv(env: Env): Auth {
   const baseURL = env.PUBLIC_ORIGIN ?? "http://localhost:8787";
-  const github: CreateAuthConfig["github"] =
-    env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET
-      ? {
-          clientId: env.GITHUB_CLIENT_ID,
-          clientSecret: env.GITHUB_CLIENT_SECRET,
-          // Keeps the existing GitHub OAuth App's registered callback
-          // URL working; delete with the translator route once the App
-          // config moves to /api/auth/callback/github.
-          redirectURI: `${baseURL}/admin/auth/github/callback`,
-        }
-      : undefined;
   return createAuth({
     database: env.DB,
     baseURL,
     secret: env.BETTER_AUTH_SECRET,
-    github,
-    adminGithubLogin: env.ADMIN_GITHUB_LOGIN,
+    methods:
+      env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET
+        ? [
+            {
+              kind: "social",
+              provider: "github",
+              clientId: env.GITHUB_CLIENT_ID,
+              clientSecret: env.GITHUB_CLIENT_SECRET,
+              // Keeps the existing GitHub OAuth App's registered callback
+              // URL working; delete with the translator route once the App
+              // config moves to /api/auth/callback/github.
+              redirectURI: `${baseURL}/admin/auth/github/callback`,
+            },
+          ]
+        : [],
+    bootstrapOwner: env.ADMIN_GITHUB_LOGIN
+      ? { match: "github-login", value: env.ADMIN_GITHUB_LOGIN }
+      : undefined,
   });
 }
 
-function getApp(env: Env): Hono {
-  if (appCache) return appCache;
-  const auth = buildAuthFromEnv(env);
-  const cms = createCmsRef(buildCmsConfig(env, auth));
+function buildApp(env: Env, auth: Auth, cms: CmsRuntimeRef): Hono {
   const app = new Hono();
 
   app.all("/api/auth/*", (c) => auth.handler(c.req.raw));
@@ -63,16 +75,10 @@ function getApp(env: Env): Hono {
   });
 
   mountServerEndpoints(app, cms);
-  mountMcp(app, cms, {
-    path: "/staff/mcp",
-    surface: "staff",
-    requiredScope: "mcp:staff",
-  });
-  mountMcp(app, cms, {
-    path: "/mcp",
-    surface: "public",
-    requiredScope: "mcp:read",
-  });
+  // `/oauth/authorize` consent gate. Verifies the visitor has a
+  // Better Auth session (staff role check happens inside each MCP
+  // apiHandler, not here — keeps consent UI uniform across surfaces).
+  mountAuthorize(app, { auth });
   mountPublicRoutes(app, cms, {
     collectionRoutes: [
       { collection: "post-translations", segment: "posts", listRoute: true },
@@ -90,8 +96,22 @@ function getApp(env: Env): Hono {
     liveDev: env.CLAM_LOCAL_DEV === "1",
   });
 
-  appCache = app;
   return app;
+}
+
+function getProvider(env: Env): CachedProvider {
+  if (providerCache) return providerCache;
+  const auth = buildAuthFromEnv(env);
+  const cms = createCmsRef(buildCmsConfig(env, auth));
+  const app = buildApp(env, auth, cms);
+  providerCache = createOAuthProvider({
+    defaultHandler: { fetch: (req, e, ctx) => app.fetch(req, e, ctx) },
+    apiHandlers: {
+      "/mcp/staff": createMcpApiHandler({ ref: cms, surface: "staff" }),
+      "/mcp": createMcpApiHandler({ ref: cms, surface: "public" }),
+    },
+  });
+  return providerCache;
 }
 
 async function renderHome(ctx: PublicRouteContext): Promise<Response> {
@@ -180,11 +200,16 @@ async function renderNotFound(ctx: PublicRouteContext): Promise<Response> {
   });
 }
 
+// `OAuthProvider` must own the worker entry — it injects
+// `env.OAUTH_PROVIDER` on every request before dispatching to
+// `defaultHandler` / `apiHandlers`. The thin `{ fetch }` wrapper is
+// just so we can lazy-build the provider once env is in scope; the
+// lib's injection logic still runs inside `getProvider(env).fetch`.
 export default {
   async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     if (!env.BETTER_AUTH_SECRET) {
       return Response.json(AUTH_NOT_CONFIGURED, { status: 503 });
     }
-    return getApp(env).fetch(req, env, ctx);
+    return getProvider(env).fetch(req, env, ctx);
   },
 };

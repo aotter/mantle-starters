@@ -9,14 +9,14 @@ importers:
   .:
     dependencies:
       '@aotterclam/clam-cms-cloudflare':
-        specifier: 0.0.8-alpha
-        version: 0.0.8-alpha(@cloudflare/workers-types@4.20260510.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+        specifier: 0.0.9-alpha
+        version: 0.0.9-alpha(@cloudflare/workers-types@4.20260510.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@aotterclam/clam-cms-runtime':
-        specifier: 0.0.8-alpha
-        version: 0.0.8-alpha
+        specifier: 0.0.9-alpha
+        version: 0.0.9-alpha
       '@aotterclam/clam-cms-spec':
-        specifier: 0.0.8-alpha
-        version: 0.0.8-alpha
+        specifier: 0.0.9-alpha
+        version: 0.0.9-alpha
       aws4fetch:
         specifier: ^1.0.20
         version: 1.0.20
@@ -48,17 +48,17 @@ importers:
 
 packages:
 
-  '@aotterclam/clam-cms-admin-ui@0.0.8-alpha':
-    resolution: {integrity: sha512-pqBjJB2WmykX71zWmeNcsoVPhZpC9jqXKi6kOq/x72W547C/LOjKE3AnwLnQdt4w9aTo15Lv1o9VT7g0xgJNdA==}
+  '@aotterclam/clam-cms-admin-ui@0.0.9-alpha':
+    resolution: {integrity: sha512-qBRolOEwIqDko1/pnd5yeOt9m+Vwesozm3B3gcIwJxuM8RjJkPAB0+/6j2s+fHNUl6Ww8zIaTvvU8o6evROe/g==}
 
-  '@aotterclam/clam-cms-cloudflare@0.0.8-alpha':
-    resolution: {integrity: sha512-kOTKg8umdRpwW1wtKpUVhL6lDOHIOy/ViRtqkjAQT74s5UlFc1evEZ7GpeL679xEvjnS4cziHPeputUOqD6jgw==}
+  '@aotterclam/clam-cms-cloudflare@0.0.9-alpha':
+    resolution: {integrity: sha512-msLWcohm1F3m7qELp8Yk7a3RmP/G1+ifhAx0/HH9DbyIQszEv40LcFQ4M5Cy4RPJ/CND3oT2MyG3w37ht7wUlg==}
 
-  '@aotterclam/clam-cms-runtime@0.0.8-alpha':
-    resolution: {integrity: sha512-TZHJw6+i1EbsRk+Aqw9418O8hqF1zXxL3KXWUyn6avYUi2sdaVauBwbu7iVTX+Hm5XFHdTCUUIEgVj2wOp5OaA==}
+  '@aotterclam/clam-cms-runtime@0.0.9-alpha':
+    resolution: {integrity: sha512-19CzKfO9+hWUdxeRW/5CnRu4ih7sqD2tosv92nQ8GnLThjJBkyBelgSj3kF6i8tqNichBWbjitztNqlTOBH4bg==}
 
-  '@aotterclam/clam-cms-spec@0.0.8-alpha':
-    resolution: {integrity: sha512-laWk0YjY7Mj1yMOORVBZHvDkIzxmeN4kAGxcZRyT9OiP2vTq13YqazyRKJT/+BwZmuHZ7opAk+ugeRIIEoPOYA==}
+  '@aotterclam/clam-cms-spec@0.0.9-alpha':
+    resolution: {integrity: sha512-YTneeV6BdgyoroSGhF2qjfOXOWqA0fXY9JNBV2JT7NPFwEhyKUFHtWu0WvnzsSyRbNN5ESpM1GTEs0XPb9eBsw==}
     hasBin: true
 
   '@better-auth/core@1.6.10':
@@ -182,6 +182,9 @@ packages:
     engines: {node: '>=16'}
     cpu: [x64]
     os: [win32]
+
+  '@cloudflare/workers-oauth-provider@0.6.0':
+    resolution: {integrity: sha512-KOkTWEjwVjfYGU78eyapKziuPuzKw9gIg4LpxbGmxWhNl4bAdiJzWXeV3nepFr+vmkEiTMEGk99Llj5j0tH2cw==}
 
   '@cloudflare/workers-types@4.20260510.1':
     resolution: {integrity: sha512-Wcmb56nJMHw1BLpArV3RSmWb/z0Zx3S8OJ5mVUTb+AVTbyopU9iJzZrFGlYX18Ju9hXxqak2mhFMq6sCaFssag==}
@@ -550,89 +553,105 @@ packages:
     resolution: {integrity: sha512-excjX8DfsIcJ10x1Kzr4RcWe1edC9PquDRRPx3YVCvQv+U5p7Yin2s32ftzikXojb1PIFc/9Mt28/y+iRklkrw==}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@img/sharp-libvips-linux-arm@1.2.4':
     resolution: {integrity: sha512-bFI7xcKFELdiNCVov8e44Ia4u2byA+l3XtsAj+Q8tfCwO6BQ8iDojYdvoPMqsKDkuoOo+X6HZA0s0q11ANMQ8A==}
     cpu: [arm]
     os: [linux]
+    libc: [glibc]
 
   '@img/sharp-libvips-linux-ppc64@1.2.4':
     resolution: {integrity: sha512-FMuvGijLDYG6lW+b/UvyilUWu5Ayu+3r2d1S8notiGCIyYU/76eig1UfMmkZ7vwgOrzKzlQbFSuQfgm7GYUPpA==}
     cpu: [ppc64]
     os: [linux]
+    libc: [glibc]
 
   '@img/sharp-libvips-linux-riscv64@1.2.4':
     resolution: {integrity: sha512-oVDbcR4zUC0ce82teubSm+x6ETixtKZBh/qbREIOcI3cULzDyb18Sr/Wcyx7NRQeQzOiHTNbZFF1UwPS2scyGA==}
     cpu: [riscv64]
     os: [linux]
+    libc: [glibc]
 
   '@img/sharp-libvips-linux-s390x@1.2.4':
     resolution: {integrity: sha512-qmp9VrzgPgMoGZyPvrQHqk02uyjA0/QrTO26Tqk6l4ZV0MPWIW6LTkqOIov+J1yEu7MbFQaDpwdwJKhbJvuRxQ==}
     cpu: [s390x]
     os: [linux]
+    libc: [glibc]
 
   '@img/sharp-libvips-linux-x64@1.2.4':
     resolution: {integrity: sha512-tJxiiLsmHc9Ax1bz3oaOYBURTXGIRDODBqhveVHonrHJ9/+k89qbLl0bcJns+e4t4rvaNBxaEZsFtSfAdquPrw==}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@img/sharp-libvips-linuxmusl-arm64@1.2.4':
     resolution: {integrity: sha512-FVQHuwx1IIuNow9QAbYUzJ+En8KcVm9Lk5+uGUQJHaZmMECZmOlix9HnH7n1TRkXMS0pGxIJokIVB9SuqZGGXw==}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@img/sharp-libvips-linuxmusl-x64@1.2.4':
     resolution: {integrity: sha512-+LpyBk7L44ZIXwz/VYfglaX/okxezESc6UxDSoyo2Ks6Jxc4Y7sGjpgU9s4PMgqgjj1gZCylTieNamqA1MF7Dg==}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@img/sharp-linux-arm64@0.34.5':
     resolution: {integrity: sha512-bKQzaJRY/bkPOXyKx5EVup7qkaojECG6NLYswgktOZjaXecSAeCWiZwwiFf3/Y+O1HrauiE3FVsGxFg8c24rZg==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@img/sharp-linux-arm@0.34.5':
     resolution: {integrity: sha512-9dLqsvwtg1uuXBGZKsxem9595+ujv0sJ6Vi8wcTANSFpwV/GONat5eCkzQo/1O6zRIkh0m/8+5BjrRr7jDUSZw==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [arm]
     os: [linux]
+    libc: [glibc]
 
   '@img/sharp-linux-ppc64@0.34.5':
     resolution: {integrity: sha512-7zznwNaqW6YtsfrGGDA6BRkISKAAE1Jo0QdpNYXNMHu2+0dTrPflTLNkpc8l7MUP5M16ZJcUvysVWWrMefZquA==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [ppc64]
     os: [linux]
+    libc: [glibc]
 
   '@img/sharp-linux-riscv64@0.34.5':
     resolution: {integrity: sha512-51gJuLPTKa7piYPaVs8GmByo7/U7/7TZOq+cnXJIHZKavIRHAP77e3N2HEl3dgiqdD/w0yUfiJnII77PuDDFdw==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [riscv64]
     os: [linux]
+    libc: [glibc]
 
   '@img/sharp-linux-s390x@0.34.5':
     resolution: {integrity: sha512-nQtCk0PdKfho3eC5MrbQoigJ2gd1CgddUMkabUj+rBevs8tZ2cULOx46E7oyX+04WGfABgIwmMC0VqieTiR4jg==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [s390x]
     os: [linux]
+    libc: [glibc]
 
   '@img/sharp-linux-x64@0.34.5':
     resolution: {integrity: sha512-MEzd8HPKxVxVenwAa+JRPwEC7QFjoPWuS5NZnBt6B3pu7EG2Ge0id1oLHZpPJdn3OQK+BQDiw9zStiHBTJQQQQ==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@img/sharp-linuxmusl-arm64@0.34.5':
     resolution: {integrity: sha512-fprJR6GtRsMt6Kyfq44IsChVZeGN97gTD331weR1ex1c1rypDEABN6Tm2xa1wE6lYb5DdEnk03NZPqA7Id21yg==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@img/sharp-linuxmusl-x64@0.34.5':
     resolution: {integrity: sha512-Jg8wNT1MUzIvhBFxViqrEhWDGzqymo3sV7z7ZsaWbZNDLXRJZoRGrjulp60YYtV4wfY8VIKcWidjojlLcWrd8Q==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@img/sharp-wasm32@0.34.5':
     resolution: {integrity: sha512-OdWTEiVkY2PHwqkbBI8frFxQQFekHaSSkUIJkwzclWZe64O1X4UlUjqqqLaPbUpMOQk6FBu/HtlGXNblIs0huw==}
@@ -1355,7 +1374,7 @@ packages:
 
 snapshots:
 
-  '@aotterclam/clam-cms-admin-ui@0.0.8-alpha':
+  '@aotterclam/clam-cms-admin-ui@0.0.9-alpha':
     dependencies:
       '@radix-ui/react-collapsible': 1.1.12(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@radix-ui/react-dialog': 1.1.15(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -1373,11 +1392,12 @@ snapshots:
       - '@types/react'
       - '@types/react-dom'
 
-  '@aotterclam/clam-cms-cloudflare@0.0.8-alpha(@cloudflare/workers-types@4.20260510.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
+  '@aotterclam/clam-cms-cloudflare@0.0.9-alpha(@cloudflare/workers-types@4.20260510.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
     dependencies:
-      '@aotterclam/clam-cms-admin-ui': 0.0.8-alpha
-      '@aotterclam/clam-cms-runtime': 0.0.8-alpha
-      '@aotterclam/clam-cms-spec': 0.0.8-alpha
+      '@aotterclam/clam-cms-admin-ui': 0.0.9-alpha
+      '@aotterclam/clam-cms-runtime': 0.0.9-alpha
+      '@aotterclam/clam-cms-spec': 0.0.9-alpha
+      '@cloudflare/workers-oauth-provider': 0.6.0
       aws4fetch: 1.0.20
       better-auth: 1.6.10(@cloudflare/workers-types@4.20260510.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       hono: 4.12.18
@@ -1406,13 +1426,13 @@ snapshots:
       - vitest
       - vue
 
-  '@aotterclam/clam-cms-runtime@0.0.8-alpha':
+  '@aotterclam/clam-cms-runtime@0.0.9-alpha':
     dependencies:
-      '@aotterclam/clam-cms-spec': 0.0.8-alpha
+      '@aotterclam/clam-cms-spec': 0.0.9-alpha
       marked: 14.1.4
       zod: 4.4.3
 
-  '@aotterclam/clam-cms-spec@0.0.8-alpha':
+  '@aotterclam/clam-cms-spec@0.0.9-alpha':
     dependencies:
       yaml: 2.8.4
       zod: 4.4.3
@@ -1492,6 +1512,8 @@ snapshots:
 
   '@cloudflare/workerd-windows-64@1.20260508.1':
     optional: true
+
+  '@cloudflare/workers-oauth-provider@0.6.0': {}
 
   '@cloudflare/workers-types@4.20260510.1': {}
 

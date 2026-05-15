@@ -17,9 +17,9 @@
     "setup:site": "node scripts/setup-site.mjs"
   },
   "dependencies": {
-    "@aotterclam/clam-cms-spec": "0.0.8-alpha",
-    "@aotterclam/clam-cms-runtime": "0.0.8-alpha",
-    "@aotterclam/clam-cms-cloudflare": "0.0.8-alpha",
+    "@aotterclam/clam-cms-spec": "0.0.9-alpha",
+    "@aotterclam/clam-cms-runtime": "0.0.9-alpha",
+    "@aotterclam/clam-cms-cloudflare": "0.0.9-alpha",
     "hono": "^4.6.20"
   },
   "devDependencies": {
