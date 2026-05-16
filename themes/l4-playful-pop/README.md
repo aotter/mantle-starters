@@ -24,7 +24,7 @@ Dark mode adjusted in parallel (deep-indigo paper, lighter hot-pink).
 
 ## Status
 
-Stub. Mechanism-only — when consumed by `create-clam-cms`, this
+Stub. Mechanism-only — when consumed by `create-clam-mantle`, this
 overlay lands at `src/theme/tokens.ts` plus `src/theme/index.ts` in the
 user's project. `index.ts` registers the token CSS as
 `ThemeOverride.tokens`, so the override is concatenated after baseline
@@ -39,4 +39,4 @@ pnpm theme:reset tokens.ts
 The locked `src/theme.default/` baseline remains untouched.
 
 Real artist content lands separately. Track at
-[Epic AotterClam/clam-cms#116](https://github.com/AotterClam/clam-cms/issues/116).
+[Epic AotterClam/clam-mantle#116](https://github.com/AotterClam/clam-mantle/issues/116).

@@ -11,7 +11,7 @@
  * order_items snapshot from checkoutStart's enriched cart).
  */
 
-import type { AnyHandler } from "@aotterclam/clam-cms-runtime";
+import type { AnyHandler } from "@aotterclam/clam-mantle/runtime";
 import { defineHandler } from "./_context.js";
 import { loadProductCatalog } from "./_productEnrichment.js";
 

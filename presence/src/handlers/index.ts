@@ -1,5 +1,5 @@
-import type { AnyHandler } from "@aotterclam/clam-cms-runtime";
-import { cloudflareTurnstileCheck } from "@aotterclam/clam-cms-cloudflare";
+import type { AnyHandler } from "@aotterclam/clam-mantle/runtime";
+import { cloudflareTurnstileCheck } from "@aotterclam/clam-mantle/cloudflare";
 import { slackNotify } from "./slackNotify.js";
 
 export interface HandlerEnv {

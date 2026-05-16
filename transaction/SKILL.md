@@ -1,11 +1,11 @@
 ---
 archetype: transaction
 status: ready
-starter_repo: AotterClam/clam-cms-starters
+starter_repo: AotterClam/clam-mantle-starters
 starter_path: transaction
 overlays: []
 scale_limit: 100  # orders/day; advisory — Mantle informs user
-applies_to: clam-cms@v0.1.0
+applies_to: clam-mantle@v0.1.0
 ---
 
 # `transaction` archetype
@@ -19,7 +19,7 @@ Small-scale shop on Cloudflare: products + cart + payment + orders. Sized for **
 Two architectural pieces beyond the standard publication shape:
 
 - **`InventoryActor` DurableObject** (one per tenant) holds inventory state + find-and-modify locks for once-and-only-once payment-callback processing.
-- **`payment_callback_queue` + `order_work_queue`** Workers Queues run at `max_concurrency: 1` for strict serial processing. The HTTP webhook handler verifies the provider's signature and ships to queue; the consumer does the actual work (lock acquire → order INSERT → inventory commit → mark completed) under the DO lock.
+- **`payment-callback-queue` + `order-work-queue`** Workers Queues run at `max_concurrency: 1` for strict serial processing. The HTTP webhook handler verifies the provider's signature and ships to queue; the consumer does the actual work (lock acquire → order INSERT → inventory commit → mark completed) under the DO lock.
 
 ## Interview probes (run in this order)
 
@@ -88,7 +88,7 @@ Open the admin and list the products collection (should be empty). Then draft th
 
 ## Payment provider wiring (your job during install)
 
-Run AFTER `create-clam-cms` scaffolds the directory and BEFORE provision. The starter's `src/payment/index.ts` is a fail-loud stub that throws "PaymentProvider not configured" until you replace it.
+Run AFTER `create-clam-mantle` scaffolds the directory and BEFORE provision. The starter's `src/payment/index.ts` is a fail-loud stub that throws "PaymentProvider not configured" until you replace it.
 
 ### Step 1 — pick the template
 
@@ -160,9 +160,9 @@ What ships:
 - **Schemas**: `products`, `product-translations`, `orders`, `order_items`, `inventory_snapshots`.
 - **Views**: `products-public`, `product-by-slug`, `orders-recent` (staff), `order-by-number`, `inventory-low` (staff).
 - **Procedures**: `add-to-cart`, `checkout-start`, `checkout-confirm`, `checkout-return`, `read-order-status`, `snapshot-inventory`, `restock-product` (staff-only via `requires.auth.all: [{ ctx.staff: [owner] }]`), `enqueue-order-confirmed`.
-- **Triggers**: 3 HTTP routes (`POST /api/cart/add`, `POST /api/checkout/start`, `POST /api/payment/callback`, `POST /staff/api/restock`) + `orders.after_create` lifecycle.
+- **Triggers**: 3 HTTP routes (`POST /api/cart/add`, `POST /api/checkout/start`, `POST /api/payment/callback`, `POST /api/staff/restock`) + `orders.after_create` lifecycle.
 - **DurableObject**: `InventoryActor` (1 per tenant).
-- **Queues**: `payment_callback_queue` + `order_work_queue` (both `max_concurrency: 1`).
+- **Queues**: `payment-callback-queue` + `order-work-queue` (both `max_concurrency: 1`).
 - **Cron**: every 5min `inventory.reconcile.tick` (sweeper + snapshot).
 
 GET-style endpoints (`/api/payment/return`, `/api/order/status`) are mounted as custom Hono routes in `src/index.ts`, not HTTP Triggers — v0.1 Triggers are locked to POST/PUT/PATCH/DELETE.
@@ -171,6 +171,6 @@ The agent-author surface stays inside v0.1 manifest grammar — no DRAFT keys, n
 
 ## See also
 
-- [`skills/extend`](https://raw.githubusercontent.com/AotterClam/clam-cms/main/skills/extend/SKILL.md) — adding additional Schemas / Views / Procedures / Triggers after install.
-- [`skills/customize-design`](https://raw.githubusercontent.com/AotterClam/clam-cms/main/skills/customize-design/SKILL.md) — theming the product / cart / checkout pages (PR 4).
+- [`skills/extend`](https://raw.githubusercontent.com/AotterClam/clam-mantle/main/skills/extend/SKILL.md) — adding additional Schemas / Views / Procedures / Triggers after install.
+- [`skills/customize-design`](https://raw.githubusercontent.com/AotterClam/clam-mantle/main/skills/customize-design/SKILL.md) — theming the product / cart / checkout pages (PR 4).
 - [`src/payment/providers/README.md`](src/payment/providers/README.md) — provider wiring details + the two pattern templates.

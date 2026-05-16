@@ -1,9 +1,9 @@
-# `@aotterclam/create-clam-cms`
+# `@aotterclam/create-clam-mantle`
 
-npx scaffolder for clam-cms v0.1.0 consumer projects. **Not published to npm** — distributed as a tarball attached to each `clam-cms` GitHub release. `npx` resolves the URL directly, so installs don't require an npm registry round-trip.
+npx scaffolder for clam-mantle v0.1.0 consumer projects. **Not published to npm** — distributed as a tarball attached to each `clam-mantle` GitHub release. `npx` resolves the URL directly, so installs don't require an npm registry round-trip.
 
 ```bash
-npx https://github.com/AotterClam/clam-cms/releases/download/v0.0.8-alpha.1/aotterclam-create-clam-cms-0.0.8-alpha.1.tgz \
+npx https://github.com/AotterClam/clam-mantle/releases/download/v0.0.8-alpha.1/aotterclam-create-clam-mantle-0.0.8-alpha.1.tgz \
   <archetype> \
   --project-name <name> \
   --brand "<brand>" \
@@ -19,8 +19,8 @@ The Mantle install skill ([`skills/install/SKILL.md`](../../skills/install/SKILL
 
 ## What it does
 
-1. Fetches `sources.json` from `AotterClam/clam-cms-starters` at the requested ref (default `main`) — resolves archetype → starter path + (optional) theme overlay. Falls back to a bundled stale snapshot if GH is unreachable.
-2. Downloads a tarball of `clam-cms-starters` at the same ref.
+1. Fetches `sources.json` from `AotterClam/clam-mantle-starters` at the requested ref (default `main`) — resolves archetype → starter path + (optional) theme overlay. Falls back to a bundled stale snapshot if GH is unreachable.
+2. Downloads a tarball of `clam-mantle-starters` at the same ref.
 3. Extracts and merges into the destination directory in this order: `_common/` → `<archetype>/` → each archetype overlay (in order) → (optional) `themes/<theme-key>/`. Later layers overwrite earlier files on conflict.
 4. Substitutes `{{PLACEHOLDER}}` macros per ADR-0016.
 5. Renames `<file>.template` → `<file>` (so `_common/AGENTS.md.template` lands as `AGENTS.md`).
@@ -49,7 +49,7 @@ The Mantle install skill ([`skills/install/SKILL.md`](../../skills/install/SKILL
 {
   "archetype": "presence",
   "theme": null,
-  "starter_source": "AotterClam/clam-cms-starters/publication",
+  "starter_source": "AotterClam/clam-mantle-starters/publication",
   "theme_source": null,
   "overlays": [],
   "files_written": ["AGENTS.md", "mantle/site.md", "package.json", "..."],
@@ -63,15 +63,15 @@ With a theme applied:
 {
   "archetype": "publication",
   "theme": "l4-editorial-warm",
-  "starter_source": "AotterClam/clam-cms-starters/publication",
-  "theme_source": "AotterClam/clam-cms-starters/themes/l4-editorial-warm",
+  "starter_source": "AotterClam/clam-mantle-starters/publication",
+  "theme_source": "AotterClam/clam-mantle-starters/themes/l4-editorial-warm",
   ...
 }
 ```
 
 ## Source map: runtime fetch
 
-`sources.json` lives at the root of [`AotterClam/clam-cms-starters`](https://github.com/AotterClam/clam-cms-starters) and is fetched at runtime. Schema:
+`sources.json` lives at the root of [`AotterClam/clam-mantle-starters`](https://github.com/AotterClam/clam-mantle-starters) and is fetched at runtime. Schema:
 
 ```json
 {
@@ -92,7 +92,7 @@ With a theme applied:
 }
 ```
 
-Adding an archetype or theme = update `sources.json` in `clam-cms-starters`. This package does not need a new version unless the merge logic itself changes.
+Adding an archetype or theme = update `sources.json` in `clam-mantle-starters`. This package does not need a new version unless the merge logic itself changes.
 
 Fetch failures (network down, GH unreachable, schema invalid) fall back to a bundled snapshot in `src/sources.ts` (`STALE_FALLBACK_SOURCES`); a warning lands on stderr.
 
@@ -127,5 +127,5 @@ The starters' own `setup:site` script keeps working for in-project reconfigurati
 
 - [ADR-0016](../../docs/adr/0016-site-semantic-layer.md) — placeholder macro list + update workflow
 - [ADR-0013](../../docs/adr/0013-agent-provisioned-consumer-projects.md) — the broader agent-provisioned install flow
-- [Epic #116](https://github.com/AotterClam/clam-cms/issues/116) — v0.0.9 install UX pivot (Mantle scope narrow + 1:1 starter + theme overlay; this package is sub-issue #121)
-- [`AotterClam/clam-cms-starters`](https://github.com/AotterClam/clam-cms-starters) — public starters monorepo this package dispatches against
+- [Epic #116](https://github.com/AotterClam/clam-mantle/issues/116) — v0.0.9 install UX pivot (Mantle scope narrow + 1:1 starter + theme overlay; this package is sub-issue #121)
+- [`AotterClam/clam-mantle-starters`](https://github.com/AotterClam/clam-mantle-starters) — public starters monorepo this package dispatches against

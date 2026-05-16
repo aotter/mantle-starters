@@ -1,7 +1,7 @@
 /**
  * Sources of truth for archetype → starter-monorepo + theme dispatch.
  *
- * `create-clam-cms` fetches `sources.json` from the `clam-cms-starters`
+ * `create-clam-mantle` fetches `sources.json` from the `clam-mantle-starters`
  * monorepo at runtime (per Epic #116 / sub-issue #121). Adding a new
  * archetype or theme = update `sources.json` in that repo. The npx
  * package does not need a new version unless the merge logic changes.
@@ -12,8 +12,8 @@
  * updated whenever the live shape evolves significantly.
  */
 
-export const STARTERS_REPO = "AotterClam/clam-cms-starters";
-export const PREMIUM_REPO = "AotterClam/clam-cms-starters-premium";
+export const STARTERS_REPO = "AotterClam/clam-mantle-starters";
+export const PREMIUM_REPO = "AotterClam/clam-mantle-starters-premium";
 
 export type SourceKind = "public" | "private";
 
@@ -67,7 +67,7 @@ export const STALE_FALLBACK_SOURCES: SourcesJson = {
 };
 
 /**
- * Fetch the live `sources.json` from `clam-cms-starters` at the given
+ * Fetch the live `sources.json` from `clam-mantle-starters` at the given
  * ref. Returns the bundled stale snapshot on any fetch / validation
  * failure, after writing a warning to stderr — installs proceed.
  */
@@ -83,7 +83,7 @@ export async function fetchSourcesJson(ref: string): Promise<SourcesJson> {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     process.stderr.write(
-      `create-clam-cms: failed to fetch ${url} (${msg}); using bundled stale fallback.\n`,
+      `create-clam-mantle: failed to fetch ${url} (${msg}); using bundled stale fallback.\n`,
     );
     return STALE_FALLBACK_SOURCES;
   }
@@ -126,7 +126,7 @@ export function resolveArchetype(
   if (sources.roadmap.includes(archetype)) {
     throw new Error(
       `Archetype "${archetype}" is roadmap-only and does not have a starter yet. ` +
-        `The install Skill should have refused before invoking create-clam-cms.`,
+        `The install Skill should have refused before invoking create-clam-mantle.`,
     );
   }
   throw new Error(

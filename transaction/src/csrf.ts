@@ -26,7 +26,7 @@
  * Endpoints to gate:
  *   - `/api/cart/add` (anonymous, browser-origin)
  *   - `/api/checkout/start` (anonymous, browser-origin)
- *   - `/staff/api/restock` (staff-session, browser-origin)
+ *   - `/api/staff/restock` (staff-session, browser-origin)
  *
  * Endpoints NOT gated:
  *   - `/api/payment/callback` — provider webhook (Stripe / ECPay /

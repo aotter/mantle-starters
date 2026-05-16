@@ -5,7 +5,7 @@
  *
  * Ported from the retired `blog-editorial-2026-05-05` starter's visual
  * system, preserved as a design reference at
- * `clam-cms/docs/design-references/editorial-blog-2026-05-05.md`.
+ * `clam-mantle/docs/design-references/editorial-blog-2026-05-05.md`.
  *
  * Tokens are the v0.0.9 stub scope; component overrides (drop cap on
  * first body paragraph, post-list two-column grid, hero block, mono

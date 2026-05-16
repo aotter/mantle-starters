@@ -1,4 +1,4 @@
-import { createPublicPathResolver, type PublicPathResolver } from "@aotterclam/clam-cms-runtime";
+import { createPublicPathResolver, type PublicPathResolver } from "@aotterclam/clam-mantle/runtime";
 
 /**
  * The starter's collection→URL routing table. Single source of truth

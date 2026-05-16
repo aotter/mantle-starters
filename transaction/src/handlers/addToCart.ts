@@ -16,7 +16,7 @@
  * add).
  */
 
-import type { AnyHandler, CmsRuntime } from "@aotterclam/clam-cms-runtime";
+import type { AnyHandler, CmsRuntime } from "@aotterclam/clam-mantle/runtime";
 import { defineHandler } from "./_context.js";
 
 interface CartState {

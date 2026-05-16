@@ -1,4 +1,4 @@
-import type { AnyHandler } from "@aotterclam/clam-cms-runtime";
+import type { AnyHandler } from "@aotterclam/clam-mantle/runtime";
 import type { Env } from "../clamConfig.js";
 import { buildAddToCart } from "./addToCart.js";
 import { buildCheckoutStart } from "./checkoutStart.js";

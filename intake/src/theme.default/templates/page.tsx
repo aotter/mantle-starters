@@ -1,6 +1,6 @@
 /** @jsxImportSource hono/jsx */
 import { raw } from "hono/html";
-import type { EntryContext } from "@aotterclam/clam-cms-runtime";
+import type { EntryContext } from "@aotterclam/clam-mantle/runtime";
 import { Layout } from "../components/Layout.js";
 import { renderMarkdown } from "./utils.js";
 

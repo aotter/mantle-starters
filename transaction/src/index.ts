@@ -2,12 +2,14 @@ import { Hono } from "hono";
 import {
   createAuth,
   createCmsRef,
-  mountMcp,
+  createMcpApiHandler,
+  createOAuthProvider,
+  mountAuthorize,
   mountServerEndpoints,
   type Auth,
+  type AuthMethodConfig,
   type CmsRuntimeRef,
-  type CreateAuthConfig,
-} from "@aotterclam/clam-cms-cloudflare";
+} from "@aotterclam/clam-mantle/cloudflare";
 import { buildCmsConfig, type Env } from "./clamConfig.js";
 import { csrfGuard } from "./csrf.js";
 import { invokeHandler } from "./handlers/_context.js";
@@ -30,19 +32,23 @@ export { InventoryActor } from "./durableObjects/InventoryActor.js";
 /**
  * Transaction starter worker entrypoint.
  *
- * Mounts: Better Auth `/api/auth/*`, manifest-declared HTTP Triggers
- * + view REST (via `mountServerEndpoints`), dual MCP (`/staff/mcp` +
- * `/mcp`), plus two custom GET routes for the customer's payment-
- * return + order-status poll (v0.1 Triggers can't express GET; the
- * routes call into the `checkoutReturn` / `readOrderStatus`
+ * Mounts: Better Auth `/api/auth/*` (owned by mountServerEndpoints),
+ * manifest-declared HTTP Triggers + view REST (also via
+ * `mountServerEndpoints`), `mountAuthorize` consent UI on Hono, and
+ * the top-level OAuthProvider that wraps it all and exposes the dual
+ * MCP surfaces (`/mcp/staff` + `/mcp`) as bearer-verified
+ * `apiHandlers`. Plus two custom GET routes for the customer's
+ * payment-return + order-status poll (v0.1 Triggers can't express
+ * GET; the routes call into the `checkoutReturn` / `readOrderStatus`
  * Procedures via the runtime — same code path MCP / POST-Trigger
  * dispatch uses).
  *
- * Queue consumer: routes `payment_callback_queue` +
- * `order_work_queue` (both `max_concurrency: 1`) to the dispatcher
+ * Queue consumer: routes `payment-callback-queue` +
+ * `order-work-queue` (both `max_concurrency: 1`) to the dispatcher
  * in `src/handlers/orderConsumer.ts`.
  */
-let appCache: { app: Hono; cms: CmsRuntimeRef } | null = null;
+type WorkerFetch = (req: Request, env: Env, ctx: ExecutionContext) => Promise<Response>;
+let workerFetchCache: WorkerFetch | null = null;
 
 const AUTH_NOT_CONFIGURED = {
   error: "auth_not_configured",
@@ -52,28 +58,31 @@ const AUTH_NOT_CONFIGURED = {
 
 function buildAuthFromEnv(env: Env): Auth {
   const baseURL = env.PUBLIC_ORIGIN ?? "http://localhost:8787";
-  const github: CreateAuthConfig["github"] =
-    env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET
-      ? {
-          clientId: env.GITHUB_CLIENT_ID,
-          clientSecret: env.GITHUB_CLIENT_SECRET,
-        }
-      : undefined;
+  const methods: AuthMethodConfig[] = [];
+  if (env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET) {
+    methods.push({
+      kind: "social",
+      provider: "github",
+      clientId: env.GITHUB_CLIENT_ID,
+      clientSecret: env.GITHUB_CLIENT_SECRET,
+    });
+  }
   return createAuth({
     database: env.DB,
     baseURL,
     secret: env.BETTER_AUTH_SECRET,
-    github,
-    adminGithubLogin: env.ADMIN_GITHUB_LOGIN,
+    methods,
+    bootstrapOwner: env.ADMIN_GITHUB_LOGIN
+      ? { match: "github-login", value: env.ADMIN_GITHUB_LOGIN }
+      : undefined,
   });
 }
 
-function getApp(env: Env): { app: Hono; cms: CmsRuntimeRef } {
-  if (appCache) return appCache;
+function buildWorker(env: Env): WorkerFetch {
+  if (workerFetchCache) return workerFetchCache;
   const auth = buildAuthFromEnv(env);
-  const cms = createCmsRef(buildCmsConfig(env, auth));
+  const cms: CmsRuntimeRef = createCmsRef(buildCmsConfig(env, auth));
   const app = new Hono();
-  app.all("/api/auth/*", (c) => auth.handler(c.req.raw));
 
   // CSRF gate on browser-origin POSTs. Mounted BEFORE
   // mountServerEndpoints so the middleware fires before the manifest-
@@ -83,19 +92,10 @@ function getApp(env: Env): { app: Hono; cms: CmsRuntimeRef } {
   // gating rationale.
   app.use("/api/cart/add", csrfGuard);
   app.use("/api/checkout/start", csrfGuard);
-  app.use("/staff/api/restock", csrfGuard);
+  app.use("/api/staff/restock", csrfGuard);
 
   mountServerEndpoints(app, cms);
-  mountMcp(app, cms, {
-    path: "/staff/mcp",
-    surface: "staff",
-    requiredScope: "mcp:staff",
-  });
-  mountMcp(app, cms, {
-    path: "/mcp",
-    surface: "public",
-    requiredScope: "mcp:read",
-  });
+  mountAuthorize(app, { auth, loginPath: "/admin/sign-in" });
 
   // Build the GET-route handlers once at app boot; they close over
   // env + runtime. The shared handler functions also live in the
@@ -214,7 +214,7 @@ function getApp(env: Env): { app: Hono; cms: CmsRuntimeRef } {
   );
 
   // Test-only bypass: seed InventoryActor stock without going through
-  // the staff-gated `/staff/api/restock` (which needs a real session
+  // the staff-gated `/api/staff/restock` (which needs a real session
   // cookie). Gated on the SAME flag that gates FakeProvider, so this
   // is impossible to hit in production unless an operator explicitly
   // sets FAKE_PAYMENT_PROVIDER=1 (which would also disable real
@@ -247,8 +247,32 @@ function getApp(env: Env): { app: Hono; cms: CmsRuntimeRef } {
     });
   }
 
-  appCache = { app, cms };
-  return appCache;
+  // Top-level OAuthProvider — gets every request first. Intercepts
+  // /token, /register, /.well-known/oauth-* internally; routes
+  // /mcp/staff + /mcp through apiHandlers AFTER verifying bearer
+  // tokens; forwards everything else to the Hono app via
+  // defaultHandler. The lib injects OAUTH_PROVIDER onto env so
+  // /authorize on Hono can read it.
+  const oauthProvider = createOAuthProvider({
+    defaultHandler: {
+      fetch: (req, env, ctx) => app.fetch(req, env, ctx),
+    },
+    apiHandlers: {
+      // Order matters: longer prefix first so /mcp/staff matches
+      // before /mcp's shorter prefix.
+      "/mcp/staff": createMcpApiHandler({ ref: cms, surface: "staff" }),
+      "/mcp": createMcpApiHandler({ ref: cms, surface: "public" }),
+    },
+    scopesSupported: ["mcp"],
+  });
+
+  workerFetchCache = (req, e, ctx) =>
+    (oauthProvider.fetch as (r: unknown, e: unknown, c: unknown) => Promise<Response>)(
+      req,
+      e,
+      ctx,
+    );
+  return workerFetchCache;
 }
 
 export default {
@@ -256,7 +280,8 @@ export default {
     if (!env.BETTER_AUTH_SECRET) {
       return Response.json(AUTH_NOT_CONFIGURED, { status: 503 });
     }
-    return getApp(env).app.fetch(req, env, ctx);
+    const worker = buildWorker(env);
+    return worker(req, env, ctx);
   },
 
   async queue(

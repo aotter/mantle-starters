@@ -14,7 +14,7 @@
  * each factory used to do inline. Authors write `defineHandler(async
  * (input, ctx) => ...)` and the cast lives in exactly one place.
  */
-import type { AnyHandler, CmsRuntime } from "@aotterclam/clam-cms-runtime";
+import type { AnyHandler, CmsRuntime } from "@aotterclam/clam-mantle/runtime";
 
 /**
  * Ctx shape the transaction starter's handlers expect. Note this is

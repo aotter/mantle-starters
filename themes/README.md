@@ -1,8 +1,8 @@
 # `themes/`
 
-Theme overlays for clam-cms v0.0.9+. Each theme ships files that
+Theme overlays for clam-mantle v0.0.9+. Each theme ships files that
 overlay onto `src/theme/` in the scaffolded consumer project. The
-overlay merge happens in `@aotterclam/create-clam-cms` after
+overlay merge happens in `@aotterclam/create-clam-mantle` after
 `_common/` + `<archetype>/` land, so theme files always win on
 conflict against archetype defaults.
 
@@ -33,7 +33,7 @@ the CSS var override, and the second registers it as
 `ThemeOverride.tokens` so the generated site actually appends it after
 the baseline. Component / template / icon / i18n overrides slot into
 the same paths the [`customize-design`
-skill](https://github.com/AotterClam/clam-cms/blob/main/skills/customize-design/SKILL.md)
+skill](https://github.com/AotterClam/clam-mantle/blob/main/skills/customize-design/SKILL.md)
 documents.
 
 Removing an install-time token theme in a generated project should be
@@ -63,7 +63,7 @@ ship separately.
 
 `l4-editorial-journal` has the richest design provenance: it ports the
 visual system documented at
-[`clam-cms/docs/design-references/editorial-blog-2026-05-05.md`](https://github.com/AotterClam/clam-cms/blob/main/docs/design-references/editorial-blog-2026-05-05.md).
+[`clam-mantle/docs/design-references/editorial-blog-2026-05-05.md`](https://github.com/AotterClam/clam-mantle/blob/main/docs/design-references/editorial-blog-2026-05-05.md).
 The full design (drop caps, post-list grid, mono eyebrow metadata,
 vermilion mid-dot wordmark, hero block) requires component overrides
 that land when artist work resumes.

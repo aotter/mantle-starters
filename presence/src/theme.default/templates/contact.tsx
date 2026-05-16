@@ -1,7 +1,7 @@
 /** @jsxImportSource hono/jsx */
 import { html, raw } from "hono/html";
 import { marked } from "marked";
-import type { SiteConfig } from "@aotterclam/clam-cms-spec";
+import type { SiteConfig } from "@aotterclam/clam-mantle/spec";
 import { Layout } from "../components/Layout.js";
 import { bundleFor } from "../../i18n/index.js";
 

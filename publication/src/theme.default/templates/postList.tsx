@@ -1,5 +1,5 @@
 /** @jsxImportSource hono/jsx */
-import type { ListContext } from "@aotterclam/clam-cms-runtime";
+import type { ListContext } from "@aotterclam/clam-mantle/runtime";
 import { Layout } from "../components/Layout.js";
 import { bundleFor } from "../../i18n/index.js";
 import { excerpt, isoDate } from "./utils.js";

@@ -1,4 +1,4 @@
-import { TemplateRegistry } from "@aotterclam/clam-cms-runtime";
+import { TemplateRegistry } from "@aotterclam/clam-mantle/runtime";
 import overrides from "../../theme/index.js";
 import { postTemplate as basePost } from "./post.js";
 import { postListTemplate as basePostList } from "./postList.js";

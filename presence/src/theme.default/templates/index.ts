@@ -1,4 +1,4 @@
-import { TemplateRegistry } from "@aotterclam/clam-cms-runtime";
+import { TemplateRegistry } from "@aotterclam/clam-mantle/runtime";
 import overrides from "../../theme/index.js";
 import { pageTemplate as basePage } from "./page.js";
 import { homeTemplate as baseHome } from "./home.js";

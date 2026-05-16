@@ -1,4 +1,4 @@
-import { createPublicPathResolver, type PublicPathResolver } from "@aotterclam/clam-cms-runtime";
+import { createPublicPathResolver, type PublicPathResolver } from "@aotterclam/clam-mantle/runtime";
 
 /**
  * Collection → URL routing table. The transaction starter exposes

@@ -7,7 +7,7 @@ import { installFromExtractedRoot } from "../src/index.js";
 let tempRoot: string;
 
 beforeEach(() => {
-  tempRoot = mkdtempSync(join(tmpdir(), "create-clam-cms-test-"));
+  tempRoot = mkdtempSync(join(tmpdir(), "create-clam-mantle-test-"));
 });
 afterEach(() => {
   rmSync(tempRoot, { recursive: true, force: true });
@@ -95,7 +95,7 @@ describe("installFromExtractedRoot", () => {
     });
 
     expect(notes.starter_source).toBe(
-      "AotterClam/clam-cms-starters/publication",
+      "AotterClam/clam-mantle-starters/publication",
     );
     expect(notes.overlays).toEqual([]);
     expect(existsSync(join(destination, "AGENTS.md"))).toBe(true);
@@ -228,7 +228,7 @@ describe("installFromExtractedRoot", () => {
 
     expect(notes.theme).toBe("l4-test");
     expect(notes.theme_source).toBe(
-      "AotterClam/clam-cms-starters/themes/l4-test",
+      "AotterClam/clam-mantle-starters/themes/l4-test",
     );
 
     // Theme overlay wins: clamConfig.ts now has `theme: "l4-test"`.
