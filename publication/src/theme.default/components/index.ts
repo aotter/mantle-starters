@@ -1,3 +1,4 @@
+// @mantle-override-class sdk-owned — see src/theme.default/README.md
 export {
   Header,
   type HeaderProps,

@@ -1,3 +1,4 @@
+// @mantle-override-class L3-component — see src/theme.default/README.md
 /** @jsxImportSource hono/jsx */
 import { raw } from "hono/html";
 import type { SiteConfig } from "@aotter/mantle/spec";
