@@ -1,7 +1,11 @@
 /** @jsxImportSource hono/jsx */
 import { raw } from "hono/html";
 import type { SiteConfig } from "@aotter/mantle/spec";
-import { I18N_BUNDLES, bundleFor, localeLabel } from "../../i18n/index.js";
+import {
+  BASELINE_BUNDLES,
+  baselineBundleFor,
+  baselineLocaleLabel,
+} from "../i18n/index.js";
 import { icon } from "../icons.js";
 
 export interface HeaderProps {
@@ -10,11 +14,13 @@ export interface HeaderProps {
   readonly current?: "home" | "posts" | "about" | "contact";
 }
 
+export type HeaderComponent = (props: HeaderProps) => any;
+
 export function Header(props: HeaderProps) {
   const { site, locale, current } = props;
-  const t = bundleFor(locale);
+  const t = baselineBundleFor(locale);
   const localesAvailable = (site.locales ?? [locale]).filter(
-    (l) => I18N_BUNDLES[l.toLowerCase()] != null,
+    (l) => BASELINE_BUNDLES[l.toLowerCase()] != null,
   );
   return (
     <header class="site-header">
@@ -44,7 +50,7 @@ export function Header(props: HeaderProps) {
               aria-label={t.lang.ariaLabel}
             >
               {raw(icon("globe", { size: 14 }))}
-              <span class="popover-trigger-label">{localeLabel(locale)}</span>
+              <span class="popover-trigger-label">{baselineLocaleLabel(locale)}</span>
               {raw(icon("chevron-down", { size: 12 }))}
             </button>
             <div class="popover-menu" role="menu" data-popover-menu="lang" hidden>
@@ -57,7 +63,7 @@ export function Header(props: HeaderProps) {
                   data-current-locale={locale}
                   aria-checked={loc.toLowerCase() === locale.toLowerCase() ? "true" : "false"}
                 >
-                  <span class="popover-item-label">{localeLabel(loc)}</span>
+                  <span class="popover-item-label">{baselineLocaleLabel(loc)}</span>
                   <span class="popover-item-check">{raw(icon("check"))}</span>
                 </button>
               ))}

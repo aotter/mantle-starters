@@ -21,12 +21,10 @@ import {
   serializeEntryAsMarkdown,
 } from "@aotter/mantle/runtime";
 import type { ContentState, Entry, SiteConfig } from "@aotter/mantle/spec";
-import {
-  pageTemplate,
-  postListTemplate,
-  postTemplate,
-} from "../src/theme.default/templates/index.js";
+import { baseline } from "../src/themeWiring.js";
 import { PUBLIC_PATH_RESOLVER } from "../src/paths.js";
+
+const { page: pageTemplate, postList: postListTemplate, post: postTemplate } = baseline.templates;
 
 const DOCTYPE = "<!doctype html>";
 const DEFAULT_NOW = Date.parse("2026-01-01T00:00:00.000Z");

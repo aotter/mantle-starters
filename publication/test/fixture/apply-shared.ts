@@ -32,11 +32,9 @@ import {
   serializeEntryAsMarkdown,
 } from "@aotter/mantle/runtime";
 import type { Entry, ContentState } from "@aotter/mantle/spec";
-import {
-  pageTemplate,
-  postTemplate,
-  postListTemplate,
-} from "../../src/theme.default/templates/index.js";
+import { baseline } from "../../src/themeWiring.js";
+
+const { page: pageTemplate, post: postTemplate, postList: postListTemplate } = baseline.templates;
 import {
   FIXTURE_AUTHOR_ID,
   FIXTURE_MCP_ACCESS_TOKEN,

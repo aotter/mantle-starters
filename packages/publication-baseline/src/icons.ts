@@ -1,11 +1,12 @@
-import overrides from "../theme/index.js";
-
 /**
  * Inline-SVG icons (24×24, lucide-style, currentColor stroke).
- * `theme/index.ts:icons` spreads after baseline — same name replaces,
- * new name adds. Past ~20 icons, swap for `lucide-static` + re-export.
+ *
+ * Baseline ships a small set; consumer extends at wire time by
+ * calling `createIconResolver({ extraIcons: { ... } })` and passing
+ * the resolver into `createPublicationBaseline({ icon })`. Past
+ * ~20 icons, swap to `lucide-static` and re-export.
  */
-export type IconName =
+export type BaselineIconName =
   | "sun"
   | "moon"
   | "monitor"
@@ -15,7 +16,7 @@ export type IconName =
   | "menu"
   | "x";
 
-const BASELINE_PATHS: Record<IconName, string> = {
+export const BASELINE_ICON_PATHS: Record<BaselineIconName, string> = {
   sun: `<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>`,
   moon: `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`,
   monitor: `<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>`,
@@ -24,11 +25,6 @@ const BASELINE_PATHS: Record<IconName, string> = {
   check: `<polyline points="20 6 9 17 4 12"/>`,
   menu: `<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>`,
   x: `<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>`,
-};
-
-const PATHS: Record<string, string> = {
-  ...BASELINE_PATHS,
-  ...(overrides.icons ?? {}),
 };
 
 const DEFAULT_STROKE = 2;
@@ -41,8 +37,17 @@ export interface IconOptions {
   readonly strokeWidth?: number;
 }
 
-export function icon(name: string, options: IconOptions = {}): string {
-  const path = PATHS[name];
+export type IconRenderer = (name: string, options?: IconOptions) => string;
+
+/** Render an inline SVG from a path-fragment table. The baseline
+ *  `icon` export below is closed over `BASELINE_ICON_PATHS` only.
+ *  Use `createIconResolver({ extraIcons })` to extend at wire time. */
+export function renderIcon(
+  paths: Readonly<Record<string, string>>,
+  name: string,
+  options: IconOptions = {},
+): string {
+  const path = paths[name];
   if (!path) return "";
   const size = options.size ?? 16;
   const stroke = options.strokeWidth ?? HEAVIER_STROKE_FOR[name] ?? DEFAULT_STROKE;
@@ -53,4 +58,20 @@ export function icon(name: string, options: IconOptions = {}): string {
     path +
     `</svg>`
   );
+}
+
+/** Baseline-only resolver. Use directly when no extension is needed. */
+export const icon: IconRenderer = (name, options) =>
+  renderIcon(BASELINE_ICON_PATHS, name, options);
+
+/** Build an icon resolver that merges baseline paths with consumer
+ *  additions / overrides. Consumer-supplied keys win on collision. */
+export function createIconResolver(opts: {
+  readonly extraIcons?: Readonly<Record<string, string>>;
+} = {}): IconRenderer {
+  const merged: Record<string, string> = {
+    ...BASELINE_ICON_PATHS,
+    ...(opts.extraIcons ?? {}),
+  };
+  return (name, options) => renderIcon(merged, name, options);
 }

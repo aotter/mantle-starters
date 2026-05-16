@@ -1,8 +1,8 @@
 {
   "name": "mantle-starter-publication",
-  "version": "0.0.8-alpha",
+  "version": "0.0.11-alpha",
   "private": true,
-  "description": "Reference publication starter for mantle v0.1.0 \u2014 owner-published content (articles / pages / docs-lite / basic contact form). Localized posts via translates; contact form via builtin + lifecycle hooks. Runs on wrangler dev with local D1 + KV.",
+  "description": "Reference publication starter for mantle v0.1.0 — owner-published content (articles / pages / docs-lite / basic contact form). Localized posts via translates; contact form via builtin + lifecycle hooks. Runs on wrangler dev with local D1 + KV.",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@aotter/mantle": "0.0.10-alpha",
+    "@aotter/mantle-publication-baseline": "workspace:*",
     "aws4fetch": "^1.0.20",
     "hono": "^4.6.20",
     "marked": "^14.1.3",

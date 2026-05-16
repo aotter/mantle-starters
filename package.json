@@ -1,0 +1,23 @@
+{
+  "name": "mantle-starters",
+  "private": true,
+  "version": "0.0.11-alpha",
+  "description": "Workspace root for the @aotter/mantle starter family — archetype source templates (publication, intake, presence, blank, transaction) + baseline UI packages (publication-baseline) + theme overlays (theme-*) + the create-mantle scaffolder. Adopters never depend on this root; they scaffold from one archetype into a fresh consumer repo.",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/aotter/mantle-starters",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aotter/mantle-starters.git"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=9"
+  },
+  "scripts": {
+    "build": "pnpm -r --filter './packages/**' build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test"
+  },
+  "packageManager": "pnpm@9.15.0"
+}

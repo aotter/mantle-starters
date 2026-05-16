@@ -2,8 +2,8 @@
 import { html, raw } from "hono/html";
 import { marked } from "marked";
 import type { SiteConfig } from "@aotter/mantle/spec";
-import { Layout } from "../components/Layout.js";
-import { bundleFor } from "../../i18n/index.js";
+import type { LayoutComponent } from "../components/Layout.js";
+import type { I18nBundle } from "../i18n/index.js";
 
 const markedOptions = { gfm: true, breaks: false } as const;
 
@@ -14,10 +14,17 @@ export interface ContactContext {
   readonly turnstileSiteKey: string;
 }
 
-export function contactTemplate(ctx: ContactContext): string {
-  const { site, locale, page, turnstileSiteKey } = ctx;
-  const t = bundleFor(locale);
-  const title = page.title || t.contact.title;
+export interface ContactTemplateDeps {
+  readonly Layout: LayoutComponent;
+  readonly bundleFor: (locale: string) => I18nBundle;
+}
+
+export function createContactTemplate(deps: ContactTemplateDeps) {
+  const { Layout, bundleFor } = deps;
+  return function contactTemplate(ctx: ContactContext): string {
+    const { site, locale, page, turnstileSiteKey } = ctx;
+    const t = bundleFor(locale);
+    const title = page.title || t.contact.title;
   const bodyHtml = page.body ? (marked.parse(page.body, markedOptions) as string) : "";
   const tree = (
     <Layout
@@ -74,9 +81,10 @@ ${raw(buildContactRuntimeJs(t))}
     </Layout>
   );
   return "<!doctype html>" + String(tree);
+  };
 }
 
-function buildContactRuntimeJs(t: ReturnType<typeof bundleFor>): string {
+function buildContactRuntimeJs(t: I18nBundle): string {
   const successMsg = JSON.stringify(t.contact.success);
   const fallbackMsg = JSON.stringify(t.contact.fallbackPrefix);
   return `

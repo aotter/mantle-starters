@@ -10,7 +10,7 @@ import { AwsClient } from "aws4fetch";
 import { buildHandlers } from "./handlers/index.js";
 import { loadManifests } from "./loadManifests.js";
 import { PUBLIC_PATH_RESOLVER } from "./paths.js";
-import { buildTemplates } from "./theme.default/templates/index.js";
+import { baseline } from "./themeWiring.js";
 
 export interface Env {
   readonly DB: D1Database;
@@ -76,7 +76,7 @@ export function buildCmsConfig(env: Env, auth: Auth): CmsConfig {
   return {
     manifests: loadManifests(),
     handlers: buildHandlers(env),
-    templates: buildTemplates(),
+    templates: baseline.buildTemplates(),
     siteDefaults: {
       brand: "{{BRAND}}",
       title: "{{BRAND}}",

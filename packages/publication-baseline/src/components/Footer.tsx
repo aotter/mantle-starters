@@ -6,7 +6,10 @@ export interface FooterProps {
   readonly locale: string;
 }
 
-/** Default site footer. Override via `theme/index.ts:components.Footer`. */
+export type FooterComponent = (props: FooterProps) => any;
+
+/** Default site footer. Override by passing a custom Footer via the
+ *  PageShell prop in `createLayoutFactory({ pageShellProps: { Footer } })`. */
 export function Footer(props: FooterProps) {
   const { site } = props;
   return (
@@ -16,7 +19,7 @@ export function Footer(props: FooterProps) {
       </div>
       <div>
         built on{" "}
-        <a href="https://github.com/aotter/mantle">mantle·cms</a>
+        <a href="https://github.com/aotter/mantle">mantle·mantle</a>
       </div>
     </footer>
   );
