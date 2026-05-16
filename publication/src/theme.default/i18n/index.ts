@@ -1,3 +1,4 @@
+// @clam-override-class sdk-owned — see src/theme.default/README.md
 import en from "./en.json";
 import zhTw from "./zh-TW.json";
 

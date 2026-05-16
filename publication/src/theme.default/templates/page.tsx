@@ -1,47 +1,47 @@
+// @clam-override-class L4-template — see src/theme.default/README.md
 /** @jsxImportSource hono/jsx */
 import { raw } from "hono/html";
 import type { EntryContext } from "@aotterclam/clam-mantle/runtime";
 import type { LayoutComponent } from "../components/Layout.js";
-import { isoDate, renderMarkdown } from "./utils.js";
+import { renderMarkdown } from "./utils.js";
 
-export interface PostTemplateDeps {
+const NAV_HINTS: Record<string, "about" | "contact" | undefined> = {
+  about: "about",
+  contact: "contact",
+};
+
+export interface PageTemplateDeps {
   readonly Layout: LayoutComponent;
 }
 
-export function createPostTemplate(deps: PostTemplateDeps) {
+export function createPageTemplate(deps: PageTemplateDeps) {
   const { Layout } = deps;
-  return function postTemplate(ctx: EntryContext): string {
+  return function pageTemplate(ctx: EntryContext): string {
     const { entry, site, seo } = ctx;
     const data = entry.data as {
       slug?: string;
       title?: string;
+      intro?: string;
       body?: string;
       locale?: string;
-      coverUrl?: string;
-      publishedAt?: number;
     };
     const locale = data.locale ?? site.canonicalLocale ?? "en";
     const title = data.title ?? data.slug ?? "Untitled";
+    const current = NAV_HINTS[(data.slug ?? "").toLowerCase()];
     const tree = (
       <Layout
         site={site}
         locale={locale}
         title={`${title} — ${site.brand}`}
-        description={site.description}
-        ogImage={data.coverUrl}
-        current="posts"
+        description={data.intro ?? site.description}
+        current={current}
         seo={seo}
       >
         <article>
           <header class="post-meta">
-            {data.publishedAt ? (
-              <time dateTime={new Date(data.publishedAt).toISOString()}>
-                {isoDate(data.publishedAt)}
-              </time>
-            ) : null}
             <h1>{title}</h1>
+            {data.intro ? <p class="meta">{data.intro}</p> : null}
           </header>
-          {data.coverUrl ? <img class="post-cover" src={data.coverUrl} alt="" /> : null}
           <div class="post-body">{raw(renderMarkdown(data.body))}</div>
         </article>
       </Layout>

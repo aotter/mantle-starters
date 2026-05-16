@@ -1,3 +1,4 @@
+// @clam-override-class L1-token — see src/theme.default/README.md
 /**
  * L1 — design tokens. Light + dark CSS custom properties only. Every
  * style rule in `styles.ts` references these, so swapping any token

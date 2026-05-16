@@ -1,3 +1,4 @@
+// @clam-override-class sdk-owned — see src/theme.default/README.md
 import { TemplateRegistry } from "@aotterclam/clam-mantle/runtime";
 import type { LayoutComponent } from "../components/Layout.js";
 import type { I18nBundle } from "../i18n/index.js";

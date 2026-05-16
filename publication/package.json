@@ -26,7 +26,6 @@
   },
   "dependencies": {
     "@aotterclam/clam-mantle": "0.0.10-alpha",
-    "@aotterclam/clam-mantle-publication-baseline": "workspace:*",
     "aws4fetch": "^1.0.20",
     "hono": "^4.6.20",
     "marked": "^14.1.3",

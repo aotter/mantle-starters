@@ -1,3 +1,4 @@
+// @clam-override-class sdk-owned — see src/theme.default/README.md
 /**
  * Hono+JSX baseline UI for the @aotterclam/clam-mantle publication
  * starter. Adopter projects scaffolded from `publication/` install

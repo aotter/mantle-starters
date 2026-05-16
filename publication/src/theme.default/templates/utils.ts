@@ -1,3 +1,4 @@
+// @clam-override-class sdk-owned — see src/theme.default/README.md
 import { marked } from "marked";
 
 const MARKDOWN_OPTIONS = { gfm: true, breaks: false } as const;

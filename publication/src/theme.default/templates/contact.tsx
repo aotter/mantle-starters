@@ -1,3 +1,4 @@
+// @clam-override-class L4-template — see src/theme.default/README.md
 /** @jsxImportSource hono/jsx */
 import { html, raw } from "hono/html";
 import { marked } from "marked";

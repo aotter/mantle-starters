@@ -1,4 +1,4 @@
-import { createPublicationBaseline } from "@aotterclam/clam-mantle-publication-baseline";
+import { createPublicationBaseline } from "./theme.default/index.js";
 
 /**
  * Single boot-time wiring of the publication baseline. Both
@@ -6,6 +6,11 @@ import { createPublicationBaseline } from "@aotterclam/clam-mantle-publication-b
  * `src/index.ts` (request-time handlers for `home`, `notFound`,
  * `contact`) import `baseline` from here, so the L1-L4 override flags
  * are configured exactly once.
+ *
+ * The baseline source lives in `src/theme.default/`. Each file there
+ * carries a `@clam-override-class` banner with its layer + fork policy.
+ * Prefer factory-option override (below) over editing those files in
+ * place — direct edits drift from upstream baseline updates.
  *
  * Customization happens here. Examples — uncomment + edit as needed:
  *

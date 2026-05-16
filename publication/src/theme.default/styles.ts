@@ -1,3 +1,4 @@
+// @clam-override-class L2-style — see src/theme.default/README.md
 /**
  * Site styles. All rules reference tokens declared in `tokens.ts`;
  * splitting them lets a consumer override the entire palette / type

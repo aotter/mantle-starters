@@ -1,3 +1,4 @@
+// @clam-override-class sdk-owned — see src/theme.default/README.md
 /** @jsxImportSource hono/jsx */
 import type { SiteConfig } from "@aotterclam/clam-mantle/spec";
 import { renderSeoTagsHtml, type SeoMeta } from "@aotterclam/clam-mantle/runtime";
