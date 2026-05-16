@@ -4,7 +4,6 @@ status: ready
 starter_repo: AotterClam/clam-mantle-starters
 starter_path: blank
 overlays: []
-applies_to: clam-mantle@v0.1.0
 ---
 
 # `blank` archetype
