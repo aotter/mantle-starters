@@ -4,7 +4,6 @@ status: roadmap
 starter_repo: aotter/mantle-starters
 starter_path: publication
 overlays: []
-applies_to: mantle@v0.1.0
 ---
 
 # `reservation` archetype — ROADMAP
