@@ -4,7 +4,6 @@ status: ready
 starter_repo: AotterClam/clam-mantle-starters
 starter_path: presence
 overlays: []
-applies_to: clam-mantle@v0.1.0
 ---
 
 # `presence` archetype

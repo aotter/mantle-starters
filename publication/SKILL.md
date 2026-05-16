@@ -4,7 +4,6 @@ status: ready
 starter_repo: AotterClam/clam-mantle-starters
 starter_path: publication
 overlays: []
-applies_to: clam-mantle@v0.1.0
 ---
 
 # `publication` archetype

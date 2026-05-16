@@ -5,7 +5,6 @@ starter_repo: AotterClam/clam-mantle-starters
 starter_path: transaction
 overlays: []
 scale_limit: 100  # orders/day; advisory — Mantle informs user
-applies_to: clam-mantle@v0.1.0
 ---
 
 # `transaction` archetype
