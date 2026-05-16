@@ -1,3 +1,4 @@
+// @mantle-override-class sdk-owned — see src/theme.default/README.md
 /**
  * Hono+JSX baseline UI for the @aotter/mantle publication
  * starter. Adopter projects scaffolded from `publication/` install

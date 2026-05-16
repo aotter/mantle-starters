@@ -1,3 +1,4 @@
+// @mantle-override-class L2-icon — see src/theme.default/README.md
 /**
  * Inline-SVG icons (24×24, lucide-style, currentColor stroke).
  *
