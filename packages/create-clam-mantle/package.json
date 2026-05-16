@@ -1,13 +1,13 @@
 {
-  "name": "@aotterclam/create-clam-cms",
-  "version": "0.0.8-alpha.1",
-  "description": "npx scaffolder for clam-cms consumer projects. Fetches the starters-monorepo tarball at a runtime-resolved sources.json, merges _common/ + <archetype>/ + (optional) themes/<theme>/ into the user's directory, fills {{PLACEHOLDER}} macros, and prints RUN_NOTES JSON for the Mantle install skill.",
+  "name": "@aotterclam/create-clam-mantle",
+  "version": "0.0.10-alpha",
+  "description": "npx scaffolder for clam-mantle consumer projects. Fetches the starters-monorepo tarball at a runtime-resolved sources.json, merges _common/ + <archetype>/ + (optional) themes/<theme>/ into the user's directory, fills {{PLACEHOLDER}} macros, and prints RUN_NOTES JSON for the Mantle install skill.",
   "license": "Apache-2.0",
-  "homepage": "https://github.com/AotterClam/clam-cms-starters/tree/main/packages/create-clam-cms",
+  "homepage": "https://github.com/AotterClam/clam-mantle-starters/tree/main/packages/create-clam-mantle",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AotterClam/clam-cms-starters.git",
-    "directory": "packages/create-clam-cms"
+    "url": "git+https://github.com/AotterClam/clam-mantle-starters.git",
+    "directory": "packages/create-clam-mantle"
   },
   "type": "module",
   "sideEffects": false,
@@ -18,7 +18,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "create-clam-cms": "./dist/cli.js"
+    "create-clam-mantle": "./dist/cli.js"
   },
   "exports": {
     ".": {

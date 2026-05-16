@@ -2,13 +2,15 @@ import { Hono } from "hono";
 import {
   createAuth,
   createCmsRef,
-  mountMcp,
+  createMcpApiHandler,
+  createOAuthProvider,
+  mountAuthorize,
   mountPublicRoutes,
   mountServerEndpoints,
   type Auth,
-  type CreateAuthConfig,
+  type AuthMethodConfig,
   type PublicRouteContext,
-} from "@aotterclam/clam-cms-cloudflare";
+} from "@aotterclam/clam-mantle/cloudflare";
 import { buildCmsConfig, type Env } from "./clamConfig.js";
 import {
   contactTemplate,
@@ -16,7 +18,8 @@ import {
   notFoundTemplate,
 } from "./theme.default/templates/index.js";
 
-let appCache: Hono | null = null;
+type WorkerFetch = (req: Request, env: Env, ctx: ExecutionContext) => Promise<Response>;
+let workerFetchCache: WorkerFetch | null = null;
 
 const AUTH_NOT_CONFIGURED = {
   error: "auth_not_configured",
@@ -26,52 +29,34 @@ const AUTH_NOT_CONFIGURED = {
 
 function buildAuthFromEnv(env: Env): Auth {
   const baseURL = env.PUBLIC_ORIGIN ?? "http://localhost:8787";
-  const github: CreateAuthConfig["github"] =
-    env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET
-      ? {
-          clientId: env.GITHUB_CLIENT_ID,
-          clientSecret: env.GITHUB_CLIENT_SECRET,
-          // Keeps the existing GitHub OAuth App's registered callback
-          // URL working; delete with the translator route once the App
-          // config moves to /api/auth/callback/github.
-          redirectURI: `${baseURL}/admin/auth/github/callback`,
-        }
-      : undefined;
+  const methods: AuthMethodConfig[] = [];
+  if (env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET) {
+    methods.push({
+      kind: "social",
+      provider: "github",
+      clientId: env.GITHUB_CLIENT_ID,
+      clientSecret: env.GITHUB_CLIENT_SECRET,
+    });
+  }
   return createAuth({
     database: env.DB,
     baseURL,
     secret: env.BETTER_AUTH_SECRET,
-    github,
-    adminGithubLogin: env.ADMIN_GITHUB_LOGIN,
+    methods,
+    bootstrapOwner: env.ADMIN_GITHUB_LOGIN
+      ? { match: "github-login", value: env.ADMIN_GITHUB_LOGIN }
+      : undefined,
   });
 }
 
-function getApp(env: Env): Hono {
-  if (appCache) return appCache;
+function buildWorker(env: Env): WorkerFetch {
+  if (workerFetchCache) return workerFetchCache;
   const auth = buildAuthFromEnv(env);
   const cms = createCmsRef(buildCmsConfig(env, auth));
   const app = new Hono();
 
-  app.all("/api/auth/*", (c) => auth.handler(c.req.raw));
-  app.get("/admin/auth/github/callback", (c) => {
-    const url = new URL(c.req.url);
-    url.pathname = "/api/auth/callback/github";
-    return auth.handler(
-      new Request(url.toString(), { method: "GET", headers: c.req.raw.headers }),
-    );
-  });
-
   mountServerEndpoints(app, cms);
-  mountMcp(app, cms, {
-    path: "/staff/mcp",
-    surface: "staff",
-    requiredScope: "mcp:staff",
-  });
-  mountMcp(app, cms, {
-    path: "/mcp",
-    surface: "public",
-    requiredScope: "mcp:read",
-  });
+  mountAuthorize(app, { auth, loginPath: "/admin/sign-in" });
   mountPublicRoutes(app, cms, {
     collectionRoutes: [
       { collection: "page-translations", segment: "pages", homeSlug: "home" },
@@ -88,8 +73,24 @@ function getApp(env: Env): Hono {
     liveDev: env.CLAM_LOCAL_DEV === "1",
   });
 
-  appCache = app;
-  return app;
+  const oauthProvider = createOAuthProvider({
+    defaultHandler: {
+      fetch: (req, env, ctx) => app.fetch(req, env, ctx),
+    },
+    apiHandlers: {
+      "/mcp/staff": createMcpApiHandler({ ref: cms, surface: "staff" }),
+      "/mcp": createMcpApiHandler({ ref: cms, surface: "public" }),
+    },
+    scopesSupported: ["mcp"],
+  });
+
+  workerFetchCache = (req, e, ctx) =>
+    (oauthProvider.fetch as (r: unknown, e: unknown, c: unknown) => Promise<Response>)(
+      req,
+      e,
+      ctx,
+    );
+  return workerFetchCache;
 }
 
 async function renderHome(ctx: PublicRouteContext): Promise<Response> {
@@ -171,6 +172,7 @@ export default {
     if (!env.BETTER_AUTH_SECRET) {
       return Response.json(AUTH_NOT_CONFIGURED, { status: 503 });
     }
-    return getApp(env).fetch(req, env, ctx);
+    const worker = buildWorker(env);
+    return worker(req, env, ctx);
   },
 };

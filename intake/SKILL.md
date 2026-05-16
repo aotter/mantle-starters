@@ -1,19 +1,19 @@
 ---
 archetype: intake
 status: ready
-starter_repo: AotterClam/clam-cms-starters
+starter_repo: AotterClam/clam-mantle-starters
 starter_path: intake
 overlays: []
-applies_to: clam-cms@v0.1.0
+applies_to: clam-mantle@v0.1.0
 ---
 
 # `intake` archetype
 
-Follow the [Mantle install brief](https://raw.githubusercontent.com/AotterClam/clam-cms/main/skills/install/SKILL.md). This file only adds the archetype-specific register hints; Mantle voice rules apply only to the closing welcome letter, not to interview / refuse / adjustment phases.
+Follow the [Mantle install brief](https://raw.githubusercontent.com/AotterClam/clam-mantle/main/skills/install/SKILL.md). This file only adds the archetype-specific register hints; Mantle voice rules apply only to the closing welcome letter, not to interview / refuse / adjustment phases.
 
 ## What this is
 
-A public site that **takes structured input** from visitors — leads, signups, applications, requests-for-quote — beyond the basic contact form. Own starter directory in `clam-cms-starters/intake/`; ships the publication shape (landing + articles + contact) plus a structured `leads` Schema with `leads-recent` View and CAPTCHA + Slack-notify lifecycle.
+A public site that **takes structured input** from visitors — leads, signups, applications, requests-for-quote — beyond the basic contact form. Own starter directory in `clam-mantle-starters/intake/`; ships the publication shape (landing + articles + contact) plus a structured `leads` Schema with `leads-recent` View and CAPTCHA + Slack-notify lifecycle.
 
 ## Interview probes to emphasize
 
@@ -52,4 +52,4 @@ If the interview surfaces additional fields the lead actually needs, edit `manif
 
 ## See also
 
-- [`skills/extend`](https://raw.githubusercontent.com/AotterClam/clam-cms/main/skills/extend/SKILL.md) — adding additional Schemas / Views / Procedures / Triggers after install.
+- [`skills/extend`](https://raw.githubusercontent.com/AotterClam/clam-mantle/main/skills/extend/SKILL.md) — adding additional Schemas / Views / Procedures / Triggers after install.

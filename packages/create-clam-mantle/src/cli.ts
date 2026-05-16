@@ -18,7 +18,7 @@ interface ParsedArgs {
 
 main().catch((err: unknown) => {
   const msg = err instanceof Error ? err.message : String(err);
-  console.error(`create-clam-cms: ${msg}`);
+  console.error(`create-clam-mantle: ${msg}`);
   process.exit(1);
 });
 
@@ -67,7 +67,7 @@ function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
   const archetype = positional[0];
   if (!archetype) {
     throw new Error(
-      "Usage: create-clam-cms <archetype> --project-name <name> --brand <...> --description <...> --locales <a,b> --github-owner <login> --summary <one-line> [--theme <key>] [--ref <git-ref>]",
+      "Usage: create-clam-mantle <archetype> --project-name <name> --brand <...> --description <...> --locales <a,b> --github-owner <login> --summary <one-line> [--theme <key>] [--ref <git-ref>]",
     );
   }
   const projectName = required(flags, "project-name");

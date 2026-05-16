@@ -1,10 +1,10 @@
 ---
 archetype: reservation
 status: roadmap
-starter_repo: AotterClam/clam-cms-starters
+starter_repo: AotterClam/clam-mantle-starters
 starter_path: publication
 overlays: []
-applies_to: clam-cms@v0.1.0
+applies_to: clam-mantle@v0.1.0
 ---
 
 # `reservation` archetype — ROADMAP

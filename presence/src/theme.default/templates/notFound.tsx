@@ -1,5 +1,5 @@
 /** @jsxImportSource hono/jsx */
-import type { SiteConfig } from "@aotterclam/clam-cms-spec";
+import type { SiteConfig } from "@aotterclam/clam-mantle/spec";
 import { Layout } from "../components/Layout.js";
 import { bundleFor } from "../../i18n/index.js";
 

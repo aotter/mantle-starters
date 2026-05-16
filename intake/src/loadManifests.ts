@@ -1,4 +1,4 @@
-import { parseManifestsOrThrow, type Manifest } from "@aotterclam/clam-cms-spec";
+import { parseManifestsOrThrow, type Manifest } from "@aotterclam/clam-mantle/spec";
 // Wrangler's `[[rules]] type = "Text"` for `*.yaml` (see wrangler.toml)
 // makes esbuild bundle these imports as inline string exports — the
 // manifests travel with the worker code, no FS access at runtime.
@@ -17,6 +17,6 @@ import leadsYaml from "../manifests/leads.yaml";
 export function loadManifests(): readonly Manifest[] {
   return parseManifestsOrThrow(
     [postsYaml, postTranslationsYaml, pagesYaml, contactYaml, leadsYaml],
-    { context: "clam-cms-starter-intake" },
+    { context: "clam-mantle-starter-intake" },
   );
 }

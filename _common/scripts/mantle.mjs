@@ -6,7 +6,7 @@
  *   prompt
  *     Output the filled Mantle subagent prompt to stdout. Reads
  *     mantle/site.md (frontmatter + ## site / ## voice / ## history),
- *     fetches the archetype hint from clam-cms-starters, substitutes
+ *     fetches the archetype hint from clam-mantle-starters, substitutes
  *     <<MANTLE_*>> placeholders in mantle-subagent-prompt.md, writes
  *     to stdout. The install agent pipes this into the Agent tool to
  *     dispatch the Mantle subagent that writes the 5-card welcome
@@ -19,7 +19,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const STARTERS_REPO = "AotterClam/clam-cms-starters";
+const STARTERS_REPO = "AotterClam/clam-mantle-starters";
 const STARTERS_REF = "main";
 
 function fail(msg) {

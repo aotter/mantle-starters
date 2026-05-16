@@ -1,6 +1,6 @@
-# `clam-cms-starters/transaction`
+# `clam-mantle-starters/transaction`
 
-`transaction` archetype starter for clam-cms v0.1.0 — small-scale
+`transaction` archetype starter for clam-mantle v0.1.0 — small-scale
 shop (≤100 orders/day): products + cart + payment + orders. Backed
 by Cloudflare Workers + D1 + KV + DurableObjects + Queues.
 
@@ -18,11 +18,11 @@ capture without payment, use [`intake/`](../intake/).
 | Piece | Where | Purpose |
 |---|---|---|
 | `InventoryActor` DO | `src/durableObjects/InventoryActor.ts` | Single DO per tenant. Holds find-and-modify locks for once-and-only-once payment-callback processing + atomic inventory reserve/commit/release. |
-| `payment_callback_queue` | `wrangler.toml` + `src/handlers/orderConsumer.ts` | Workers Queue at `max_concurrency: 1`. HTTP handler verifies provider signature and queues; consumer does the real work under the DO lock. |
-| `order_work_queue` | same | Workers Queue for downstream effects: email confirmation, fulfillment notify, inventory snapshot, reconcile tick. |
+| `payment-callback-queue` | `wrangler.toml` + `src/handlers/orderConsumer.ts` | Workers Queue at `max_concurrency: 1`. HTTP handler verifies provider signature and queues; consumer does the real work under the DO lock. |
+| `order-work-queue` | same | Workers Queue for downstream effects: email confirmation, fulfillment notify, inventory snapshot, reconcile tick. |
 | `PaymentProvider` interface | `src/payment/provider.ts` | Three-method contract: `startCheckout`, `parseCallback`, `verifyReturn`. The starter is provider-blank; Mantle scaffolds an impl at install. |
 | Two pattern templates | `src/payment/providers/_templates/` | `redirect-checkout.ts` (hosted-checkout style: Stripe / Paddle / Lemon Squeezy) + `merchant-form.ts` (merchant-rendered form: ECPay / PayUni / NewebPay). Coding agents read these to learn the shape; Mantle copies the closer one and adapts. |
-| Cron sweeper | `wrangler.toml [triggers].crons` | Every 5 min → `order_work_queue:inventory.reconcile.tick` → sweeps stale `pending` locks (10 min TTL) so crashed-consumer work can retry. |
+| Cron sweeper | `wrangler.toml [triggers].crons` | Every 5 min → `order-work-queue:inventory.reconcile.tick` → sweeps stale `pending` locks (10 min TTL) so crashed-consumer work can retry. |
 
 ## Scale contract
 
@@ -56,7 +56,7 @@ cycle:
   detail / cart / checkout / order confirmation page templates;
   `transaction/SKILL.md` flipped from roadmap-refuse to ready;
   `sources.json` adds transaction to the `archetypes` dict (until
-  this lands, the directory exists but `npx create-clam-cms transaction`
+  this lands, the directory exists but `npx create-clam-mantle transaction`
   refuses).
 
 ## Getting started
@@ -76,7 +76,7 @@ pnpm test:integration
 ```
 
 Real-user installs go through the Mantle install Skill — see the
-[Mantle install brief](https://raw.githubusercontent.com/AotterClam/clam-cms/main/skills/install/SKILL.md)
+[Mantle install brief](https://raw.githubusercontent.com/AotterClam/clam-mantle/main/skills/install/SKILL.md)
 and this starter's [`SKILL.md`](SKILL.md), which carries the payment
 provider interview + scaffolding procedure.
 
@@ -84,4 +84,4 @@ provider interview + scaffolding procedure.
 
 - [`SKILL.md`](SKILL.md) — Mantle's install-time interview + provider wiring
 - [`src/payment/providers/README.md`](src/payment/providers/README.md) — provider templates explained
-- [`skills/extend`](https://raw.githubusercontent.com/AotterClam/clam-cms/main/skills/extend/SKILL.md) — adding Schemas / Views / Procedures / Triggers
+- [`skills/extend`](https://raw.githubusercontent.com/AotterClam/clam-mantle/main/skills/extend/SKILL.md) — adding Schemas / Views / Procedures / Triggers

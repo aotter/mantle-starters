@@ -1,7 +1,10 @@
 # Local-only vars wrangler dev reads. NOT deployed.
 # Copy this file to `.dev.vars` and fill in the secrets below before
-# running `pnpm dev`. Public read routes work without any auth; /admin
-# + /mcp need BETTER_AUTH_SECRET and (for /admin) the GitHub OAuth App.
+# running `pnpm dev`. The worker requires BETTER_AUTH_SECRET + at least
+# one registered auth method (GitHub OAuth below) to boot — even for
+# public read routes — because `getApp` builds Auth at boot and Better
+# Auth refuses an empty methods list. /admin additionally needs the
+# GitHub OAuth App credentials.
 
 # Cloudflare Turnstile secret key. Default `dev-stub` short-circuits
 # siteverify with a literal-string check (turnstileToken === "fail"
@@ -27,7 +30,7 @@ PUBLIC_ORIGIN=http://localhost:8787
 #
 #   1. Create a GitHub OAuth App at github.com/settings/developers
 #      - Homepage URL:    http://localhost:8787
-#      - Callback URL:    http://localhost:8787/admin/auth/github/callback
+#      - Callback URL:    http://localhost:8787/api/auth/callback/github
 #   2. Paste the client id / secret below.
 #   3. Set ADMIN_GITHUB_LOGIN to YOUR GitHub login. The runtime's
 #      `ensureBootstrapOwner` hook promotes whoever signs in matching

@@ -1,11 +1,11 @@
 /**
  * Queue consumers for the transaction starter.
  *
- *   - `payment_callback_queue` (max_concurrency: 1) — verified
+ *   - `payment-callback-queue` (max_concurrency: 1) — verified
  *     provider callbacks from `checkoutConfirm`. Consumer does the
  *     heavy work under the InventoryActor lock.
  *
- *   - `order_work_queue` (max_concurrency: 1) — downstream effects
+ *   - `order-work-queue` (max_concurrency: 1) — downstream effects
  *     (email, fulfillment notify, inventory snapshot) plus the
  *     cron-driven `inventory.reconcile.tick` (sweeper + per-product
  *     snapshot fan-out).
@@ -326,7 +326,7 @@ async function releaseIfReserved(
 }
 
 /**
- * order_work_queue consumer — real branches per message type:
+ * order-work-queue consumer — real branches per message type:
  *
  *   - `order.confirmed`: send the confirmation email + fulfillment
  *     notify; mark `confirmation_emailed_at` on the order row to dedup.
@@ -339,7 +339,7 @@ async function releaseIfReserved(
  *
  * Throwing skips msg.ack — the queue retries per wrangler.toml
  * (30 attempts × 30s delay). Terminal failures land in
- * `order_work_dlq` for observability.
+ * `order-work-dlq` for observability.
  */
 export async function orderWorkConsumer(
   batch: MessageBatch<OrderWorkMessage>,
@@ -489,15 +489,15 @@ export function buildQueueDispatcher(env: ConsumerEnv): (
 ) => Promise<void> {
   return async (batch, env, ctx) => {
     switch (batch.queue) {
-      case "payment_callback_queue":
-      case "payment_callback_queue_test":
+      case "payment-callback-queue":
+      case "payment-callback-queue-test":
         return paymentCallbackConsumer(
           batch as MessageBatch<PaymentCallbackMessage>,
           env,
           ctx,
         );
-      case "order_work_queue":
-      case "order_work_queue_test":
+      case "order-work-queue":
+      case "order-work-queue-test":
         return orderWorkConsumer(
           batch as MessageBatch<OrderWorkMessage>,
           env,

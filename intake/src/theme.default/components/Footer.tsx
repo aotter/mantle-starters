@@ -1,5 +1,5 @@
 /** @jsxImportSource hono/jsx */
-import type { SiteConfig } from "@aotterclam/clam-cms-spec";
+import type { SiteConfig } from "@aotterclam/clam-mantle/spec";
 
 export interface FooterProps {
   readonly site: SiteConfig;
@@ -16,7 +16,7 @@ export function Footer(props: FooterProps) {
       </div>
       <div>
         built on{" "}
-        <a href="https://github.com/AotterClam/clam-cms">clam·cms</a>
+        <a href="https://github.com/AotterClam/clam-mantle">clam·cms</a>
       </div>
     </footer>
   );

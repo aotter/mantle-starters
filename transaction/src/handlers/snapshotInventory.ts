@@ -11,7 +11,7 @@
  * Input shape enforced by the manifest (`required: [productSlug]`).
  */
 
-import type { AnyHandler } from "@aotterclam/clam-cms-runtime";
+import type { AnyHandler } from "@aotterclam/clam-mantle/runtime";
 import { defineHandler } from "./_context.js";
 import { getInventoryActor } from "../durableObjects/InventoryActor.js";
 

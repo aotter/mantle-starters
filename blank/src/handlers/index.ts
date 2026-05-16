@@ -1,4 +1,4 @@
-import type { AnyHandler } from "@aotterclam/clam-cms-runtime";
+import type { AnyHandler } from "@aotterclam/clam-mantle/runtime";
 
 /**
  * Procedure handler registry. Empty for the headless starter — add

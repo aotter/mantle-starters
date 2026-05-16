@@ -12,6 +12,14 @@ database_id = "00000000-0000-0000-0000-000000000000"
 binding = "KV"
 id = "kv-clam-blank-local"
 
+# OAuth grant store for @cloudflare/workers-oauth-provider — client
+# registrations + grants + tokens for the MCP surfaces (/mcp + /mcp/staff).
+# Provision with `wrangler kv namespace create OAUTH_KV` and replace
+# the id below before deploy.
+[[kv_namespaces]]
+binding = "OAUTH_KV"
+id = "kv-clam-blank-oauth-local"
+
 # Bundle YAML manifests as inline text strings.
 [[rules]]
 type = "Text"

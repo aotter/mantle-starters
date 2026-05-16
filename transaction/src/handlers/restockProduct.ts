@@ -18,7 +18,7 @@
  * cap and handler cap are intentional duplication across layers.
  */
 
-import type { AnyHandler } from "@aotterclam/clam-cms-runtime";
+import type { AnyHandler } from "@aotterclam/clam-mantle/runtime";
 import { defineHandler } from "./_context.js";
 import { getInventoryActor } from "../durableObjects/InventoryActor.js";
 import { sendOrderWork } from "./orderConsumer.js";

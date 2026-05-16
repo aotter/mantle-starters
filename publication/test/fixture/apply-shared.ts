@@ -30,8 +30,8 @@ import {
   listHtmlKey,
   llmsTxtKey,
   serializeEntryAsMarkdown,
-} from "@aotterclam/clam-cms-runtime";
-import type { Entry, ContentState } from "@aotterclam/clam-cms-spec";
+} from "@aotterclam/clam-mantle/runtime";
+import type { Entry, ContentState } from "@aotterclam/clam-mantle/spec";
 import {
   pageTemplate,
   postTemplate,

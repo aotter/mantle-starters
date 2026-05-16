@@ -7,7 +7,7 @@ const brand = args.brand ?? projectName;
 const description = args.description ?? "";
 const locales = (args.locales ?? "en").split(",").map((s) => s.trim()).filter(Boolean);
 const origin = args.origin ?? "https://example.com";
-const clamCmsVersion = args["clam-cms-version"] ?? readPackageVersion();
+const clamCmsVersion = args["clam-mantle-version"] ?? readPackageVersion();
 
 if (!/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(projectName)) {
   throw new Error("--project-name must use lowercase letters, numbers, and hyphens");
@@ -40,7 +40,7 @@ rewriteJson("tsconfig.json", (json) => ({ ...json, extends: "./tsconfig.base.jso
 
 console.log(`Configured ${projectName}`);
 console.log(`Locales: ${locales.join(", ")}`);
-console.log(`clam-cms packages: ${clamCmsVersion}`);
+console.log(`clam-mantle packages: ${clamCmsVersion}`);
 
 function parseArgs(argv) {
   const out = {};
@@ -79,7 +79,7 @@ function readPackageVersion() {
 function rewriteClamCmsDeps(deps, version) {
   const out = { ...deps };
   for (const name of Object.keys(out)) {
-    if (name.startsWith("@aotterclam/clam-cms-")) out[name] = version;
+    if (name.startsWith("@aotterclam/clam-mantle-")) out[name] = version;
   }
   return out;
 }

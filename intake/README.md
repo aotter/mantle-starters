@@ -1,6 +1,6 @@
-# `clam-cms-starters/intake`
+# `clam-mantle-starters/intake`
 
-`intake` archetype starter for clam-cms v0.1.0 — public site that
+`intake` archetype starter for clam-mantle v0.1.0 — public site that
 **takes structured input** from visitors (lead capture, signups,
 applications, requests-for-quote). Backed by the `publication` shape
 (landing + articles + contact) **plus** a structured `leads` Schema
@@ -27,7 +27,7 @@ For a publication-only starter without a leads form, use
 
 If your intake form needs additional fields, edit `manifests/leads.yaml`
 directly. To add a fully separate Schema, route through
-[`skills/extend`](https://github.com/AotterClam/clam-cms/blob/main/skills/extend/SKILL.md).
+[`skills/extend`](https://github.com/AotterClam/clam-mantle/blob/main/skills/extend/SKILL.md).
 
 ## Getting started
 
@@ -38,5 +38,5 @@ pnpm dev      # wrangler dev — http://localhost:8787
 ```
 
 Real-user installs go through the install Skill — see the
-[Mantle install brief](https://github.com/AotterClam/clam-cms/blob/main/skills/install/SKILL.md)
-and the [`intake` archetype brief](https://github.com/AotterClam/clam-cms/blob/main/skills/install/archetypes/intake.md).
+[Mantle install brief](https://github.com/AotterClam/clam-mantle/blob/main/skills/install/SKILL.md)
+and the [`intake` archetype brief](https://github.com/AotterClam/clam-mantle/blob/main/skills/install/archetypes/intake.md).

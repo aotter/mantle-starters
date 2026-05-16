@@ -1,8 +1,8 @@
 {
-  "name": "clam-cms-starter-intake",
+  "name": "clam-mantle-starter-intake",
   "version": "0.0.8-alpha",
   "private": true,
-  "description": "Intake starter for clam-cms v0.1.0 \u2014 publication shape (landing + articles + contact) plus a structured `leads` Schema with leads-recent View and CAPTCHA + Slack-notify lifecycle. Runs on wrangler dev with local D1 + KV.",
+  "description": "Intake starter for clam-mantle v0.1.0 \u2014 publication shape (landing + articles + contact) plus a structured `leads` Schema with leads-recent View and CAPTCHA + Slack-notify lifecycle. Runs on wrangler dev with local D1 + KV.",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
@@ -10,11 +10,11 @@
     "test:integration": "node scripts/run-integration.mjs",
     "mcp-smoke": "tsx test/integration/mcp-smoke.ts",
     "view-smoke": "tsx test/integration/view-rest-smoke.ts",
-    "validate": "clam-cms validate",
+    "validate": "clam-mantle validate",
     "mantle:prompt": "node scripts/mantle.mjs prompt",
-    "introspect": "clam-cms introspect",
-    "emit-openapi": "clam-cms emit-openapi > openapi.json",
-    "emit-types": "clam-cms emit-types --namespace IntakeCms > clam-types.d.ts",
+    "introspect": "clam-mantle introspect",
+    "emit-openapi": "clam-mantle emit-openapi > openapi.json",
+    "emit-types": "clam-mantle emit-types --namespace IntakeCms > clam-types.d.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "check": "pnpm validate && pnpm typecheck",
     "deploy": "wrangler deploy",
@@ -25,9 +25,7 @@
     "theme:reset": "node scripts/theme-reset.mjs"
   },
   "dependencies": {
-    "@aotterclam/clam-cms-cloudflare": "0.0.8-alpha",
-    "@aotterclam/clam-cms-runtime": "0.0.8-alpha",
-    "@aotterclam/clam-cms-spec": "0.0.8-alpha",
+    "@aotterclam/clam-mantle": "0.0.10-alpha",
     "aws4fetch": "^1.0.20",
     "hono": "^4.6.20",
     "marked": "^14.1.3",

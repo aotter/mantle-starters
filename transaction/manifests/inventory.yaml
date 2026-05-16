@@ -99,6 +99,6 @@ spec:
   source:
     kind: http
     method: POST
-    path: /staff/api/restock
+    path: /api/staff/restock
   target:
     procedure: restock-product

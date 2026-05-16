@@ -12,7 +12,7 @@
  * join, but the caller-facing API stays the same.
  */
 
-import type { CmsRuntime } from "@aotterclam/clam-cms-runtime";
+import type { CmsRuntime } from "@aotterclam/clam-mantle/runtime";
 
 export interface ProductRow {
   readonly slug: string;

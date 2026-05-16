@@ -89,7 +89,7 @@ const FILE_EXTENSIONS_FOR_SUBSTITUTION = new Set([
 ]);
 
 /**
- * Bootstrap a new clam-cms consumer project from the starters
+ * Bootstrap a new clam-mantle consumer project from the starters
  * monorepo. Fetches `sources.json` at the requested ref, downloads
  * the tarball, merges `_common/` + `<archetype>/` + (optional)
  * `themes/<theme-key>/` into the destination, substitutes

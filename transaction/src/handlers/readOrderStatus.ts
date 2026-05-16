@@ -9,7 +9,7 @@
  * silent miss past the limit cap.
  */
 
-import type { AnyHandler } from "@aotterclam/clam-cms-runtime";
+import type { AnyHandler } from "@aotterclam/clam-mantle/runtime";
 import { defineHandler } from "./_context.js";
 import { orderEntryId, type OrderLineItem, type OrderRowData } from "./orderConsumer.js";
 

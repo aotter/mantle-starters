@@ -19,7 +19,7 @@
  * point, implement against the provider's docs, swap the import in
  * `index.ts`.
  *
- * Note: this lives in the STARTER, not in `@aotterclam/clam-cms-*`.
+ * Note: this lives in the STARTER, not in `@aotterclam/clam-mantle-*`.
  * The SDK has no opinion on payments.
  */
 

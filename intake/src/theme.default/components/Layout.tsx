@@ -1,6 +1,6 @@
 /** @jsxImportSource hono/jsx */
-import type { SiteConfig } from "@aotterclam/clam-cms-spec";
-import { renderSeoTagsHtml, type SeoMeta } from "@aotterclam/clam-cms-runtime";
+import type { SiteConfig } from "@aotterclam/clam-mantle/spec";
+import { renderSeoTagsHtml, type SeoMeta } from "@aotterclam/clam-mantle/runtime";
 import { html, raw } from "hono/html";
 import overrides from "../../theme/index.js";
 import { HEADER_RUNTIME_JS, SITE_CSS, THEME_BOOTSTRAP_JS } from "../styles.js";

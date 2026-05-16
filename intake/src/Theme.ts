@@ -20,7 +20,7 @@
  * PageShell covers body-layout variation inside the publication
  * family without forking every template.
  */
-import type { EntryContext, ListContext } from "@aotterclam/clam-cms-runtime";
+import type { EntryContext, ListContext } from "@aotterclam/clam-mantle/runtime";
 import type { I18nBundle } from "./i18n/index.js";
 import type { Header } from "./theme.default/components/Header.js";
 import type { Footer } from "./theme.default/components/Footer.js";
