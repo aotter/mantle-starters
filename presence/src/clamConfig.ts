@@ -73,9 +73,9 @@ export function buildCmsConfig(env: Env, auth: Auth): CmsConfig {
     handlers: buildHandlers(env),
     templates: buildTemplates(),
     siteDefaults: {
-      brand: "Clam Presence",
-      title: "Clam Presence",
-      description: "Reference starter for clam-cms — localized pages + contact form.",
+      brand: "{{BRAND}}",
+      title: "{{BRAND}}",
+      description: "{{DESCRIPTION}}",
       origin: "https://example.com",
       // `{{LOCALES}}` is substituted by @aotterclam/create-clam-cms at install
       // time (ADR-0016). JSON.parse keeps this file TS-valid pre-substitution

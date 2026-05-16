@@ -24,11 +24,15 @@ export function buildCmsConfig(env: Env, auth: Auth): CmsConfig {
     manifests: loadManifests(),
     handlers: buildHandlers(),
     siteDefaults: {
-      brand: "Clam Blank",
-      title: "Clam Blank",
-      description: "Headless CMS — bring your own frontend.",
+      brand: "{{BRAND}}",
+      title: "{{BRAND}}",
+      description: "{{DESCRIPTION}}",
       origin: "https://example.com",
-      locales: ["en"],
+      // `{{LOCALES}}` is substituted by @aotterclam/create-clam-cms at install
+      // time (ADR-0016). JSON.parse keeps this file TS-valid pre-substitution
+      // so contributors can `pnpm typecheck` the starter directly; the runtime
+      // cost is one tiny parse at worker cold-start.
+      locales: JSON.parse('{{LOCALES}}') as readonly string[],
     },
     bindings: {
       db: new D1DatabaseDriver(env.DB),

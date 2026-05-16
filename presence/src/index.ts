@@ -24,7 +24,42 @@ const AUTH_NOT_CONFIGURED = {
     "BETTER_AUTH_SECRET is required. Run `wrangler secret put BETTER_AUTH_SECRET` and redeploy.",
 } as const;
 
+// Paths that REQUIRE configured admin auth. Anything else (manifest-
+// declared HTTP triggers, Views, custom GET routes, /favicon.svg) keeps
+// rendering even when BETTER_AUTH_SECRET is missing — public previews
+// shouldn't fail closed because the operator hasn't wired admin yet.
+function pathRequiresAuth(pathname: string): boolean {
+  return (
+    pathname === "/admin" ||
+    pathname.startsWith("/admin/") ||
+    pathname === "/mcp" ||
+    pathname.startsWith("/mcp/") ||
+    pathname === "/staff/mcp" ||
+    pathname.startsWith("/staff/mcp/") ||
+    pathname.startsWith("/api/auth/") ||
+    pathname.startsWith("/oauth/") ||
+    pathname.startsWith("/.well-known/oauth")
+  );
+}
+
+let warnedAuthMissing = false;
+function noOpAuth(): Auth {
+  if (!warnedAuthMissing) {
+    warnedAuthMissing = true;
+    console.warn(
+      "[presence] BETTER_AUTH_SECRET unset — serving public routes only; /admin /mcp /api/auth will return 503.",
+    );
+  }
+  return {
+    handler: async () => Response.json(AUTH_NOT_CONFIGURED, { status: 503 }),
+    getSession: async () => null,
+    getMcpSession: async () => null,
+    getUserRole: async () => null,
+  };
+}
+
 function buildAuthFromEnv(env: Env): Auth {
+  if (!env.BETTER_AUTH_SECRET) return noOpAuth();
   const baseURL = env.PUBLIC_ORIGIN ?? "http://localhost:8787";
   const github: CreateAuthConfig["github"] =
     env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET
@@ -52,7 +87,6 @@ function getApp(env: Env): Hono {
   const cms = createCmsRef(buildCmsConfig(env, auth));
   const app = new Hono();
 
-  app.all("/api/auth/*", (c) => auth.handler(c.req.raw));
   app.get("/admin/auth/github/callback", (c) => {
     const url = new URL(c.req.url);
     url.pathname = "/api/auth/callback/github";
@@ -169,7 +203,10 @@ async function renderNotFound(ctx: PublicRouteContext): Promise<Response> {
 export default {
   async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     if (!env.BETTER_AUTH_SECRET) {
-      return Response.json(AUTH_NOT_CONFIGURED, { status: 503 });
+      const url = new URL(req.url);
+      if (pathRequiresAuth(url.pathname)) {
+        return Response.json(AUTH_NOT_CONFIGURED, { status: 503 });
+      }
     }
     return getApp(env).fetch(req, env, ctx);
   },
