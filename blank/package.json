@@ -17,7 +17,7 @@
     "setup:site": "node scripts/setup-site.mjs"
   },
   "dependencies": {
-    "@aotter/mantle": "0.0.10-alpha",
+    "@aotter/mantle": "0.0.11-alpha",
     "hono": "^4.6.20"
   },
   "devDependencies": {
