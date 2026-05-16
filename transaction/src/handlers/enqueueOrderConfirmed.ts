@@ -12,7 +12,7 @@
  * `confirmation_emailed_at` marker.
  */
 
-import type { AnyHandler } from "@aotter/mantle-runtime";
+import type { AnyHandler } from "@aotter/mantle/runtime";
 import { defineHandler } from "./_context.js";
 import { sendOrderWork } from "./orderConsumer.js";
 

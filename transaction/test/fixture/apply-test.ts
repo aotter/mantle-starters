@@ -15,7 +15,7 @@
  */
 import { execFileSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
-import { CANONICAL_MIGRATIONS } from "@aotter/mantle-runtime";
+import { CANONICAL_MIGRATIONS } from "@aotter/mantle/runtime";
 
 const NOW = 1_730_000_000_000;
 

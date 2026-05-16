@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Single-shot provision orchestrator for mantle-starters.
+ * Single-shot provision orchestrator for mantle-starter-publication.
  *
  * Two subcommands:
  *

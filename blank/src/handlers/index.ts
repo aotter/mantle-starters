@@ -1,4 +1,4 @@
-import type { AnyHandler } from "@aotter/mantle-runtime";
+import type { AnyHandler } from "@aotter/mantle/runtime";
 
 /**
  * Procedure handler registry. Empty for the headless starter — add

@@ -1,4 +1,4 @@
-import type { SiteConfig } from "@aotter/mantle-spec";
+import type { SiteConfig } from "@aotter/mantle/spec";
 
 /**
  * Fixture data for the starter's integration tests + local-dev demo.

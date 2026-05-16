@@ -79,9 +79,9 @@ function readPackageVersion() {
 function rewriteWorkspaceMantleDeps(deps, version) {
   const out = { ...deps };
   for (const name of [
-    "@aotter/mantle-spec",
-    "@aotter/mantle-runtime",
-    "@aotter/mantle-cloudflare",
+    "@aotter/mantle/spec",
+    "@aotter/mantle/runtime",
+    "@aotter/mantle/cloudflare",
   ]) {
     if (out[name] === "workspace:*") out[name] = version;
   }

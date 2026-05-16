@@ -5,7 +5,7 @@ import {
   R2MediaStorage,
   type Auth,
   type CmsConfig,
-} from "@aotter/mantle-cloudflare";
+} from "@aotter/mantle/cloudflare";
 import { AwsClient } from "aws4fetch";
 import { buildHandlers } from "./handlers/index.js";
 import { loadManifests } from "./loadManifests.js";
@@ -15,6 +15,11 @@ import { buildTemplates } from "./theme.default/templates/index.js";
 export interface Env {
   readonly DB: D1Database;
   readonly KV: KVNamespace;
+  /** OAuth grant store for `@cloudflare/workers-oauth-provider` —
+   *  client registrations + grants + tokens. Required by the
+   *  top-level OAuthProvider that wraps the Worker; both /mcp/staff
+   *  and /mcp return 503 without it. `wrangler kv namespace create OAUTH_KV`. */
+  readonly OAUTH_KV: KVNamespace;
   readonly ASSETS?: Fetcher;
   /** GitHub OAuth App client_id — provision at github.com/settings/developers. */
   readonly GITHUB_CLIENT_ID?: string;
@@ -97,17 +102,15 @@ export function buildCmsConfig(env: Env, auth: Auth): CmsConfig {
     handlers: buildHandlers(env),
     templates: buildTemplates(),
     siteDefaults: {
-      brand: "Mantle Transaction",
-      title: "Mantle Transaction",
-      description: "Reference transaction starter for mantle — products + cart + checkout via configurable payment provider.",
+      brand: "{{BRAND}}",
+      title: "{{BRAND}}",
+      description: "{{DESCRIPTION}}",
       origin: "https://example.com",
-      // `{{LOCALES}}` is substituted by @aotter/create-mantle at
-      // install time (ADR-0016). Defensive parse: pre-substitution +
-      // CI builds + contributor `pnpm dev` see the raw `{{LOCALES}}`
-      // string which isn't valid JSON; fall back to `["en"]` so the
-      // runtime boots and integration tests run. Post-substitution the
-      // first branch returns the configured array.
-      locales: parseLocales(),
+      // `{{LOCALES}}` is substituted by @aotter/create-mantle at install
+      // time (ADR-0016). JSON.parse keeps this file TS-valid pre-substitution
+      // so contributors can `pnpm typecheck` the starter directly; the runtime
+      // cost is one tiny parse at worker cold-start.
+      locales: JSON.parse('{{LOCALES}}') as readonly string[],
     },
     publicPathResolver: PUBLIC_PATH_RESOLVER,
     bindings: {
@@ -158,15 +161,3 @@ function buildMediaStorage(env: Env): { mediaStorage?: R2MediaStorage } {
   };
 }
 
-function parseLocales(): readonly string[] {
-  const raw = "{{LOCALES}}";
-  try {
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.every((s) => typeof s === "string")) {
-      return parsed;
-    }
-  } catch {
-    // pre-substitution / fixture / CI — fall through to default.
-  }
-  return ["en"];
-}

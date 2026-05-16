@@ -17,9 +17,7 @@
     "setup:site": "node scripts/setup-site.mjs"
   },
   "dependencies": {
-    "@aotter/mantle-spec": "0.0.8-alpha",
-    "@aotter/mantle-runtime": "0.0.8-alpha",
-    "@aotter/mantle-cloudflare": "0.0.8-alpha",
+    "@aotter/mantle": "0.0.10-alpha",
     "hono": "^4.6.20"
   },
   "devDependencies": {

@@ -19,8 +19,8 @@ import {
   listHtmlKey,
   llmsTxtKey,
   serializeEntryAsMarkdown,
-} from "@aotter/mantle-runtime";
-import type { ContentState, Entry, SiteConfig } from "@aotter/mantle-spec";
+} from "@aotter/mantle/runtime";
+import type { ContentState, Entry, SiteConfig } from "@aotter/mantle/spec";
 import {
   pageTemplate,
   postListTemplate,

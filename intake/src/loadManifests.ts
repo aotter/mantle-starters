@@ -1,4 +1,4 @@
-import { parseManifestsOrThrow, type Manifest } from "@aotter/mantle-spec";
+import { parseManifestsOrThrow, type Manifest } from "@aotter/mantle/spec";
 // Wrangler's `[[rules]] type = "Text"` for `*.yaml` (see wrangler.toml)
 // makes esbuild bundle these imports as inline string exports — the
 // manifests travel with the worker code, no FS access at runtime.

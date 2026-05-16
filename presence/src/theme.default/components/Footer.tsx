@@ -1,5 +1,5 @@
 /** @jsxImportSource hono/jsx */
-import type { SiteConfig } from "@aotter/mantle-spec";
+import type { SiteConfig } from "@aotter/mantle/spec";
 
 export interface FooterProps {
   readonly site: SiteConfig;

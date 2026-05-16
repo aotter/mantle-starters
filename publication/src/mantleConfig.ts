@@ -5,7 +5,7 @@ import {
   R2MediaStorage,
   type Auth,
   type CmsConfig,
-} from "@aotter/mantle-cloudflare";
+} from "@aotter/mantle/cloudflare";
 import { AwsClient } from "aws4fetch";
 import { buildHandlers } from "./handlers/index.js";
 import { loadManifests } from "./loadManifests.js";
@@ -15,6 +15,11 @@ import { buildTemplates } from "./theme.default/templates/index.js";
 export interface Env {
   readonly DB: D1Database;
   readonly KV: KVNamespace;
+  /** OAuth grant store for `@cloudflare/workers-oauth-provider` —
+   *  client registrations + grants + tokens. Required by the
+   *  top-level OAuthProvider that wraps the Worker; both /mcp/staff
+   *  and /mcp return 503 without it. `wrangler kv namespace create OAUTH_KV`. */
+  readonly OAUTH_KV: KVNamespace;
   readonly ASSETS?: Fetcher;
   /** GitHub OAuth App client_id — provision at github.com/settings/developers. */
   readonly GITHUB_CLIENT_ID?: string;

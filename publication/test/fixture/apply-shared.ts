@@ -30,8 +30,8 @@ import {
   listHtmlKey,
   llmsTxtKey,
   serializeEntryAsMarkdown,
-} from "@aotter/mantle-runtime";
-import type { Entry, ContentState } from "@aotter/mantle-spec";
+} from "@aotter/mantle/runtime";
+import type { Entry, ContentState } from "@aotter/mantle/spec";
 import {
   pageTemplate,
   postTemplate,

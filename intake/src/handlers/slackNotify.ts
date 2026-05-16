@@ -1,4 +1,4 @@
-import type { HandlerContext } from "@aotter/mantle-runtime";
+import type { HandlerContext } from "@aotter/mantle/runtime";
 
 /**
  * `after_create` hook on `contact-messages`. Notifies a Slack

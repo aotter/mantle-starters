@@ -1,5 +1,5 @@
 /** @jsxImportSource hono/jsx */
-import type { ListContext } from "@aotter/mantle-runtime";
+import type { ListContext } from "@aotter/mantle/runtime";
 import { Layout } from "../components/Layout.js";
 import { bundleFor } from "../../i18n/index.js";
 import { excerpt, isoDate } from "./utils.js";

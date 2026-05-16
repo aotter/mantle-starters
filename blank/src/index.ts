@@ -2,16 +2,19 @@ import { Hono } from "hono";
 import {
   createAuth,
   createCmsRef,
-  mountMcp,
+  createMcpApiHandler,
+  createOAuthProvider,
+  mountAuthorize,
   mountServerEndpoints,
   type Auth,
-  type CreateAuthConfig,
-} from "@aotter/mantle-cloudflare";
+  type AuthMethodConfig,
+} from "@aotter/mantle/cloudflare";
 import { buildCmsConfig, type Env } from "./mantleConfig.js";
 
 /** Headless worker entrypoint — API + MCP only, no rendered UI.
- *  Wire your own frontend to /api/views/* + /staff/mcp + /mcp + /api/auth/*. */
-let appCache: Hono | null = null;
+ *  Wire your own frontend to /api/views/* + /mcp/staff + /mcp + /api/auth/*. */
+type WorkerFetch = (req: Request, env: Env, ctx: ExecutionContext) => Promise<Response>;
+let workerFetchCache: WorkerFetch | null = null;
 
 const AUTH_NOT_CONFIGURED = {
   error: "auth_not_configured",
@@ -21,41 +24,53 @@ const AUTH_NOT_CONFIGURED = {
 
 function buildAuthFromEnv(env: Env): Auth {
   const baseURL = env.PUBLIC_ORIGIN ?? "http://localhost:8787";
-  const github: CreateAuthConfig["github"] =
-    env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET
-      ? {
-          clientId: env.GITHUB_CLIENT_ID,
-          clientSecret: env.GITHUB_CLIENT_SECRET,
-        }
-      : undefined;
+  const methods: AuthMethodConfig[] = [];
+  if (env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET) {
+    methods.push({
+      kind: "social",
+      provider: "github",
+      clientId: env.GITHUB_CLIENT_ID,
+      clientSecret: env.GITHUB_CLIENT_SECRET,
+    });
+  }
   return createAuth({
     database: env.DB,
     baseURL,
     secret: env.BETTER_AUTH_SECRET,
-    github,
-    adminGithubLogin: env.ADMIN_GITHUB_LOGIN,
+    methods,
+    bootstrapOwner: env.ADMIN_GITHUB_LOGIN
+      ? { match: "github-login", value: env.ADMIN_GITHUB_LOGIN }
+      : undefined,
   });
 }
 
-function getApp(env: Env): Hono {
-  if (appCache) return appCache;
+function buildWorker(env: Env): WorkerFetch {
+  if (workerFetchCache) return workerFetchCache;
   const auth = buildAuthFromEnv(env);
   const cms = createCmsRef(buildCmsConfig(env, auth));
   const app = new Hono();
-  app.all("/api/auth/*", (c) => auth.handler(c.req.raw));
+
   mountServerEndpoints(app, cms);
-  mountMcp(app, cms, {
-    path: "/staff/mcp",
-    surface: "staff",
-    requiredScope: "mcp:staff",
+  mountAuthorize(app, { auth, loginPath: "/admin/sign-in" });
+
+  const oauthProvider = createOAuthProvider({
+    defaultHandler: {
+      fetch: (req, env, ctx) => app.fetch(req, env, ctx),
+    },
+    apiHandlers: {
+      "/mcp/staff": createMcpApiHandler({ ref: cms, surface: "staff" }),
+      "/mcp": createMcpApiHandler({ ref: cms, surface: "public" }),
+    },
+    scopesSupported: ["mcp"],
   });
-  mountMcp(app, cms, {
-    path: "/mcp",
-    surface: "public",
-    requiredScope: "mcp:read",
-  });
-  appCache = app;
-  return app;
+
+  workerFetchCache = (req, e, ctx) =>
+    (oauthProvider.fetch as (r: unknown, e: unknown, c: unknown) => Promise<Response>)(
+      req,
+      e,
+      ctx,
+    );
+  return workerFetchCache;
 }
 
 export default {
@@ -63,6 +78,7 @@ export default {
     if (!env.BETTER_AUTH_SECRET) {
       return Response.json(AUTH_NOT_CONFIGURED, { status: 503 });
     }
-    return getApp(env).fetch(req, env, ctx);
+    const worker = buildWorker(env);
+    return worker(req, env, ctx);
   },
 };

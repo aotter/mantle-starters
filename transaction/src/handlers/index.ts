@@ -1,4 +1,4 @@
-import type { AnyHandler } from "@aotter/mantle-runtime";
+import type { AnyHandler } from "@aotter/mantle/runtime";
 import type { Env } from "../mantleConfig.js";
 import { buildAddToCart } from "./addToCart.js";
 import { buildCheckoutStart } from "./checkoutStart.js";

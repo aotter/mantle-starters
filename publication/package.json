@@ -1,5 +1,5 @@
 {
-  "name": "mantle-starters",
+  "name": "mantle-starter-publication",
   "version": "0.0.8-alpha",
   "private": true,
   "description": "Reference publication starter for mantle v0.1.0 \u2014 owner-published content (articles / pages / docs-lite / basic contact form). Localized posts via translates; contact form via builtin + lifecycle hooks. Runs on wrangler dev with local D1 + KV.",
@@ -25,9 +25,7 @@
     "theme:reset": "node scripts/theme-reset.mjs"
   },
   "dependencies": {
-    "@aotter/mantle-cloudflare": "0.0.8-alpha",
-    "@aotter/mantle-runtime": "0.0.8-alpha",
-    "@aotter/mantle-spec": "0.0.8-alpha",
+    "@aotter/mantle": "0.0.10-alpha",
     "aws4fetch": "^1.0.20",
     "hono": "^4.6.20",
     "marked": "^14.1.3",

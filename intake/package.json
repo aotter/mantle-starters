@@ -25,9 +25,7 @@
     "theme:reset": "node scripts/theme-reset.mjs"
   },
   "dependencies": {
-    "@aotter/mantle-cloudflare": "0.0.8-alpha",
-    "@aotter/mantle-runtime": "0.0.8-alpha",
-    "@aotter/mantle-spec": "0.0.8-alpha",
+    "@aotter/mantle": "0.0.10-alpha",
     "aws4fetch": "^1.0.20",
     "hono": "^4.6.20",
     "marked": "^14.1.3",

@@ -1,5 +1,5 @@
 /** @jsxImportSource hono/jsx */
-import type { SiteConfig } from "@aotter/mantle-spec";
+import type { SiteConfig } from "@aotter/mantle/spec";
 import overrides from "../../theme/index.js";
 import { Header as BaselineHeader, type HeaderProps } from "./Header.js";
 import { Footer as BaselineFooter } from "./Footer.js";

@@ -1,4 +1,4 @@
-import { TemplateRegistry } from "@aotter/mantle-runtime";
+import { TemplateRegistry } from "@aotter/mantle/runtime";
 import overrides from "../../theme/index.js";
 import { pageTemplate as basePage } from "./page.js";
 import { homeTemplate as baseHome } from "./home.js";

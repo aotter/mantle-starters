@@ -19,7 +19,7 @@ ALL  /mcp                         User/read MCP JSON-RPC dispatcher
 
 No public read routes (`/{locale}/...`, `/sitemap.xml`, `.md` mirrors,
 `llms.txt`). Add `mountPublicRoutes` from
-`@aotter/mantle-cloudflare` if you change your mind.
+`@aotter/mantle/cloudflare` if you change your mind.
 
 ### Auth
 
@@ -74,12 +74,12 @@ example View executing against an empty `notes` collection.
 
 ## What you get from the npm packages
 
-`@aotter/mantle-cloudflare` mounts the routes above against
-`@aotter/mantle-runtime` use cases. Nothing is starter-specific
+`@aotter/mantle/cloudflare` mounts the routes above against
+`@aotter/mantle/runtime` use cases. Nothing is starter-specific
 once you've wired the bindings — bearer-token MCP auth, view executor,
 and HTTP Trigger dispatcher all come straight from the runtime packages.
 
 If your frontend renders posts (or anything you'd like to expose for
 LLM crawlers), the runtime can ship an `.md` mirror of any entry; see
-`@aotter/mantle-runtime/serializeEntryAsMarkdown` and
+`@aotter/mantle/runtime/serializeEntryAsMarkdown` and
 `composeLlmsTxt`.

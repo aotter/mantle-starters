@@ -18,11 +18,11 @@ capture without payment, use [`intake/`](../intake/).
 | Piece | Where | Purpose |
 |---|---|---|
 | `InventoryActor` DO | `src/durableObjects/InventoryActor.ts` | Single DO per tenant. Holds find-and-modify locks for once-and-only-once payment-callback processing + atomic inventory reserve/commit/release. |
-| `payment_callback_queue` | `wrangler.toml` + `src/handlers/orderConsumer.ts` | Workers Queue at `max_concurrency: 1`. HTTP handler verifies provider signature and queues; consumer does the real work under the DO lock. |
-| `order_work_queue` | same | Workers Queue for downstream effects: email confirmation, fulfillment notify, inventory snapshot, reconcile tick. |
+| `payment-callback-queue` | `wrangler.toml` + `src/handlers/orderConsumer.ts` | Workers Queue at `max_concurrency: 1`. HTTP handler verifies provider signature and queues; consumer does the real work under the DO lock. |
+| `order-work-queue` | same | Workers Queue for downstream effects: email confirmation, fulfillment notify, inventory snapshot, reconcile tick. |
 | `PaymentProvider` interface | `src/payment/provider.ts` | Three-method contract: `startCheckout`, `parseCallback`, `verifyReturn`. The starter is provider-blank; Mantle scaffolds an impl at install. |
 | Two pattern templates | `src/payment/providers/_templates/` | `redirect-checkout.ts` (hosted-checkout style: Stripe / Paddle / Lemon Squeezy) + `merchant-form.ts` (merchant-rendered form: ECPay / PayUni / NewebPay). Coding agents read these to learn the shape; Mantle copies the closer one and adapts. |
-| Cron sweeper | `wrangler.toml [triggers].crons` | Every 5 min → `order_work_queue:inventory.reconcile.tick` → sweeps stale `pending` locks (10 min TTL) so crashed-consumer work can retry. |
+| Cron sweeper | `wrangler.toml [triggers].crons` | Every 5 min → `order-work-queue:inventory.reconcile.tick` → sweeps stale `pending` locks (10 min TTL) so crashed-consumer work can retry. |
 
 ## Scale contract
 

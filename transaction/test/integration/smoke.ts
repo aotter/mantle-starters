@@ -158,13 +158,13 @@ check("idempotency: same callback event again → no second order row", async ()
 // ── PR 3 — staff-gated + scheduled handler ───────────────────────────
 
 check(
-  "restockProduct: POST /staff/api/restock unauthenticated → rejected",
+  "restockProduct: POST /api/staff/restock unauthenticated → rejected",
   async () => {
     // Auth-denied shape varies by mount layer in v0.1 — Hono may
     // return 401/403, the procedure dispatcher may return 200 with
     // `{ ok: false, diagnostic }`. Either is fine; the failure mode
     // is a 200 with the success shape (`snapshotQueued: true`).
-    const res = await fetch(`${BASE_URL}/staff/api/restock`, {
+    const res = await fetch(`${BASE_URL}/api/staff/restock`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ productSlug: "tracked-out-of-stock", addQty: 10 }),

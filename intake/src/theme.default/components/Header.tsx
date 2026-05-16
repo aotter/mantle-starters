@@ -1,6 +1,6 @@
 /** @jsxImportSource hono/jsx */
 import { raw } from "hono/html";
-import type { SiteConfig } from "@aotter/mantle-spec";
+import type { SiteConfig } from "@aotter/mantle/spec";
 import { I18N_BUNDLES, bundleFor, localeLabel } from "../../i18n/index.js";
 import { icon } from "../icons.js";
 

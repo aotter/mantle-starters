@@ -17,7 +17,7 @@
  * can poll readOrderStatus while waiting for the async callback.
  */
 
-import type { AnyHandler } from "@aotter/mantle-runtime";
+import type { AnyHandler } from "@aotter/mantle/runtime";
 import { getInventoryActor } from "../durableObjects/InventoryActor.js";
 import { buildPaymentProvider, type PaymentEnv } from "../payment/index.js";
 import { defineHandler } from "./_context.js";
