@@ -106,20 +106,31 @@ three values (`GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` /
 `ADMIN_GITHUB_LOGIN`) into `.dev.vars`. `TURNSTILE_SECRET_KEY=dev-stub` is
 fine for local development.
 
-Then:
+Seed the demo catalog and start the dev server:
 
 ```bash
 pnpm validate
 pnpm typecheck
 
-# Live dev (requires no payment provider wiring yet — ref handlers
-# throw "not implemented" until PR 2):
+# One-time: seed dev D1 with demo products so `/` renders a catalog
+# instead of "No products yet."
+pnpm fixture
+
+# Live dev (ref handlers throw "not implemented" until PR 2; checkout
+# end-to-end needs a payment provider wired up):
 pnpm dev
 
 # Integration smoke (PR 1: view REST + HTTP Trigger dispatch +
 # MCP auth gates):
 pnpm test:integration
 ```
+
+Open <http://localhost:8787>. Without `pnpm fixture` the catalog is
+empty and the storefront shows the "No products yet. Sign in as staff
+to add some." placeholder — true but unhelpful for first-look impressions.
+The fixture seeds three demo products (two untracked, one tracked with
+zero stock) so the grid + product detail + cart flows all have something
+to exercise.
 
 `pnpm validate` defaults to the **preview** phase — grammar + cross-Schema only,
 exits 0 on a fresh scaffold even when the Mantle welcome letter is still
