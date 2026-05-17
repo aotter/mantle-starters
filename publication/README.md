@@ -159,9 +159,10 @@ The fixture re-runs cleanly while `wrangler dev` is up too — the
 migrations are `IF NOT EXISTS` and inserts use `OR IGNORE`, so
 edits to fixture text or templates land on subsequent applies.
 
-Run order matters because `wrangler dev`'s D1 lives in memory
-unless the fixture has populated `.wrangler/state` first; without
-fixture data, every page returns 404.
+(The "without `pnpm fixture` every route 404s" note in the top
+Quickstart is the same observation seen from the dev side: until
+the fixture has populated `.wrangler/state`, miniflare's D1 is
+empty.)
 
 ### Integration smokes
 
@@ -296,11 +297,12 @@ Prerequisites:
 1. **Bootstrap from prompt.** Paste [`docs/prompts/publication.en.md`](../../docs/prompts/publication.en.md) (or `publication.zh-TW.md`) into Claude Code / Cursor / Codex with placeholders filled in. The agent reads the install Skill, copies the starter, runs `setup:site`, and reports back a clean `pnpm validate` + `pnpm typecheck`. (The strict `pnpm validate:deploy` gate runs later, in step 4 — it expects the Mantle welcome letter to be written first, which happens during the install Skill flow.)
 
 2. **Contributor local smoke.** Before any Cloudflare provisioning,
-   optionally use the fixture to verify the template itself:
+   walk the top [Quickstart](#quickstart) (`pnpm install` →
+   `.dev.vars` → `pnpm fixture` → `pnpm dev`) to verify the template
+   boots locally. Then add three quick curl checks + integration
+   smoke that aren't part of the day-to-day Quickstart:
 
    ```bash
-   pnpm fixture
-   pnpm dev
    curl -s http://localhost:8787/en/posts/hello-world | head -5     # expect <!doctype html>
    curl -s http://localhost:8787/api/views/recent-posts | jq '.data.rows | length'
    curl -s http://localhost:8787/llms.txt | head -1
