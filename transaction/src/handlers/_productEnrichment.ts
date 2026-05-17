@@ -20,7 +20,10 @@ export interface ProductRow {
   readonly priceMinor: number;
   readonly currency: string;
   readonly inventoryMode: "tracked" | "untracked";
-  readonly description?: string;
+  /** Short blurb for catalog cards. From `product-translations.shortDescription`. */
+  readonly shortDescription?: string;
+  /** Full markdown body for product detail page. From `product-translations.body`. */
+  readonly body?: string;
 }
 
 export interface ProductCatalog {
@@ -55,14 +58,13 @@ export async function loadProductCatalog(
       priceMinor?: number;
       currency?: string;
       inventoryMode?: "tracked" | "untracked";
-      description?: string;
     };
     if (!d.slug) continue;
     const tr = translationEntries.find(
       (t) => (t.data as { slug?: string }).slug === d.slug,
     );
     const trd = tr?.data as
-      | { title?: string; description?: string }
+      | { title?: string; shortDescription?: string; body?: string }
       | undefined;
     rows.push({
       slug: d.slug,
@@ -70,7 +72,8 @@ export async function loadProductCatalog(
       priceMinor: d.priceMinor ?? 0,
       currency: d.currency ?? "USD",
       inventoryMode: d.inventoryMode ?? "untracked",
-      description: trd?.description ?? d.description,
+      shortDescription: trd?.shortDescription,
+      body: trd?.body,
     });
   }
   const bySlug = new Map(rows.map((r) => [r.slug, r]));

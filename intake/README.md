@@ -69,12 +69,32 @@ That's the only field you have to set for the public site. The remaining
 are only consumed by `/admin` sign-in; public routes ignore them.
 `TURNSTILE_SECRET_KEY=dev-stub` is fine for local development.
 
-Then:
+Seed demo content and start the dev server:
 
 ```bash
 pnpm validate
-pnpm dev      # wrangler dev — http://localhost:8787
+pnpm fixture     # one-time: seeds dev D1/KV with demo posts + pages
+pnpm dev         # wrangler dev — http://localhost:8787
 ```
+
+Open <http://localhost:8787>. The root URL 302-redirects to your
+canonical locale (`<!doctype html>` HTML, not a JSON error). Without
+`pnpm fixture` every route 404s — the miniflare D1/KV start empty.
+The intake's structured-lead form lives at `/api/leads` (anonymous
+POST); the public storefront chrome mirrors publication's.
+
+`pnpm validate` defaults to the **preview** phase (grammar + cross-Schema only) and
+exits 0 on a fresh scaffold even when the Mantle welcome letter is still a placeholder
+— that's intentional, so `pnpm dev` is unblocked during local iteration. Before
+deploying, run the strict gate:
+
+```bash
+pnpm validate:deploy   # = `mantle validate --phase deploy`
+```
+
+It re-enables `MANTLE_LETTER_NOT_WRITTEN` and any future pre-deploy-only checks.
+`pnpm deploy` already chains it in front of `wrangler deploy`, so manual invocation
+is only needed when you want the gate without deploying.
 
 Real-user installs go through the install Skill — see the
 [Mantle install brief](https://github.com/AotterClam/mantle/blob/main/skills/install/SKILL.md)

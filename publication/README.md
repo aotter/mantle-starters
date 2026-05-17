@@ -76,9 +76,8 @@ in a blank starter or a later starter family.
   provisioning.
 - **Full admin SPA**. v0.1.0 ships a minimal owner landing at `/admin`.
   Real-user first content is created after provisioning, through
-  agent interview + MCP/admin authoring. `fixture` and `seed:initial`
-  are for tests and OSS contributor local dev, not the production
-  onboarding path.
+  agent interview + MCP / admin authoring. `fixture` is local-dev / OSS
+  contributor scaffolding, not the production onboarding path.
 
 ## Quickstart
 
@@ -116,8 +115,24 @@ locale (`<!doctype html>` HTML, not a JSON error). Without `pnpm fixture` every
 route 404s — the miniflare D1/KV start empty.
 
 The fixture is intentionally demo-shaped. Use it only for local contributor
-preview or smoke testing — real user sites should not inherit fixture copy
-(production content comes from `pnpm run seed:initial` instead, see below).
+preview or smoke testing — real user sites populate production content
+through MCP / `/admin` authoring after provisioning, not from a fixture or
+seed file.
+
+#### `pnpm validate` (preview) vs `pnpm validate:deploy`
+
+`pnpm validate` defaults to the **preview** phase — grammar + cross-Schema
+checks only. It exits 0 on a fresh scaffold even when the Mantle welcome
+letter is still a placeholder, so `pnpm dev` is unblocked during local
+iteration. Before deploying, run the strict gate:
+
+```bash
+pnpm validate:deploy   # = `mantle validate --phase deploy`
+```
+
+It re-enables `MANTLE_LETTER_NOT_WRITTEN` and any future pre-deploy-only
+checks. `pnpm deploy` chains it in front of `wrangler deploy`, so the manual
+form is only needed for an ahead-of-time check.
 
 ### Signing in at /admin
 
@@ -126,7 +141,7 @@ browser redirect flow. One-time setup:
 
 1. **Create a GitHub OAuth App** at <https://github.com/settings/developers>:
    - **Homepage URL**: `http://localhost:8787`
-   - **Callback URL**: `http://localhost:8787/admin/auth/github/callback`
+   - **Callback URL**: `http://localhost:8787/api/auth/callback/github`
 2. **Edit `.dev.vars`** (created above from `.dev.vars.example`):
    ```
    GITHUB_CLIENT_ID=<the_client_id>
@@ -144,9 +159,10 @@ The fixture re-runs cleanly while `wrangler dev` is up too — the
 migrations are `IF NOT EXISTS` and inserts use `OR IGNORE`, so
 edits to fixture text or templates land on subsequent applies.
 
-Run order matters because `wrangler dev`'s D1 lives in memory
-unless the fixture has populated `.wrangler/state` first; without
-fixture data, every page returns 404.
+(The "without `pnpm fixture` every route 404s" note in the top
+Quickstart is the same observation seen from the dev side: until
+the fixture has populated `.wrangler/state`, miniflare's D1 is
+empty.)
 
 ### Integration smokes
 
@@ -211,7 +227,7 @@ curl -i -X POST http://localhost:8787/api/contact \
 # Staff MCP smoke uses the test profile's pre-minted Better Auth MCP
 # token. Local dev browser sign-in uses real GitHub OAuth; no stub
 # bearer is accepted on the dev profile.
-curl -i -X POST http://localhost:8788/staff/mcp \
+curl -i -X POST http://localhost:8788/mcp/staff \
   -H 'authorization: Bearer fixture-mcp-access-token' \
   -H 'content-type: application/json' \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize"}'
@@ -273,19 +289,20 @@ End-to-end verification on a real Cloudflare account, ~20 min. Run this whenever
 Prerequisites:
 
 - A Cloudflare account with billing profile (D1 + KV are free-tier; signup is the bar)
-- A GitHub OAuth App configured with the Worker URL as both Homepage URL and `<worker_url>/admin/auth/github/callback` as Authorization Callback URL. The first deploy gives you `<worker_url>` so this is a two-pass setup; copy the Worker URL after step 4 below, register the OAuth App, then come back and set `wrangler secret put GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET / ADMIN_GITHUB_LOGIN`.
+- A GitHub OAuth App configured with the Worker URL as both Homepage URL and `<worker_url>/api/auth/callback/github` as Authorization Callback URL. The first deploy gives you `<worker_url>` so this is a two-pass setup; copy the Worker URL after step 4 below, register the OAuth App, then come back and set `wrangler secret put GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET / ADMIN_GITHUB_LOGIN`.
 - Node 20+, pnpm 9+, an empty target directory.
 
 ### Steps
 
-1. **Bootstrap from prompt.** Paste [`docs/prompts/publication.en.md`](../../docs/prompts/publication.en.md) (or `publication.zh-TW.md`) into Claude Code / Cursor / Codex with placeholders filled in. The agent reads the install Skill, copies the starter, runs `setup:site`, and reports back a clean `pnpm validate` + `pnpm typecheck`.
+1. **Bootstrap from prompt.** Paste [`docs/prompts/publication.en.md`](../../docs/prompts/publication.en.md) (or `publication.zh-TW.md`) into Claude Code / Cursor / Codex with placeholders filled in. The agent reads the install Skill, copies the starter, runs `setup:site`, and reports back a clean `pnpm validate` + `pnpm typecheck`. (The strict `pnpm validate:deploy` gate runs later, in step 4 — it expects the Mantle welcome letter to be written first, which happens during the install Skill flow.)
 
 2. **Contributor local smoke.** Before any Cloudflare provisioning,
-   optionally use the fixture to verify the template itself:
+   walk the top [Quickstart](#quickstart) (`pnpm install` →
+   `.dev.vars` → `pnpm fixture` → `pnpm dev`) to verify the template
+   boots locally. Then add three quick curl checks + integration
+   smoke that aren't part of the day-to-day Quickstart:
 
    ```bash
-   pnpm fixture
-   pnpm dev
    curl -s http://localhost:8787/en/posts/hello-world | head -5     # expect <!doctype html>
    curl -s http://localhost:8787/api/views/recent-posts | jq '.data.rows | length'
    curl -s http://localhost:8787/llms.txt | head -1
@@ -300,11 +317,17 @@ Prerequisites:
 4. **First deploy.**
 
    ```bash
-   pnpm wrangler deploy
+   pnpm deploy        # chains `validate:deploy && typecheck && wrangler deploy`
    # capture <worker_url> from the deploy output
    ```
 
-5. **Register GitHub OAuth App** at <https://github.com/settings/developers> using `<worker_url>` and `<worker_url>/admin/auth/github/callback`. Then:
+   The `deploy` script runs `pnpm validate:deploy` (strict phase — re-enables
+   `MANTLE_LETTER_NOT_WRITTEN` and any future pre-deploy-only checks) and
+   `pnpm typecheck` before invoking wrangler. If you want to invoke wrangler
+   directly (skipping the gate) use `pnpm exec wrangler deploy`, but the
+   gate is the supported path.
+
+5. **Register GitHub OAuth App** at <https://github.com/settings/developers> using `<worker_url>` and `<worker_url>/api/auth/callback/github`. Then:
 
    ```bash
    pnpm wrangler secret put GITHUB_CLIENT_ID
@@ -341,7 +364,7 @@ Prerequisites:
 
 8. **Owner sign-in.** Visit `<worker_url>/admin` in a browser, sign in with GitHub. `ensureBootstrapOwner` promotes you to `owner` on first login because `ADMIN_GITHUB_LOGIN` matches.
 
-9. **MCP operator smoke.** Open Claude Code / Cursor / Codex in any working directory; configure the MCP client with `<worker_url>/staff/mcp`. The first connection opens the consent screen — approve it with the same GitHub account.
+9. **MCP operator smoke.** Open Claude Code / Cursor / Codex in any working directory; configure the MCP client with `<worker_url>/mcp/staff`. The first connection opens the consent screen — approve it with the same GitHub account.
 
    Then ask the agent to:
 
@@ -370,4 +393,4 @@ Prerequisites:
 
 - Step 2 fails: bug in the SDK or starter. File against the SDK; don't try to patch the consumer project.
 - Step 6 content authoring fails: verify owner sign-in and Staff MCP auth first, then ask the owner whether to retry with a smaller first draft.
-- Step 9 (MCP) fails: most likely the OAuth consent flow — verify the OAuth App's callback URL matches `<worker_url>/admin/auth/github/callback` exactly, no trailing slash mismatch.
+- Step 9 (MCP) fails: most likely the OAuth consent flow — verify the OAuth App's callback URL matches `<worker_url>/api/auth/callback/github` exactly, no trailing slash mismatch.

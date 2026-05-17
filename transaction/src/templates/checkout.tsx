@@ -1,5 +1,6 @@
 /** @jsxImportSource hono/jsx */
 import { raw } from "hono/html";
+import type { SiteConfig } from "@aotterclam/mantle/spec";
 import { Layout, renderHtml } from "./layout.js";
 
 /**
@@ -99,9 +100,13 @@ const CHECKOUT_JS = `
 })();
 `;
 
-export function renderCheckout(): string {
+export interface CheckoutContext {
+  readonly site: SiteConfig;
+}
+
+export function renderCheckout(ctx: CheckoutContext): string {
   const tree = (
-    <Layout title="Checkout">
+    <Layout title="Checkout" site={ctx.site}>
       <h1>Checkout</h1>
       <div id="summary">Loading cart…</div>
       <form id="checkout-form" class="checkout">
