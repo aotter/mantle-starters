@@ -1,5 +1,6 @@
 /** @jsxImportSource hono/jsx */
 import { raw } from "hono/html";
+import type { SiteConfig } from "@aotterclam/mantle/spec";
 import { Layout, renderHtml } from "./layout.js";
 
 /**
@@ -62,9 +63,13 @@ const CART_BOOTSTRAP_JS = `
 })();
 `;
 
-export function renderCart(): string {
+export interface CartContext {
+  readonly site: SiteConfig;
+}
+
+export function renderCart(ctx: CartContext): string {
   const tree = (
-    <Layout title="Cart">
+    <Layout title="Cart" site={ctx.site}>
       <h1>Your Cart</h1>
       <div id="summary-loading">Loading…</div>
       <div id="cart-empty" class="empty" style="display: none">

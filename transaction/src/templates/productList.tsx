@@ -1,4 +1,5 @@
 /** @jsxImportSource hono/jsx */
+import type { SiteConfig } from "@aotterclam/mantle/spec";
 import { Layout, renderHtml } from "./layout.js";
 
 /**
@@ -20,11 +21,12 @@ export interface ProductListItem {
 
 export interface ProductListContext {
   readonly products: ReadonlyArray<ProductListItem>;
+  readonly site: SiteConfig;
 }
 
 export function renderProductList(ctx: ProductListContext): string {
   const tree = (
-    <Layout title="Shop">
+    <Layout title="Shop" site={ctx.site}>
       <h1>Shop</h1>
       {ctx.products.length === 0 ? (
         <div class="empty">

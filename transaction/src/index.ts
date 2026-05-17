@@ -185,8 +185,11 @@ function buildWorker(env: Env): WorkerFetch {
   app.get("/", async (c) => {
     try {
       const runtime = await cms.get();
-      const catalog = await loadProductCatalog(runtime);
-      return c.html(renderProductList({ products: catalog.rows }));
+      const [catalog, site] = await Promise.all([
+        loadProductCatalog(runtime),
+        runtime.siteConfig.load(),
+      ]);
+      return c.html(renderProductList({ products: catalog.rows, site }));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       return c.text(`error: ${msg}`, 500);
@@ -197,21 +200,34 @@ function buildWorker(env: Env): WorkerFetch {
     const slug = c.req.param("slug");
     try {
       const runtime = await cms.get();
-      const catalog = await loadProductCatalog(runtime);
+      const [catalog, site] = await Promise.all([
+        loadProductCatalog(runtime),
+        runtime.siteConfig.load(),
+      ]);
       const product = catalog.bySlug.get(slug);
       if (!product) return c.text("not found", 404);
-      return c.html(renderProductDetail({ product }));
+      return c.html(renderProductDetail({ product, site }));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       return c.text(`error: ${msg}`, 500);
     }
   });
 
-  app.get("/cart", (c) => c.html(renderCart()));
-  app.get("/checkout", (c) => c.html(renderCheckout()));
-  app.get("/order/:orderId", (c) =>
-    c.html(renderOrderStatus({ orderId: c.req.param("orderId") })),
-  );
+  app.get("/cart", async (c) => {
+    const runtime = await cms.get();
+    const site = await runtime.siteConfig.load();
+    return c.html(renderCart({ site }));
+  });
+  app.get("/checkout", async (c) => {
+    const runtime = await cms.get();
+    const site = await runtime.siteConfig.load();
+    return c.html(renderCheckout({ site }));
+  });
+  app.get("/order/:orderId", async (c) => {
+    const runtime = await cms.get();
+    const site = await runtime.siteConfig.load();
+    return c.html(renderOrderStatus({ orderId: c.req.param("orderId"), site }));
+  });
 
   // Test-only bypass: seed InventoryActor stock without going through
   // the staff-gated `/api/staff/restock` (which needs a real session
