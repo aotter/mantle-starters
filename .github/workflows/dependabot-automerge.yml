@@ -34,4 +34,6 @@ jobs:
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh pr merge --auto --squash "$PR_URL"
+        # `--merge` (not --squash) because this repo's GitHub settings
+        # disable squash. Match what PR #60 / #88 / #112 were merged with.
+        run: gh pr merge --auto --merge "$PR_URL"
