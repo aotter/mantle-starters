@@ -1,5 +1,25 @@
 # `mantle-starters/blank`
 
+> **This README ships with your scaffolded project.** If you're reading
+> it on GitHub at `AotterClam/mantle-starters/blank`, the
+> Getting-started block below **does not work on a raw clone** —
+> `src/clamConfig.ts` contains literal `{{BRAND}}` / `{{LOCALES}}` /
+> `{{DESCRIPTION}}` placeholders that `@aotterclam/create-mantle`
+> substitutes at install time. A fresh-clone `pnpm dev` throws
+> `SyntaxError: Expected property name or '}' in JSON` at boot.
+>
+> **To evaluate this starter end-to-end**, scaffold a throwaway site:
+>
+> ```bash
+> npm create @aotterclam/mantle@alpha /tmp/eval-blank
+> cd /tmp/eval-blank
+> # then follow the Getting-started block below in that directory
+> ```
+>
+> Or paste the two-URL prompt from <https://mantle.aotterclam.ai/> into
+> your agent. See the [top-level README](../README.md) for the template
+> model.
+
 **Headless CMS starter.** Ships zero UI. Use this when you have your own
 frontend (Next.js, Astro, SvelteKit, native iOS/Android, partner
 integration) and want mantle purely as a content + auth + MCP backend.
@@ -50,18 +70,31 @@ mantle-starters/blank/
 ## Getting started
 
 ```bash
-pnpm run setup:site -- \
-  --project-name "clam-blank" \
-  --brand "Clam Blank" \
-  --description "Headless CMS — bring your own frontend." \
-  --locales "en" \
-  --origin "https://example.com"
 pnpm install
+cp .dev.vars.example .dev.vars
+```
+
+Edit `.dev.vars` and fill in `BETTER_AUTH_SECRET=` — without it the worker
+returns `auth_not_configured` on every request. Generate a value:
+
+```bash
+openssl rand -hex 32
+# copy the output, paste it after `BETTER_AUTH_SECRET=` in .dev.vars
+```
+
+Then:
+
+```bash
 pnpm dev      # wrangler dev — http://localhost:8787
 ```
 
 Hit `GET http://localhost:8787/api/views/published-notes` to see the
 example View executing against an empty `notes` collection.
+
+> **Note:** `blank` is the headless starter; there is no `/admin` UI and
+> the `GITHUB_*` / `ADMIN_GITHUB_LOGIN` placeholders in `.dev.vars` are
+> only consumed if you mount the optional MCP/admin auth surfaces. Plain
+> `/api/views/*` works without them.
 
 ## Replacing the example
 

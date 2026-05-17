@@ -1,5 +1,25 @@
 # `mantle-starters/presence`
 
+> **This README ships with your scaffolded project.** If you're reading
+> it on GitHub at `AotterClam/mantle-starters/presence`, the
+> Getting-started block below **does not work on a raw clone** —
+> `src/clamConfig.ts` contains literal `{{BRAND}}` / `{{LOCALES}}` /
+> `{{DESCRIPTION}}` placeholders that `@aotterclam/create-mantle`
+> substitutes at install time. A fresh-clone `pnpm dev` throws
+> `SyntaxError: Expected property name or '}' in JSON` at boot.
+>
+> **To evaluate this starter end-to-end**, scaffold a throwaway site:
+>
+> ```bash
+> npm create @aotterclam/mantle@alpha /tmp/eval-presence
+> cd /tmp/eval-presence
+> # then follow the Getting-started block below in that directory
+> ```
+>
+> Or paste the two-URL prompt from <https://mantle.aotterclam.ai/> into
+> your agent. See the [top-level README](../README.md) for the template
+> model.
+
 `presence` archetype starter for mantle v0.1.0 — a small public site
 that exists to **be there**: landing page, secondary pages
 (About, Contact, etc.), and a CAPTCHA-gated contact form. Light on

@@ -1,5 +1,25 @@
 # `mantle-starters/transaction`
 
+> **This README ships with your scaffolded project.** If you're reading
+> it on GitHub at `AotterClam/mantle-starters/transaction`, the
+> Getting-started block below **does not work on a raw clone** —
+> `src/clamConfig.ts` contains literal `{{BRAND}}` / `{{LOCALES}}` /
+> `{{DESCRIPTION}}` placeholders that `@aotterclam/create-mantle`
+> substitutes at install time. A fresh-clone `pnpm dev` throws
+> `SyntaxError: Expected property name or '}' in JSON` at boot.
+>
+> **To evaluate this starter end-to-end**, scaffold a throwaway site:
+>
+> ```bash
+> npm create @aotterclam/mantle@alpha /tmp/eval-transaction
+> cd /tmp/eval-transaction
+> # then follow the Getting-started block below in that directory
+> ```
+>
+> Or paste the two-URL prompt from <https://mantle.aotterclam.ai/> into
+> your agent. See the [top-level README](../README.md) for the template
+> model.
+
 `transaction` archetype starter for mantle v0.1.0 — small-scale
 shop (≤100 orders/day): products + cart + payment + orders. Backed
 by Cloudflare Workers + D1 + KV + DurableObjects + Queues.
@@ -63,6 +83,32 @@ cycle:
 
 ```bash
 pnpm install
+cp .dev.vars.example .dev.vars
+```
+
+Edit `.dev.vars` and fill in `BETTER_AUTH_SECRET=` — without it the worker
+returns `auth_not_configured` on every request. Generate a value:
+
+```bash
+openssl rand -hex 32
+# copy the output, paste it after `BETTER_AUTH_SECRET=` in .dev.vars
+```
+
+**`transaction` is stricter than the other starters about auth at boot.**
+Unlike `publication` / `presence` / `intake`, the `transaction` worker
+requires `BETTER_AUTH_SECRET` **plus** at least one registered auth method
+to boot even for public read routes — `getApp` builds Better Auth at boot
+and Better Auth refuses an empty methods list. The fastest way through is
+to register a local-dev GitHub OAuth App at
+<https://github.com/settings/developers> (Homepage `http://localhost:8787`,
+Callback `http://localhost:8787/api/auth/callback/github`) and paste the
+three values (`GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` /
+`ADMIN_GITHUB_LOGIN`) into `.dev.vars`. `TURNSTILE_SECRET_KEY=dev-stub` is
+fine for local development.
+
+Then:
+
+```bash
 pnpm validate
 pnpm typecheck
 

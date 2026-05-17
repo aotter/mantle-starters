@@ -1,5 +1,27 @@
 # `mantle-starters/publication`
 
+> **This README ships with your scaffolded project.** If you're reading
+> it on GitHub at `AotterClam/mantle-starters/publication`, the
+> Quickstart below **does not work on a raw clone** — `src/clamConfig.ts`
+> contains literal `{{BRAND}}` / `{{LOCALES}}` / `{{DESCRIPTION}}`
+> placeholders that `@aotterclam/create-mantle` substitutes at install
+> time. A fresh-clone `pnpm dev` throws `SyntaxError: Expected property
+> name or '}' in JSON` at boot because `JSON.parse('{{LOCALES}}')` runs
+> on an unsubstituted string.
+>
+> **To evaluate this starter end-to-end**, scaffold a throwaway site —
+> `create-mantle` does the substitution and prints a runnable project:
+>
+> ```bash
+> npm create @aotterclam/mantle@alpha /tmp/eval-publication
+> cd /tmp/eval-publication
+> # then follow the Quickstart below in that directory
+> ```
+>
+> Or paste the two-URL prompt from <https://mantle.aotterclam.ai/> into
+> Claude Code / Cursor / Codex — same scaffolder, agent-driven. See the
+> [top-level README](../README.md) for the template model.
+
 Reference `publication` starter for mantle v0.1.0 — the
 owner-published-content family in the starter taxonomy (#58). Covers
 landing pages, articles, docs-lite, project updates, and basic contact
