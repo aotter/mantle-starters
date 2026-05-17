@@ -18,9 +18,9 @@ export const FIXTURE_MCP_ACCESS_TOKEN = "fixture-mcp-access-token";
 export const FIXTURE_MCP_REFRESH_TOKEN = "fixture-mcp-refresh-token";
 
 export const FIXTURE_SITE: SiteConfig = {
-  brand: "Mantle Publication",
-  title: "Mantle Publication",
-  description: "Reference starter for mantle — localized posts + contact form.",
+  brand: "{{BRAND}}",
+  title: "{{BRAND}}",
+  description: "{{DESCRIPTION}}",
   origin: "http://localhost:8787",
   locales: ["en", "zh-TW"],
   canonicalLocale: "en",
@@ -103,13 +103,13 @@ export const FIXTURE_PAGES: readonly FixturePage[] = [
     translations: [
       {
         locale: "en",
-        title: "Welcome to Mantle Publication",
+        title: "Welcome to {{BRAND}}",
         intro: "Localized posts + contact form, served from Cloudflare D1 + KV.",
         body: "This site is the v0.1.0 reference starter for mantle. It exercises every locked grammar feature: posts (language-neutral parent), post-translations (translates demo), pages (this page is one), and a CAPTCHA-gated contact form running on lifecycle hooks. Recent posts are listed below; About + Contact pages are reachable from the header.",
       },
       {
         locale: "zh-TW",
-        title: "歡迎來到 Mantle Publication",
+        title: "歡迎來到 {{BRAND}}",
         intro: "多語系文章 + 聯絡表單，跑在 Cloudflare D1 + KV 上。",
         body: "這個網站是 mantle v0.1.0 的範本 starter。Locked grammar 全跑一遍：posts（語系無關的 parent）、post-translations（translates demo）、pages（這頁就是其中一個）、以及一個用 lifecycle hooks 過 CAPTCHA 的聯絡表單。最新文章列在下面；標頭可以連到 About / Contact。",
       },
@@ -122,13 +122,13 @@ export const FIXTURE_PAGES: readonly FixturePage[] = [
         locale: "en",
         title: "About",
         intro: "What this starter is for.",
-        body: "Mantle Publication is a reference deployment of the mantle v0.1.0 manifest engine on Cloudflare Workers. It demonstrates the four locked atoms — Schema, View, Procedure, Trigger — composed into a real, runnable site. Source: github.com/aotter/mantle.",
+        body: "{{BRAND}} is a reference deployment of the mantle v0.1.0 manifest engine on Cloudflare Workers. It demonstrates the four locked atoms — Schema, View, Procedure, Trigger — composed into a real, runnable site. Source: github.com/aotter/mantle.",
       },
       {
         locale: "zh-TW",
         title: "關於",
         intro: "這個 starter 的用途。",
-        body: "Mantle Publication 是 mantle v0.1.0 manifest 引擎跑在 Cloudflare Workers 上的範例佈署。它把四個 locked atom（Schema、View、Procedure、Trigger）組成一個真的能跑的網站。原始碼：github.com/aotter/mantle。",
+        body: "{{BRAND}} 是 mantle v0.1.0 manifest 引擎跑在 Cloudflare Workers 上的範例佈署。它把四個 locked atom（Schema、View、Procedure、Trigger）組成一個真的能跑的網站。原始碼：github.com/aotter/mantle。",
       },
     ],
   },
