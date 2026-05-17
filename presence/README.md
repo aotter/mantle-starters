@@ -1,5 +1,25 @@
 # `mantle-starters/presence`
 
+> **This README ships with your scaffolded project.** If you're reading
+> it on GitHub at `aotter/mantle-starters/presence`, the
+> Getting-started block below **does not work on a raw clone** —
+> `src/mantleConfig.ts` contains literal `{{BRAND}}` / `{{LOCALES}}` /
+> `{{DESCRIPTION}}` placeholders that `@aotter/create-mantle`
+> substitutes at install time. A fresh-clone `pnpm dev` throws
+> `SyntaxError: Expected property name or '}' in JSON` at boot.
+>
+> **To evaluate this starter end-to-end**, scaffold a throwaway site:
+>
+> ```bash
+> npm create @aotter/mantle@alpha /tmp/eval-presence
+> cd /tmp/eval-presence
+> # then follow the Getting-started block below in that directory
+> ```
+>
+> Or paste the two-URL prompt from <https://the Mantle landing page/> into
+> your agent. See the [top-level README](../README.md) for the template
+> model.
+
 `presence` archetype starter for mantle v0.1.0 — a small public site
 that exists to **be there**: landing page, secondary pages
 (About, Contact, etc.), and a CAPTCHA-gated contact form. Light on
@@ -23,6 +43,25 @@ For a structured-form intake starter (RSVPs, lead capture, etc.), use
 
 ```bash
 pnpm install
+cp .dev.vars.example .dev.vars
+```
+
+Edit `.dev.vars` and fill in `BETTER_AUTH_SECRET=` — without it the worker
+returns `auth_not_configured` on every request. Generate a value:
+
+```bash
+openssl rand -hex 32
+# copy the output, paste it after `BETTER_AUTH_SECRET=` in .dev.vars
+```
+
+That's the only field you have to set for the public site. The remaining
+`GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` / `ADMIN_GITHUB_LOGIN` placeholders
+are only consumed by `/admin` sign-in; public routes ignore them.
+`TURNSTILE_SECRET_KEY=dev-stub` is fine for local development.
+
+Then:
+
+```bash
 pnpm validate
 pnpm dev      # wrangler dev — http://localhost:8787
 ```

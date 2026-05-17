@@ -1,5 +1,27 @@
 # `mantle-starters/publication`
 
+> **This README ships with your scaffolded project.** If you're reading
+> it on GitHub at `aotter/mantle-starters/publication`, the
+> Quickstart below **does not work on a raw clone** — `src/mantleConfig.ts`
+> contains literal `{{BRAND}}` / `{{LOCALES}}` / `{{DESCRIPTION}}`
+> placeholders that `@aotter/create-mantle` substitutes at install
+> time. A fresh-clone `pnpm dev` throws `SyntaxError: Expected property
+> name or '}' in JSON` at boot because `JSON.parse('{{LOCALES}}')` runs
+> on an unsubstituted string.
+>
+> **To evaluate this starter end-to-end**, scaffold a throwaway site —
+> `create-mantle` does the substitution and prints a runnable project:
+>
+> ```bash
+> npm create @aotter/mantle@alpha /tmp/eval-publication
+> cd /tmp/eval-publication
+> # then follow the Quickstart below in that directory
+> ```
+>
+> Or paste the two-URL prompt from <https://the Mantle landing page/> into
+> Claude Code / Cursor / Codex — same scaffolder, agent-driven. See the
+> [top-level README](../README.md) for the template model.
+
 Reference `publication` starter for mantle v0.1.0 — the
 owner-published-content family in the starter taxonomy (#58). Covers
 landing pages, articles, docs-lite, project updates, and basic contact
@@ -60,20 +82,42 @@ in a blank starter or a later starter family.
 
 ## Quickstart
 
+To browse the **public site** locally (rendered publication routes, contact form,
+MCP transport auth), one secret is required and nothing else needs to be touched:
+
 ```bash
 pnpm install
 cp .dev.vars.example .dev.vars
+```
 
-# Option A: local demo fixture for development/testing.
-pnpm fixture       # seeds dev D1/KV with demo content (no staff row)
+Edit `.dev.vars` and fill in `BETTER_AUTH_SECRET=` — without it the worker
+returns `auth_not_configured` on every request. Generate a value:
 
-# Then run wrangler dev:
+```bash
+openssl rand -hex 32
+# copy the output, paste it after `BETTER_AUTH_SECRET=` in .dev.vars
+```
+
+That's the only field you have to set for the public site. The `GITHUB_CLIENT_ID`
+/ `GITHUB_CLIENT_SECRET` / `ADMIN_GITHUB_LOGIN` placeholders left in `.dev.vars`
+are only consumed when you click `/admin` — public routes ignore them. (See
+[§ Signing in at /admin](#signing-in-at-admin) when you're ready.) `TURNSTILE_SECRET_KEY=dev-stub`
+is fine for local development.
+
+Seed demo content and start the dev server:
+
+```bash
+pnpm fixture       # one-time: seeds dev D1/KV with demo content (no staff row)
 pnpm dev
 ```
 
-The fixture is optional and intentionally demo-shaped. Use it only when
-you want a local contributor preview or smoke test. Real user sites
-should not inherit fixture copy.
+Open <http://localhost:8787>. The root URL 302-redirects to your canonical
+locale (`<!doctype html>` HTML, not a JSON error). Without `pnpm fixture` every
+route 404s — the miniflare D1/KV start empty.
+
+The fixture is intentionally demo-shaped. Use it only for local contributor
+preview or smoke testing — real user sites should not inherit fixture copy
+(production content comes from `pnpm run seed:initial` instead, see below).
 
 ### Signing in at /admin
 
@@ -214,7 +258,7 @@ wrangler.toml          # default env: local D1 + KV bindings
 
 Before deploying THIS starter as-is:
 
-1. Production uses Better Auth with GitHub OAuth + MCP OAuth/DCR. Set real `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `ADMIN_GITHUB_LOGIN`, and `BETTER_AUTH_SECRET`.
+1. Production uses Better Auth with GitHub OAuth + MCP OAuth/DCR. Set real `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `ADMIN_GITHUB_LOGIN`, and `BETTER_AUTH_SECRET`. **Back `BETTER_AUTH_SECRET` up in a secret manager** — Better Auth uses it to sign session cookies + JWTs and (if the JWT plugin is enabled) to encrypt JWK private keys at rest. Carrying the same value across host migrations keeps users signed in and JWK rows readable; rotating it logs everyone out and requires regenerating the JWK row. Use `BETTER_AUTH_SECRETS` (comma-separated, plural) when you need a graceful rotation window.
 2. Replace `captchaCheck` with a real Turnstile / hCaptcha siteverify call.
 3. Replace `slackNotify` with your Slack webhook (or a different sink).
 4. Replace demo Unsplash cover images with assets you own when appropriate,

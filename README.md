@@ -15,6 +15,39 @@ Premium / per-customer starters live in the private sibling
 [`aotter/mantle-starters-premium`](https://github.com/aotter/mantle-starters-premium).
 That repo mirrors `_common/`; sync strategy is TBD.
 
+## How to install (one-line `npx`)
+
+The agent-driven flow (paste the landing prompt into Claude Code /
+Cursor / Codex) is the recommended path because the install Skill
+interviews the user for brand / locales / audience before running the
+command. If you're already past the interview and want to invoke the
+scaffolder directly, the command shape is:
+
+```bash
+npx @aotter/create-mantle@alpha <archetype> \
+  --project-name "<my-site>" \
+  --brand "<My Brand>" \
+  --description "<one-line site description>" \
+  --locales "en,zh-TW" \
+  --github-owner "<your-github-login>" \
+  --summary "<install-moment marker>"
+  # optional: --theme <theme>     (default | minimal-ink | editorial-warm | journal | playful-pop)
+```
+
+`<archetype>` is one of: `presence`, `publication`, `intake`,
+`transaction`, `blank`. The CLI fetches `sources.json` at runtime,
+downloads the matching starter tarball, merges `_common/` +
+`<archetype>/` + optional `themes/<theme>/`, fills `{{BRAND}}` /
+`{{LOCALES}}` / `{{DESCRIPTION}}` placeholders, runs `git init` +
+`pnpm install`, and prints RUN_NOTES JSON. After it returns, `cd
+<my-site>` and follow that directory's own README for the local-dev
+Quickstart.
+
+See [`aotter/mantle/skills/install`](https://github.com/aotter/mantle/tree/develop/skills/install)
+for the full agent-driven flow (the interview that produces the values
+above) and the `## Run this` block in
+[install/SKILL.md](https://github.com/aotter/mantle/blob/develop/skills/install/SKILL.md).
+
 ## Layout
 
 ```
