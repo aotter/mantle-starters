@@ -44,7 +44,25 @@ jobs:
           # PR branch isn't refused for shallow-history reasons.
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.ref }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # Token policy: prefer DEPENDABOT_PUSH_TOKEN (a fine-grained
+          # PAT or GitHub App token), fall back to GITHUB_TOKEN.
+          #
+          # The fallback works for committing the lockfile, BUT GitHub
+          # has an explicit anti-loop rule: pushes made with
+          # GITHUB_TOKEN do NOT retrigger any other workflow on the
+          # same branch. That means after we push the lockfile delta,
+          # `validate.yml` won't re-run, so it stays in its (failing,
+          # pre-lockfile-fix) state — and `dependabot-automerge.yml`
+          # never sees green CI to queue the auto-merge. End result:
+          # the PR sits BLOCKED until an admin manually merges.
+          #
+          # With `DEPENDABOT_PUSH_TOKEN` set as a repo secret (a
+          # fine-grained PAT with `contents: write` + `pull-requests:
+          # write` scoped to this repo, owned by a real account — NOT
+          # the github-actions[bot]), the lockfile push triggers
+          # validate.yml normally, which then gates auto-merge as
+          # designed.
+          token: ${{ secrets.DEPENDABOT_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
 
       - uses: pnpm/action-setup@v6
 
