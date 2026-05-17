@@ -1,5 +1,8 @@
 # mantle-starters
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
+
 Public monorepo of mantle v0.1.0 starter templates.
 
 This repo is consumed by the `@aotterclam/create-mantle` npx package
@@ -127,5 +130,5 @@ starters do not share runtime code (that lives upstream in the
 
 ## License
 
-[MIT](publication/LICENSE) — see each starter for its own LICENSE if
+[MIT](./LICENSE) — see each starter for its own LICENSE if
 present.

@@ -1,0 +1,88 @@
+name: Bug report
+description: Report broken, surprising, or unsafe behavior in a starter or the scaffolder.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Do not include secrets or vulnerability details here; use Security Advisories for security reports.
+        Engine / runtime bugs (in `@aotterclam/mantle-*`) belong on the parent repo: https://github.com/AotterClam/mantle/issues/new/choose
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What is broken?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction
+      description: Include the install command, archetype + theme used, terminal output, and a minimal repro if possible.
+      placeholder: |
+        1. npx <release-tarball-url> my-site
+        2. Selected: archetype=publication, theme=l4-editorial-warm
+        3. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - starter:blank
+        - starter:publication
+        - starter:presence
+        - starter:intake
+        - starter:transaction
+        - starter:community
+        - starter:membership
+        - starter:reservation
+        - area:scaffolder
+        - area:themes
+        - area:_common
+        - area:sources-json
+        - area:ci
+        - area:docs
+        - unknown
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Logs or diagnostics
+      description: Paste structured diagnostics, stack traces, scaffolder RUN_NOTES JSON, or command output.
+      render: text
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Scaffolder release tag, Node version, pnpm version, platform.
+      placeholder: |
+        scaffolder release:
+        node:
+        pnpm:
+        platform:
+    validations:
+      required: true
+  - type: checkboxes
+    id: gates
+    attributes:
+      label: Gates
+      options:
+        - label: This may involve unfilled `{{MACRO}}` substitution.
+        - label: This may involve trust boundaries (`.dev.vars`, OAuth secrets, Turnstile keys).
+        - label: I checked existing issues.

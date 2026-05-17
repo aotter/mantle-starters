@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.11-alpha",
   "description": "Workspace root for the @aotterclam/mantle starter family — archetype source templates (publication, intake, presence, blank, transaction, ...) + theme overlays + the create-mantle scaffolder. Adopters never depend on this root; they scaffold from one archetype into a fresh consumer repo.",
-  "license": "Apache-2.0",
+  "license": "MIT",
   "homepage": "https://github.com/AotterClam/mantle-starters",
   "repository": {
     "type": "git",

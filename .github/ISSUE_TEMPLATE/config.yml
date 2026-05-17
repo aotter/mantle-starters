@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: General question / discussion
+    url: https://github.com/AotterClam/mantle-starters/discussions
+    about: For open Q&A, ideas, and show-and-tell. Issues are for actionable bugs / features only.
+  - name: Engine / runtime bug
+    url: https://github.com/AotterClam/mantle/issues/new/choose
+    about: Bugs in @aotterclam/mantle-* packages (runtime / spec / admin UI / CF adapter) belong on the parent repo.
+  - name: Report a vulnerability
+    url: https://github.com/AotterClam/mantle-starters/security/advisories/new
+    about: Use a private security advisory for vulnerability reports.

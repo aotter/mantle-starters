@@ -1,0 +1,73 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /packages/create-mantle
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels:
+      - area:scaffolder
+      - dependencies
+
+  - package-ecosystem: npm
+    directory: /blank
+    schedule:
+      interval: weekly
+    labels:
+      - starter:blank
+      - dependencies
+    groups:
+      aotterclam:
+        patterns: ["@aotterclam/*"]
+
+  - package-ecosystem: npm
+    directory: /publication
+    schedule:
+      interval: weekly
+    labels:
+      - starter:publication
+      - dependencies
+    groups:
+      aotterclam:
+        patterns: ["@aotterclam/*"]
+
+  - package-ecosystem: npm
+    directory: /presence
+    schedule:
+      interval: weekly
+    labels:
+      - starter:presence
+      - dependencies
+    groups:
+      aotterclam:
+        patterns: ["@aotterclam/*"]
+
+  - package-ecosystem: npm
+    directory: /intake
+    schedule:
+      interval: weekly
+    labels:
+      - starter:intake
+      - dependencies
+    groups:
+      aotterclam:
+        patterns: ["@aotterclam/*"]
+
+  - package-ecosystem: npm
+    directory: /transaction
+    schedule:
+      interval: weekly
+    labels:
+      - starter:transaction
+      - dependencies
+    groups:
+      aotterclam:
+        patterns: ["@aotterclam/*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    labels:
+      - area:ci
+      - dependencies
