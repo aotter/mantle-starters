@@ -55,6 +55,70 @@ Mantle's install interview asks "roughly how many orders per day?"
 and routes >100 to `commerce-pro` (roadmap — sharded DOs, multi-region,
 higher-throughput design).
 
+## Design choice + limits
+
+Four concurrency / consistency hazards exist in any shop-like system.
+Naming them up front so the choices below have something to defend.
+
+| Hazard | What goes wrong without protection |
+|---|---|
+| **R1 — webhook retry** | Payment provider re-delivers a callback; two consumers try to mark the same order paid. |
+| **R2 — synchronous race** | Two customers click "checkout" within ms on the last unit in stock; both decrement, oversell. |
+| **R3 — multi-item bundle** | A cart with several items: stock for some is fine, others not. Either all reserve or none. |
+| **R4 — TTL release** | A pending reservation never completes; held stock needs to return. |
+
+This starter protects against all four with **one DurableObject +
+two `max_concurrency: 1` queues**:
+
+| Hazard | Protected by |
+|---|---|
+| R1 | `payment-callback-queue` (consumer serialization) + `InventoryActor.tryAcquire(workId)` (storage-level idempotency) |
+| R2 | `InventoryActor.reserve()` — DO is single-threaded per instance, so concurrent `stub.fetch()` calls queue up inside the DO |
+| R3 | `reserve()` checks + decrements every item in one DO method (multi-key atomic by construction) |
+| R4 | DO Alarm (`expiresAt`) fires per-reservation; sweeper also runs as a backstop |
+
+**Why one DO per tenant, not one DO per product?** Sharding by SKU
+(`stub = INVENTORY_ACTOR.idFromName(productSlug)`) would scale linearly
+with catalog size but breaks R3 — multi-item carts can't be reserved
+atomically across DO instances. At ≤100 orders/day, one DO covers the
+contention; the multi-item bundle is the dominant constraint.
+
+**Why queues at all when DO already serializes?** Two reasons:
+
+1. **Native webhook-retry semantics.** Cloudflare Queues give you
+   `max_retries / retry_delay / dead_letter_queue` for free; the
+   `payment-callback-queue` config (30 retries × 30s = ~15 min window)
+   intentionally exceeds `InventoryActor.PENDING_LOCK_TTL_MS` so the
+   sweeper + queue retry recover a crashed consumer without DLQ.
+2. **Buffer between fast webhook delivery and slow inventory work.**
+   The HTTP handler verifies the provider signature and queues; the
+   consumer does the heavier reserve/commit work under the DO lock.
+   Decoupling lets the webhook 200 OK fast (providers retry aggressively
+   on slow responses).
+
+**What this starter does NOT scale to:**
+
+- **More than ~200 reserve req/s sustained.** DO storage operations
+  cap at roughly that per single instance.
+- **More than ~200 callback msg/s sustained.** `max_concurrency: 1`
+  means one consumer at a time.
+- **Multi-tenant within one Worker.** Each tenant = its own deploy;
+  the `INVENTORY_ACTOR.idFromName("singleton")` pattern assumes one
+  catalog per Worker.
+
+**Graduation path** (what to change when you outgrow this shape):
+
+| Symptom | Fix |
+|---|---|
+| Checkout latency rises during sales | Shard `InventoryActor` per SKU (`idFromName(productSlug)`); accept that multi-item bundles need a coordinator pattern (saga / Outbox), or run them sequentially with compensating release on partial failure. |
+| Webhook consumer backlog | Raise `max_concurrency` on `payment-callback-queue`; re-verify R1 idempotency holds when consumers run in parallel (the DO `tryAcquire` lock still works because DO is the actual serialization point, not the queue). |
+| Order count outgrows D1 IOPS | Move catalog + orders to Hyperdrive-backed PostgreSQL (mantle v0.2+); InventoryActor stays as the consistency layer. |
+| Need geo-redundancy | Move to `commerce-pro` starter (roadmap) — multi-region DOs + replicated read views. |
+
+The `commerce-pro` migration is the explicit "you've outgrown this"
+exit; it isn't a config flip, it's a different starter you re-scaffold
+into. Mantle's install Skill flags the size threshold during interview.
+
 ## PR series status
 
 The transaction starter lands across four phased PRs in the v0.1.0
@@ -154,3 +218,4 @@ provider interview + scaffolding procedure.
 - [`SKILL.md`](SKILL.md) — Mantle's install-time interview + provider wiring
 - [`src/payment/providers/README.md`](src/payment/providers/README.md) — provider templates explained
 - [`skills/extend`](https://raw.githubusercontent.com/aotter/mantle/main/skills/extend/SKILL.md) — adding Schemas / Views / Procedures / Triggers
+- [`reservation/`](../reservation/) — sibling starter (roadmap, v0.2) for time-bounded bookings. Same DO + Queue shape; documented as a forward-spec.
