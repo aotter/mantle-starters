@@ -33,7 +33,7 @@
     "@aotterclam/mantle-spec": "0.0.11-alpha.3",
     "@cloudflare/workers-types": "^4.20251101.0",
     "@types/node": "^20",
-    "tsx": "^4.19.0",
+    "tsx": "^4.22.1",
     "typescript": "^5.6.3",
     "wrangler": "^4.0.0"
   },
