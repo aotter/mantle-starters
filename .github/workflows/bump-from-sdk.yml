@@ -1,0 +1,169 @@
+# Release fanout — Step 2 of AotterClam/mantle#191.
+#
+# Triggered by mantle SDK's `release.yml` after a successful publish.
+# Bumps every starter's `@aotterclam/mantle*` deps + own version +
+# `sources.json.version` to the just-published SDK version, gates on
+# validate + typecheck across all 5 starters, opens a PR with
+# auto-merge enabled. A companion workflow (`tag-and-dispatch-landing.yml`)
+# fires when that PR merges to main, tags the release, and dispatches
+# `mantle-landing`'s bump-from-starters.yml.
+#
+# Operator setup (one-time):
+#
+#   RELEASE_FANOUT_TOKEN — fine-grained PAT (or GitHub App token)
+#                          with `contents: write` + `pull-requests:
+#                          write` on this repo (for opening + auto-
+#                          merging the PR) and on `mantle-landing`
+#                          (for the dispatch after merge). Required.
+
+name: bump-from-sdk
+
+on:
+  repository_dispatch:
+    types: [sdk-published]
+
+  # Manual override — useful if RELEASE_FANOUT_TOKEN was missing during
+  # the SDK publish or if a previous bump PR was closed without merge.
+  workflow_dispatch:
+    inputs:
+      sdk_version:
+        description: 'SDK version to bump to (without leading v)'
+        required: true
+        type: string
+      npm_tag:
+        description: 'npm dist-tag (alpha / beta / rc / latest)'
+        required: true
+        type: string
+        default: alpha
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - id: input
+        run: |
+          set -euo pipefail
+          VERSION="${{ github.event.client_payload.sdk_version || inputs.sdk_version }}"
+          NPM_TAG="${{ github.event.client_payload.npm_tag || inputs.npm_tag }}"
+          if [ -z "$VERSION" ]; then
+            echo "::error::sdk_version not supplied"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "npm_tag=$NPM_TAG" >> "$GITHUB_OUTPUT"
+          echo "Bumping starters to SDK version $VERSION (npm dist-tag $NPM_TAG)"
+
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.RELEASE_FANOUT_TOKEN }}
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Create release branch
+        run: |
+          set -euo pipefail
+          BRANCH="release/v${{ steps.input.outputs.version }}"
+          git checkout -B "$BRANCH"
+          echo "branch=$BRANCH" >> "$GITHUB_ENV"
+
+      - name: Bump @aotterclam/mantle* deps + own version
+        env:
+          VERSION: ${{ steps.input.outputs.version }}
+        run: |
+          set -euo pipefail
+          # Per starter (and root): rewrite every "@aotterclam/mantle*" dep
+          # to the new version, and bump the package's own `version`.
+          # Touches both `dependencies` and `devDependencies`.
+          node --input-type=module -e "
+            import { readFileSync, writeFileSync } from 'node:fs';
+            import { globSync } from 'node:fs';
+            const paths = [
+              'package.json',
+              'blank/package.json',
+              'publication/package.json',
+              'presence/package.json',
+              'intake/package.json',
+              'transaction/package.json',
+              'packages/create-mantle/package.json',
+            ];
+            const version = process.env.VERSION;
+            for (const p of paths) {
+              const j = JSON.parse(readFileSync(p, 'utf8'));
+              for (const k of ['dependencies', 'devDependencies']) {
+                if (!j[k]) continue;
+                for (const dep of Object.keys(j[k])) {
+                  if (dep === '@aotterclam/mantle' || dep.startsWith('@aotterclam/mantle-')) {
+                    j[k][dep] = version;
+                  }
+                }
+              }
+              // Own version mirrors SDK version per #191.
+              j.version = version;
+              writeFileSync(p, JSON.stringify(j, null, 2) + '\n');
+              console.log('bumped', p);
+            }
+          "
+
+      - name: Update sources.json version
+        env:
+          VERSION: ${{ steps.input.outputs.version }}
+        run: |
+          set -euo pipefail
+          node --input-type=module -e "
+            import { readFileSync, writeFileSync } from 'node:fs';
+            const path = 'sources.json';
+            const j = JSON.parse(readFileSync(path, 'utf8'));
+            j.version = process.env.VERSION;
+            writeFileSync(path, JSON.stringify(j, null, 2) + '\n');
+            console.log('updated', path);
+          "
+
+      - name: Regenerate workspace lockfile
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Validate (gate)
+        run: |
+          set -euo pipefail
+          for starter in blank publication presence intake transaction; do
+            echo "=== validate $starter ==="
+            (cd "$starter" && pnpm validate)
+            echo "=== typecheck $starter ==="
+            (cd "$starter" && pnpm typecheck)
+          done
+
+      - name: Commit + push
+        run: |
+          set -euo pipefail
+          git config user.name 'mantle-release-bot'
+          git config user.email '49699333+dependabot[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo "::error::No changes after bump — was the SDK version the same as current?"
+            exit 1
+          fi
+          git commit -m "release: bump @aotterclam/mantle* to v${{ steps.input.outputs.version }}"
+          git push origin "${{ env.branch }}"
+
+      - name: Open PR + enable auto-merge
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_FANOUT_TOKEN }}
+        run: |
+          set -euo pipefail
+          PR_URL=$(gh pr create \
+            --base main \
+            --head "${{ env.branch }}" \
+            --title "release: bump @aotterclam/mantle* to v${{ steps.input.outputs.version }}" \
+            --body "Auto-generated by \`bump-from-sdk.yml\` after SDK release \`v${{ steps.input.outputs.version }}\` (dist-tag \`${{ steps.input.outputs.npm_tag }}\`). Validate + typecheck passed for all 5 starters before this PR opened. Auto-merge enabled; companion workflow \`tag-and-dispatch-landing.yml\` will tag the release + dispatch landing after merge.")
+          gh pr review --approve "$PR_URL"
+          gh pr merge --auto --merge "$PR_URL"
+          echo "PR ready: $PR_URL"

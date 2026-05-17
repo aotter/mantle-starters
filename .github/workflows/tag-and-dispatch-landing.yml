@@ -1,0 +1,67 @@
+# Release fanout — between Step 2 and Step 3 of AotterClam/mantle#191.
+#
+# Triggered when a `release: bump @aotterclam/mantle* to vX.Y.Z` commit
+# lands on main (the merge of the PR opened by `bump-from-sdk.yml`).
+# Tags the merge commit `vX.Y.Z` and dispatches `mantle-landing`'s
+# `bump-from-starters.yml` workflow so the landing site rolls forward
+# to the same version.
+#
+# Why split from bump-from-sdk.yml: that workflow opens a PR and
+# returns. The PR's auto-merge fires asynchronously, so the tag +
+# downstream dispatch can't live in the same job. Listening for the
+# merge commit on main is the simplest pivot point.
+
+name: tag-and-dispatch-landing
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write   # for `git tag` + `git push`
+
+jobs:
+  tag:
+    if: startsWith(github.event.head_commit.message, 'release: bump @aotterclam/mantle* to v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_FANOUT_TOKEN }}
+
+      - name: Extract version from commit message
+        id: ver
+        run: |
+          set -euo pipefail
+          # Commit message shape: `release: bump @aotterclam/mantle* to vX.Y.Z`
+          MSG="${{ github.event.head_commit.message }}"
+          VERSION=$(echo "$MSG" | head -n1 | grep -oE 'v[0-9][^[:space:]]+' | sed 's/^v//')
+          if [ -z "$VERSION" ]; then
+            echo "::error::Couldn't extract version from commit message: $MSG"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Detected release version: v$VERSION"
+
+      - name: Create + push tag
+        run: |
+          set -euo pipefail
+          git config user.name 'mantle-release-bot'
+          git config user.email '49699333+dependabot[bot]@users.noreply.github.com'
+          git tag "v${{ steps.ver.outputs.version }}"
+          git push origin "v${{ steps.ver.outputs.version }}"
+
+      - name: Dispatch landing bump-from-starters
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_FANOUT_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::warning::RELEASE_FANOUT_TOKEN not set — landing bump skipped. Starters is tagged; set the secret and re-dispatch manually via the Actions UI in mantle-landing."
+            exit 0
+          fi
+          gh api repos/AotterClam/mantle-landing/dispatches \
+            -f event_type=starters-released \
+            -F "client_payload[starters_version]=${{ steps.ver.outputs.version }}"
+          echo "Dispatched mantle-landing bump-from-starters for v${{ steps.ver.outputs.version }}"
