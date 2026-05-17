@@ -33,7 +33,7 @@ i18n, theme stack, and contact form, use the sibling
 ```
 GET  /api/views/<name>            view REST per View atom
 METHOD <trigger path>             manifest-declared HTTP Trigger routes
-ALL  /staff/mcp                   Staff MCP JSON-RPC dispatcher
+ALL  /mcp/staff                   Staff MCP JSON-RPC dispatcher
 ALL  /mcp                         User/read MCP JSON-RPC dispatcher
 ```
 
@@ -46,7 +46,7 @@ No public read routes (`/{locale}/...`, `/sitemap.xml`, `.md` mirrors,
 MCP requests must carry a verified bearer token. The runtime's
 Cloudflare adapter now uses Better Auth for browser sign-in and MCP
 OAuth/DCR. `publication` wires the production-ready dual MCP surface
-(`/staff/mcp` for staff authoring, `/mcp` for end-user/read tools).
+(`/mcp/staff` for staff authoring, `/mcp` for end-user/read tools).
 `blank` wires the same Better Auth factory and dual mounts, but ships
 no public HTML. Add your own frontend and policy surface before
 claiming a custom production workflow.

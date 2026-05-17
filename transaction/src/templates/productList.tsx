@@ -17,6 +17,8 @@ export interface ProductListItem {
   readonly priceMinor: number;
   readonly currency: string;
   readonly inventoryMode: "tracked" | "untracked";
+  /** Short blurb shown under the card title. From `product-translations.shortDescription`. */
+  readonly shortDescription?: string;
 }
 
 export interface ProductListContext {
@@ -39,6 +41,9 @@ export function renderProductList(ctx: ProductListContext): string {
               <h3>
                 <a href={`/product/${encodeURIComponent(p.slug)}`}>{p.title}</a>
               </h3>
+              {p.shortDescription ? (
+                <p class="muted">{p.shortDescription}</p>
+              ) : null}
               <div class="price">{formatPrice(p.priceMinor, p.currency)}</div>
               {p.inventoryMode === "tracked" ? (
                 <div class="muted">Limited stock</div>

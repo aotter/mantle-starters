@@ -52,7 +52,10 @@ export interface ProductDetailContext {
     readonly title: string;
     readonly priceMinor: number;
     readonly currency: string;
-    readonly description?: string;
+    /** Short blurb under the title. From `product-translations.shortDescription`. */
+    readonly shortDescription?: string;
+    /** Full body markdown. From `product-translations.body`. */
+    readonly body?: string;
     readonly inventoryMode: "tracked" | "untracked";
   };
   readonly site: SiteConfig;
@@ -76,8 +79,9 @@ export function renderProductDetail(ctx: ProductDetailContext): string {
         <a href="/">← Back to shop</a>
       </p>
       <h1>{p.title}</h1>
+      {p.shortDescription ? <p class="lead">{p.shortDescription}</p> : null}
       <p class="price-tag">{formatPrice(p.priceMinor, p.currency)}</p>
-      {p.description ? <p>{p.description}</p> : null}
+      {p.body ? <p>{p.body}</p> : null}
       <div>
         <label for="qty">Quantity</label>
         <input id="qty" type="number" min="1" max="10" value="1" style="width: 5rem" />

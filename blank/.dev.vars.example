@@ -24,7 +24,7 @@ PUBLIC_ORIGIN=http://localhost:8787
 #
 #   1. Create a GitHub OAuth App at github.com/settings/developers
 #      - Homepage URL:    http://localhost:8787
-#      - Callback URL:    http://localhost:8787/admin/auth/github/callback
+#      - Callback URL:    http://localhost:8787/api/auth/callback/github
 #   2. Paste the client id / secret below.
 #   3. Set ADMIN_GITHUB_LOGIN to YOUR GitHub login.
 GITHUB_CLIENT_ID=<your_github_oauth_app_client_id>

@@ -141,7 +141,7 @@ browser redirect flow. One-time setup:
 
 1. **Create a GitHub OAuth App** at <https://github.com/settings/developers>:
    - **Homepage URL**: `http://localhost:8787`
-   - **Callback URL**: `http://localhost:8787/admin/auth/github/callback`
+   - **Callback URL**: `http://localhost:8787/api/auth/callback/github`
 2. **Edit `.dev.vars`** (created above from `.dev.vars.example`):
    ```
    GITHUB_CLIENT_ID=<the_client_id>
@@ -227,7 +227,7 @@ curl -i -X POST http://localhost:8787/api/contact \
 # Staff MCP smoke uses the test profile's pre-minted Better Auth MCP
 # token. Local dev browser sign-in uses real GitHub OAuth; no stub
 # bearer is accepted on the dev profile.
-curl -i -X POST http://localhost:8788/staff/mcp \
+curl -i -X POST http://localhost:8788/mcp/staff \
   -H 'authorization: Bearer fixture-mcp-access-token' \
   -H 'content-type: application/json' \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize"}'
@@ -289,7 +289,7 @@ End-to-end verification on a real Cloudflare account, ~20 min. Run this whenever
 Prerequisites:
 
 - A Cloudflare account with billing profile (D1 + KV are free-tier; signup is the bar)
-- A GitHub OAuth App configured with the Worker URL as both Homepage URL and `<worker_url>/admin/auth/github/callback` as Authorization Callback URL. The first deploy gives you `<worker_url>` so this is a two-pass setup; copy the Worker URL after step 4 below, register the OAuth App, then come back and set `wrangler secret put GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET / ADMIN_GITHUB_LOGIN`.
+- A GitHub OAuth App configured with the Worker URL as both Homepage URL and `<worker_url>/api/auth/callback/github` as Authorization Callback URL. The first deploy gives you `<worker_url>` so this is a two-pass setup; copy the Worker URL after step 4 below, register the OAuth App, then come back and set `wrangler secret put GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET / ADMIN_GITHUB_LOGIN`.
 - Node 20+, pnpm 9+, an empty target directory.
 
 ### Steps
@@ -327,7 +327,7 @@ Prerequisites:
    directly (skipping the gate) use `pnpm exec wrangler deploy`, but the
    gate is the supported path.
 
-5. **Register GitHub OAuth App** at <https://github.com/settings/developers> using `<worker_url>` and `<worker_url>/admin/auth/github/callback`. Then:
+5. **Register GitHub OAuth App** at <https://github.com/settings/developers> using `<worker_url>` and `<worker_url>/api/auth/callback/github`. Then:
 
    ```bash
    pnpm wrangler secret put GITHUB_CLIENT_ID
@@ -364,7 +364,7 @@ Prerequisites:
 
 8. **Owner sign-in.** Visit `<worker_url>/admin` in a browser, sign in with GitHub. `ensureBootstrapOwner` promotes you to `owner` on first login because `ADMIN_GITHUB_LOGIN` matches.
 
-9. **MCP operator smoke.** Open Claude Code / Cursor / Codex in any working directory; configure the MCP client with `<worker_url>/staff/mcp`. The first connection opens the consent screen — approve it with the same GitHub account.
+9. **MCP operator smoke.** Open Claude Code / Cursor / Codex in any working directory; configure the MCP client with `<worker_url>/mcp/staff`. The first connection opens the consent screen — approve it with the same GitHub account.
 
    Then ask the agent to:
 
@@ -393,4 +393,4 @@ Prerequisites:
 
 - Step 2 fails: bug in the SDK or starter. File against the SDK; don't try to patch the consumer project.
 - Step 6 content authoring fails: verify owner sign-in and Staff MCP auth first, then ask the owner whether to retry with a smaller first draft.
-- Step 9 (MCP) fails: most likely the OAuth consent flow — verify the OAuth App's callback URL matches `<worker_url>/admin/auth/github/callback` exactly, no trailing slash mismatch.
+- Step 9 (MCP) fails: most likely the OAuth consent flow — verify the OAuth App's callback URL matches `<worker_url>/api/auth/callback/github` exactly, no trailing slash mismatch.
