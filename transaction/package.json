@@ -26,7 +26,7 @@
   "dependencies": {
     "@aotterclam/mantle": "0.0.11-alpha.3",
     "aws4fetch": "^1.0.20",
-    "hono": "^4.6.20",
+    "hono": "^4.12.19",
     "marked": "^14.1.3",
     "yaml": "^2.6.1"
   },
