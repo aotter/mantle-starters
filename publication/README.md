@@ -119,6 +119,21 @@ The fixture is intentionally demo-shaped. Use it only for local contributor
 preview or smoke testing — real user sites should not inherit fixture copy
 (production content comes from `pnpm run seed:initial` instead, see below).
 
+#### `pnpm validate` (preview) vs `pnpm validate:deploy`
+
+`pnpm validate` defaults to the **preview** phase — grammar + cross-Schema
+checks only. It exits 0 on a fresh scaffold even when the Mantle welcome
+letter is still a placeholder, so `pnpm dev` is unblocked during local
+iteration. Before deploying, run the strict gate:
+
+```bash
+pnpm validate:deploy   # = `mantle validate --phase deploy`
+```
+
+It re-enables `MANTLE_LETTER_NOT_WRITTEN` and any future pre-deploy-only
+checks. `pnpm deploy` chains it in front of `wrangler deploy`, so the manual
+form is only needed for an ahead-of-time check.
+
 ### Signing in at /admin
 
 `/admin` uses real GitHub OAuth even locally — there is no stub for the

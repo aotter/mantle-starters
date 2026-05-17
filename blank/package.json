@@ -14,8 +14,7 @@
     "emit-types": "mantle emit-types --namespace BlankCms > mantle-types.d.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "check": "pnpm validate && pnpm typecheck",
-    "predeploy": "pnpm validate:deploy && pnpm typecheck",
-    "deploy": "wrangler deploy",
+    "deploy": "pnpm validate:deploy && pnpm typecheck && wrangler deploy",
     "setup:site": "node scripts/setup-site.mjs"
   },
   "dependencies": {
