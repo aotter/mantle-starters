@@ -34,12 +34,16 @@ function buildFixtureSql(): string {
     lines.push(`-- migration ${m.id}: ${m.description}`);
     lines.push(m.sql);
   }
-  lines.push("-- 2. site_config row so the runtime boot's locale validator passes.");
-  lines.push(
-    `INSERT OR IGNORE INTO site_config (id, brand, title, description, origin, locales, updated_at) VALUES (` +
-      `'site', 'Clam Transaction (test)', 'Clam Transaction (test)', 'fixture', 'http://localhost:8788', '["en"]', ${NOW});`,
-  );
-  lines.push("-- 3. one published product + en translation");
+  // site_config is seeded automatically by boot from
+  // CmsConfig.siteDefaults via DatabaseSiteConfigRepository.seed —
+  // we don't touch it here. (The previous fixture wrote to a column
+  // shape — `(id, brand, title, description, origin, locales,
+  // updated_at)` — that doesn't match the canonical migration's
+  // `(key TEXT PRIMARY KEY, value TEXT NOT NULL)`. SQLite rejected
+  // it as `table site_config has no column named id`; the fixture
+  // only worked when a previous run had already populated the table
+  // and OR IGNORE silently swallowed the error.)
+  lines.push("-- 2. one published product + en translation");
   const productData = {
     slug: SEED_PRODUCT_SLUG,
     sku: "SMK-001",
@@ -66,7 +70,7 @@ function buildFixtureSql(): string {
       `'${JSON.stringify(translationData).replace(/'/g, "''")}', ${NOW}, ${NOW});`,
   );
 
-  lines.push("-- 4. one tracked product with zero stock (for insufficient-stock smoke)");
+  lines.push("-- 3. one tracked product with zero stock (for insufficient-stock smoke)");
   const trackedData = {
     slug: SEED_TRACKED_SLUG,
     sku: "TRK-001",
