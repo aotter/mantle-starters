@@ -64,6 +64,11 @@ in a blank starter or a later starter family.
 pnpm install
 cp .dev.vars.example .dev.vars
 
+# Generate BETTER_AUTH_SECRET and paste the output into the
+# BETTER_AUTH_SECRET= line of .dev.vars. The worker returns
+# `auth_not_configured` on every request until this is filled in.
+openssl rand -hex 32
+
 # Option A: local demo fixture for development/testing.
 pnpm fixture       # seeds dev D1/KV with demo content (no staff row)
 
@@ -214,7 +219,7 @@ wrangler.toml          # default env: local D1 + KV bindings
 
 Before deploying THIS starter as-is:
 
-1. Production uses Better Auth with GitHub OAuth + MCP OAuth/DCR. Set real `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `ADMIN_GITHUB_LOGIN`, and `BETTER_AUTH_SECRET`.
+1. Production uses Better Auth with GitHub OAuth + MCP OAuth/DCR. Set real `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `ADMIN_GITHUB_LOGIN`, and `BETTER_AUTH_SECRET`. **Back `BETTER_AUTH_SECRET` up in a secret manager** — Better Auth uses it to sign session cookies + JWTs and (if the JWT plugin is enabled) to encrypt JWK private keys at rest. Carrying the same value across host migrations keeps users signed in and JWK rows readable; rotating it logs everyone out and requires regenerating the JWK row. Use `BETTER_AUTH_SECRETS` (comma-separated, plural) when you need a graceful rotation window.
 2. Replace `captchaCheck` with a real Turnstile / hCaptcha siteverify call.
 3. Replace `slackNotify` with your Slack webhook (or a different sink).
 4. Replace demo Unsplash cover images with assets you own when appropriate,

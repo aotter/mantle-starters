@@ -14,10 +14,15 @@ TURNSTILE_SECRET_KEY=dev-stub
 # Don't set in production.
 CLAM_LOCAL_DEV=1
 
-# Better Auth signing secret (32+ random bytes). Generate locally with
-# `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
-# Production: `wrangler secret put BETTER_AUTH_SECRET`.
-BETTER_AUTH_SECRET=<32+ random bytes — see comment above>
+# Better Auth signing secret (32+ random bytes). REQUIRED — boot fails
+# with `auth_not_configured` if empty. Generate with:
+#   openssl rand -hex 32
+# (or `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`)
+# Production: `wrangler secret put BETTER_AUTH_SECRET`. Back the value up
+# (1Password / Bitwarden / secret manager) — keeping it across host
+# migrations preserves sessions and JWK-encrypted rows; losing it logs
+# every user out and any JWT plugin's stored private key won't decrypt.
+BETTER_AUTH_SECRET=
 
 # Better Auth's baseURL. Production: the deployed Worker origin.
 PUBLIC_ORIGIN=http://localhost:8787
