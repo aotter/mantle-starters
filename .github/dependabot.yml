@@ -1,5 +1,136 @@
+# Dependabot config for mantle-starters.
+#
+# Each starter is its own pnpm project (with its own pnpm-lock.yaml) plus
+# a parent pnpm-workspace.yaml — Dependabot has to be configured per
+# directory because it doesn't natively crawl workspaces. To keep PR
+# noise sane, deps are batched into named groups per starter so a weekly
+# sweep ends up at ~5 grouped PRs per starter at worst, not 5 × N.
+#
+# `@aotterclam/*` is excluded: SDK bumps land via the mantle release
+# pipeline + a deliberate `pnpm up @aotterclam/*` in each starter,
+# never via dependabot patch/minor PRs.
+#
+# Lockfile note: dependabot's npm ecosystem updates `package.json` but
+# does NOT regenerate `pnpm-lock.yaml`, so `--frozen-lockfile` would
+# fail on every dependabot PR. The dependabot-lockfile.yml workflow
+# runs `pnpm install` on the PR branch and pushes the lockfile fix
+# back, so CI can pass and dependabot-automerge can fire for
+# patch/minor.
+
 version: 2
 updates:
+  # ── Starter dirs ────────────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /blank
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels:
+      - starter:blank
+      - dependencies
+    ignore:
+      - dependency-name: "@aotterclam/*"
+    groups:
+      types:
+        patterns: ["@types/*"]
+      cloudflare:
+        patterns: ["wrangler", "@cloudflare/*"]
+      build-tooling:
+        patterns: ["typescript", "tsx"]
+        update-types: ["minor", "patch"]
+      runtime-libs:
+        patterns: ["hono", "marked", "yaml", "aws4fetch"]
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: npm
+    directory: /publication
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels:
+      - starter:publication
+      - dependencies
+    ignore:
+      - dependency-name: "@aotterclam/*"
+    groups:
+      types:
+        patterns: ["@types/*"]
+      cloudflare:
+        patterns: ["wrangler", "@cloudflare/*"]
+      build-tooling:
+        patterns: ["typescript", "tsx"]
+        update-types: ["minor", "patch"]
+      runtime-libs:
+        patterns: ["hono", "marked", "yaml", "aws4fetch"]
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: npm
+    directory: /presence
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels:
+      - starter:presence
+      - dependencies
+    ignore:
+      - dependency-name: "@aotterclam/*"
+    groups:
+      types:
+        patterns: ["@types/*"]
+      cloudflare:
+        patterns: ["wrangler", "@cloudflare/*"]
+      build-tooling:
+        patterns: ["typescript", "tsx"]
+        update-types: ["minor", "patch"]
+      runtime-libs:
+        patterns: ["hono", "marked", "yaml", "aws4fetch"]
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: npm
+    directory: /intake
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels:
+      - starter:intake
+      - dependencies
+    ignore:
+      - dependency-name: "@aotterclam/*"
+    groups:
+      types:
+        patterns: ["@types/*"]
+      cloudflare:
+        patterns: ["wrangler", "@cloudflare/*"]
+      build-tooling:
+        patterns: ["typescript", "tsx"]
+        update-types: ["minor", "patch"]
+      runtime-libs:
+        patterns: ["hono", "marked", "yaml", "aws4fetch"]
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: npm
+    directory: /transaction
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels:
+      - starter:transaction
+      - dependencies
+    ignore:
+      - dependency-name: "@aotterclam/*"
+    groups:
+      types:
+        patterns: ["@types/*"]
+      cloudflare:
+        patterns: ["wrangler", "@cloudflare/*"]
+      build-tooling:
+        patterns: ["typescript", "tsx"]
+        update-types: ["minor", "patch"]
+      runtime-libs:
+        patterns: ["hono", "marked", "yaml", "aws4fetch"]
+        update-types: ["minor", "patch"]
+
+  # ── Scaffolder ──────────────────────────────────────────────────────
   - package-ecosystem: npm
     directory: /packages/create-mantle
     schedule:
@@ -8,66 +139,22 @@ updates:
     labels:
       - area:scaffolder
       - dependencies
-
-  - package-ecosystem: npm
-    directory: /blank
-    schedule:
-      interval: weekly
-    labels:
-      - starter:blank
-      - dependencies
     groups:
-      aotterclam:
-        patterns: ["@aotterclam/*"]
+      types:
+        patterns: ["@types/*"]
+      build-tooling:
+        patterns: ["typescript", "tsx", "vitest"]
+        update-types: ["minor", "patch"]
 
-  - package-ecosystem: npm
-    directory: /publication
-    schedule:
-      interval: weekly
-    labels:
-      - starter:publication
-      - dependencies
-    groups:
-      aotterclam:
-        patterns: ["@aotterclam/*"]
-
-  - package-ecosystem: npm
-    directory: /presence
-    schedule:
-      interval: weekly
-    labels:
-      - starter:presence
-      - dependencies
-    groups:
-      aotterclam:
-        patterns: ["@aotterclam/*"]
-
-  - package-ecosystem: npm
-    directory: /intake
-    schedule:
-      interval: weekly
-    labels:
-      - starter:intake
-      - dependencies
-    groups:
-      aotterclam:
-        patterns: ["@aotterclam/*"]
-
-  - package-ecosystem: npm
-    directory: /transaction
-    schedule:
-      interval: weekly
-    labels:
-      - starter:transaction
-      - dependencies
-    groups:
-      aotterclam:
-        patterns: ["@aotterclam/*"]
-
+  # ── GitHub Actions ──────────────────────────────────────────────────
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    open-pull-requests-limit: 5
     labels:
       - area:ci
       - dependencies
+    groups:
+      actions:
+        patterns: ["*"]
