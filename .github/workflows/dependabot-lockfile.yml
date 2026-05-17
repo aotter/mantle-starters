@@ -1,0 +1,77 @@
+# Dependabot updates `package.json` but doesn't regenerate
+# `pnpm-lock.yaml` — `pnpm install --frozen-lockfile` (what validate.yml
+# runs) then fails with `ERR_PNPM_OUTDATED_LOCKFILE` on every dependabot
+# PR. This workflow runs `pnpm install` on the PR branch and commits
+# the lockfile delta back. After the push, validate.yml re-runs and
+# can pass, which is the precondition for dependabot-automerge.yml.
+#
+# Only fires for the dependabot[bot] actor — same workflow contract as
+# dependabot-automerge.yml.
+
+name: dependabot-lockfile
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  fix-lockfile:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          # Use a PAT-less push by giving the default GITHUB_TOKEN
+          # permission via permissions.contents above. Push back to
+          # the same branch dependabot owns.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Detect which directory the bump targets. Dependabot encodes
+      # the directory in branch names like
+      # `dependabot/npm_and_yarn/<dir>/<package>-<version>`. Strip the
+      # known prefix + the suffix to recover `<dir>`.
+      - id: dir
+        run: |
+          BRANCH='${{ github.event.pull_request.head.ref }}'
+          # Strip `dependabot/npm_and_yarn/` prefix
+          REST="${BRANCH#dependabot/npm_and_yarn/}"
+          # Drop the trailing component (the package + version, possibly with slashes)
+          # by inspecting the changed files. Safer: find `package.json` paths in the diff.
+          CHANGED=$(git diff --name-only HEAD~1 HEAD -- '**/package.json' | head -1)
+          if [ -z "$CHANGED" ]; then
+            echo "No package.json change detected; nothing to do."
+            echo "dir=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          DIR="$(dirname "$CHANGED")"
+          echo "dir=$DIR" >> "$GITHUB_OUTPUT"
+          echo "Detected starter dir: $DIR"
+
+      - name: Regenerate lockfile
+        if: steps.dir.outputs.dir != ''
+        working-directory: ${{ steps.dir.outputs.dir }}
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Commit lockfile delta if any
+        if: steps.dir.outputs.dir != ''
+        run: |
+          if git diff --quiet -- '${{ steps.dir.outputs.dir }}/pnpm-lock.yaml'; then
+            echo "Lockfile already up to date; nothing to commit."
+            exit 0
+          fi
+          git config user.name 'dependabot[bot]'
+          git config user.email '49699333+dependabot[bot]@users.noreply.github.com'
+          git add '${{ steps.dir.outputs.dir }}/pnpm-lock.yaml'
+          git commit -m "chore(deps): regenerate pnpm-lock.yaml after package.json bump"
+          git push
