@@ -1,5 +1,6 @@
 /** @jsxImportSource hono/jsx */
 import { raw } from "hono/html";
+import type { SiteConfig } from "@aotter/mantle/spec";
 
 /**
  * Minimal HTML doc envelope for the customer-facing storefront.
@@ -14,9 +15,11 @@ import { raw } from "hono/html";
  * (`cart:<cartId>`); the server's view of the cart is authoritative
  * after addToCart, but the template renders subtotal client-side
  * while the user shops to avoid round-trips.
+ *
+ * Header brand + footer copy come from `site_config` (seeded from
+ * `siteDefaults.brand` / `siteDefaults.description` at boot). Route
+ * handlers call `runtime.siteConfig.load()` and pass the result down.
  */
-
-const BRAND = "Storefront";
 
 const INLINE_CSS = `
   :root {
@@ -115,16 +118,19 @@ const BOOTSTRAP_JS = `
 
 export interface LayoutContext {
   readonly title: string;
+  readonly site: SiteConfig;
   readonly children: unknown;
 }
 
 export function Layout(props: LayoutContext) {
+  const { site } = props;
+  const pageTitle = `${props.title} — ${site.brand}`;
   return (
     <html lang="en">
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>{props.title}</title>
+        <title>{pageTitle}</title>
         <style>{raw(INLINE_CSS)}</style>
         {/*
           Bootstrap lives in <head> so window.__cartId + window.__escapeHtml
@@ -134,7 +140,7 @@ export function Layout(props: LayoutContext) {
       </head>
       <body>
         <header class="site">
-          <a href="/" class="brand">{BRAND}</a>
+          <a href="/" class="brand">{site.brand}</a>
           <nav>
             <a href="/">Shop</a>
             <a href="/cart">Cart</a>
@@ -142,7 +148,8 @@ export function Layout(props: LayoutContext) {
         </header>
         <main>{props.children}</main>
         <footer class="site">
-          Reference storefront — replace with your brand.
+          {site.brand}
+          {site.description ? ` · ${site.description}` : ""}
         </footer>
       </body>
     </html>

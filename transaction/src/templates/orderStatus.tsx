@@ -1,5 +1,6 @@
 /** @jsxImportSource hono/jsx */
 import { raw } from "hono/html";
+import type { SiteConfig } from "@aotter/mantle/spec";
 import { Layout, renderHtml } from "./layout.js";
 
 /**
@@ -104,12 +105,13 @@ const ORDER_STATUS_JS = `
 
 export interface OrderStatusContext {
   readonly orderId: string;
+  readonly site: SiteConfig;
 }
 
 export function renderOrderStatus(ctx: OrderStatusContext): string {
   const orderIdJson = JSON.stringify(ctx.orderId);
   const tree = (
-    <Layout title="Order">
+    <Layout title="Order" site={ctx.site}>
       <h1>Order Confirmation</h1>
       <div id="order-content">
         <p class="muted">Checking your order status…</p>

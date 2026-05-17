@@ -66,15 +66,33 @@ pnpm fixture       # one-time: seeds dev D1/KV with demo home + about pages
 pnpm dev           # wrangler dev — http://localhost:8787
 ```
 
-Open <http://localhost:8787>. Without `pnpm fixture`, `/<locale>/` and
-`/<locale>/pages/about` 404 — the miniflare D1/KV start empty and the
-home / about routes look up `page-translations` rows that don't exist yet.
-The contact page is template-only (no DB row needed) and renders without
-the fixture.
+Open <http://localhost:8787>. The root URL 302-redirects to your
+canonical locale and the home page renders (`<!doctype html>` HTML,
+not a JSON error) with your `--brand` filled in. `/<locale>/pages/about`
+loads the seeded about page; `/<locale>/pages/contact` renders the
+contact form (template-only — no DB row needed even without the fixture).
+
+Without `pnpm fixture`, `/<locale>/` and `/<locale>/pages/about` 404 —
+the miniflare D1/KV start empty and the home / about routes look up
+`page-translations` rows that don't exist yet. The contact page still
+renders.
 
 The fixture is intentionally demo-shaped — edit `test/fixture/data.ts`
 to replace the placeholder copy with content that introduces your site,
 or author through `/admin` after signing in.
+
+`pnpm validate` defaults to the **preview** phase — grammar + cross-Schema
+checks only. It exits 0 on a fresh scaffold even when the Mantle welcome
+letter is still a placeholder, so `pnpm dev` is unblocked during local
+iteration. Before deploying, run the strict gate:
+
+```bash
+pnpm validate:deploy   # = `mantle validate --phase deploy`
+```
+
+It re-enables `MANTLE_LETTER_NOT_WRITTEN` and any future pre-deploy-only
+checks. `pnpm deploy` chains it in front of `wrangler deploy`, so the
+manual form is only needed for an ahead-of-time check.
 
 Real-user installs go through the install Skill — see the
 [Mantle install brief](https://github.com/aotter/mantle/blob/main/skills/install/SKILL.md)

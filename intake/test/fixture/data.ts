@@ -44,12 +44,12 @@ export const FIXTURE_POSTS: readonly FixturePost[] = [
       {
         locale: "en",
         title: "Hello, world",
-        body: "This is the first post on the Mantle publication. Localized content rendered from KV; the body is plain markdown for v0.1.0 (real markdown rendering arrives in starter v2).",
+        body: "This is the first post on the {{BRAND}} site. Localized content rendered from KV; the body is plain markdown for v0.1.0 (real markdown rendering arrives in starter v2).",
       },
       {
         locale: "zh-TW",
         title: "你好，世界",
-        body: "這是 Mantle publication 的第一篇文章。內容從 KV 渲染、依語系切版；v0.1.0 的 body 暫以純文字呈現，正式 markdown 渲染留給 starter v2。",
+        body: "這是 {{BRAND}} 的第一篇文章。內容從 KV 渲染、依語系切版；v0.1.0 的 body 暫以純文字呈現，正式 markdown 渲染留給 starter v2。",
       },
     ],
   },

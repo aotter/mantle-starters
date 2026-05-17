@@ -53,6 +53,25 @@ function buildWorker(env: Env): WorkerFetch {
   mountServerEndpoints(app, cms);
   mountAuthorize(app, { auth, loginPath: "/admin/sign-in" });
 
+  // Headless friendly index. blank ships no UI on purpose, but a bare
+  // `GET /` returning 404 looks broken on first visit during local
+  // dev. Surface a tiny JSON sitemap pointing at what *is* mounted
+  // so the operator can confirm the worker booted and find the next
+  // URL to hit. Replace this route with your own frontend's `/` once
+  // you start building.
+  app.get("/", (c) =>
+    c.json({
+      starter: "blank",
+      mounts: {
+        viewsRest: "/api/views/<view-name>",
+        mcpStaff: "/mcp/staff",
+        mcpPublic: "/mcp",
+        auth: "/api/auth/*",
+      },
+      note: "blank is headless — no HTML chrome ships. Wire your own frontend (Next.js / Astro / native) to the mounts above.",
+    }),
+  );
+
   const oauthProvider = createOAuthProvider({
     defaultHandler: {
       fetch: (req, env, ctx) => app.fetch(req, env, ctx),

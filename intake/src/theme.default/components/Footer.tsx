@@ -16,7 +16,7 @@ export function Footer(props: FooterProps) {
       </div>
       <div>
         built on{" "}
-        <a href="https://github.com/aotter/mantle">mantle·cms</a>
+        <a href="https://github.com/aotter/mantle">mantle·mantle</a>
       </div>
     </footer>
   );
