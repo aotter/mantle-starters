@@ -26,6 +26,22 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+      # Approve the PR first — main branch protection requires 1
+      # approving review, dependabot can't self-approve, so without
+      # this the auto-merge queue stays BLOCKED forever. Repo Settings
+      # → Actions → "Allow GitHub Actions to create and approve PRs"
+      # must be on (it is; flipped 2026-05-17). Only approves patch /
+      # minor / digest — same gate as the merge step below.
+      - name: Auto-approve patch + minor + digest
+        if: |
+          steps.meta.outputs.update-type == 'version-update:semver-patch' ||
+          steps.meta.outputs.update-type == 'version-update:semver-minor' ||
+          steps.meta.outputs.update-type == 'version-update:semver-digest'
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr review --approve "$PR_URL"
+
       - name: Auto-merge patch + minor + digest
         if: |
           steps.meta.outputs.update-type == 'version-update:semver-patch' ||
