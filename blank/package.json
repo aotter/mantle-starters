@@ -7,12 +7,14 @@
   "scripts": {
     "dev": "wrangler dev",
     "validate": "mantle validate",
+    "validate:deploy": "mantle validate --phase deploy",
     "mantle:prompt": "node scripts/mantle.mjs prompt",
     "introspect": "mantle introspect",
     "emit-openapi": "mantle emit-openapi > openapi.json",
     "emit-types": "mantle emit-types --namespace BlankCms > clam-types.d.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "check": "pnpm validate && pnpm typecheck",
+    "predeploy": "pnpm validate:deploy && pnpm typecheck",
     "deploy": "wrangler deploy",
     "setup:site": "node scripts/setup-site.mjs"
   },
