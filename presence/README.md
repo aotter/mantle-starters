@@ -23,6 +23,25 @@ For a structured-form intake starter (RSVPs, lead capture, etc.), use
 
 ```bash
 pnpm install
+cp .dev.vars.example .dev.vars
+```
+
+Edit `.dev.vars` and fill in `BETTER_AUTH_SECRET=` — without it the worker
+returns `auth_not_configured` on every request. Generate a value:
+
+```bash
+openssl rand -hex 32
+# copy the output, paste it after `BETTER_AUTH_SECRET=` in .dev.vars
+```
+
+That's the only field you have to set for the public site. The remaining
+`GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` / `ADMIN_GITHUB_LOGIN` placeholders
+are only consumed by `/admin` sign-in; public routes ignore them.
+`TURNSTILE_SECRET_KEY=dev-stub` is fine for local development.
+
+Then:
+
+```bash
 pnpm validate
 pnpm dev      # wrangler dev — http://localhost:8787
 ```

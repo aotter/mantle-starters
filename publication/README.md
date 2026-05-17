@@ -60,25 +60,42 @@ in a blank starter or a later starter family.
 
 ## Quickstart
 
+To browse the **public site** locally (rendered publication routes, contact form,
+MCP transport auth), one secret is required and nothing else needs to be touched:
+
 ```bash
 pnpm install
 cp .dev.vars.example .dev.vars
+```
 
-# Generate BETTER_AUTH_SECRET and paste the output into the
-# BETTER_AUTH_SECRET= line of .dev.vars. The worker returns
-# `auth_not_configured` on every request until this is filled in.
+Edit `.dev.vars` and fill in `BETTER_AUTH_SECRET=` — without it the worker
+returns `auth_not_configured` on every request. Generate a value:
+
+```bash
 openssl rand -hex 32
+# copy the output, paste it after `BETTER_AUTH_SECRET=` in .dev.vars
+```
 
-# Option A: local demo fixture for development/testing.
-pnpm fixture       # seeds dev D1/KV with demo content (no staff row)
+That's the only field you have to set for the public site. The `GITHUB_CLIENT_ID`
+/ `GITHUB_CLIENT_SECRET` / `ADMIN_GITHUB_LOGIN` placeholders left in `.dev.vars`
+are only consumed when you click `/admin` — public routes ignore them. (See
+[§ Signing in at /admin](#signing-in-at-admin) when you're ready.) `TURNSTILE_SECRET_KEY=dev-stub`
+is fine for local development.
 
-# Then run wrangler dev:
+Seed demo content and start the dev server:
+
+```bash
+pnpm fixture       # one-time: seeds dev D1/KV with demo content (no staff row)
 pnpm dev
 ```
 
-The fixture is optional and intentionally demo-shaped. Use it only when
-you want a local contributor preview or smoke test. Real user sites
-should not inherit fixture copy.
+Open <http://localhost:8787>. The root URL 302-redirects to your canonical
+locale (`<!doctype html>` HTML, not a JSON error). Without `pnpm fixture` every
+route 404s — the miniflare D1/KV start empty.
+
+The fixture is intentionally demo-shaped. Use it only for local contributor
+preview or smoke testing — real user sites should not inherit fixture copy
+(production content comes from `pnpm run seed:initial` instead, see below).
 
 ### Signing in at /admin
 
