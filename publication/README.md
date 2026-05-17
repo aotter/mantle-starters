@@ -76,9 +76,8 @@ in a blank starter or a later starter family.
   provisioning.
 - **Full admin SPA**. v0.1.0 ships a minimal owner landing at `/admin`.
   Real-user first content is created after provisioning, through
-  agent interview + MCP/admin authoring. `fixture` and `seed:initial`
-  are for tests and OSS contributor local dev, not the production
-  onboarding path.
+  agent interview + MCP / admin authoring. `fixture` is local-dev / OSS
+  contributor scaffolding, not the production onboarding path.
 
 ## Quickstart
 
@@ -116,8 +115,9 @@ locale (`<!doctype html>` HTML, not a JSON error). Without `pnpm fixture` every
 route 404s — the miniflare D1/KV start empty.
 
 The fixture is intentionally demo-shaped. Use it only for local contributor
-preview or smoke testing — real user sites should not inherit fixture copy
-(production content comes from `pnpm run seed:initial` instead, see below).
+preview or smoke testing — real user sites populate production content
+through MCP / `/admin` authoring after provisioning, not from a fixture or
+seed file.
 
 #### `pnpm validate` (preview) vs `pnpm validate:deploy`
 
@@ -293,7 +293,7 @@ Prerequisites:
 
 ### Steps
 
-1. **Bootstrap from prompt.** Paste [`docs/prompts/publication.en.md`](../../docs/prompts/publication.en.md) (or `publication.zh-TW.md`) into Claude Code / Cursor / Codex with placeholders filled in. The agent reads the install Skill, copies the starter, runs `setup:site`, and reports back a clean `pnpm validate` + `pnpm typecheck`.
+1. **Bootstrap from prompt.** Paste [`docs/prompts/publication.en.md`](../../docs/prompts/publication.en.md) (or `publication.zh-TW.md`) into Claude Code / Cursor / Codex with placeholders filled in. The agent reads the install Skill, copies the starter, runs `setup:site`, and reports back a clean `pnpm validate` + `pnpm typecheck`. (The strict `pnpm validate:deploy` gate runs later, in step 4 — it expects the Mantle welcome letter to be written first, which happens during the install Skill flow.)
 
 2. **Contributor local smoke.** Before any Cloudflare provisioning,
    optionally use the fixture to verify the template itself:
@@ -315,9 +315,15 @@ Prerequisites:
 4. **First deploy.**
 
    ```bash
-   pnpm wrangler deploy
+   pnpm deploy        # chains `validate:deploy && typecheck && wrangler deploy`
    # capture <worker_url> from the deploy output
    ```
+
+   The `deploy` script runs `pnpm validate:deploy` (strict phase — re-enables
+   `MANTLE_LETTER_NOT_WRITTEN` and any future pre-deploy-only checks) and
+   `pnpm typecheck` before invoking wrangler. If you want to invoke wrangler
+   directly (skipping the gate) use `pnpm exec wrangler deploy`, but the
+   gate is the supported path.
 
 5. **Register GitHub OAuth App** at <https://github.com/settings/developers> using `<worker_url>` and `<worker_url>/admin/auth/github/callback`. Then:
 
