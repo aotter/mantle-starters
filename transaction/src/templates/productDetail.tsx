@@ -1,5 +1,6 @@
 /** @jsxImportSource hono/jsx */
 import { raw } from "hono/html";
+import type { SiteConfig } from "@aotter/mantle/spec";
 import { Layout, renderHtml } from "./layout.js";
 
 /**
@@ -54,6 +55,7 @@ export interface ProductDetailContext {
     readonly description?: string;
     readonly inventoryMode: "tracked" | "untracked";
   };
+  readonly site: SiteConfig;
 }
 
 /**
@@ -69,7 +71,7 @@ export interface ProductDetailContext {
 export function renderProductDetail(ctx: ProductDetailContext): string {
   const p = ctx.product;
   const tree = (
-    <Layout title={p.title}>
+    <Layout title={p.title} site={ctx.site}>
       <p>
         <a href="/">← Back to shop</a>
       </p>
