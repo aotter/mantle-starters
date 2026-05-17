@@ -37,7 +37,7 @@ importers:
     dependencies:
       '@aotterclam/mantle':
         specifier: 0.0.11-alpha.3
-        version: 0.0.11-alpha.3(@cloudflare/workers-types@4.20260517.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@20.19.41))
+        version: 0.0.11-alpha.3(@cloudflare/workers-types@4.20260517.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0))
       aws4fetch:
         specifier: ^1.0.20
         version: 1.0.20
@@ -58,8 +58,8 @@ importers:
         specifier: ^4.20260517.1
         version: 4.20260517.1
       '@types/node':
-        specifier: ^20
-        version: 20.19.41
+        specifier: ^25
+        version: 25.8.0
       tsx:
         specifier: ^4.22.1
         version: 4.22.1
