@@ -59,12 +59,22 @@ That's the only field you have to set for the public site. The remaining
 are only consumed by `/admin` sign-in; public routes ignore them.
 `TURNSTILE_SECRET_KEY=dev-stub` is fine for local development.
 
-Then:
+Seed demo home + about pages and start the dev server:
 
 ```bash
-pnpm validate
-pnpm dev      # wrangler dev — http://localhost:8787
+pnpm fixture       # one-time: seeds dev D1/KV with demo home + about pages
+pnpm dev           # wrangler dev — http://localhost:8787
 ```
+
+Open <http://localhost:8787>. Without `pnpm fixture`, `/<locale>/` and
+`/<locale>/pages/about` 404 — the miniflare D1/KV start empty and the
+home / about routes look up `page-translations` rows that don't exist yet.
+The contact page is template-only (no DB row needed) and renders without
+the fixture.
+
+The fixture is intentionally demo-shaped — edit `test/fixture/data.ts`
+to replace the placeholder copy with content that introduces your site,
+or author through `/admin` after signing in.
 
 Real-user installs go through the install Skill — see the
 [Mantle install brief](https://github.com/AotterClam/mantle/blob/main/skills/install/SKILL.md)

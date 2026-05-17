@@ -119,8 +119,16 @@ function buildContactRuntimeJs(t: I18nBundle): string {
 
   function tokenFromWidget(){
     if(window.turnstile && widgetId !== null){
-      try { return window.turnstile.getResponse(widgetId) || ''; } catch(_){}
+      try {
+        var t = window.turnstile.getResponse(widgetId);
+        if(t) return t;
+      } catch(_){}
     }
+    // Fall through if the widget rendered but returned empty (timing
+    // race in dev with the test sitekey, or the user hasn't completed
+    // the challenge yet). Read whatever the FormData carries — the
+    // widget injects a hidden \`cf-turnstile-response\` input synced
+    // with getResponse, and tests can pre-fill it.
     var fd = new FormData(form);
     return fd.get('cf-turnstile-response') || '';
   }
