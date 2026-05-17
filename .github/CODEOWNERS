@@ -1,0 +1,29 @@
+# See https://docs.github.com/articles/about-codeowners
+# Owners listed here are auto-requested as reviewers on touching PRs.
+# (Solo-maintainer phase — entries are forward-looking for when co-maintainers join.)
+
+# Default
+* @guyspy
+
+# Archetypes
+/blank/                          @guyspy
+/publication/                    @guyspy
+/presence/                       @guyspy
+/intake/                         @guyspy
+/transaction/                    @guyspy
+
+# Roadmap stubs
+/community/                      @guyspy
+/membership/                     @guyspy
+/reservation/                    @guyspy
+
+# Shared surface
+/_common/                        @guyspy
+/themes/                         @guyspy
+/sources.json                    @guyspy
+
+# Scaffolder
+/packages/create-mantle/       @guyspy
+
+# CI / governance
+/.github/                        @guyspy

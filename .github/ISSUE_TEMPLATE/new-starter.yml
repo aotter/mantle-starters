@@ -1,0 +1,41 @@
+name: New starter archetype request
+description: Propose a new starter archetype (or graduate a roadmap stub to "ready").
+title: "[Starter] "
+labels: ["enhancement", "status:roadmap"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        New archetypes start as **roadmap stubs** (`SKILL.md` refuse-path only) and graduate to **ready** once all files land and CI passes. See `CONTRIBUTING.md` ▸ "Adding a starter archetype" for the full process.
+  - type: input
+    id: name
+    attributes:
+      label: Proposed archetype name (kebab-case)
+      placeholder: "e.g. commerce-marketplace"
+    validations:
+      required: true
+  - type: textarea
+    id: shape
+    attributes:
+      label: What does it produce?
+      description: 3–5 sentences. What URLs, what models, what auth surface, what deploy target.
+    validations:
+      required: true
+  - type: textarea
+    id: contrast
+    attributes:
+      label: Why isn't an existing archetype enough?
+      description: How does this differ from publication / intake / transaction / presence / blank?
+    validations:
+      required: true
+  - type: textarea
+    id: prior-art
+    attributes:
+      label: Prior art / references
+  - type: checkboxes
+    id: gates
+    attributes:
+      label: Gates
+      options:
+        - label: I checked the existing roadmap list in `sources.json`.
+        - label: This may need parent `mantle` engine changes (note them above).
