@@ -26,7 +26,7 @@ name: dependabot-lockfile
 
 on:
   pull_request:
-    branches: [main]
+    branches: [develop]
 
 permissions:
   contents: write
@@ -73,7 +73,7 @@ jobs:
       - name: Check if PR touched any package.json
         id: changed
         run: |
-          # Compare against the base branch (main) — fetch-depth: 0 above
+          # Compare against the PR base branch — fetch-depth: 0 above
           # ensures we have the history.
           BASE="${{ github.event.pull_request.base.ref }}"
           git fetch --no-tags --depth=1 origin "$BASE" 2>/dev/null || true
