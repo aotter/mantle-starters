@@ -22,6 +22,7 @@ updates:
   # ── Starter dirs ────────────────────────────────────────────────────
   - package-ecosystem: npm
     directory: /blank
+    target-branch: develop
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
@@ -44,6 +45,7 @@ updates:
 
   - package-ecosystem: npm
     directory: /publication
+    target-branch: develop
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
@@ -66,6 +68,7 @@ updates:
 
   - package-ecosystem: npm
     directory: /presence
+    target-branch: develop
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
@@ -88,6 +91,7 @@ updates:
 
   - package-ecosystem: npm
     directory: /intake
+    target-branch: develop
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
@@ -110,6 +114,7 @@ updates:
 
   - package-ecosystem: npm
     directory: /transaction
+    target-branch: develop
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
@@ -133,6 +138,7 @@ updates:
   # ── Scaffolder ──────────────────────────────────────────────────────
   - package-ecosystem: npm
     directory: /packages/create-mantle
+    target-branch: develop
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
@@ -149,6 +155,7 @@ updates:
   # ── GitHub Actions ──────────────────────────────────────────────────
   - package-ecosystem: github-actions
     directory: /
+    target-branch: develop
     schedule:
       interval: weekly
     open-pull-requests-limit: 5

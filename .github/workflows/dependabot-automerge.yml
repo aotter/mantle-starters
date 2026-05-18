@@ -10,7 +10,7 @@ name: dependabot-automerge
 
 on:
   pull_request:
-    branches: [main]
+    branches: [develop]
 
 permissions:
   contents: write
@@ -26,7 +26,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      # Approve the PR first — main branch protection requires 1
+      # Approve the PR first — develop branch protection requires 1
       # approving review, dependabot can't self-approve, so without
       # this the auto-merge queue stays BLOCKED forever. Repo Settings
       # → Actions → "Allow GitHub Actions to create and approve PRs"
@@ -50,6 +50,9 @@ jobs:
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # `--merge` (not --squash) because this repo's GitHub settings
-        # disable squash. Match what PR #60 / #88 / #112 were merged with.
-        run: gh pr merge --auto --merge "$PR_URL"
+        # Rebase merge: keeps develop linear and preserves dependabot's
+        # `chore(deps): bump X` subject as the head commit. Squash is
+        # disabled on this repo; merge-commit is allowed but produces
+        # 'Merge pull request #N from ...' subjects that would collide
+        # with the release-fanout filter on tag-and-dispatch-landing.yml.
+        run: gh pr merge --auto --rebase "$PR_URL"

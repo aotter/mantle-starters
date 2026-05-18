@@ -1,16 +1,39 @@
 {
   "archetypes": {
-    "presence":    { "path": "presence" },
-    "publication": { "path": "publication" },
-    "intake":      { "path": "intake" },
-    "transaction": { "path": "transaction" },
-    "blank":       { "path": "blank" }
+    "presence": {
+      "path": "presence"
+    },
+    "publication": {
+      "path": "publication"
+    },
+    "intake": {
+      "path": "intake"
+    },
+    "transaction": {
+      "path": "transaction"
+    },
+    "blank": {
+      "path": "blank"
+    }
   },
   "themes": {
-    "l4-minimal-ink":       { "path": "themes/l4-minimal-ink" },
-    "l4-editorial-warm":    { "path": "themes/l4-editorial-warm" },
-    "l4-editorial-journal": { "path": "themes/l4-editorial-journal" },
-    "l4-playful-pop":       { "path": "themes/l4-playful-pop" }
+    "l4-minimal-ink": {
+      "path": "themes/l4-minimal-ink"
+    },
+    "l4-editorial-warm": {
+      "path": "themes/l4-editorial-warm"
+    },
+    "l4-editorial-journal": {
+      "path": "themes/l4-editorial-journal"
+    },
+    "l4-playful-pop": {
+      "path": "themes/l4-playful-pop"
+    }
   },
-  "roadmap": ["reservation", "community", "membership"]
+  "roadmap": [
+    "reservation",
+    "community",
+    "membership"
+  ],
+  "version": "0.0.11-alpha.5"
 }
