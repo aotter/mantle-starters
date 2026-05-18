@@ -75,9 +75,19 @@ jobs:
         run: |
           # Compare against the PR base branch — fetch-depth: 0 above
           # ensures we have the history.
+          #
+          # Git pathspec doesn't expand `**` recursively by default —
+          # `'**/package.json'` matches the literal `**/package.json`
+          # and finds nothing. Use `:(glob)**/package.json` (pathspec
+          # `glob` magic) to opt into recursive expansion. Without this
+          # the workflow silently no-op'd on every dependabot PR that
+          # touched a starter's nested `package.json` (because that
+          # lives at `<starter>/package.json`, not the repo root) —
+          # which then left `validate.yml` failing on
+          # `ERR_PNPM_OUTDATED_LOCKFILE`.
           BASE="${{ github.event.pull_request.base.ref }}"
           git fetch --no-tags --depth=1 origin "$BASE" 2>/dev/null || true
-          CHANGED=$(git diff --name-only "origin/$BASE...HEAD" -- '**/package.json' 'package.json' 2>/dev/null || echo "")
+          CHANGED=$(git diff --name-only "origin/$BASE...HEAD" -- ':(glob)**/package.json' 'package.json' 2>/dev/null || echo "")
           if [ -z "$CHANGED" ]; then
             echo "no_pkg=true" >> "$GITHUB_OUTPUT"
             echo "No package.json change detected; nothing to do."
@@ -98,13 +108,15 @@ jobs:
       - name: Commit lockfile deltas if any
         if: steps.changed.outputs.no_pkg == 'false'
         run: |
-          if git diff --quiet -- '**/pnpm-lock.yaml' 'pnpm-lock.yaml' 2>/dev/null; then
+          # Same pathspec gotcha as the detection step — `:(glob)` so
+          # nested per-starter `pnpm-lock.yaml` files are picked up.
+          if git diff --quiet -- ':(glob)**/pnpm-lock.yaml' 'pnpm-lock.yaml' 2>/dev/null; then
             echo "Lockfiles already up to date; nothing to commit."
             exit 0
           fi
           git config user.name 'dependabot[bot]'
           git config user.email '49699333+dependabot[bot]@users.noreply.github.com'
-          git add -A -- '**/pnpm-lock.yaml' 'pnpm-lock.yaml'
+          git add -A -- ':(glob)**/pnpm-lock.yaml' 'pnpm-lock.yaml'
           if git diff --cached --quiet; then
             echo "No lockfile changes staged; nothing to commit."
             exit 0

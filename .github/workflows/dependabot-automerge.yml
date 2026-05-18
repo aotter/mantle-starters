@@ -50,6 +50,9 @@ jobs:
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # `--merge` (not --squash) because this repo's GitHub settings
-        # disable squash. Match what PR #60 / #88 / #112 were merged with.
-        run: gh pr merge --auto --merge "$PR_URL"
+        # Rebase merge: keeps develop linear and preserves dependabot's
+        # `chore(deps): bump X` subject as the head commit. Squash is
+        # disabled on this repo; merge-commit is allowed but produces
+        # 'Merge pull request #N from ...' subjects that would collide
+        # with the release-fanout filter on tag-and-dispatch-landing.yml.
+        run: gh pr merge --auto --rebase "$PR_URL"
