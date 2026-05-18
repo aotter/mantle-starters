@@ -1,0 +1,113 @@
+# Dependabot updates `package.json` but doesn't regenerate
+# `pnpm-lock.yaml` for this repo's setup (per-starter package.json
+# inside a root pnpm workspace). `pnpm install --frozen-lockfile`
+# (what validate.yml runs) then fails with `ERR_PNPM_OUTDATED_LOCKFILE`
+# on every dependabot PR. This workflow runs `pnpm install` at the
+# workspace root and commits any resulting lockfile delta back to
+# the PR branch. After the push, validate.yml re-runs and can pass —
+# which is the precondition for dependabot-automerge.yml.
+#
+# Two pnpm-lock.yaml locations may move:
+#
+#   - `/<starter>/pnpm-lock.yaml` — each starter is also installable
+#     standalone (consumers run `pnpm install` inside the scaffolded
+#     dir after create-mantle copies it out).
+#   - `/pnpm-lock.yaml` — the workspace root, which `validate.yml`'s
+#     per-starter `pnpm install --frozen-lockfile` actually reads
+#     when run inside the workspace.
+#
+# Running `pnpm install` at root with `recursive: true` regenerates
+# both. We commit whichever changed.
+#
+# Only fires for the dependabot[bot] actor — same workflow contract as
+# dependabot-automerge.yml.
+
+name: dependabot-lockfile
+
+on:
+  pull_request:
+    branches: [develop]
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  fix-lockfile:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # Need history to compare against the base branch (for the
+          # changed-file detection below) AND so the push back to the
+          # PR branch isn't refused for shallow-history reasons.
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+          # Token policy: prefer DEPENDABOT_PUSH_TOKEN (a fine-grained
+          # PAT or GitHub App token), fall back to GITHUB_TOKEN.
+          #
+          # The fallback works for committing the lockfile, BUT GitHub
+          # has an explicit anti-loop rule: pushes made with
+          # GITHUB_TOKEN do NOT retrigger any other workflow on the
+          # same branch. That means after we push the lockfile delta,
+          # `validate.yml` won't re-run, so it stays in its (failing,
+          # pre-lockfile-fix) state — and `dependabot-automerge.yml`
+          # never sees green CI to queue the auto-merge. End result:
+          # the PR sits BLOCKED until an admin manually merges.
+          #
+          # With `DEPENDABOT_PUSH_TOKEN` set as a repo secret (a
+          # fine-grained PAT with `contents: write` + `pull-requests:
+          # write` scoped to this repo, owned by a real account — NOT
+          # the github-actions[bot]), the lockfile push triggers
+          # validate.yml normally, which then gates auto-merge as
+          # designed.
+          token: ${{ secrets.DEPENDABOT_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Check if PR touched any package.json
+        id: changed
+        run: |
+          # Compare against the PR base branch — fetch-depth: 0 above
+          # ensures we have the history.
+          BASE="${{ github.event.pull_request.base.ref }}"
+          git fetch --no-tags --depth=1 origin "$BASE" 2>/dev/null || true
+          CHANGED=$(git diff --name-only "origin/$BASE...HEAD" -- '**/package.json' 'package.json' 2>/dev/null || echo "")
+          if [ -z "$CHANGED" ]; then
+            echo "no_pkg=true" >> "$GITHUB_OUTPUT"
+            echo "No package.json change detected; nothing to do."
+          else
+            echo "no_pkg=false" >> "$GITHUB_OUTPUT"
+            echo "Changed package.json files:"
+            echo "$CHANGED"
+          fi
+
+      - name: Regenerate workspace lockfiles
+        if: steps.changed.outputs.no_pkg == 'false'
+        run: |
+          # Recursive install hits the workspace + every starter, so
+          # both `/pnpm-lock.yaml` and the per-starter ones stay in
+          # sync with whatever package.json dependabot just bumped.
+          pnpm install --no-frozen-lockfile
+
+      - name: Commit lockfile deltas if any
+        if: steps.changed.outputs.no_pkg == 'false'
+        run: |
+          if git diff --quiet -- '**/pnpm-lock.yaml' 'pnpm-lock.yaml' 2>/dev/null; then
+            echo "Lockfiles already up to date; nothing to commit."
+            exit 0
+          fi
+          git config user.name 'dependabot[bot]'
+          git config user.email '49699333+dependabot[bot]@users.noreply.github.com'
+          git add -A -- '**/pnpm-lock.yaml' 'pnpm-lock.yaml'
+          if git diff --cached --quiet; then
+            echo "No lockfile changes staged; nothing to commit."
+            exit 0
+          fi
+          git commit -m "chore(deps): regenerate pnpm-lock.yaml after package.json bump"
+          git push

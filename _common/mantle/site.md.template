@@ -1,0 +1,51 @@
+---
+archetype: {{ARCHETYPE}}
+brand: {{BRAND}}
+description: {{DESCRIPTION}}
+locales: {{LOCALES}}
+canonical_locale: {{CANONICAL_LOCALE}}
+site_url: {{SITE_URL}}
+github_owner: {{GITHUB_OWNER}}
+specifics: []
+futures: []
+dont_touch: []
+dates: []
+revisions:
+  - at: {{INSTALL_TIMESTAMP}}
+    by: install
+    summary: {{INSTALL_SUMMARY}}
+---
+
+## site
+> purpose: 一段話講這站是什麼、為什麼存在。用 user 自己的語言寫。
+
+<!-- Mantle: write here from interview. reflect, don't ennoble. one paragraph. -->
+
+## voice
+> purpose: 站點怎麼說話。從 interview 抽出 register。
+
+<!-- Mantle: a few lines. specific markers, not generic words. e.g. "短句、避免感嘆號" beats "friendly tone". -->
+
+## welcome
+> purpose: /admin first-visit letter. Three voice cards persist here (card1 / card4 / card5); cards 2 (mcp install command) and 3 (editor first prompt) are mechanical and rendered by admin UI from frontmatter + the editor first_prompt at display time — they do not live in this file.
+
+### card1
+<!-- Mantle: open with self-introduction (I'm Mantle; I was watching while you built this) then one specific reflect (something user said) paired with the design choice it implied. Signature — Mantle + {{INSTALL_TIMESTAMP}} -->
+
+### card4
+<!-- Mantle: brief frame (editor handles content; Mantle handles site-shape). Memory URL <SITE_URL>/.well-known/mantle/. One specific future from frontmatter.futures (or interview observation if futures is empty). "Anyone you trust can paste this URL too." -->
+
+### card5
+<!-- Mantle: admin sidebar pointer + where this note can be re-read (Settings → About this site) + closing line ("I'll be quiet now. Your editor takes it from here." equivalent in user's language) + final signature. -->
+
+## editor
+> purpose: handoff cues for the daily content agent. `first_prompt:` is filled by the install agent (mechanical: archetype hint's `Editor first-prompt template` + brand sub).
+
+first_prompt: |
+  <!-- install agent: copy the archetype hint's `Editor first-prompt template` here, substituting {{BRAND}}. Plain text, no markdown wrapping. -->
+
+
+## history
+> purpose: Mantle's worklog. Each return appends one paragraph.
+
+<!-- Mantle: first install line. one paragraph: what was decided, what the user said, what's open. -->

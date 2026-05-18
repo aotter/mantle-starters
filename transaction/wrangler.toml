@@ -1,0 +1,186 @@
+name = "mantle-transaction"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
+
+[vars]
+# Cloudflare Turnstile site key (public — embedded in the checkout
+# form bot-check). Default is CF's "always passes" test key — good
+# for `pnpm dev`. Production: provision your own at
+# dash.cloudflare.com/?to=/:account/turnstile and replace.
+TURNSTILE_SITE_KEY = "1x00000000000000000000AA"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "mantle-transaction-local"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+# Render KV — shared by the runtime for entry HTML / `.md` mirror /
+# llms.txt. Also used for cart state at key `cart:<sessionId>` (no
+# per-session DO; KV's 60s eventual consistency is fine at the
+# ≤100 orders/day scale this starter is sized for).
+[[kv_namespaces]]
+binding = "KV"
+id = "kv-mantle-transaction-local"
+
+# OAuth grant store for @cloudflare/workers-oauth-provider — client
+# registrations + grants + tokens for the MCP surfaces (/mcp + /mcp/staff).
+# Provision with `wrangler kv namespace create OAUTH_KV` and replace
+# the id below before deploy.
+[[kv_namespaces]]
+binding = "OAUTH_KV"
+id = "kv-mantle-transaction-oauth-local"
+
+# InventoryActor DurableObject — single instance per tenant. Holds
+# find-and-modify locks for once-and-only-once webhook processing
+# AND atomic inventory reserve/commit/release. See
+# src/durableObjects/InventoryActor.ts for the contract.
+[[durable_objects.bindings]]
+name = "INVENTORY_ACTOR"
+class_name = "InventoryActor"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["InventoryActor"]
+
+# ── Queues ───────────────────────────────────────────────────────────
+# Both queues run at max_concurrency: 1 / max_batch_size: 1 — serial
+# processing. The transaction starter is sized for ≤100 orders/day;
+# serialization eliminates entire classes of race condition (two
+# webhook retries racing each other, two checkout reservations
+# racing the same inventory) at acceptable latency.
+
+# payment-callback-queue: HTTP handler verifies provider signature
+# and ships the verified envelope here. Consumer does the heavy work
+# under the InventoryActor lock.
+[[queues.producers]]
+queue = "payment-callback-queue"
+binding = "PAYMENT_CALLBACK_QUEUE"
+
+[[queues.consumers]]
+queue = "payment-callback-queue"
+max_concurrency = 1
+max_batch_size = 1
+# Retry budget intentionally exceeds InventoryActor.PENDING_LOCK_TTL_MS
+# (10 min). The lock-stuck-in-pending recovery path requires the
+# sweeper to reset the lock + a queue retry to land *after* that.
+# 30 retries × 30s delay = ~15 min — covers the sweeper window plus
+# headroom for the consumer's actual work. Defaults (3 retries / 0s
+# delay) would exhaust in <1 min and silently DLQ the message before
+# recovery could happen.
+max_retries = 30
+retry_delay = 30
+dead_letter_queue = "payment-callback-dlq"
+
+[[queues.producers]]
+queue = "payment-callback-dlq"
+binding = "PAYMENT_CALLBACK_DLQ"
+
+# order-work-queue: downstream effects (email, fulfillment notify,
+# inventory snapshot, reconcile tick). Driven by both the
+# orders.after_create lifecycle Trigger and the cron tick below.
+[[queues.producers]]
+queue = "order-work-queue"
+binding = "ORDER_WORK_QUEUE"
+
+[[queues.consumers]]
+queue = "order-work-queue"
+max_concurrency = 1
+max_batch_size = 1
+# Same retry-budget rationale; PR 3 may dial this down once we
+# know each work-type's retry profile.
+max_retries = 30
+retry_delay = 30
+dead_letter_queue = "order-work-dlq"
+
+[[queues.producers]]
+queue = "order-work-dlq"
+binding = "ORDER_WORK_DLQ"
+
+# Cron: inventory reconcile + stale-lock sweep. Sends an
+# `inventory.reconcile.tick` to order-work-queue which calls
+# InventoryActor.sweepStaleLocks() and snapshots inventory state.
+[triggers]
+crons = ["*/5 * * * *"]  # every 5 minutes
+
+# Bundle YAML manifests as inline text strings — TS imports them via
+# raw text, esbuild resolves to a string export at build time.
+[[rules]]
+type = "Text"
+globs = ["**/*.yaml"]
+fallthrough = true
+
+# Payment provider secrets — set per the chosen provider via
+# `wrangler secret put` during provision. The starter ships with NO
+# provider impl wired; Mantle adds the right secrets list during
+# install. Examples (uncomment + set the ones you need):
+#
+# Hosted-checkout pattern (e.g. Stripe / Paddle / Lemon Squeezy):
+#   wrangler secret put PROVIDER_SECRET_KEY
+#   wrangler secret put PROVIDER_WEBHOOK_SECRET
+#
+# Merchant-form pattern (e.g. ECPay / PayUni / NewebPay):
+#   wrangler secret put PROVIDER_MERCHANT_ID
+#   wrangler secret put PROVIDER_HASH_KEY
+#   wrangler secret put PROVIDER_HASH_IV
+
+# ── Test profile ──────────────────────────────────────────────────────
+# Activated by `wrangler dev --env test`. Used by
+# scripts/run-integration.mjs to run the PR 1 smoke against a clean
+# .wrangler-test/ miniflare state — won't pollute the dev profile
+# (.wrangler/).
+#
+# Bindings are duplicated rather than inherited because wrangler does
+# NOT merge env-scoped bindings with the top-level ones (top-level
+# bindings disappear once any [env.*] block exists for that resource).
+# IDs match dev — same miniflare simulation — but state is isolated by
+# `--persist-to=.wrangler-test`.
+[env.test]
+
+[env.test.vars]
+TURNSTILE_SITE_KEY = "1x00000000000000000000AA"
+TURNSTILE_SECRET_KEY = "dev-stub"
+# Wires the in-process FakeProvider (src/payment/providers/_templates/fake.ts)
+# so the integration smoke can exercise the happy path without a real
+# provider account. NEVER set in production.
+FAKE_PAYMENT_PROVIDER = "1"
+PUBLIC_ORIGIN = "http://localhost:8788"
+# Worker needs a BETTER_AUTH_SECRET to boot; the test profile uses a
+# fixed value because it's the same shape across runs and not a real
+# secret.
+BETTER_AUTH_SECRET = "test-better-auth-secret-32+-bytes-random-fixed"
+
+[[env.test.d1_databases]]
+binding = "DB"
+database_name = "mantle-transaction-test"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[[env.test.kv_namespaces]]
+binding = "KV"
+id = "kv-mantle-transaction-test"
+
+[[env.test.kv_namespaces]]
+binding = "OAUTH_KV"
+id = "kv-mantle-transaction-oauth-test"
+
+[[env.test.durable_objects.bindings]]
+name = "INVENTORY_ACTOR"
+class_name = "InventoryActor"
+
+[[env.test.queues.producers]]
+queue = "payment-callback-queue-test"
+binding = "PAYMENT_CALLBACK_QUEUE"
+
+[[env.test.queues.consumers]]
+queue = "payment-callback-queue-test"
+max_concurrency = 1
+max_batch_size = 1
+
+[[env.test.queues.producers]]
+queue = "order-work-queue-test"
+binding = "ORDER_WORK_QUEUE"
+
+[[env.test.queues.consumers]]
+queue = "order-work-queue-test"
+max_concurrency = 1
+max_batch_size = 1

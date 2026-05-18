@@ -1,0 +1,44 @@
+{
+  "name": "mantle-starter-transaction",
+  "version": "0.0.8-alpha",
+  "private": true,
+  "description": "Transaction starter for mantle v0.1.0 — small-scale shop (~100 orders/day): products + cart + payment + orders. Provider-agnostic by design; Mantle wires the actual payment provider (Stripe / ECPay / PayUni / custom) during install. DurableObject inventory authority + Workers Queues for serialized callback processing.",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "fixture": "tsx test/fixture/apply-dev.ts",
+    "test:integration": "node scripts/run-integration.mjs",
+    "smoke": "tsx test/integration/smoke.ts",
+    "validate": "mantle validate",
+    "validate:deploy": "mantle validate --phase deploy",
+    "introspect": "mantle introspect",
+    "emit-openapi": "mantle emit-openapi > openapi.json",
+    "emit-types": "mantle emit-types --namespace TransactionCms > mantle-types.d.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "check": "pnpm validate && pnpm typecheck",
+    "deploy": "pnpm validate:deploy && pnpm typecheck && wrangler deploy",
+    "setup:site": "node scripts/setup-site.mjs",
+    "provision:plan": "node scripts/provision.mjs plan",
+    "provision:up": "node scripts/provision.mjs up",
+    "theme:fork": "node scripts/theme-fork.mjs",
+    "theme:reset": "node scripts/theme-reset.mjs"
+  },
+  "dependencies": {
+    "@aotter/mantle": "0.0.11-alpha.3",
+    "aws4fetch": "^1.0.20",
+    "hono": "^4.12.19",
+    "marked": "^14.1.3",
+    "yaml": "^2.6.1"
+  },
+  "devDependencies": {
+    "@aotter/mantle-spec": "0.0.11-alpha.3",
+    "@cloudflare/workers-types": "^4.20260518.1",
+    "@types/node": "^25",
+    "tsx": "^4.22.1",
+    "typescript": "^5.6.3",
+    "wrangler": "^4.92.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

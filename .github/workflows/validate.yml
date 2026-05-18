@@ -1,0 +1,103 @@
+name: validate
+
+on:
+  pull_request:
+    branches: [develop]
+  push:
+    branches: [develop, main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  starters:
+    name: starter ${{ matrix.starter }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        starter: [blank, publication, presence, intake, transaction]
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: ${{ matrix.starter }}/pnpm-lock.yaml
+
+      - name: Install
+        working-directory: ${{ matrix.starter }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate manifests
+        working-directory: ${{ matrix.starter }}
+        run: pnpm validate
+
+      - name: Typecheck
+        working-directory: ${{ matrix.starter }}
+        run: pnpm typecheck
+
+  scaffolder:
+    name: scaffolder
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: packages/create-mantle/pnpm-lock.yaml
+
+      - name: Install
+        working-directory: packages/create-mantle
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        working-directory: packages/create-mantle
+        run: pnpm build
+
+      - name: Typecheck
+        working-directory: packages/create-mantle
+        run: pnpm typecheck
+
+      - name: Test
+        working-directory: packages/create-mantle
+        run: pnpm test
+
+  sources-sanity:
+    name: sources.json sanity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Assert sources.json references real directories
+        run: |
+          node --input-type=module -e "
+            import fs from 'node:fs';
+            const src = JSON.parse(fs.readFileSync('sources.json', 'utf8'));
+            const missing = [];
+            for (const [k, v] of Object.entries(src.archetypes ?? {})) {
+              if (!fs.existsSync(v.path)) missing.push(\`archetype \${k} -> \${v.path}\`);
+            }
+            for (const [k, v] of Object.entries(src.themes ?? {})) {
+              if (!fs.existsSync(v.path)) missing.push(\`theme \${k} -> \${v.path}\`);
+            }
+            if (missing.length) {
+              console.error('Missing paths referenced from sources.json:');
+              for (const m of missing) console.error('  - ' + m);
+              process.exit(1);
+            }
+            console.log('sources.json: all referenced paths exist.');
+          "

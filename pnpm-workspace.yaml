@@ -1,0 +1,10 @@
+packages:
+  - "packages/*"
+  - "blank"
+  - "intake"
+  - "membership"
+  - "presence"
+  - "publication"
+  - "reservation"
+  - "community"
+  - "transaction"

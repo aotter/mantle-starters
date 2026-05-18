@@ -1,0 +1,396 @@
+# `mantle-starters/publication`
+
+> **This README ships with your scaffolded project.** If you're reading
+> it on GitHub at `aotter/mantle-starters/publication`, the
+> Quickstart below **does not work on a raw clone** — `src/mantleConfig.ts`
+> contains literal `{{BRAND}}` / `{{LOCALES}}` / `{{DESCRIPTION}}`
+> placeholders that `@aotter/create-mantle` substitutes at install
+> time. A fresh-clone `pnpm dev` throws `SyntaxError: Expected property
+> name or '}' in JSON` at boot because `JSON.parse('{{LOCALES}}')` runs
+> on an unsubstituted string.
+>
+> **To evaluate this starter end-to-end**, scaffold a throwaway site —
+> `create-mantle` does the substitution and prints a runnable project:
+>
+> ```bash
+> npm create @aotter/mantle@alpha /tmp/eval-publication
+> cd /tmp/eval-publication
+> # then follow the Quickstart below in that directory
+> ```
+>
+> Or paste the two-URL prompt from <https://the Mantle landing page/> into
+> Claude Code / Cursor / Codex — same scaffolder, agent-driven. See the
+> [top-level README](../README.md) for the template model.
+
+Reference `publication` starter for mantle v0.1.0 — the
+owner-published-content family in the starter taxonomy (#58). Covers
+landing pages, articles, docs-lite, project updates, and basic contact
+capture. Not for inventory / order workflows (`micro-shop`), lead
+qualification pipelines (`leads-inbox`), member-created content
+(`community`), or private/paid creator content (`fan-club`).
+
+It wraps the runtime + Cloudflare adapter into a runnable Worker with
+three Schemas (posts, post-translations, contact-messages) and a
+public read path served from KV. Schema-level names (`posts`,
+`/posts` route, MCP tool names) are intentionally kept stable through
+v0.1.0 even though the family rename happened — runtime route
+behavior, seed scripts, MCP tool names, views, tests, and SEO paths
+all key off these.
+
+This starter is intentionally fixed-manifest during bootstrap. The
+first-run installer should ask for public copy and, only after owner
+approval, create initial home/about/contact/article content through
+the normal MCP/admin authoring path. It should not redesign the
+Schema/View/Procedure/Trigger model. Custom workflow design belongs
+in a blank starter or a later starter family.
+
+## What it exercises
+
+- **Localized posts via `translates`** — `posts` is language-neutral
+  (slug, cover image, author, publish time); `post-translations`
+  carries per-locale title + body and joins on `slug`. ADR-0010 cross-
+  Schema invariants run at boot.
+- **Builtin Procedure** — `submit-contact` declares
+  `handler.kind: builtin`, `op: create`, `schema: contact-messages`.
+  The runtime projects input, stamps `x-mantle-bind: now`, drops side-
+  channel fields (CAPTCHA token), routes through the entry-writer
+  chokepoint.
+- **Lifecycle hooks** — `before_create` on `contact-messages` runs a
+  CAPTCHA-check Procedure (`errorPolicy: abort`); `after_create` runs
+  a Slack-notify Procedure (default `errorPolicy: continue`, rides
+  `ctx.waitUntil` when CF supplies it).
+- **Render pipeline** — entry HTML + per-locale `llms.txt` are written
+  to KV at publish time by `HtmlPublishOrchestrator`. The starter
+  serves them directly via a small KV-read handler in `src/index.ts`.
+
+## What it does NOT do (deferred)
+
+- **Member system** (end-user login, signup, password). Comments are
+  the contact form's anonymous-with-email pattern — no member auth.
+  Lands in v0.2.
+- **Editorial lifecycle** (approval queue). Schemas use `lifecycle:
+  simple` only. Editorial runtime lands in v0.1.x.
+- **First-party media hosting**. `posts.coverUrl` is a hand-supplied
+  URL string marked with `x-mcp-hint: media-image` for agents/admin UI.
+  R2-backed uploads are an explicit opt-in add-on, not part of first-run
+  provisioning.
+- **Full admin SPA**. v0.1.0 ships a minimal owner landing at `/admin`.
+  Real-user first content is created after provisioning, through
+  agent interview + MCP / admin authoring. `fixture` is local-dev / OSS
+  contributor scaffolding, not the production onboarding path.
+
+## Quickstart
+
+To browse the **public site** locally (rendered publication routes, contact form,
+MCP transport auth), one secret is required and nothing else needs to be touched:
+
+```bash
+pnpm install
+cp .dev.vars.example .dev.vars
+```
+
+Edit `.dev.vars` and fill in `BETTER_AUTH_SECRET=` — without it the worker
+returns `auth_not_configured` on every request. Generate a value:
+
+```bash
+openssl rand -hex 32
+# copy the output, paste it after `BETTER_AUTH_SECRET=` in .dev.vars
+```
+
+That's the only field you have to set for the public site. The `GITHUB_CLIENT_ID`
+/ `GITHUB_CLIENT_SECRET` / `ADMIN_GITHUB_LOGIN` placeholders left in `.dev.vars`
+are only consumed when you click `/admin` — public routes ignore them. (See
+[§ Signing in at /admin](#signing-in-at-admin) when you're ready.) `TURNSTILE_SECRET_KEY=dev-stub`
+is fine for local development.
+
+Seed demo content and start the dev server:
+
+```bash
+pnpm fixture       # one-time: seeds dev D1/KV with demo content (no staff row)
+pnpm dev
+```
+
+Open <http://localhost:8787>. The root URL 302-redirects to your canonical
+locale (`<!doctype html>` HTML, not a JSON error). Without `pnpm fixture` every
+route 404s — the miniflare D1/KV start empty.
+
+The fixture is intentionally demo-shaped. Use it only for local contributor
+preview or smoke testing — real user sites populate production content
+through MCP / `/admin` authoring after provisioning, not from a fixture or
+seed file.
+
+#### `pnpm validate` (preview) vs `pnpm validate:deploy`
+
+`pnpm validate` defaults to the **preview** phase — grammar + cross-Schema
+checks only. It exits 0 on a fresh scaffold even when the Mantle welcome
+letter is still a placeholder, so `pnpm dev` is unblocked during local
+iteration. Before deploying, run the strict gate:
+
+```bash
+pnpm validate:deploy   # = `mantle validate --phase deploy`
+```
+
+It re-enables `MANTLE_LETTER_NOT_WRITTEN` and any future pre-deploy-only
+checks. `pnpm deploy` chains it in front of `wrangler deploy`, so the manual
+form is only needed for an ahead-of-time check.
+
+### Signing in at /admin
+
+`/admin` uses real GitHub OAuth even locally — there is no stub for the
+browser redirect flow. One-time setup:
+
+1. **Create a GitHub OAuth App** at <https://github.com/settings/developers>:
+   - **Homepage URL**: `http://localhost:8787`
+   - **Callback URL**: `http://localhost:8787/api/auth/callback/github`
+2. **Edit `.dev.vars`** (created above from `.dev.vars.example`):
+   ```
+   GITHUB_CLIENT_ID=<the_client_id>
+   GITHUB_CLIENT_SECRET=<the_client_secret>
+   ADMIN_GITHUB_LOGIN=<your_github_login>
+   ```
+3. **Restart `pnpm dev`** so wrangler picks up the new vars.
+4. Visit <http://localhost:8787/admin> and sign in with the GitHub
+   account whose login matches `ADMIN_GITHUB_LOGIN`. The runtime's
+   `ensureBootstrapOwner` promotes that first user to `owner`
+   automatically — the dev fixture intentionally leaves the staff
+   table empty so this bootstrap fires.
+
+The fixture re-runs cleanly while `wrangler dev` is up too — the
+migrations are `IF NOT EXISTS` and inserts use `OR IGNORE`, so
+edits to fixture text or templates land on subsequent applies.
+
+(The "without `pnpm fixture` every route 404s" note in the top
+Quickstart is the same observation seen from the dev side: until
+the fixture has populated `.wrangler/state`, miniflare's D1 is
+empty.)
+
+### Integration smokes
+
+```bash
+cp .dev.vars.test.example .dev.vars.test   # one-time, gitignored
+pnpm test:integration
+```
+
+`pnpm test:integration` orchestrates the test profile end-to-end:
+spawns wrangler with `--env test --persist-to .wrangler-test --port 8788`,
+applies the test fixture (which **does** pre-seed
+`user(u-staff-1, role=editor)` plus a Better Auth MCP token with
+`mcp:staff` scope so the Staff MCP smoke reaches the role-gated
+authoring path — that's exactly what should NOT happen on the dev
+profile), runs both smokes against port 8788, then tears
+wrangler down.
+
+The test profile has its own miniflare state (`.wrangler-test/`) and
+its own port (8788), so it never collides with `pnpm dev` running on
+the default profile (`.wrangler/`, port 8787). Both can run in
+parallel.
+
+For production onboarding, do not run the fixture and do not run
+`seed-initial-content.ts` against `--remote`. Provision first, then
+interview the site owner for public copy and ask whether they want
+help drafting initial content. If they approve, create content
+through MCP/admin authoring so the same operation path is exercised
+from day one.
+
+## Smoke test (curl)
+
+```bash
+# Public read — pre-rendered HTML from KV:
+curl -i http://localhost:8787/en/posts/hello-world
+curl -i http://localhost:8787/zh-TW/posts/hello-world
+
+# Per-locale post list:
+curl -i http://localhost:8787/en/posts
+
+# llms.txt:
+curl -i http://localhost:8787/llms.txt
+curl -i http://localhost:8787/en/llms.txt
+
+# Public View REST surface (ADR-0012). Every parsed View auto-mounts:
+#   - recent-posts: static (no params)
+#   - posts-by-locale: required ?locale= param
+curl -s http://localhost:8787/api/views/recent-posts | jq '.data | {rows: .rows | length, page, show, hasMore}'
+curl -s 'http://localhost:8787/api/views/posts-by-locale?locale=zh-TW' | jq '.data.rows[] | {slug, title}'
+curl -s 'http://localhost:8787/api/views/posts-by-locale?locale=en&page=1&show=2' | jq '.data | {page, show, hasMore, count: .rows | length}'
+
+# Contact form happy path (CAPTCHA passes):
+curl -i -X POST http://localhost:8787/api/contact \
+  -H 'content-type: application/json' \
+  -d '{"name":"Alice","email":"a@example.com","message":"Hi","turnstileToken":"tok-pass"}'
+
+# Contact form CAPTCHA fail path (the stub rejects token === "fail").
+# Expect HTTP 403 with `{ ok: false, diagnostic: { code: AUTH_DENIED, ... } }`:
+curl -i -X POST http://localhost:8787/api/contact \
+  -H 'content-type: application/json' \
+  -d '{"name":"Bot","email":"b@example.com","message":"spam","turnstileToken":"fail"}'
+
+# Staff MCP smoke uses the test profile's pre-minted Better Auth MCP
+# token. Local dev browser sign-in uses real GitHub OAuth; no stub
+# bearer is accepted on the dev profile.
+curl -i -X POST http://localhost:8788/mcp/staff \
+  -H 'authorization: Bearer fixture-mcp-access-token' \
+  -H 'content-type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize"}'
+```
+
+`pnpm fixture` renders pre-published HTML for each post-translation
++ each per-locale list and writes both to KV alongside the D1 inserts
+— the public read path serves immediately, no admin publish flow
+required. The fixture is idempotent (D1 inserts use `OR IGNORE`; KV
+puts overwrite). Re-running picks up edits to fixture text or to the
+templates.
+
+## Files
+
+```
+manifests/        # YAML: posts + post-translations + contact (Schemas, Procedures, Triggers, Views)
+src/
+  index.ts        # worker entrypoint — Hono routes + KV public reader
+  mantleConfig.ts   # builds CmsConfig from env
+  loadManifests.ts# parses YAML at module-load (Wrangler [[rules]] type=Text)
+  handlers/       # ref handlers (CAPTCHA stub, Slack stub)
+  theme.default/  # hono/jsx HTML for entry/list/home/contact + chrome
+scripts/
+  seed-initial-content.ts # contributor/test seed utility, not real-user provisioning
+  run-integration.mjs     # spawns wrangler --env test --persist-to .wrangler-test,
+                          # applies test fixture, runs smokes, tears down
+test/fixture/
+  data.ts            # fixture posts + translations + site config
+  apply-shared.ts    # SQL/KV builder + applyFixture(opts) entrypoint
+  apply-dev.ts       # `pnpm fixture` — dev seed (no staff row;
+                     # `ensureBootstrapOwner` fires for first OAuth login)
+  apply-test.ts      # `pnpm test:integration` setup — same content +
+                     # user(u-staff-1, role=editor) + MCP token
+test/integration/
+  mcp-smoke.ts       # Staff MCP JSON-RPC smoke (fixture Better Auth token)
+  view-rest-smoke.ts # public-read smoke
+wrangler.toml          # default env: local D1 + KV bindings
+                       # [env.test]: separate bindings, port 8788
+.dev.vars.example      # committed; .dev.vars itself stays gitignored
+.dev.vars.test.example # committed; .dev.vars.test loaded by wrangler --env test
+```
+
+## Production checklist
+
+Before deploying THIS starter as-is:
+
+1. Production uses Better Auth with GitHub OAuth + MCP OAuth/DCR. Set real `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `ADMIN_GITHUB_LOGIN`, and `BETTER_AUTH_SECRET`. **Back `BETTER_AUTH_SECRET` up in a secret manager** — Better Auth uses it to sign session cookies + JWTs and (if the JWT plugin is enabled) to encrypt JWK private keys at rest. Carrying the same value across host migrations keeps users signed in and JWK rows readable; rotating it logs everyone out and requires regenerating the JWK row. Use `BETTER_AUTH_SECRETS` (comma-separated, plural) when you need a graceful rotation window.
+2. Replace `captchaCheck` with a real Turnstile / hCaptcha siteverify call.
+3. Replace `slackNotify` with your Slack webhook (or a different sink).
+4. Replace demo Unsplash cover images with assets you own when appropriate,
+   or keep using external image URLs until first-party media hosting is enabled.
+5. Bind real D1 and render KV namespaces in `wrangler.toml`; boot applies runtime migrations on first request.
+6. Don't run `test/fixture/` against production — it is demo content for local dev.
+
+## Production smoke recipe
+
+End-to-end verification on a real Cloudflare account, ~20 min. Run this whenever the starter ships, an SDK release lands, or before declaring a v0.1.x release tag clean. Closes [#25](https://github.com/aotter/mantle/issues/25)'s production-smoke acceptance bullet.
+
+Prerequisites:
+
+- A Cloudflare account with billing profile (D1 + KV are free-tier; signup is the bar)
+- A GitHub OAuth App configured with the Worker URL as both Homepage URL and `<worker_url>/api/auth/callback/github` as Authorization Callback URL. The first deploy gives you `<worker_url>` so this is a two-pass setup; copy the Worker URL after step 4 below, register the OAuth App, then come back and set `wrangler secret put GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET / ADMIN_GITHUB_LOGIN`.
+- Node 20+, pnpm 9+, an empty target directory.
+
+### Steps
+
+1. **Bootstrap from prompt.** Paste [`docs/prompts/publication.en.md`](../../docs/prompts/publication.en.md) (or `publication.zh-TW.md`) into Claude Code / Cursor / Codex with placeholders filled in. The agent reads the install Skill, copies the starter, runs `setup:site`, and reports back a clean `pnpm validate` + `pnpm typecheck`. (The strict `pnpm validate:deploy` gate runs later, in step 4 — it expects the Mantle welcome letter to be written first, which happens during the install Skill flow.)
+
+2. **Contributor local smoke.** Before any Cloudflare provisioning,
+   walk the top [Quickstart](#quickstart) (`pnpm install` →
+   `.dev.vars` → `pnpm fixture` → `pnpm dev`) to verify the template
+   boots locally. Then add three quick curl checks + integration
+   smoke that aren't part of the day-to-day Quickstart:
+
+   ```bash
+   curl -s http://localhost:8787/en/posts/hello-world | head -5     # expect <!doctype html>
+   curl -s http://localhost:8787/api/views/recent-posts | jq '.data.rows | length'
+   curl -s http://localhost:8787/llms.txt | head -1
+   pnpm test:integration                                             # mcp-smoke + view-smoke
+   ```
+
+   All four must succeed for template release work. Do not treat this
+   fixture content as user content.
+
+3. **Provision Cloudflare resources** via the [provision Skill](../../skills/provision/SKILL.md). Creates D1 + render KV and writes their IDs into `wrangler.toml`. Verify `wrangler dev --remote` boots without binding errors.
+
+4. **First deploy.**
+
+   ```bash
+   pnpm deploy        # chains `validate:deploy && typecheck && wrangler deploy`
+   # capture <worker_url> from the deploy output
+   ```
+
+   The `deploy` script runs `pnpm validate:deploy` (strict phase — re-enables
+   `MANTLE_LETTER_NOT_WRITTEN` and any future pre-deploy-only checks) and
+   `pnpm typecheck` before invoking wrangler. If you want to invoke wrangler
+   directly (skipping the gate) use `pnpm exec wrangler deploy`, but the
+   gate is the supported path.
+
+5. **Register GitHub OAuth App** at <https://github.com/settings/developers> using `<worker_url>` and `<worker_url>/api/auth/callback/github`. Then:
+
+   ```bash
+   pnpm wrangler secret put GITHUB_CLIENT_ID
+   pnpm wrangler secret put GITHUB_CLIENT_SECRET
+   pnpm wrangler secret put ADMIN_GITHUB_LOGIN     # your GH login
+   pnpm wrangler secret put TURNSTILE_SECRET_KEY   # real Turnstile secret
+   ```
+
+6. **Owner bootstrap + content interview.** Sign in as the owner, then
+   connect an MCP-capable agent to the Staff MCP URL. The agent should
+   ask the owner what initial content they want and whether it should
+   write a first pass.
+
+   Do not apply fixture or seed data to production. The
+   `scripts/seed-initial-content.ts` helper is reserved for tests
+   and contributor local dev — no longer exposed as a user-facing
+   `pnpm` script.
+
+7. **Public smoke against deployed worker.**
+
+   ```bash
+   curl -s "<worker_url>/<locale>/posts/<slug>" | head -5
+   curl -s "<worker_url>/<locale>/posts/<slug>.md" | head -5    # markdown mirror
+   curl -s "<worker_url>/api/views/recent-posts" | jq '.data.rows[] | {slug, title}'
+   curl -s "<worker_url>/llms.txt"
+   curl -s "<worker_url>/en/llms.txt"
+   curl -s "<worker_url>/sitemap.xml" | head -10
+   ```
+
+   Use the slug the owner approved in step 6. All authored HTML routes
+   return 200; the View REST endpoint returns the authored posts; both
+   llms.txt variants exist; sitemap lists every locale × every
+   published entry.
+
+8. **Owner sign-in.** Visit `<worker_url>/admin` in a browser, sign in with GitHub. `ensureBootstrapOwner` promotes you to `owner` on first login because `ADMIN_GITHUB_LOGIN` matches.
+
+9. **MCP operator smoke.** Open Claude Code / Cursor / Codex in any working directory; configure the MCP client with `<worker_url>/mcp/staff`. The first connection opens the consent screen — approve it with the same GitHub account.
+
+   Then ask the agent to:
+
+   ```text
+   1. List entries in the posts collection.
+   2. Create a draft post titled "Smoke test post" in en with slug "smoke-test"
+      and a one-paragraph body.
+   3. Publish it.
+   4. Confirm the public HTML at <worker_url>/en/posts/smoke-test loads.
+   5. Confirm the markdown mirror at <worker_url>/en/posts/smoke-test.md loads.
+   6. Confirm the post appears in the recent-posts view.
+   ```
+
+   Every step must succeed. If `tools/list` doesn't show `create_draft_posts` / `request_publish` / etc., the boot validator failed silently — check `wrangler tail` for diagnostics.
+
+10. **Cleanup.** Either keep the deployment as your real site or `wrangler delete` and clean up the OAuth App + KV / D1 resources. The smoke is reproducible from step 1.
+
+### What this proves
+
+- Pinned-Skill install path works end-to-end ([#22](https://github.com/aotter/mantle/issues/22))
+- Provision + deploy creates real CF resources ([#23](https://github.com/aotter/mantle/issues/23))
+- Standalone GitHub-only install + MCP smoke ([#24](https://github.com/aotter/mantle/issues/24))
+- Blog/publication vertical end-to-end ([#25](https://github.com/aotter/mantle/issues/25))
+
+### When this fails
+
+- Step 2 fails: bug in the SDK or starter. File against the SDK; don't try to patch the consumer project.
+- Step 6 content authoring fails: verify owner sign-in and Staff MCP auth first, then ask the owner whether to retry with a smaller first draft.
+- Step 9 (MCP) fails: most likely the OAuth consent flow — verify the OAuth App's callback URL matches `<worker_url>/api/auth/callback/github` exactly, no trailing slash mismatch.

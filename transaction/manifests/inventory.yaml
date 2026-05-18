@@ -1,0 +1,104 @@
+apiVersion: cms.mantle.aotter.net/v1
+kind: Schema
+metadata:
+  name: inventory_snapshots
+spec:
+  title: Inventory snapshots
+  description: |
+    Read-mostly inventory state, snapshotted from `InventoryActor`
+    DurableObject on every successful checkout-confirm. Staff reads
+    this via Views (low-stock dashboard); customers read it via the
+    public products View indirectly (we don't expose raw counts).
+
+    The DO is the **authority**; this Schema is a snapshot for query.
+    A periodic reconciliation job (queue handler, daily) writes the
+    DO → D1 to catch drift. Reads from D1 are eventually-consistent
+    by design.
+
+    `available` = on-hand minus reserved (still in active cart).
+    `reserved` = currently held by an in-flight checkout. Both
+    decrement together when checkout confirms.
+  schema:
+    type: object
+    required: [productSlug, available, reserved, updatedAt]
+    properties:
+      productSlug:
+        type: string
+        description: FK to products.slug.
+      available:
+        type: integer
+        minimum: 0
+      reserved:
+        type: integer
+        minimum: 0
+      restockedAt:
+        type: number
+        description: When staff last manually restocked. Null until first restock.
+      updatedAt:
+        type: number
+        x-mantle-bind: now
+  lifecycle: simple
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: View
+metadata:
+  name: inventory-low
+spec:
+  from: inventory_snapshots
+  fields: [productSlug, available, reserved, updatedAt]
+  filter:
+    eq: { field: available, value: 0 }
+  orderBy:
+    - { field: updatedAt, direction: desc }
+  limit: 100
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Procedure
+metadata:
+  name: snapshot-inventory
+spec:
+  input:
+    type: object
+    required: [productSlug]
+    properties:
+      productSlug: { type: string }
+  output:
+    type: object
+  handler:
+    kind: ref
+    ref: snapshotInventory
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Procedure
+metadata:
+  name: restock-product
+spec:
+  input:
+    type: object
+    required: [productSlug, addQty]
+    properties:
+      productSlug: { type: string }
+      addQty:
+        type: integer
+        minimum: 1
+  output:
+    type: object
+  handler:
+    kind: ref
+    ref: restockProduct
+  requires:
+    auth:
+      all:
+        - "ctx.staff": [owner]
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Trigger
+metadata:
+  name: restock-product-http
+spec:
+  source:
+    kind: http
+    method: POST
+    path: /api/staff/restock
+  target:
+    procedure: restock-product
