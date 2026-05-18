@@ -133,7 +133,7 @@ async function lookupProduct(
     status: "published",
     limit: 1000,
   });
-  const hit = entries.find(
+  const hit = entries.rows.find(
     (e) => (e.data as { slug?: string }).slug === slug,
   );
   if (!hit) return null;

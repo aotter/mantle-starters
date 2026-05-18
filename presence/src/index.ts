@@ -100,7 +100,7 @@ async function renderHome(ctx: PublicRouteContext): Promise<Response> {
     status: "published",
     limit: 50,
   });
-  const homeEntry = pages.find(
+  const homeEntry = pages.rows.find(
     (e) =>
       (e.data as { slug?: string }).slug === "home" &&
       (e.data as { locale?: string }).locale === locale,
@@ -133,7 +133,7 @@ async function renderContact(ctx: PublicRouteContext, env: Env): Promise<Respons
     status: "published",
     limit: 50,
   });
-  const entry = all.find(
+  const entry = all.rows.find(
     (e) =>
       (e.data as { slug?: string }).slug === "contact" &&
       (e.data as { locale?: string }).locale === locale,

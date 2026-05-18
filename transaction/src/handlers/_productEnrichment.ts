@@ -52,7 +52,7 @@ export async function loadProductCatalog(
     }),
   ]);
   const rows: ProductRow[] = [];
-  for (const entry of productEntries) {
+  for (const entry of productEntries.rows) {
     const d = entry.data as {
       slug?: string;
       priceMinor?: number;
@@ -60,7 +60,7 @@ export async function loadProductCatalog(
       inventoryMode?: "tracked" | "untracked";
     };
     if (!d.slug) continue;
-    const tr = translationEntries.find(
+    const tr = translationEntries.rows.find(
       (t) => (t.data as { slug?: string }).slug === d.slug,
     );
     const trd = tr?.data as
