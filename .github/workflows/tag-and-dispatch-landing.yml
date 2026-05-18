@@ -1,10 +1,17 @@
 # Release fanout — between Step 2 and Step 3 of AotterClam/mantle#191.
 #
 # Triggered when a `release: bump @aotterclam/mantle* to vX.Y.Z` commit
-# lands on main (the merge of the PR opened by `bump-from-sdk.yml`).
-# Tags the merge commit `vX.Y.Z` and dispatches `mantle-landing`'s
-# `bump-from-starters.yml` workflow so the landing site rolls forward
-# to the same version.
+# lands on main (a develop→main promotion that brings the
+# bump-from-sdk.yml release commit forward). Tags the head commit
+# `vX.Y.Z` and dispatches `mantle-landing`'s `bump-from-starters.yml`
+# workflow so the landing site rolls forward to the same version.
+#
+# Filter uses `contains(...)` not `startsWith(...)` because the
+# develop→main merge is done with `gh pr merge --merge`, whose default
+# commit subject is `Merge pull request #N from owner/develop` with
+# the PR title (which we always start with `release: ...`) in the
+# body. `contains` matches body text too; `startsWith` would silently
+# skip the run and leave the release un-tagged.
 #
 # Why split from bump-from-sdk.yml: that workflow opens a PR and
 # returns. The PR's auto-merge fires asynchronously, so the tag +
@@ -22,7 +29,7 @@ permissions:
 
 jobs:
   tag:
-    if: startsWith(github.event.head_commit.message, 'release: bump @aotterclam/mantle* to v')
+    if: contains(github.event.head_commit.message, 'release: bump @aotterclam/mantle* to v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -34,9 +41,13 @@ jobs:
         id: ver
         run: |
           set -euo pipefail
-          # Commit message shape: `release: bump @aotterclam/mantle* to vX.Y.Z`
+          # Commit message shape: somewhere inside is `release: bump
+          # @aotterclam/mantle* to vX.Y.Z`. Grep extracts the version
+          # token from anywhere in the message, not just the first
+          # line, so a merge-commit body works the same as a rebase
+          # commit's first line.
           MSG="${{ github.event.head_commit.message }}"
-          VERSION=$(echo "$MSG" | head -n1 | grep -oE 'v[0-9][^[:space:]]+' | sed 's/^v//')
+          VERSION=$(echo "$MSG" | grep -oE 'release: bump @aotterclam/mantle\* to v[0-9][^[:space:]]+' | head -n1 | grep -oE 'v[0-9][^[:space:]]+' | sed 's/^v//')
           if [ -z "$VERSION" ]; then
             echo "::error::Couldn't extract version from commit message: $MSG"
             exit 1
