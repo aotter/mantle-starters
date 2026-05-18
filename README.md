@@ -3,27 +3,37 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
-Public monorepo of mantle v0.1.0 starter templates.
+Public monorepo of mantle starter templates.
 
 This repo is consumed by the `@aotterclam/create-mantle` npx package
-at install time (Epic [`AotterClam/mantle#97`](https://github.com/AotterClam/mantle/issues/97)).
-End users do not clone this repo directly. They land on
-[mantle-landing](https://github.com/AotterClam/mantle-landing),
-paste a two-URL prompt into Claude Code / Cursor / Codex, and the
-install Skill invokes `create-mantle`, which downloads a tagged
-tarball of this repo, merges `_common/` + `<archetype>/` into the
-user's empty directory, then initializes their own Git repo.
+at install time. End users usually should not clone this repo directly:
+they start from [mantle.aotterclam.ai](https://mantle.aotterclam.ai/),
+paste the generated prompt into Claude Code / Cursor / Codex, and the
+install Skill in [`AotterClam/mantle`](https://github.com/AotterClam/mantle)
+invokes `create-mantle`. The scaffolder downloads a tagged tarball of
+this repo, merges `_common/` + `<archetype>/` + optional theme overlays
+into the user's empty directory, then initializes their own Git repo.
 
 Premium / per-customer starters live in the private sibling
 [`AotterClam/mantle-starters-premium`](https://github.com/AotterClam/mantle-starters-premium).
 That repo mirrors `_common/`; sync strategy is TBD.
 
-## How to install (one-line `npx`)
+## How to install
+
+Recommended path:
+
+1. Open [mantle.aotterclam.ai](https://mantle.aotterclam.ai/).
+2. Pick an archetype and optional theme.
+3. Paste the generated prompt into Claude Code / Cursor / Codex.
+
+That route runs the [`mantle` install Skill](https://github.com/AotterClam/mantle/tree/develop/skills/install), which interviews the user for brand, locales, audience, and deployment intent before invoking the scaffolder.
+
+### Direct scaffolder call
 
 The agent-driven flow (paste the landing prompt into Claude Code /
 Cursor / Codex) is the recommended path because the install Skill
 interviews the user for brand / locales / audience before running the
-command. If you're already past the interview and want to invoke the
+command. If you're already past the interview or testing this repo and want to invoke the
 scaffolder directly, the command shape is:
 
 ```bash
@@ -34,7 +44,7 @@ npx @aotterclam/create-mantle@alpha <archetype> \
   --locales "en,zh-TW" \
   --github-owner "<your-github-login>" \
   --summary "<install-moment marker>"
-  # optional: --theme <theme>     (default | minimal-ink | editorial-warm | journal | playful-pop)
+  # optional: --theme <theme>     (l4-minimal-ink | l4-editorial-warm | l4-editorial-journal | l4-playful-pop)
 ```
 
 `<archetype>` is one of: `presence`, `publication`, `intake`,
@@ -46,10 +56,9 @@ downloads the matching starter tarball, merges `_common/` +
 <my-site>` and follow that directory's own README for the local-dev
 Quickstart.
 
-See [`AotterClam/mantle/skills/install`](https://github.com/AotterClam/mantle/tree/develop/skills/install)
-for the full agent-driven flow (the interview that produces the values
-above) and the `## Run this` block in
-[install/SKILL.md](https://github.com/AotterClam/mantle/blob/develop/skills/install/SKILL.md).
+For SDK/runtime internals, release policy, and agent skills, go back to
+[`AotterClam/mantle`](https://github.com/AotterClam/mantle). This repo is
+only the starter source and scaffolder package.
 
 ## Layout
 
@@ -63,6 +72,10 @@ mantle-starters/
 ├── presence/                  ← landing-page / brand-presence starter
 ├── publication/               ← owner-published-content starter
 ├── intake/                    ← publication + structured `leads` Schema
+├── transaction/               ← small catalog + cart + order workflow
+├── reservation/               ← roadmap note; routes to intake for v0.1
+├── community/                 ← roadmap placeholder
+├── membership/                ← roadmap placeholder
 ├── blank/                     ← headless API + MCP starter
 ├── themes/                    ← theme overlays (artist-designed; v0.0.9+)
 └── sources.json               ← archetype + theme dispatch (runtime-fetched)
@@ -124,9 +137,10 @@ pnpm typecheck
 pnpm dev
 ```
 
-There is no cross-starter build at the monorepo root by design;
-starters do not share runtime code (that lives upstream in the
-`AotterClam/mantle` packages).
+The root CI runs the workspace checks across starters and the
+scaffolder, but each starter remains a standalone consumer project.
+Runtime code lives upstream in the `AotterClam/mantle` packages; this
+repo only pins and consumes those published packages.
 
 ## License
 
