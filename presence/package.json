@@ -2,7 +2,7 @@
   "name": "mantle-starter-presence",
   "version": "0.0.11-alpha.5",
   "private": true,
-  "description": "Presence starter for mantle v0.1.0 — landing page, secondary pages, contact form. Localized pages via translates; contact form via builtin + lifecycle hooks. No article list. Runs on wrangler dev with local D1 + KV.",
+  "description": "Presence starter for mantle v0.1.0 \u2014 landing page, secondary pages, contact form. Localized pages via translates; contact form via builtin + lifecycle hooks. No article list. Runs on wrangler dev with local D1 + KV.",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
@@ -24,10 +24,13 @@
   },
   "dependencies": {
     "@aotterclam/mantle": "0.0.11-alpha.5",
+    "@cloudflare/workers-oauth-provider": "^0.6.0",
     "aws4fetch": "^1.0.20",
+    "better-auth": "^1.6.11",
     "hono": "^4.12.19",
     "marked": "^14.1.3",
-    "yaml": "^2.9.0"
+    "yaml": "^2.9.0",
+    "zod": "^4.4.2"
   },
   "devDependencies": {
     "@aotterclam/mantle-spec": "0.0.11-alpha.5",
