@@ -100,7 +100,7 @@ jobs:
             echo "::warning::RELEASE_FANOUT_TOKEN not set — landing bump skipped. Starters is tagged; set the secret and re-dispatch manually via the Actions UI in mantle-landing."
             exit 0
           fi
-          gh api repos/aotter/mantle-landing/dispatches \
+          gh api "repos/${{ github.repository_owner }}/mantle-landing/dispatches" \
             -f event_type=starters-released \
             -F "client_payload[starters_version]=${{ needs.gate.outputs.version }}"
           echo "Dispatched mantle-landing bump-from-starters for v${{ needs.gate.outputs.version }}"
