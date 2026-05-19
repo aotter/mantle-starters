@@ -4,8 +4,8 @@
 > it on GitHub at `AotterClam/mantle-starters/publication`, the
 > Quickstart below **does not work on a raw clone** — `src/clamConfig.ts`
 > contains literal `{{BRAND}}` / `{{LOCALES}}` / `{{DESCRIPTION}}`
-> placeholders that `@aotterclam/create-mantle` substitutes at install
-> time. A fresh-clone `pnpm dev` throws `SyntaxError: Expected property
+> placeholders that the `create-mantle` scaffolder substitutes at
+> install time. A fresh-clone `pnpm dev` throws `SyntaxError: Expected property
 > name or '}' in JSON` at boot because `JSON.parse('{{LOCALES}}')` runs
 > on an unsubstituted string.
 >
@@ -13,7 +13,14 @@
 > `create-mantle` does the substitution and prints a runnable project:
 >
 > ```bash
-> npm create @aotterclam/mantle@alpha /tmp/eval-publication
+> cd /tmp
+> npx https://github.com/AotterClam/mantle-starters/releases/latest/download/aotterclam-create-mantle.tgz publication \
+>   --project-name eval-publication \
+>   --brand "Eval Publication" \
+>   --description "Throwaway publication mantle evaluation" \
+>   --locales "en" \
+>   --github-owner "<your-github-login>" \
+>   --summary "Evaluate publication starter"
 > cd /tmp/eval-publication
 > # then follow the Quickstart below in that directory
 > ```

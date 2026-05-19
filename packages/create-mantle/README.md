@@ -1,9 +1,12 @@
 # `@aotterclam/create-mantle`
 
-npx scaffolder for mantle v0.1.0 consumer projects. Published to npm as `@aotterclam/create-mantle` under the `alpha` dist-tag during v0.1.0 development.
+Scaffolder for mantle v0.1.0 consumer projects. It is distributed as a
+tarball attached to `mantle-starters` GitHub releases, not as an npm
+package. The package name and `create-mantle` bin exist so `npx` can run
+the GitHub release tarball directly.
 
 ```bash
-npx @aotterclam/create-mantle@alpha \
+npx https://github.com/AotterClam/mantle-starters/releases/latest/download/aotterclam-create-mantle.tgz \
   <archetype> \
   --project-name <name> \
   --brand "<brand>" \

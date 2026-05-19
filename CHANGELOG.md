@@ -4,7 +4,7 @@ All notable changes to this repository will be documented in this file.
 
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-The repository version reflects the `@aotterclam/create-mantle` scaffolder published to npm at each tag (and mirrored as a tarball asset on the corresponding GitHub release). Individual starter packages pin `@aotterclam/mantle-*` versions independently inside their own `package.json`.
+The repository version reflects the `create-mantle` scaffolder tarball attached to each GitHub release. Individual starter packages pin `@aotterclam/mantle-*` versions independently inside their own `package.json`.
 
 ## [Unreleased]
 
@@ -27,7 +27,7 @@ The repository version reflects the `@aotterclam/create-mantle` scaffolder publi
 - 3 roadmap stubs (in `sources.json` roadmap list): `reservation`, `community`, `membership`.
 - 4 theme overlays: `l4-minimal-ink`, `l4-editorial-warm`, `l4-editorial-journal`, `l4-playful-pop`.
 - `_common/` shared backbone (`AGENTS.md.template`, `mantle/site.md.template`, `.gitignore.template`).
-- `packages/create-mantle/` scaffolder, published to npm as `@aotterclam/create-mantle` and also attached as a tarball asset on each GitHub release.
+- `packages/create-mantle/` scaffolder, attached as a tarball asset on each GitHub release.
 
 ### Notes
 

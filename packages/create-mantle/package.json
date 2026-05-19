@@ -3,6 +3,7 @@
   "version": "0.0.11-alpha.8",
   "description": "npx scaffolder for mantle consumer projects. Fetches the starters-monorepo tarball at a runtime-resolved sources.json, merges _common/ + <archetype>/ + (optional) themes/<theme>/ into the user's directory, fills {{PLACEHOLDER}} macros, and prints RUN_NOTES JSON for the Mantle install skill.",
   "license": "MIT",
+  "private": true,
   "homepage": "https://github.com/AotterClam/mantle-starters/tree/develop/packages/create-mantle",
   "repository": {
     "type": "git",
@@ -11,10 +12,6 @@
   },
   "type": "module",
   "sideEffects": false,
-  "publishConfig": {
-    "access": "public",
-    "tag": "alpha"
-  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {

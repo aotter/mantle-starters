@@ -1,6 +1,6 @@
 # Contributing to mantle-starters
 
-This repo holds the public starter scaffolds + the `create-mantle` scaffolder for the [mantle](https://github.com/AotterClam/mantle) project. Most consumers never see this repo directly — they run the scaffolder via `npx @aotterclam/create-mantle@alpha`.
+This repo holds the public starter scaffolds + the `create-mantle` scaffolder for the [mantle](https://github.com/AotterClam/mantle) project. Most consumers never see this repo directly — they run the scaffolder from the GitHub release tarball.
 
 Start here before changing code or docs. For project-wide doctrine, read the parent repo's [`CLAUDE.md`](https://github.com/AotterClam/mantle/blob/main/CLAUDE.md).
 
@@ -122,17 +122,18 @@ Use [`.github/pull_request_template.md`](./.github/pull_request_template.md). Li
 
 ## Release process
 
-The `create-mantle` scaffolder is published to npm under the `@aotterclam/create-mantle` package. Consumers run it via:
+The `create-mantle` scaffolder is attached to each GitHub release as a
+tarball. Consumers run it via:
 
 ```bash
-npx @aotterclam/create-mantle@alpha <archetype> ...
+npx https://github.com/AotterClam/mantle-starters/releases/latest/download/aotterclam-create-mantle.tgz <archetype> ...
 ```
 
 Release process:
 
 1. Land changes on `main`.
 2. Tag `v<version>` from `main` (e.g. `v0.0.11-alpha`).
-3. CI release workflow builds the scaffolder, publishes it to npm under the `alpha` dist-tag, and also attaches a `pnpm pack` tarball + sha256 to the GitHub release as a fallback distribution channel.
+3. CI release workflow builds the scaffolder and attaches a `pnpm pack` tarball + sha256 to the GitHub release.
 
 Per-starter `@aotterclam/mantle-*` version pins move on their own cadence — independent of the tarball tag.
 

@@ -4,14 +4,21 @@
 > it on GitHub at `AotterClam/mantle-starters/blank`, the
 > Getting-started block below **does not work on a raw clone** —
 > `src/clamConfig.ts` contains literal `{{BRAND}}` / `{{LOCALES}}` /
-> `{{DESCRIPTION}}` placeholders that `@aotterclam/create-mantle`
+> `{{DESCRIPTION}}` placeholders that the `create-mantle` scaffolder
 > substitutes at install time. A fresh-clone `pnpm dev` throws
 > `SyntaxError: Expected property name or '}' in JSON` at boot.
 >
 > **To evaluate this starter end-to-end**, scaffold a throwaway site:
 >
 > ```bash
-> npm create @aotterclam/mantle@alpha /tmp/eval-blank
+> cd /tmp
+> npx https://github.com/AotterClam/mantle-starters/releases/latest/download/aotterclam-create-mantle.tgz blank \
+>   --project-name eval-blank \
+>   --brand "Eval Blank" \
+>   --description "Throwaway blank mantle evaluation" \
+>   --locales "en" \
+>   --github-owner "<your-github-login>" \
+>   --summary "Evaluate blank starter"
 > cd /tmp/eval-blank
 > # then follow the Getting-started block below in that directory
 > ```
