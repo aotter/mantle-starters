@@ -145,6 +145,10 @@ function readSeed(path: string, overrides: { readonly origin?: string } = {}): N
     locales,
     canonicalLocale,
     faviconUrl: raw.faviconUrl?.trim() || undefined,
+    // Mirror publication's declared `siteDefaults.media.purposes`
+    // (aotter/mantle#262). v0.0.11-alpha.9 made `SiteConfig.media`
+    // required on the runtime read shape.
+    media: { purposes: ["post-cover"] },
   };
 
   return {
