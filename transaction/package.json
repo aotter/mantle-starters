@@ -1,6 +1,6 @@
 {
   "name": "mantle-starter-transaction",
-  "version": "0.0.11-alpha.9",
+  "version": "0.0.11-alpha.10",
   "private": true,
   "description": "Transaction starter for mantle v0.1.0 — small-scale shop (~100 orders/day): products + cart + payment + orders. Provider-agnostic by design; Mantle wires the actual payment provider (Stripe / ECPay / PayUni / custom) during install. DurableObject inventory authority + Workers Queues for serialized callback processing.",
   "type": "module",
@@ -24,7 +24,7 @@
     "theme:reset": "node scripts/theme-reset.mjs"
   },
   "dependencies": {
-    "@aotterclam/mantle": "0.0.11-alpha.9",
+    "@aotterclam/mantle": "0.0.11-alpha.10",
     "@cloudflare/workers-oauth-provider": "^0.6.0",
     "aws4fetch": "^1.0.20",
     "better-auth": "^1.6.11",
@@ -34,7 +34,7 @@
     "zod": "^4.4.2"
   },
   "devDependencies": {
-    "@aotterclam/mantle-spec": "0.0.11-alpha.9",
+    "@aotterclam/mantle-spec": "0.0.11-alpha.10",
     "@cloudflare/workers-types": "^4.20260518.1",
     "@types/node": "^25",
     "tsx": "^4.22.1",
