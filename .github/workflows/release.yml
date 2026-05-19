@@ -83,6 +83,10 @@ jobs:
           set -euo pipefail
           TAG="${GITHUB_REF#refs/tags/}"
           if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --title "$TAG" --generate-notes
+            CREATE_FLAGS=()
+            case "$TAG" in
+              *-alpha*|*-beta*|*-rc*) CREATE_FLAGS+=(--prerelease) ;;
+            esac
+            gh release create "$TAG" --title "$TAG" --generate-notes "${CREATE_FLAGS[@]}"
           fi
           gh release upload "$TAG" out/* --clobber
