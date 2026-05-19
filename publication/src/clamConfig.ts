@@ -87,6 +87,12 @@ export function buildCmsConfig(env: Env, auth: Auth): CmsConfig {
       // so contributors can `pnpm typecheck` the starter directly; the runtime
       // cost is one tiny parse at worker cold-start.
       locales: JSON.parse('{{LOCALES}}') as readonly string[],
+      // Declared media purpose taxonomy (#262 / AotterClam/mantle#262).
+      // create_media_upload rejects any `purpose` not in this set with
+      // MEDIA_PURPOSE_REJECTED; an empty list disables uploads entirely.
+      // Each entry becomes an object-store key prefix so operator
+      // dashboards eyeball "post-cover/abc.jpg".
+      media: { purposes: ["post-cover"] },
     },
     publicPathResolver: PUBLIC_PATH_RESOLVER,
     bindings: {

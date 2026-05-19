@@ -80,7 +80,10 @@ in a blank starter or a later starter family.
 - **First-party media hosting**. `posts.coverUrl` is a hand-supplied
   URL string marked with `x-mcp-hint: media-image` for agents/admin UI.
   R2-backed uploads are an explicit opt-in add-on, not part of first-run
-  provisioning.
+  provisioning. When enabled, the only declared upload purpose is
+  `post-cover` (see `siteDefaults.media.purposes` in
+  `src/clamConfig.ts`); agents calling `create_media_upload` must use
+  that purpose, not invent new prefixes.
 - **Full admin SPA**. v0.1.0 ships a minimal owner landing at `/admin`.
   Real-user first content is created after provisioning, through
   agent interview + MCP / admin authoring. `fixture` is local-dev / OSS

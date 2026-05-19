@@ -21,6 +21,16 @@ Public site: {{SITE_URL}}  (placeholder until provision)
 - To rebuild site logic, change archetype, or rework prose: invoke the
   Mantle install skill again (URL in `mantle/site.md` frontmatter).
 
+### Media uploads
+
+- `create_media_upload(purpose)` only accepts purposes declared in
+  `siteDefaults.media.purposes` in `src/clamConfig.ts`. Unknown
+  purposes are rejected with `MEDIA_PURPOSE_REJECTED`.
+- Don't invent purpose prefixes (`mcp-e2e`, `agent-test`, ...). Use one
+  of the declared purposes, or add a new one to `clamConfig.ts` first.
+- An archetype without declared purposes (or without an R2 bucket
+  bound) hides the upload tools entirely.
+
 ## Setup
 
 GitHub OAuth + Better Auth backed admin at `<SITE_URL>/admin/sign-in`.
