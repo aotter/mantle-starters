@@ -5,14 +5,15 @@
 
 Public monorepo of mantle starter templates.
 
-This repo is consumed by the `@aotter/create-mantle` npx package
-at install time. End users usually should not clone this repo directly:
-they start from [the Mantle landing page](https://the Mantle landing page/),
-paste the generated prompt into Claude Code / Cursor / Codex, and the
-install Skill in [`aotter/mantle`](https://github.com/aotter/mantle)
-invokes `create-mantle`. The scaffolder downloads a tagged tarball of
-this repo, merges `_common/` + `<archetype>/` + optional theme overlays
-into the user's empty directory, then initializes their own Git repo.
+This repo is consumed by the `create-mantle` scaffolder tarball attached
+to each GitHub release. End users usually should not clone this repo
+directly: they start from
+[the Mantle landing page](https://the Mantle landing page/), paste the
+generated prompt into Claude Code / Cursor / Codex, and the install Skill
+in [`aotter/mantle`](https://github.com/aotter/mantle) invokes
+the release tarball. The scaffolder downloads a tagged tarball of this
+repo, merges `_common/` + `<archetype>/` + optional theme overlays into
+the user's empty directory, then initializes their own Git repo.
 
 Premium / per-customer starters live in the private sibling
 [`aotter/mantle-starters-premium`](https://github.com/aotter/mantle-starters-premium).
@@ -37,7 +38,7 @@ command. If you're already past the interview or testing this repo and want to i
 scaffolder directly, the command shape is:
 
 ```bash
-npx @aotter/create-mantle@alpha <archetype> \
+npx https://github.com/aotter/mantle-starters/releases/latest/download/aotter-create-mantle.tgz <archetype> \
   --project-name "<my-site>" \
   --brand "<My Brand>" \
   --description "<one-line site description>" \
@@ -58,7 +59,7 @@ Quickstart.
 
 For SDK/runtime internals, release policy, and agent skills, go back to
 [`aotter/mantle`](https://github.com/aotter/mantle). This repo is
-only the starter source and scaffolder package.
+only the starter source and scaffolder implementation.
 
 ## Layout
 
@@ -92,7 +93,7 @@ archetype / theme key → starter directory + theme overlays.
 `create-mantle` fetches it at runtime
 (`raw.githubusercontent.com/aotter/mantle-starters/<ref>/sources.json`)
 on every install. Adding an archetype or theme = update this file; no
-`create-mantle` republish needed unless merge logic changes.
+SDK publish is needed unless merge logic changes.
 
 ## Install merge order
 
