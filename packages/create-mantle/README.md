@@ -1,9 +1,12 @@
 # `@aotter/create-mantle`
 
-npx scaffolder for mantle v0.1.0 consumer projects. Published to npm as `@aotter/create-mantle` (under the `alpha` dist-tag during v0.1.0 development) and also attached as a tarball asset to each `mantle-starters` GitHub release for offline / pinned-by-URL installs.
+Scaffolder for mantle v0.1.0 consumer projects. It is distributed as a
+tarball attached to `mantle-starters` GitHub releases, not as an npm
+package. The package name and `create-mantle` bin exist so `npx` can run
+the GitHub release tarball directly.
 
 ```bash
-npx @aotter/create-mantle@alpha \
+npx https://github.com/aotter/mantle-starters/releases/latest/download/aotter-create-mantle.tgz \
   <archetype> \
   --project-name <name> \
   --brand "<brand>" \
@@ -15,11 +18,11 @@ npx @aotter/create-mantle@alpha \
   [--ref <git-ref>]
 ```
 
-The Mantle install skill ([`skills/install/SKILL.md`](../../skills/install/SKILL.md)) invokes this entry point pinned to the release the skill itself is read from.
+Recommended end-user path: open [the Mantle landing page](https://the Mantle landing page/), pick an archetype and theme, then paste the generated prompt into Claude Code / Cursor / Codex. The Mantle install skill in [`aotter/mantle`](https://github.com/aotter/mantle/tree/develop/skills/install) invokes this package after it interviews the user for brand, locales, audience, and deployment intent.
 
 ## What it does
 
-1. Fetches `sources.json` from `aotter/mantle-starters` at the requested ref (default `main`) — resolves archetype → starter path + (optional) theme overlay. Falls back to a bundled stale snapshot if GH is unreachable.
+1. Fetches `sources.json` from `aotter/mantle-starters` at the requested ref (default `develop`) — resolves archetype -> starter path + (optional) theme overlay. Falls back to a bundled stale snapshot if GH is unreachable.
 2. Downloads a tarball of `mantle-starters` at the same ref.
 3. Extracts and merges into the destination directory in this order: `_common/` → `<archetype>/` → each archetype overlay (in order) → (optional) `themes/<theme-key>/`. Later layers overwrite earlier files on conflict.
 4. Substitutes `{{PLACEHOLDER}}` macros per ADR-0016.
@@ -32,7 +35,7 @@ The Mantle install skill ([`skills/install/SKILL.md`](../../skills/install/SKILL
 
 | Flag | Required | Default | Notes |
 |---|---|---|---|
-| (positional `<archetype>`) | yes | — | `presence` / `publication` / `intake` / `blank`. Roadmap keys refused. |
+| (positional `<archetype>`) | yes | — | `presence` / `publication` / `intake` / `transaction` / `blank`. Roadmap keys refused. |
 | `--project-name` | yes | — | Lowercase, hyphenated. Becomes wrangler worker name. |
 | `--brand` | yes | — | Public display name. |
 | `--description` | yes | — | One-line public description. |
@@ -41,7 +44,7 @@ The Mantle install skill ([`skills/install/SKILL.md`](../../skills/install/SKILL
 | `--github-owner` | yes | — | Becomes `ADMIN_GITHUB_LOGIN`. |
 | `--summary` | yes | — | Mantle's one-line install summary; lands in `mantle/site.md` `revisions[0].summary`. |
 | `--theme` | no | none | Theme overlay key resolved against `sources.themes`. |
-| `--ref` | no | `main` | Git ref for both `sources.json` and the tarball. `--starter-ref` retained as alias. |
+| `--ref` | no | `develop` | Git ref for both `sources.json` and the tarball. `--starter-ref` retained as alias. |
 
 ## RUN_NOTES JSON shape
 
@@ -125,7 +128,7 @@ The starters' own `setup:site` script keeps working for in-project reconfigurati
 
 ## See also
 
-- [ADR-0016](../../docs/adr/0016-site-semantic-layer.md) — placeholder macro list + update workflow
-- [ADR-0013](../../docs/adr/0013-agent-provisioned-consumer-projects.md) — the broader agent-provisioned install flow
+- [ADR-0016](https://github.com/aotter/mantle/blob/develop/docs/adr/0016-site-semantic-layer.md) — placeholder macro list + update workflow
+- [ADR-0013](https://github.com/aotter/mantle/blob/develop/docs/adr/0013-agent-provisioned-consumer-projects.md) — the broader agent-provisioned install flow
 - [Epic #116](https://github.com/aotter/mantle/issues/116) — v0.0.9 install UX pivot (Mantle scope narrow + 1:1 starter + theme overlay; this package is sub-issue #121)
 - [`aotter/mantle-starters`](https://github.com/aotter/mantle-starters) — public starters monorepo this package dispatches against

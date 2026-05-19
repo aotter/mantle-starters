@@ -23,6 +23,11 @@ export const FIXTURE_SITE: SiteConfig = {
   origin: "http://localhost:8787",
   locales: ["en"],
   canonicalLocale: "en",
+  // Presence has no media-image fields in its manifests, so its
+  // `siteDefaults.media.purposes` is undeclared; the runtime keeps
+  // upload tools disabled (aotter/mantle#262). v0.0.11-alpha.9
+  // made `SiteConfig.media` required on the runtime read shape.
+  media: { purposes: [] },
 };
 
 export interface FixturePage {

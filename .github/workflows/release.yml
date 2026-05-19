@@ -23,9 +23,32 @@ jobs:
           cache: pnpm
           cache-dependency-path: packages/create-mantle/pnpm-lock.yaml
 
+      - name: Extract version from tag
+        id: ver
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF#refs/tags/}"
+          VERSION="${TAG#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Tag $TAG -> version $VERSION"
+
       - name: Install scaffolder deps
         working-directory: packages/create-mantle
         run: pnpm install --frozen-lockfile
+
+      - name: Verify package version matches ${{ steps.ver.outputs.version }}
+        working-directory: packages/create-mantle
+        run: |
+          set -euo pipefail
+          node --input-type=module -e "
+            import { readFileSync } from 'node:fs';
+            const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+            const expected = '${{ steps.ver.outputs.version }}';
+            if (pkg.version !== expected) {
+              console.error('packages/create-mantle/package.json version ' + pkg.version + ' does not match tag version ' + expected);
+              process.exit(1);
+            }
+          "
 
       - name: Build scaffolder
         working-directory: packages/create-mantle
@@ -38,8 +61,7 @@ jobs:
       - name: Stage release assets
         run: |
           set -euo pipefail
-          TAG="${GITHUB_REF#refs/tags/}"
-          VER="${TAG#v}"
+          VER="${{ steps.ver.outputs.version }}"
           TARBALL=$(ls packages/create-mantle/aotter-create-mantle-*.tgz | head -n 1)
           if [ -z "$TARBALL" ]; then
             echo "::error::pnpm pack did not produce a tarball"
@@ -61,6 +83,10 @@ jobs:
           set -euo pipefail
           TAG="${GITHUB_REF#refs/tags/}"
           if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --title "$TAG" --generate-notes
+            CREATE_FLAGS=()
+            case "$TAG" in
+              *-alpha*|*-beta*|*-rc*) CREATE_FLAGS+=(--prerelease) ;;
+            esac
+            gh release create "$TAG" --title "$TAG" --generate-notes "${CREATE_FLAGS[@]}"
           fi
           gh release upload "$TAG" out/* --clobber

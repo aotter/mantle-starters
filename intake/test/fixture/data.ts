@@ -24,6 +24,10 @@ export const FIXTURE_SITE: SiteConfig = {
   origin: "http://localhost:8787",
   locales: ["en", "zh-TW"],
   canonicalLocale: "en",
+  // Mirror intake's declared `siteDefaults.media.purposes`
+  // (aotter/mantle#262). v0.0.11-alpha.9 made `SiteConfig.media`
+  // required on the runtime read shape.
+  media: { purposes: ["post-cover"] },
 };
 
 export interface FixturePost {
