@@ -11,8 +11,8 @@ importers:
   blank:
     dependencies:
       '@aotterclam/mantle':
-        specifier: 0.0.11-alpha.9
-        version: 0.0.11-alpha.9(@cloudflare/workers-oauth-provider@0.6.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.19)(zod@4.4.3)
+        specifier: 0.0.11-alpha.10
+        version: 0.0.11-alpha.10(@cloudflare/workers-oauth-provider@0.6.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.19)(zod@4.4.3)
       '@cloudflare/workers-oauth-provider':
         specifier: ^0.6.0
         version: 0.6.0
@@ -30,8 +30,8 @@ importers:
         version: 4.4.3
     devDependencies:
       '@aotterclam/mantle-spec':
-        specifier: 0.0.11-alpha.9
-        version: 0.0.11-alpha.9(zod@4.4.3)
+        specifier: 0.0.11-alpha.10
+        version: 0.0.11-alpha.10(zod@4.4.3)
       '@cloudflare/workers-types':
         specifier: ^4.20260518.1
         version: 4.20260518.1
@@ -48,8 +48,8 @@ importers:
   intake:
     dependencies:
       '@aotterclam/mantle':
-        specifier: 0.0.11-alpha.9
-        version: 0.0.11-alpha.9(@cloudflare/workers-oauth-provider@0.6.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.19)(zod@4.4.3)
+        specifier: 0.0.11-alpha.10
+        version: 0.0.11-alpha.10(@cloudflare/workers-oauth-provider@0.6.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.19)(zod@4.4.3)
       '@cloudflare/workers-oauth-provider':
         specifier: ^0.6.0
         version: 0.6.0
@@ -73,8 +73,8 @@ importers:
         version: 4.4.3
     devDependencies:
       '@aotterclam/mantle-spec':
-        specifier: 0.0.11-alpha.9
-        version: 0.0.11-alpha.9(zod@4.4.3)
+        specifier: 0.0.11-alpha.10
+        version: 0.0.11-alpha.10(zod@4.4.3)
       '@cloudflare/workers-types':
         specifier: ^4.20260518.1
         version: 4.20260518.1
@@ -106,8 +106,8 @@ importers:
   presence:
     dependencies:
       '@aotterclam/mantle':
-        specifier: 0.0.11-alpha.9
-        version: 0.0.11-alpha.9(@cloudflare/workers-oauth-provider@0.6.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.19)(zod@4.4.3)
+        specifier: 0.0.11-alpha.10
+        version: 0.0.11-alpha.10(@cloudflare/workers-oauth-provider@0.6.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.19)(zod@4.4.3)
       '@cloudflare/workers-oauth-provider':
         specifier: ^0.6.0
         version: 0.6.0
@@ -131,8 +131,8 @@ importers:
         version: 4.4.3
     devDependencies:
       '@aotterclam/mantle-spec':
-        specifier: 0.0.11-alpha.9
-        version: 0.0.11-alpha.9(zod@4.4.3)
+        specifier: 0.0.11-alpha.10
+        version: 0.0.11-alpha.10(zod@4.4.3)
       '@cloudflare/workers-types':
         specifier: ^4.20260518.1
         version: 4.20260518.1
@@ -152,8 +152,8 @@ importers:
   publication:
     dependencies:
       '@aotterclam/mantle':
-        specifier: 0.0.11-alpha.9
-        version: 0.0.11-alpha.9(@cloudflare/workers-oauth-provider@0.6.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.19)(zod@4.4.3)
+        specifier: 0.0.11-alpha.10
+        version: 0.0.11-alpha.10(@cloudflare/workers-oauth-provider@0.6.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.19)(zod@4.4.3)
       '@cloudflare/workers-oauth-provider':
         specifier: ^0.6.0
         version: 0.6.0
@@ -177,8 +177,8 @@ importers:
         version: 4.4.3
     devDependencies:
       '@aotterclam/mantle-spec':
-        specifier: 0.0.11-alpha.9
-        version: 0.0.11-alpha.9(zod@4.4.3)
+        specifier: 0.0.11-alpha.10
+        version: 0.0.11-alpha.10(zod@4.4.3)
       '@cloudflare/workers-types':
         specifier: ^4.20260518.1
         version: 4.20260518.1
@@ -198,8 +198,8 @@ importers:
   transaction:
     dependencies:
       '@aotterclam/mantle':
-        specifier: 0.0.11-alpha.9
-        version: 0.0.11-alpha.9(@cloudflare/workers-oauth-provider@0.6.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.19)(zod@4.4.3)
+        specifier: 0.0.11-alpha.10
+        version: 0.0.11-alpha.10(@cloudflare/workers-oauth-provider@0.6.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.19)(zod@4.4.3)
       '@cloudflare/workers-oauth-provider':
         specifier: ^0.6.0
         version: 0.6.0
@@ -223,8 +223,8 @@ importers:
         version: 4.4.3
     devDependencies:
       '@aotterclam/mantle-spec':
-        specifier: 0.0.11-alpha.9
-        version: 0.0.11-alpha.9(zod@4.4.3)
+        specifier: 0.0.11-alpha.10
+        version: 0.0.11-alpha.10(zod@4.4.3)
       '@cloudflare/workers-types':
         specifier: ^4.20260518.1
         version: 4.20260518.1
@@ -243,11 +243,11 @@ importers:
 
 packages:
 
-  '@aotterclam/mantle-admin-ui@0.0.11-alpha.9':
-    resolution: {integrity: sha512-8wD0JnTMyDGFigvex1DApuYcK9aLCHlaYrjsP6eSH3CXPADdBEvrnNczYfVnXmbYwi4q+pRTgJzOm9TRq+yxtA==}
+  '@aotterclam/mantle-admin-ui@0.0.11-alpha.10':
+    resolution: {integrity: sha512-TxgCbIG1py0jAc7von233cLeN1Z6V2RuaBBMd3bzOPjS7A1ysjwgHyWNsbV99nguXldxEzWe3czvFwzTqIj74A==}
 
-  '@aotterclam/mantle-cloudflare@0.0.11-alpha.9':
-    resolution: {integrity: sha512-wtC4XxDf+q6NzEFfy9Pv30Tz8muGHAjEv8Jk62ZnZ9/RuyWS3pwKKqqIEIiImzwWX075d0umCb2qzMreQFh9Vg==}
+  '@aotterclam/mantle-cloudflare@0.0.11-alpha.10':
+    resolution: {integrity: sha512-Eq3hGHx3RbTgePZop0iD3ZUfZdgkJdVvJIdDwXj3i1pTpKt5w7lgTvSJwW4O2sW9P24mU1teuodEuXKCDdQUOw==}
     peerDependencies:
       '@cloudflare/workers-oauth-provider': ^0.6.0
       aws4fetch: ^1.0.20
@@ -255,19 +255,19 @@ packages:
       hono: ^4.12.0
       zod: ^4.0.0
 
-  '@aotterclam/mantle-runtime@0.0.11-alpha.9':
-    resolution: {integrity: sha512-r1sTcNehGLgxCFx5Vzx73L4En55GU0trlEXybbgCsMhftQ5aBwjai5O9p1dRun3rqNMWZ/5fez/FaszFecE5zA==}
+  '@aotterclam/mantle-runtime@0.0.11-alpha.10':
+    resolution: {integrity: sha512-nnA6ywidom7j/KDec5w2/eg8Ohs/gs0oPJf08oG6ea30MpBS9h3LlZD3fdFDqfDdZiNIckXo4thZUz0Opxey9g==}
     peerDependencies:
       zod: ^4.0.0
 
-  '@aotterclam/mantle-spec@0.0.11-alpha.9':
-    resolution: {integrity: sha512-4s7CaCTwxs1qmYGWAGcc264qz8Bj7HDPv0b/LBin3tR5ViGoNlDMiO+HeqpImTrEPyldHbVf+Mtev8ZzbAIpOg==}
+  '@aotterclam/mantle-spec@0.0.11-alpha.10':
+    resolution: {integrity: sha512-xbQL9AhXP3ZEBUZq14TE/JRfP9k/V0+5P63bQCblUopp2rRqNHBpX+eWAqTym6lyDm1StAfu/ViTKuUCgis6Nw==}
     hasBin: true
     peerDependencies:
       zod: ^4.0.0
 
-  '@aotterclam/mantle@0.0.11-alpha.9':
-    resolution: {integrity: sha512-MI2ue9qNe1Ioaulug1wUrXDb5maxxP6nIRcMeM9h10FVoWibpauuLl4ri5hG4JCJrK6dYXIULuo4AJSJeCURbg==}
+  '@aotterclam/mantle@0.0.11-alpha.10':
+    resolution: {integrity: sha512-FKL1gDB7I1+x6G46DX6vhlFwuiffXpLs+ESaU/otA4y2JqI87fNXmROsLZC05JM6q04tcJDNIDpb1EDBOL5ZWw==}
     engines: {node: '>=22'}
     peerDependencies:
       '@cloudflare/workers-oauth-provider': ^0.6.0
@@ -2044,7 +2044,7 @@ packages:
 
 snapshots:
 
-  '@aotterclam/mantle-admin-ui@0.0.11-alpha.9':
+  '@aotterclam/mantle-admin-ui@0.0.11-alpha.10':
     dependencies:
       '@radix-ui/react-collapsible': 1.1.12(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@radix-ui/react-dialog': 1.1.15(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -2062,11 +2062,11 @@ snapshots:
       - '@types/react'
       - '@types/react-dom'
 
-  '@aotterclam/mantle-cloudflare@0.0.11-alpha.9(@cloudflare/workers-oauth-provider@0.6.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.19)(zod@4.4.3)':
+  '@aotterclam/mantle-cloudflare@0.0.11-alpha.10(@cloudflare/workers-oauth-provider@0.6.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.19)(zod@4.4.3)':
     dependencies:
-      '@aotterclam/mantle-admin-ui': 0.0.11-alpha.9
-      '@aotterclam/mantle-runtime': 0.0.11-alpha.9(zod@4.4.3)
-      '@aotterclam/mantle-spec': 0.0.11-alpha.9(zod@4.4.3)
+      '@aotterclam/mantle-admin-ui': 0.0.11-alpha.10
+      '@aotterclam/mantle-runtime': 0.0.11-alpha.10(zod@4.4.3)
+      '@aotterclam/mantle-spec': 0.0.11-alpha.10(zod@4.4.3)
       '@cloudflare/workers-oauth-provider': 0.6.0
       aws4fetch: 1.0.20
       better-auth: 1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0))
@@ -2076,22 +2076,22 @@ snapshots:
       - '@types/react'
       - '@types/react-dom'
 
-  '@aotterclam/mantle-runtime@0.0.11-alpha.9(zod@4.4.3)':
+  '@aotterclam/mantle-runtime@0.0.11-alpha.10(zod@4.4.3)':
     dependencies:
-      '@aotterclam/mantle-spec': 0.0.11-alpha.9(zod@4.4.3)
+      '@aotterclam/mantle-spec': 0.0.11-alpha.10(zod@4.4.3)
       zod: 4.4.3
 
-  '@aotterclam/mantle-spec@0.0.11-alpha.9(zod@4.4.3)':
+  '@aotterclam/mantle-spec@0.0.11-alpha.10(zod@4.4.3)':
     dependencies:
       yaml: 2.9.0
       zod: 4.4.3
 
-  '@aotterclam/mantle@0.0.11-alpha.9(@cloudflare/workers-oauth-provider@0.6.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.19)(zod@4.4.3)':
+  '@aotterclam/mantle@0.0.11-alpha.10(@cloudflare/workers-oauth-provider@0.6.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.19)(zod@4.4.3)':
     dependencies:
-      '@aotterclam/mantle-admin-ui': 0.0.11-alpha.9
-      '@aotterclam/mantle-cloudflare': 0.0.11-alpha.9(@cloudflare/workers-oauth-provider@0.6.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.19)(zod@4.4.3)
-      '@aotterclam/mantle-runtime': 0.0.11-alpha.9(zod@4.4.3)
-      '@aotterclam/mantle-spec': 0.0.11-alpha.9(zod@4.4.3)
+      '@aotterclam/mantle-admin-ui': 0.0.11-alpha.10
+      '@aotterclam/mantle-cloudflare': 0.0.11-alpha.10(@cloudflare/workers-oauth-provider@0.6.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.19)(zod@4.4.3)
+      '@aotterclam/mantle-runtime': 0.0.11-alpha.10(zod@4.4.3)
+      '@aotterclam/mantle-spec': 0.0.11-alpha.10(zod@4.4.3)
       '@cloudflare/workers-oauth-provider': 0.6.0
       aws4fetch: 1.0.20
       better-auth: 1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0))
