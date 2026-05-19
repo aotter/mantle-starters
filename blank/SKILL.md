@@ -1,14 +1,14 @@
 ---
 archetype: blank
 status: ready
-starter_repo: AotterClam/mantle-starters
+starter_repo: aotter/mantle-starters
 starter_path: blank
 overlays: []
 ---
 
 # `blank` archetype
 
-Follow the [Mantle install brief](https://raw.githubusercontent.com/AotterClam/mantle/main/skills/install/SKILL.md). This file only adds the archetype-specific register hints; Mantle voice rules apply only to the closing welcome letter, not to interview / refuse / adjustment phases.
+Follow the [Mantle install brief](https://raw.githubusercontent.com/aotter/mantle/main/skills/install/SKILL.md). This file only adds the archetype-specific register hints; Mantle voice rules apply only to the closing welcome letter, not to interview / refuse / adjustment phases.
 
 ## What this is
 
@@ -40,8 +40,8 @@ Open the admin and list current collections (the example one should be there). S
 
 ## Schema/View/Procedure extensions
 
-Defer all schema design to [`skills/extend`](https://raw.githubusercontent.com/AotterClam/mantle/main/skills/extend/SKILL.md). The starter ships exactly one demo Schema/View (`notes` / `published-notes`); during install, do **not** add custom manifests. The user designs theirs after deploy.
+Defer all schema design to [`skills/extend`](https://raw.githubusercontent.com/aotter/mantle/main/skills/extend/SKILL.md). The starter ships exactly one demo Schema/View (`notes` / `published-notes`); during install, do **not** add custom manifests. The user designs theirs after deploy.
 
 ## See also
 
-- [`skills/extend`](https://raw.githubusercontent.com/AotterClam/mantle/main/skills/extend/SKILL.md) — designing the user's real Schemas / Views / Procedures / Triggers.
+- [`skills/extend`](https://raw.githubusercontent.com/aotter/mantle/main/skills/extend/SKILL.md) — designing the user's real Schemas / Views / Procedures / Triggers.

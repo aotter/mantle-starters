@@ -1,8 +1,8 @@
 # Contributing to mantle-starters
 
-This repo holds the public starter scaffolds + the `create-mantle` scaffolder for the [mantle](https://github.com/AotterClam/mantle) project. Most consumers never see this repo directly — they run the scaffolder from the GitHub release tarball.
+This repo holds the public starter scaffolds + the `create-mantle` scaffolder for the [mantle](https://github.com/aotter/mantle) project. Most consumers never see this repo directly — they run the scaffolder from the GitHub release tarball.
 
-Start here before changing code or docs. For project-wide doctrine, read the parent repo's [`CLAUDE.md`](https://github.com/AotterClam/mantle/blob/main/CLAUDE.md).
+Start here before changing code or docs. For project-wide doctrine, read the parent repo's [`CLAUDE.md`](https://github.com/aotter/mantle/blob/main/CLAUDE.md).
 
 ## Project shape
 
@@ -68,7 +68,7 @@ Archetypes graduate in two stages: **roadmap stub** → **ready**.
 
 To graduate, the directory must contain:
 
-- `package.json` (pinned `@aotterclam/mantle-*` versions; no `workspace:*` deps — each starter is standalone).
+- `package.json` (pinned `@aotter/mantle-*` versions; no `workspace:*` deps — each starter is standalone).
 - `wrangler.toml` (Cloudflare Worker entry).
 - `manifests/` (CLAM atom manifests — Schema / View / Procedure / Trigger).
 - `src/index.ts` (Worker entry; mounts runtime + auth).
@@ -126,7 +126,7 @@ The `create-mantle` scaffolder is attached to each GitHub release as a
 tarball. Consumers run it via:
 
 ```bash
-npx https://github.com/AotterClam/mantle-starters/releases/latest/download/aotterclam-create-mantle.tgz <archetype> ...
+npx https://github.com/aotter/mantle-starters/releases/latest/download/aotter-create-mantle.tgz <archetype> ...
 ```
 
 Release process:
@@ -135,14 +135,14 @@ Release process:
 2. Tag `v<version>` from `main` (e.g. `v0.0.11-alpha`).
 3. CI release workflow builds the scaffolder and attaches a `pnpm pack` tarball + sha256 to the GitHub release.
 
-Per-starter `@aotterclam/mantle-*` version pins move on their own cadence — independent of the tarball tag.
+Per-starter `@aotter/mantle-*` version pins move on their own cadence — independent of the tarball tag.
 
 ## Architecture gates
 
-- Each starter is **standalone**. No `workspace:*` cross-deps. Bump `@aotterclam/mantle-*` deps explicitly per starter.
+- Each starter is **standalone**. No `workspace:*` cross-deps. Bump `@aotter/mantle-*` deps explicitly per starter.
 - `_common/` is **merge-first**: every file in `_common/` ends up in every scaffold (unless overridden by the archetype). Anything starter-specific belongs in `<archetype>/`, not `_common/`.
 - `sources.json` is the **only** dispatch surface. The scaffolder does not introspect directory names; if it's not in `sources.json`, it doesn't exist.
-- Macro expansion (`{{SITE_NAME}}`, `{{ARCHETYPE}}`, …) is governed by [ADR-0016](https://github.com/AotterClam/mantle/blob/main/docs/adr/0016-site-semantic-layer.md) on the parent repo. Unfilled macros in the scaffolded output are a release blocker.
+- Macro expansion (`{{SITE_NAME}}`, `{{ARCHETYPE}}`, …) is governed by [ADR-0016](https://github.com/aotter/mantle/blob/main/docs/adr/0016-site-semantic-layer.md) on the parent repo. Unfilled macros in the scaffolded output are a release blocker.
 
 ## Security
 

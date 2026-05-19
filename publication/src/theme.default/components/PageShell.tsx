@@ -1,6 +1,6 @@
 // @clam-override-class L3-component — see src/theme.default/README.md
 /** @jsxImportSource hono/jsx */
-import type { SiteConfig } from "@aotterclam/mantle/spec";
+import type { SiteConfig } from "@aotter/mantle/spec";
 import { Header as BaselineHeader, type HeaderProps, type HeaderComponent } from "./Header.js";
 import { Footer as BaselineFooter, type FooterComponent } from "./Footer.js";
 

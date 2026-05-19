@@ -8,7 +8,7 @@ import {
   mountServerEndpoints,
   type Auth,
   type AuthMethodConfig,
-} from "@aotterclam/mantle/cloudflare";
+} from "@aotter/mantle/cloudflare";
 import { buildCmsConfig, type Env } from "./clamConfig.js";
 
 /** Headless worker entrypoint — API + MCP only, no rendered UI.

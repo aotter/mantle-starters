@@ -2,7 +2,7 @@
 /** @jsxImportSource hono/jsx */
 import { html, raw } from "hono/html";
 import { marked } from "marked";
-import type { SiteConfig } from "@aotterclam/mantle/spec";
+import type { SiteConfig } from "@aotter/mantle/spec";
 import type { LayoutComponent } from "../components/Layout.js";
 import type { I18nBundle } from "../i18n/index.js";
 

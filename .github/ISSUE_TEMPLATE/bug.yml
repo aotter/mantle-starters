@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         Thanks for reporting a bug. Do not include secrets or vulnerability details here; use Security Advisories for security reports.
-        Engine / runtime bugs (in `@aotterclam/mantle-*`) belong on the parent repo: https://github.com/AotterClam/mantle/issues/new/choose
+        Engine / runtime bugs (in `@aotter/mantle-*`) belong on the parent repo: https://github.com/aotter/mantle/issues/new/choose
   - type: textarea
     id: summary
     attributes:

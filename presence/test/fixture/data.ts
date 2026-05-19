@@ -1,4 +1,4 @@
-import type { SiteConfig } from "@aotterclam/mantle/spec";
+import type { SiteConfig } from "@aotter/mantle/spec";
 
 /**
  * Fixture data for the presence starter's local-dev demo.
@@ -10,7 +10,7 @@ import type { SiteConfig } from "@aotterclam/mantle/spec";
  * pre-seeded in the runtime itself.
  *
  * The brand / description strings below are `{{BRAND}}` / `{{DESCRIPTION}}`
- * placeholders that `@aotterclam/create-mantle` substitutes at install
+ * placeholders that `@aotter/create-mantle` substitutes at install
  * time. After scaffold the values reflect what the operator typed.
  */
 export const FIXTURE_NOW = 1_730_000_000_000;
@@ -25,7 +25,7 @@ export const FIXTURE_SITE: SiteConfig = {
   canonicalLocale: "en",
   // Presence has no media-image fields in its manifests, so its
   // `siteDefaults.media.purposes` is undeclared; the runtime keeps
-  // upload tools disabled (AotterClam/mantle#262). v0.0.11-alpha.9
+  // upload tools disabled (aotter/mantle#262). v0.0.11-alpha.9
   // made `SiteConfig.media` required on the runtime read shape.
   media: { purposes: [] },
 };

@@ -95,7 +95,7 @@ describe("installFromExtractedRoot", () => {
     });
 
     expect(notes.starter_source).toBe(
-      "AotterClam/mantle-starters/publication",
+      "aotter/mantle-starters/publication",
     );
     expect(notes.overlays).toEqual([]);
     expect(existsSync(join(destination, "AGENTS.md"))).toBe(true);
@@ -228,7 +228,7 @@ describe("installFromExtractedRoot", () => {
 
     expect(notes.theme).toBe("l4-test");
     expect(notes.theme_source).toBe(
-      "AotterClam/mantle-starters/themes/l4-test",
+      "aotter/mantle-starters/themes/l4-test",
     );
 
     // Theme overlay wins: clamConfig.ts now has `theme: "l4-test"`.

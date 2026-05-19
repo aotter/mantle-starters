@@ -1,6 +1,6 @@
-# Release fanout — between Step 2 and Step 3 of AotterClam/mantle#191.
+# Release fanout — between Step 2 and Step 3 of aotter/mantle#191.
 #
-# Triggered when a `release: bump @aotterclam/mantle* to vX.Y.Z` commit
+# Triggered when a `release: bump @aotter/mantle* to vX.Y.Z` commit
 # lands on main (a develop→main promotion that brings the
 # bump-from-sdk.yml release commit forward). Tags the head commit
 # `vX.Y.Z` and dispatches `mantle-landing`'s `bump-from-starters.yml`
@@ -52,11 +52,11 @@ jobs:
         run: |
           set -euo pipefail
           # Commit message shape: somewhere inside is `release: bump
-          # @aotterclam/mantle* to vX.Y.Z`. Grep extracts the version
+          # @aotter/mantle* to vX.Y.Z`. Grep extracts the version
           # token from anywhere in the message, not just the first
           # line, so a merge-commit body works the same as a rebase
           # commit's first line.
-          VERSION=$(printf '%s\n' "$MSG" | grep -oE 'release: bump @aotterclam/mantle\* to v[0-9][^[:space:]]+' | head -n1 | grep -oE 'v[0-9][^[:space:]]+' | sed 's/^v//' || true)
+          VERSION=$(printf '%s\n' "$MSG" | grep -oE 'release: bump @aotter/mantle\* to v[0-9][^[:space:]]+' | head -n1 | grep -oE 'v[0-9][^[:space:]]+' | sed 's/^v//' || true)
           if [ -z "$VERSION" ]; then
             echo "No release-bump subject detected — nothing to tag."
             echo "should_release=false" >> "$GITHUB_OUTPUT"
@@ -100,7 +100,7 @@ jobs:
             echo "::warning::RELEASE_FANOUT_TOKEN not set — landing bump skipped. Starters is tagged; set the secret and re-dispatch manually via the Actions UI in mantle-landing."
             exit 0
           fi
-          gh api repos/AotterClam/mantle-landing/dispatches \
+          gh api "repos/${{ github.repository_owner }}/mantle-landing/dispatches" \
             -f event_type=starters-released \
             -F "client_payload[starters_version]=${{ needs.gate.outputs.version }}"
           echo "Dispatched mantle-landing bump-from-starters for v${{ needs.gate.outputs.version }}"

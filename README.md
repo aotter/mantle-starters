@@ -10,13 +10,13 @@ to each GitHub release. End users usually should not clone this repo
 directly: they start from
 [mantle.aotterclam.ai](https://mantle.aotterclam.ai/), paste the
 generated prompt into Claude Code / Cursor / Codex, and the install Skill
-in [`AotterClam/mantle`](https://github.com/AotterClam/mantle) invokes
+in [`aotter/mantle`](https://github.com/aotter/mantle) invokes
 the release tarball. The scaffolder downloads a tagged tarball of this
 repo, merges `_common/` + `<archetype>/` + optional theme overlays into
 the user's empty directory, then initializes their own Git repo.
 
 Premium / per-customer starters live in the private sibling
-[`AotterClam/mantle-starters-premium`](https://github.com/AotterClam/mantle-starters-premium).
+[`aotter/mantle-starters-premium`](https://github.com/aotter/mantle-starters-premium).
 That repo mirrors `_common/`; sync strategy is TBD.
 
 ## How to install
@@ -27,7 +27,7 @@ Recommended path:
 2. Pick an archetype and optional theme.
 3. Paste the generated prompt into Claude Code / Cursor / Codex.
 
-That route runs the [`mantle` install Skill](https://github.com/AotterClam/mantle/tree/develop/skills/install), which interviews the user for brand, locales, audience, and deployment intent before invoking the scaffolder.
+That route runs the [`mantle` install Skill](https://github.com/aotter/mantle/tree/develop/skills/install), which interviews the user for brand, locales, audience, and deployment intent before invoking the scaffolder.
 
 ### Direct scaffolder call
 
@@ -38,7 +38,7 @@ command. If you're already past the interview or testing this repo and want to i
 scaffolder directly, the command shape is:
 
 ```bash
-npx https://github.com/AotterClam/mantle-starters/releases/latest/download/aotterclam-create-mantle.tgz <archetype> \
+npx https://github.com/aotter/mantle-starters/releases/latest/download/aotter-create-mantle.tgz <archetype> \
   --project-name "<my-site>" \
   --brand "<My Brand>" \
   --description "<one-line site description>" \
@@ -58,7 +58,7 @@ downloads the matching starter tarball, merges `_common/` +
 Quickstart.
 
 For SDK/runtime internals, release policy, and agent skills, go back to
-[`AotterClam/mantle`](https://github.com/AotterClam/mantle). This repo is
+[`aotter/mantle`](https://github.com/aotter/mantle). This repo is
 only the starter source and scaffolder implementation.
 
 ## Layout
@@ -91,7 +91,7 @@ readable, validatable, and forkable.
 `sources.json` at the repo root is the authoritative dispatch from
 archetype / theme key → starter directory + theme overlays.
 `create-mantle` fetches it at runtime
-(`raw.githubusercontent.com/AotterClam/mantle-starters/<ref>/sources.json`)
+(`raw.githubusercontent.com/aotter/mantle-starters/<ref>/sources.json`)
 on every install. Adding an archetype or theme = update this file; no
 SDK publish is needed unless merge logic changes.
 
@@ -105,14 +105,14 @@ For each install, `create-mantle` extracts files in this order
 3. Each theme overlay listed in the request, in order
 
 Then `{{PLACEHOLDER}}` macros are substituted across the result. See
-[`AotterClam/mantle` ADR-0016](https://github.com/AotterClam/mantle/blob/develop/docs/adr/0016-site-semantic-layer.md)
+[`aotter/mantle` ADR-0016](https://github.com/aotter/mantle/blob/develop/docs/adr/0016-site-semantic-layer.md)
 for the macro list.
 
 ## Adding a starter
 
 1. Create a new top-level directory in this repo (e.g. `membership/`).
 2. Add the starter sources. Keep the directory standalone — no
-   `workspace:*` deps; pin `@aotterclam/mantle-*` to the published
+   `workspace:*` deps; pin `@aotter/mantle-*` to the published
    version that this starter ships against.
 3. Add a corresponding entry to `sources.json` under `archetypes:`.
    Runtime fetch picks it up on the next install — no
@@ -140,7 +140,7 @@ pnpm dev
 
 The root CI runs the workspace checks across starters and the
 scaffolder, but each starter remains a standalone consumer project.
-Runtime code lives upstream in the `AotterClam/mantle` packages; this
+Runtime code lives upstream in the `aotter/mantle` packages; this
 repo only pins and consumes those published packages.
 
 ## License

@@ -20,13 +20,13 @@
  * but unhelpful for a first-look impression of what the starter ships.
  *
  * Brand / description copy uses `{{BRAND}}` / `{{DESCRIPTION}}`
- * placeholders that `@aotterclam/create-mantle` substitutes at install
+ * placeholders that `@aotter/create-mantle` substitutes at install
  * time (ADR-0016) — so the seeded product copy reflects what the
  * operator typed.
  */
 import { execFileSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
-import { CANONICAL_MIGRATIONS } from "@aotterclam/mantle/runtime";
+import { CANONICAL_MIGRATIONS } from "@aotter/mantle/runtime";
 
 const NOW = 1_730_000_000_000;
 

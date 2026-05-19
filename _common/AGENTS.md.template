@@ -1,6 +1,6 @@
 # This site
 
-A {{ARCHETYPE}} site built with @aotterclam/clam-cms on Cloudflare Workers.
+A {{ARCHETYPE}} site built with @aotter/mantle on Cloudflare Workers.
 Public site: {{SITE_URL}}  (placeholder until provision)
 
 ## Commands

@@ -12,8 +12,8 @@
  * updated whenever the live shape evolves significantly.
  */
 
-export const STARTERS_REPO = "AotterClam/mantle-starters";
-export const PREMIUM_REPO = "AotterClam/mantle-starters-premium";
+export const STARTERS_REPO = "aotter/mantle-starters";
+export const PREMIUM_REPO = "aotter/mantle-starters-premium";
 
 export type SourceKind = "public" | "private";
 

@@ -1,14 +1,14 @@
 ---
 archetype: intake
 status: ready
-starter_repo: AotterClam/mantle-starters
+starter_repo: aotter/mantle-starters
 starter_path: intake
 overlays: []
 ---
 
 # `intake` archetype
 
-Follow the [Mantle install brief](https://raw.githubusercontent.com/AotterClam/mantle/main/skills/install/SKILL.md). This file only adds the archetype-specific register hints; Mantle voice rules apply only to the closing welcome letter, not to interview / refuse / adjustment phases.
+Follow the [Mantle install brief](https://raw.githubusercontent.com/aotter/mantle/main/skills/install/SKILL.md). This file only adds the archetype-specific register hints; Mantle voice rules apply only to the closing welcome letter, not to interview / refuse / adjustment phases.
 
 ## What this is
 
@@ -51,4 +51,4 @@ If the interview surfaces additional fields the lead actually needs, edit `manif
 
 ## See also
 
-- [`skills/extend`](https://raw.githubusercontent.com/AotterClam/mantle/main/skills/extend/SKILL.md) — adding additional Schemas / Views / Procedures / Triggers after install.
+- [`skills/extend`](https://raw.githubusercontent.com/aotter/mantle/main/skills/extend/SKILL.md) — adding additional Schemas / Views / Procedures / Triggers after install.

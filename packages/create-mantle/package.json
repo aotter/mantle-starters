@@ -1,13 +1,13 @@
 {
-  "name": "@aotterclam/create-mantle",
+  "name": "@aotter/create-mantle",
   "version": "0.0.11-alpha.10",
   "description": "npx scaffolder for mantle consumer projects. Fetches the starters-monorepo tarball at a runtime-resolved sources.json, merges _common/ + <archetype>/ + (optional) themes/<theme>/ into the user's directory, fills {{PLACEHOLDER}} macros, and prints RUN_NOTES JSON for the Mantle install skill.",
   "license": "MIT",
   "private": true,
-  "homepage": "https://github.com/AotterClam/mantle-starters/tree/develop/packages/create-mantle",
+  "homepage": "https://github.com/aotter/mantle-starters/tree/develop/packages/create-mantle",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AotterClam/mantle-starters.git",
+    "url": "git+https://github.com/aotter/mantle-starters.git",
     "directory": "packages/create-mantle"
   },
   "type": "module",

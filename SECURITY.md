@@ -4,7 +4,7 @@ Do not report vulnerabilities in public issues or discussions.
 
 ## Scope of this repo
 
-This repo ships consumer-facing starter scaffolds. Engine / runtime vulnerabilities should be reported against the parent SDK repo at https://github.com/AotterClam/mantle/security/advisories/new (see that repo's `SECURITY.md`).
+This repo ships consumer-facing starter scaffolds. Engine / runtime vulnerabilities should be reported against the parent SDK repo at https://github.com/aotter/mantle/security/advisories/new (see that repo's `SECURITY.md`).
 
 **In-scope here:**
 
@@ -12,16 +12,16 @@ This repo ships consumer-facing starter scaffolds. Engine / runtime vulnerabilit
 - The `create-mantle` scaffolder (`packages/create-mantle/`).
 - Released tarball assets attached to GitHub releases on this repo.
 
-**Out-of-scope here — report to parent `AotterClam/mantle`:**
+**Out-of-scope here — report to parent `aotter/mantle`:**
 
-- `@aotterclam/mantle-spec`, `@aotterclam/mantle-runtime`, `@aotterclam/mantle-admin-ui`, `@aotterclam/mantle-cloudflare`.
+- `@aotter/mantle-spec`, `@aotter/mantle-runtime`, `@aotter/mantle-admin-ui`, `@aotter/mantle-cloudflare`.
 - Auth, MCP, D1 / KV / asset boundaries, render pipeline, deploy / provision scripts.
 
 ## How to report
 
 Preferred path: open a private GitHub Security Advisory:
 
-https://github.com/AotterClam/mantle-starters/security/advisories/new
+https://github.com/aotter/mantle-starters/security/advisories/new
 
 Fallback contact: `phsu@aotter.net` (subject prefix `[mantle-starters security]`).
 

@@ -79,7 +79,7 @@ function readPackageVersion() {
 function rewriteClamCmsDeps(deps, version) {
   const out = { ...deps };
   for (const name of Object.keys(out)) {
-    if (name.startsWith("@aotterclam/mantle-")) out[name] = version;
+    if (name.startsWith("@aotter/mantle-")) out[name] = version;
   }
   return out;
 }

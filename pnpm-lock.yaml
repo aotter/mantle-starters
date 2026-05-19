@@ -10,9 +10,9 @@ importers:
 
   blank:
     dependencies:
-      '@aotterclam/mantle':
-        specifier: 0.0.11-alpha.10
-        version: 0.0.11-alpha.10(@cloudflare/workers-oauth-provider@0.6.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.19)(zod@4.4.3)
+      '@aotter/mantle':
+        specifier: npm:@aotterclam/mantle@0.0.11-alpha.10
+        version: '@aotterclam/mantle@0.0.11-alpha.10(@cloudflare/workers-oauth-provider@0.6.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.19)(zod@4.4.3)'
       '@cloudflare/workers-oauth-provider':
         specifier: ^0.6.0
         version: 0.6.0
@@ -29,9 +29,9 @@ importers:
         specifier: ^4.4.2
         version: 4.4.3
     devDependencies:
-      '@aotterclam/mantle-spec':
-        specifier: 0.0.11-alpha.10
-        version: 0.0.11-alpha.10(zod@4.4.3)
+      '@aotter/mantle-spec':
+        specifier: npm:@aotterclam/mantle-spec@0.0.11-alpha.10
+        version: '@aotterclam/mantle-spec@0.0.11-alpha.10(zod@4.4.3)'
       '@cloudflare/workers-types':
         specifier: ^4.20260518.1
         version: 4.20260518.1
@@ -47,9 +47,9 @@ importers:
 
   intake:
     dependencies:
-      '@aotterclam/mantle':
-        specifier: 0.0.11-alpha.10
-        version: 0.0.11-alpha.10(@cloudflare/workers-oauth-provider@0.6.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.19)(zod@4.4.3)
+      '@aotter/mantle':
+        specifier: npm:@aotterclam/mantle@0.0.11-alpha.10
+        version: '@aotterclam/mantle@0.0.11-alpha.10(@cloudflare/workers-oauth-provider@0.6.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.19)(zod@4.4.3)'
       '@cloudflare/workers-oauth-provider':
         specifier: ^0.6.0
         version: 0.6.0
@@ -72,9 +72,9 @@ importers:
         specifier: ^4.4.2
         version: 4.4.3
     devDependencies:
-      '@aotterclam/mantle-spec':
-        specifier: 0.0.11-alpha.10
-        version: 0.0.11-alpha.10(zod@4.4.3)
+      '@aotter/mantle-spec':
+        specifier: npm:@aotterclam/mantle-spec@0.0.11-alpha.10
+        version: '@aotterclam/mantle-spec@0.0.11-alpha.10(zod@4.4.3)'
       '@cloudflare/workers-types':
         specifier: ^4.20260518.1
         version: 4.20260518.1
@@ -105,9 +105,9 @@ importers:
 
   presence:
     dependencies:
-      '@aotterclam/mantle':
-        specifier: 0.0.11-alpha.10
-        version: 0.0.11-alpha.10(@cloudflare/workers-oauth-provider@0.6.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.19)(zod@4.4.3)
+      '@aotter/mantle':
+        specifier: npm:@aotterclam/mantle@0.0.11-alpha.10
+        version: '@aotterclam/mantle@0.0.11-alpha.10(@cloudflare/workers-oauth-provider@0.6.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.19)(zod@4.4.3)'
       '@cloudflare/workers-oauth-provider':
         specifier: ^0.6.0
         version: 0.6.0
@@ -130,9 +130,9 @@ importers:
         specifier: ^4.4.2
         version: 4.4.3
     devDependencies:
-      '@aotterclam/mantle-spec':
-        specifier: 0.0.11-alpha.10
-        version: 0.0.11-alpha.10(zod@4.4.3)
+      '@aotter/mantle-spec':
+        specifier: npm:@aotterclam/mantle-spec@0.0.11-alpha.10
+        version: '@aotterclam/mantle-spec@0.0.11-alpha.10(zod@4.4.3)'
       '@cloudflare/workers-types':
         specifier: ^4.20260518.1
         version: 4.20260518.1
@@ -151,9 +151,9 @@ importers:
 
   publication:
     dependencies:
-      '@aotterclam/mantle':
-        specifier: 0.0.11-alpha.10
-        version: 0.0.11-alpha.10(@cloudflare/workers-oauth-provider@0.6.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.19)(zod@4.4.3)
+      '@aotter/mantle':
+        specifier: npm:@aotterclam/mantle@0.0.11-alpha.10
+        version: '@aotterclam/mantle@0.0.11-alpha.10(@cloudflare/workers-oauth-provider@0.6.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.19)(zod@4.4.3)'
       '@cloudflare/workers-oauth-provider':
         specifier: ^0.6.0
         version: 0.6.0
@@ -176,9 +176,9 @@ importers:
         specifier: ^4.4.2
         version: 4.4.3
     devDependencies:
-      '@aotterclam/mantle-spec':
-        specifier: 0.0.11-alpha.10
-        version: 0.0.11-alpha.10(zod@4.4.3)
+      '@aotter/mantle-spec':
+        specifier: npm:@aotterclam/mantle-spec@0.0.11-alpha.10
+        version: '@aotterclam/mantle-spec@0.0.11-alpha.10(zod@4.4.3)'
       '@cloudflare/workers-types':
         specifier: ^4.20260518.1
         version: 4.20260518.1
@@ -197,9 +197,9 @@ importers:
 
   transaction:
     dependencies:
-      '@aotterclam/mantle':
-        specifier: 0.0.11-alpha.10
-        version: 0.0.11-alpha.10(@cloudflare/workers-oauth-provider@0.6.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.19)(zod@4.4.3)
+      '@aotter/mantle':
+        specifier: npm:@aotterclam/mantle@0.0.11-alpha.10
+        version: '@aotterclam/mantle@0.0.11-alpha.10(@cloudflare/workers-oauth-provider@0.6.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260518.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.19)(zod@4.4.3)'
       '@cloudflare/workers-oauth-provider':
         specifier: ^0.6.0
         version: 0.6.0
@@ -222,9 +222,9 @@ importers:
         specifier: ^4.4.2
         version: 4.4.3
     devDependencies:
-      '@aotterclam/mantle-spec':
-        specifier: 0.0.11-alpha.10
-        version: 0.0.11-alpha.10(zod@4.4.3)
+      '@aotter/mantle-spec':
+        specifier: npm:@aotterclam/mantle-spec@0.0.11-alpha.10
+        version: '@aotterclam/mantle-spec@0.0.11-alpha.10(zod@4.4.3)'
       '@cloudflare/workers-types':
         specifier: ^4.20260518.1
         version: 4.20260518.1

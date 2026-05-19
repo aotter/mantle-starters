@@ -62,18 +62,18 @@ jobs:
         run: |
           set -euo pipefail
           VER="${{ steps.ver.outputs.version }}"
-          TARBALL=$(ls packages/create-mantle/aotterclam-create-mantle-*.tgz | head -n 1)
+          TARBALL=$(ls packages/create-mantle/aotter-create-mantle-*.tgz | head -n 1)
           if [ -z "$TARBALL" ]; then
             echo "::error::pnpm pack did not produce a tarball"
             exit 1
           fi
           # Versioned + 'latest' aliases. The 'latest' alias powers:
-          # npx https://github.com/AotterClam/mantle-starters/releases/latest/download/aotterclam-create-mantle.tgz
+          # npx https://github.com/aotter/mantle-starters/releases/latest/download/aotter-create-mantle.tgz
           mkdir -p out
-          cp "$TARBALL" "out/aotterclam-create-mantle-${VER}.tgz"
-          cp "$TARBALL" "out/aotterclam-create-mantle.tgz"
-          (cd out && sha256sum aotterclam-create-mantle-${VER}.tgz > aotterclam-create-mantle-${VER}.tgz.sha256)
-          (cd out && sha256sum aotterclam-create-mantle.tgz > aotterclam-create-mantle.tgz.sha256)
+          cp "$TARBALL" "out/aotter-create-mantle-${VER}.tgz"
+          cp "$TARBALL" "out/aotter-create-mantle.tgz"
+          (cd out && sha256sum aotter-create-mantle-${VER}.tgz > aotter-create-mantle-${VER}.tgz.sha256)
+          (cd out && sha256sum aotter-create-mantle.tgz > aotter-create-mantle.tgz.sha256)
           ls -la out/
 
       - name: Attach to GitHub release

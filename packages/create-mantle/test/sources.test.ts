@@ -15,7 +15,7 @@ describe("resolveSource (back-compat, stale fallback)", () => {
   it("returns presence → presence starter (1:1, no overlay)", () => {
     const s = resolveSource("presence");
     expect(s.kind).toBe("public");
-    expect(s.repo).toBe("AotterClam/mantle-starters");
+    expect(s.repo).toBe("aotter/mantle-starters");
     expect(s.path).toBe("presence");
     expect(s.overlays).toBeUndefined();
   });

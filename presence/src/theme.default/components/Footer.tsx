@@ -1,5 +1,5 @@
 /** @jsxImportSource hono/jsx */
-import type { SiteConfig } from "@aotterclam/mantle/spec";
+import type { SiteConfig } from "@aotter/mantle/spec";
 
 export interface FooterProps {
   readonly site: SiteConfig;
@@ -16,7 +16,7 @@ export function Footer(props: FooterProps) {
       </div>
       <div>
         built on{" "}
-        <a href="https://github.com/AotterClam/mantle">clam·mantle</a>
+        <a href="https://github.com/aotter/mantle">AotterMantle</a>
       </div>
     </footer>
   );

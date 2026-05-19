@@ -39,4 +39,4 @@ pnpm theme:reset tokens.ts
 The locked `src/theme.default/` baseline remains untouched.
 
 Real artist content lands separately. Track at
-[Epic AotterClam/mantle#116](https://github.com/AotterClam/mantle/issues/116).
+[Epic aotter/mantle#116](https://github.com/aotter/mantle/issues/116).

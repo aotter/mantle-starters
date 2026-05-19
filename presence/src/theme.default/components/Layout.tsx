@@ -1,6 +1,6 @@
 /** @jsxImportSource hono/jsx */
-import type { SiteConfig } from "@aotterclam/mantle/spec";
-import { renderSeoTagsHtml, type SeoMeta } from "@aotterclam/mantle/runtime";
+import type { SiteConfig } from "@aotter/mantle/spec";
+import { renderSeoTagsHtml, type SeoMeta } from "@aotter/mantle/runtime";
 import { html, raw } from "hono/html";
 import overrides from "../../theme/index.js";
 import { HEADER_RUNTIME_JS, SITE_CSS, THEME_BOOTSTRAP_JS } from "../styles.js";

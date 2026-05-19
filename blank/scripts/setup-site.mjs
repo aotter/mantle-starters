@@ -79,9 +79,9 @@ function readPackageVersion() {
 function rewriteWorkspaceClamDeps(deps, version) {
   const out = { ...deps };
   for (const name of [
-    "@aotterclam/mantle/spec",
-    "@aotterclam/mantle/runtime",
-    "@aotterclam/mantle/cloudflare",
+    "@aotter/mantle/spec",
+    "@aotter/mantle/runtime",
+    "@aotter/mantle/cloudflare",
   ]) {
     if (out[name] === "workspace:*") out[name] = version;
   }

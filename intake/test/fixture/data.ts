@@ -1,4 +1,4 @@
-import type { SiteConfig } from "@aotterclam/mantle/spec";
+import type { SiteConfig } from "@aotter/mantle/spec";
 
 /**
  * Fixture data for the starter's integration tests + local-dev demo.
@@ -25,7 +25,7 @@ export const FIXTURE_SITE: SiteConfig = {
   locales: ["en", "zh-TW"],
   canonicalLocale: "en",
   // Mirror intake's declared `siteDefaults.media.purposes`
-  // (AotterClam/mantle#262). v0.0.11-alpha.9 made `SiteConfig.media`
+  // (aotter/mantle#262). v0.0.11-alpha.9 made `SiteConfig.media`
   // required on the runtime read shape.
   media: { purposes: ["post-cover"] },
 };
@@ -126,13 +126,13 @@ export const FIXTURE_PAGES: readonly FixturePage[] = [
         locale: "en",
         title: "About",
         intro: "What this starter is for.",
-        body: "{{BRAND}} is a reference deployment of the mantle v0.1.0 manifest engine on Cloudflare Workers. It demonstrates the four locked atoms — Schema, View, Procedure, Trigger — composed into a real, runnable site. Source: github.com/AotterClam/mantle.",
+        body: "{{BRAND}} is a reference deployment of the mantle v0.1.0 manifest engine on Cloudflare Workers. It demonstrates the four locked atoms — Schema, View, Procedure, Trigger — composed into a real, runnable site. Source: github.com/aotter/mantle.",
       },
       {
         locale: "zh-TW",
         title: "關於",
         intro: "這個 starter 的用途。",
-        body: "{{BRAND}} 是 mantle v0.1.0 manifest 引擎跑在 Cloudflare Workers 上的範例佈署。它把四個 locked atom（Schema、View、Procedure、Trigger）組成一個真的能跑的網站。原始碼：github.com/AotterClam/mantle。",
+        body: "{{BRAND}} 是 mantle v0.1.0 manifest 引擎跑在 Cloudflare Workers 上的範例佈署。它把四個 locked atom（Schema、View、Procedure、Trigger）組成一個真的能跑的網站。原始碼：github.com/aotter/mantle。",
       },
     ],
   },

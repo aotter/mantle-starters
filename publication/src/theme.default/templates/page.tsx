@@ -1,7 +1,7 @@
 // @clam-override-class L4-template — see src/theme.default/README.md
 /** @jsxImportSource hono/jsx */
 import { raw } from "hono/html";
-import type { EntryContext } from "@aotterclam/mantle/runtime";
+import type { EntryContext } from "@aotter/mantle/runtime";
 import type { LayoutComponent } from "../components/Layout.js";
 import { renderMarkdown } from "./utils.js";
 

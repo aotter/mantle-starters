@@ -11,7 +11,7 @@
  * Input shape enforced by the manifest (`required: [productSlug]`).
  */
 
-import type { AnyHandler } from "@aotterclam/mantle/runtime";
+import type { AnyHandler } from "@aotter/mantle/runtime";
 import { defineHandler } from "./_context.js";
 import { getInventoryActor } from "../durableObjects/InventoryActor.js";
 

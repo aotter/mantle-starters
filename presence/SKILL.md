@@ -1,14 +1,14 @@
 ---
 archetype: presence
 status: ready
-starter_repo: AotterClam/mantle-starters
+starter_repo: aotter/mantle-starters
 starter_path: presence
 overlays: []
 ---
 
 # `presence` archetype
 
-Follow the [Mantle install brief](https://raw.githubusercontent.com/AotterClam/mantle/main/skills/install/SKILL.md). This file only adds the archetype-specific register hints; Mantle voice rules apply only to the closing welcome letter, not to interview / refuse / adjustment phases.
+Follow the [Mantle install brief](https://raw.githubusercontent.com/aotter/mantle/main/skills/install/SKILL.md). This file only adds the archetype-specific register hints; Mantle voice rules apply only to the closing welcome letter, not to interview / refuse / adjustment phases.
 
 ## What this is
 
@@ -40,4 +40,4 @@ Open the admin and list the current collections. Then draft the home for "{{BRAN
 
 ## Schema/View/Procedure extensions
 
-None. `presence` ships ready-to-go. Customization belongs in [`skills/customize-design`](https://raw.githubusercontent.com/AotterClam/mantle/main/skills/customize-design/SKILL.md) after deploy.
+None. `presence` ships ready-to-go. Customization belongs in [`skills/customize-design`](https://raw.githubusercontent.com/aotter/mantle/main/skills/customize-design/SKILL.md) after deploy.
