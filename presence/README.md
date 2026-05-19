@@ -4,14 +4,21 @@
 > it on GitHub at `aotter/mantle-starters/presence`, the
 > Getting-started block below **does not work on a raw clone** —
 > `src/mantleConfig.ts` contains literal `{{BRAND}}` / `{{LOCALES}}` /
-> `{{DESCRIPTION}}` placeholders that `@aotter/create-mantle`
+> `{{DESCRIPTION}}` placeholders that the `create-mantle` scaffolder
 > substitutes at install time. A fresh-clone `pnpm dev` throws
 > `SyntaxError: Expected property name or '}' in JSON` at boot.
 >
 > **To evaluate this starter end-to-end**, scaffold a throwaway site:
 >
 > ```bash
-> npm create @aotter/mantle@alpha /tmp/eval-presence
+> cd /tmp
+> npx https://github.com/aotter/mantle-starters/releases/latest/download/aotter-create-mantle.tgz presence \
+>   --project-name eval-presence \
+>   --brand "Eval Presence" \
+>   --description "Throwaway presence mantle evaluation" \
+>   --locales "en" \
+>   --github-owner "<your-github-login>" \
+>   --summary "Evaluate presence starter"
 > cd /tmp/eval-presence
 > # then follow the Getting-started block below in that directory
 > ```
