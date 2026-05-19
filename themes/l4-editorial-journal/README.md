@@ -7,7 +7,7 @@ Source Serif 4 body, vermilion accent.
 
 Full design reference (typography behaviors, page chrome, drop cap,
 post-list grid, contact-form styling) lives upstream at
-[`mantle/docs/design-references/editorial-blog-2026-05-05.md`](https://github.com/AotterClam/mantle/blob/main/docs/design-references/editorial-blog-2026-05-05.md).
+[`mantle/docs/design-references/editorial-blog-2026-05-05.md`](https://github.com/aotter/mantle/blob/main/docs/design-references/editorial-blog-2026-05-05.md).
 
 ## What's in this stub
 
@@ -52,7 +52,7 @@ overrides that aren't part of the v0.0.9 mechanism stub scope:
 
 When artist deliverables land, they slot under `src/theme/components/`
 and `src/theme/templates/` per the
-[`customize-design` skill](https://github.com/AotterClam/mantle/blob/main/skills/customize-design/SKILL.md).
+[`customize-design` skill](https://github.com/aotter/mantle/blob/main/skills/customize-design/SKILL.md).
 
 ## Status
 
@@ -67,4 +67,4 @@ pnpm theme:reset tokens.ts
 ```
 
 The locked `src/theme.default/` baseline remains untouched. Track at
-[Epic AotterClam/mantle#116](https://github.com/AotterClam/mantle/issues/116).
+[Epic aotter/mantle#116](https://github.com/aotter/mantle/issues/116).

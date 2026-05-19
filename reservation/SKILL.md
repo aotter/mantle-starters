@@ -1,7 +1,7 @@
 ---
 archetype: reservation
 status: roadmap
-starter_repo: AotterClam/mantle-starters
+starter_repo: aotter/mantle-starters
 starter_path: publication
 overlays: []
 ---

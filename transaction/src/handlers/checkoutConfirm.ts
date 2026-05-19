@@ -30,7 +30,7 @@
  * succeed second time around.
  */
 
-import type { AnyHandler } from "@aotterclam/mantle/runtime";
+import type { AnyHandler } from "@aotter/mantle/runtime";
 import { buildPaymentProvider, type PaymentEnv } from "../payment/index.js";
 import { defineHandler } from "./_context.js";
 

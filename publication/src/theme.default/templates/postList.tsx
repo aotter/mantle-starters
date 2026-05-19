@@ -1,6 +1,6 @@
 // @clam-override-class L4-template — see src/theme.default/README.md
 /** @jsxImportSource hono/jsx */
-import type { ListContext } from "@aotterclam/mantle/runtime";
+import type { ListContext } from "@aotter/mantle/runtime";
 import type { LayoutComponent } from "../components/Layout.js";
 import type { I18nBundle } from "../i18n/index.js";
 import { excerpt, isoDate } from "./utils.js";

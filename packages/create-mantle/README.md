@@ -1,4 +1,4 @@
-# `@aotterclam/create-mantle`
+# `@aotter/create-mantle`
 
 Scaffolder for mantle v0.1.0 consumer projects. It is distributed as a
 tarball attached to `mantle-starters` GitHub releases, not as an npm
@@ -6,7 +6,7 @@ package. The package name and `create-mantle` bin exist so `npx` can run
 the GitHub release tarball directly.
 
 ```bash
-npx https://github.com/AotterClam/mantle-starters/releases/latest/download/aotterclam-create-mantle.tgz \
+npx https://github.com/aotter/mantle-starters/releases/latest/download/aotter-create-mantle.tgz \
   <archetype> \
   --project-name <name> \
   --brand "<brand>" \
@@ -18,11 +18,11 @@ npx https://github.com/AotterClam/mantle-starters/releases/latest/download/aotte
   [--ref <git-ref>]
 ```
 
-Recommended end-user path: open [mantle.aotterclam.ai](https://mantle.aotterclam.ai/), pick an archetype and theme, then paste the generated prompt into Claude Code / Cursor / Codex. The Mantle install skill in [`AotterClam/mantle`](https://github.com/AotterClam/mantle/tree/develop/skills/install) invokes this package after it interviews the user for brand, locales, audience, and deployment intent.
+Recommended end-user path: open [mantle.aotterclam.ai](https://mantle.aotterclam.ai/), pick an archetype and theme, then paste the generated prompt into Claude Code / Cursor / Codex. The Mantle install skill in [`aotter/mantle`](https://github.com/aotter/mantle/tree/develop/skills/install) invokes this package after it interviews the user for brand, locales, audience, and deployment intent.
 
 ## What it does
 
-1. Fetches `sources.json` from `AotterClam/mantle-starters` at the requested ref (default `develop`) — resolves archetype -> starter path + (optional) theme overlay. Falls back to a bundled stale snapshot if GH is unreachable.
+1. Fetches `sources.json` from `aotter/mantle-starters` at the requested ref (default `develop`) — resolves archetype -> starter path + (optional) theme overlay. Falls back to a bundled stale snapshot if GH is unreachable.
 2. Downloads a tarball of `mantle-starters` at the same ref.
 3. Extracts and merges into the destination directory in this order: `_common/` → `<archetype>/` → each archetype overlay (in order) → (optional) `themes/<theme-key>/`. Later layers overwrite earlier files on conflict.
 4. Substitutes `{{PLACEHOLDER}}` macros per ADR-0016.
@@ -52,7 +52,7 @@ Recommended end-user path: open [mantle.aotterclam.ai](https://mantle.aotterclam
 {
   "archetype": "presence",
   "theme": null,
-  "starter_source": "AotterClam/mantle-starters/publication",
+  "starter_source": "aotter/mantle-starters/publication",
   "theme_source": null,
   "overlays": [],
   "files_written": ["AGENTS.md", "mantle/site.md", "package.json", "..."],
@@ -66,15 +66,15 @@ With a theme applied:
 {
   "archetype": "publication",
   "theme": "l4-editorial-warm",
-  "starter_source": "AotterClam/mantle-starters/publication",
-  "theme_source": "AotterClam/mantle-starters/themes/l4-editorial-warm",
+  "starter_source": "aotter/mantle-starters/publication",
+  "theme_source": "aotter/mantle-starters/themes/l4-editorial-warm",
   ...
 }
 ```
 
 ## Source map: runtime fetch
 
-`sources.json` lives at the root of [`AotterClam/mantle-starters`](https://github.com/AotterClam/mantle-starters) and is fetched at runtime. Schema:
+`sources.json` lives at the root of [`aotter/mantle-starters`](https://github.com/aotter/mantle-starters) and is fetched at runtime. Schema:
 
 ```json
 {
@@ -128,7 +128,7 @@ The starters' own `setup:site` script keeps working for in-project reconfigurati
 
 ## See also
 
-- [ADR-0016](https://github.com/AotterClam/mantle/blob/develop/docs/adr/0016-site-semantic-layer.md) — placeholder macro list + update workflow
-- [ADR-0013](https://github.com/AotterClam/mantle/blob/develop/docs/adr/0013-agent-provisioned-consumer-projects.md) — the broader agent-provisioned install flow
-- [Epic #116](https://github.com/AotterClam/mantle/issues/116) — v0.0.9 install UX pivot (Mantle scope narrow + 1:1 starter + theme overlay; this package is sub-issue #121)
-- [`AotterClam/mantle-starters`](https://github.com/AotterClam/mantle-starters) — public starters monorepo this package dispatches against
+- [ADR-0016](https://github.com/aotter/mantle/blob/develop/docs/adr/0016-site-semantic-layer.md) — placeholder macro list + update workflow
+- [ADR-0013](https://github.com/aotter/mantle/blob/develop/docs/adr/0013-agent-provisioned-consumer-projects.md) — the broader agent-provisioned install flow
+- [Epic #116](https://github.com/aotter/mantle/issues/116) — v0.0.9 install UX pivot (Mantle scope narrow + 1:1 starter + theme overlay; this package is sub-issue #121)
+- [`aotter/mantle-starters`](https://github.com/aotter/mantle-starters) — public starters monorepo this package dispatches against

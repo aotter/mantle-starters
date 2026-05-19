@@ -41,4 +41,4 @@ The locked `src/theme.default/` baseline remains untouched.
 
 Real artist content (component / template overrides, font assets,
 license-cleared display faces) lands separately. Track at
-[Epic AotterClam/mantle#116](https://github.com/AotterClam/mantle/issues/116).
+[Epic aotter/mantle#116](https://github.com/aotter/mantle/issues/116).

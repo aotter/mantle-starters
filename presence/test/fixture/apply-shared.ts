@@ -16,8 +16,8 @@ import {
   entryHtmlKey,
   entryMarkdownKey,
   serializeEntryAsMarkdown,
-} from "@aotterclam/mantle/runtime";
-import type { Entry, ContentState } from "@aotterclam/mantle/spec";
+} from "@aotter/mantle/runtime";
+import type { Entry, ContentState } from "@aotter/mantle/spec";
 import { pageTemplate } from "../../src/theme.default/templates/index.js";
 import {
   FIXTURE_AUTHOR_ID,

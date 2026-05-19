@@ -30,8 +30,8 @@ import {
   listHtmlKey,
   llmsTxtKey,
   serializeEntryAsMarkdown,
-} from "@aotterclam/mantle/runtime";
-import type { Entry, ContentState } from "@aotterclam/mantle/spec";
+} from "@aotter/mantle/runtime";
+import type { Entry, ContentState } from "@aotter/mantle/spec";
 import { baseline } from "../../src/themeWiring.js";
 
 const { page: pageTemplate, post: postTemplate, postList: postListTemplate } = baseline.templates;

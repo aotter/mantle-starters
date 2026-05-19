@@ -1,6 +1,6 @@
 /** @jsxImportSource hono/jsx */
 import { raw } from "hono/html";
-import type { SiteConfig } from "@aotterclam/mantle/spec";
+import type { SiteConfig } from "@aotter/mantle/spec";
 
 /**
  * Minimal HTML doc envelope for the customer-facing storefront.

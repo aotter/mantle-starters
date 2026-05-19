@@ -13,7 +13,7 @@
  * read-order-status.
  */
 
-import type { AnyHandler, CmsRuntime } from "@aotterclam/mantle/runtime";
+import type { AnyHandler, CmsRuntime } from "@aotter/mantle/runtime";
 import { buildPaymentProvider, type PaymentEnv } from "../payment/index.js";
 import { defineHandler } from "./_context.js";
 import { orderEntryId } from "./orderConsumer.js";

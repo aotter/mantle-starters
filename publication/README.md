@@ -1,7 +1,7 @@
 # `mantle-starters/publication`
 
 > **This README ships with your scaffolded project.** If you're reading
-> it on GitHub at `AotterClam/mantle-starters/publication`, the
+> it on GitHub at `aotter/mantle-starters/publication`, the
 > Quickstart below **does not work on a raw clone** — `src/clamConfig.ts`
 > contains literal `{{BRAND}}` / `{{LOCALES}}` / `{{DESCRIPTION}}`
 > placeholders that the `create-mantle` scaffolder substitutes at
@@ -14,7 +14,7 @@
 >
 > ```bash
 > cd /tmp
-> npx https://github.com/AotterClam/mantle-starters/releases/latest/download/aotterclam-create-mantle.tgz publication \
+> npx https://github.com/aotter/mantle-starters/releases/latest/download/aotter-create-mantle.tgz publication \
 >   --project-name eval-publication \
 >   --brand "Eval Publication" \
 >   --description "Throwaway publication mantle evaluation" \
@@ -294,7 +294,7 @@ Before deploying THIS starter as-is:
 
 ## Production smoke recipe
 
-End-to-end verification on a real Cloudflare account, ~20 min. Run this whenever the starter ships, an SDK release lands, or before declaring a v0.1.x release tag clean. Closes [#25](https://github.com/AotterClam/mantle/issues/25)'s production-smoke acceptance bullet.
+End-to-end verification on a real Cloudflare account, ~20 min. Run this whenever the starter ships, an SDK release lands, or before declaring a v0.1.x release tag clean. Closes [#25](https://github.com/aotter/mantle/issues/25)'s production-smoke acceptance bullet.
 
 Prerequisites:
 
@@ -394,10 +394,10 @@ Prerequisites:
 
 ### What this proves
 
-- Pinned-Skill install path works end-to-end ([#22](https://github.com/AotterClam/mantle/issues/22))
-- Provision + deploy creates real CF resources ([#23](https://github.com/AotterClam/mantle/issues/23))
-- Standalone GitHub-only install + MCP smoke ([#24](https://github.com/AotterClam/mantle/issues/24))
-- Blog/publication vertical end-to-end ([#25](https://github.com/AotterClam/mantle/issues/25))
+- Pinned-Skill install path works end-to-end ([#22](https://github.com/aotter/mantle/issues/22))
+- Provision + deploy creates real CF resources ([#23](https://github.com/aotter/mantle/issues/23))
+- Standalone GitHub-only install + MCP smoke ([#24](https://github.com/aotter/mantle/issues/24))
+- Blog/publication vertical end-to-end ([#25](https://github.com/aotter/mantle/issues/25))
 
 ### When this fails
 

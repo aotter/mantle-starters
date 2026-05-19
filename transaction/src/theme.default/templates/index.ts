@@ -1,4 +1,4 @@
-import { TemplateRegistry } from "@aotterclam/mantle/runtime";
+import { TemplateRegistry } from "@aotter/mantle/runtime";
 import overrides from "../../theme/index.js";
 
 /**

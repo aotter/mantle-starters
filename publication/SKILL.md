@@ -1,14 +1,14 @@
 ---
 archetype: publication
 status: ready
-starter_repo: AotterClam/mantle-starters
+starter_repo: aotter/mantle-starters
 starter_path: publication
 overlays: []
 ---
 
 # `publication` archetype
 
-Follow the [Mantle install brief](https://raw.githubusercontent.com/AotterClam/mantle/main/skills/install/SKILL.md). This file only adds the archetype-specific register hints; Mantle voice rules apply only to the closing welcome letter, not to interview / refuse / adjustment phases.
+Follow the [Mantle install brief](https://raw.githubusercontent.com/aotter/mantle/main/skills/install/SKILL.md). This file only adds the archetype-specific register hints; Mantle voice rules apply only to the closing welcome letter, not to interview / refuse / adjustment phases.
 
 ## What this is
 
@@ -78,4 +78,4 @@ Open the admin and list the posts collection (should be empty). Draft a "Hello, 
 
 ## Schema/View/Procedure extensions
 
-None. The starter carries everything. If the user wants newsletter signup, search, or a public widget on top of `publication`, route them to [`skills/extend`](https://raw.githubusercontent.com/AotterClam/mantle/main/skills/extend/SKILL.md) **after** deploy — don't add manifests during install.
+None. The starter carries everything. If the user wants newsletter signup, search, or a public widget on top of `publication`, route them to [`skills/extend`](https://raw.githubusercontent.com/aotter/mantle/main/skills/extend/SKILL.md) **after** deploy — don't add manifests during install.

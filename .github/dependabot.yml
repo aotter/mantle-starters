@@ -6,8 +6,8 @@
 # noise sane, deps are batched into named groups per starter so a weekly
 # sweep ends up at ~5 grouped PRs per starter at worst, not 5 × N.
 #
-# `@aotterclam/*` is excluded: SDK bumps land via the mantle release
-# pipeline + a deliberate `pnpm up @aotterclam/*` in each starter,
+# `@aotter/*` is excluded: SDK bumps land via the mantle release
+# pipeline + a deliberate `pnpm up @aotter/*` in each starter,
 # never via dependabot patch/minor PRs.
 #
 # Lockfile note: dependabot's npm ecosystem updates `package.json` but
@@ -30,7 +30,7 @@ updates:
       - starter:blank
       - dependencies
     ignore:
-      - dependency-name: "@aotterclam/*"
+      - dependency-name: "@aotter/*"
     groups:
       types:
         patterns: ["@types/*"]
@@ -53,7 +53,7 @@ updates:
       - starter:publication
       - dependencies
     ignore:
-      - dependency-name: "@aotterclam/*"
+      - dependency-name: "@aotter/*"
     groups:
       types:
         patterns: ["@types/*"]
@@ -76,7 +76,7 @@ updates:
       - starter:presence
       - dependencies
     ignore:
-      - dependency-name: "@aotterclam/*"
+      - dependency-name: "@aotter/*"
     groups:
       types:
         patterns: ["@types/*"]
@@ -99,7 +99,7 @@ updates:
       - starter:intake
       - dependencies
     ignore:
-      - dependency-name: "@aotterclam/*"
+      - dependency-name: "@aotter/*"
     groups:
       types:
         patterns: ["@types/*"]
@@ -122,7 +122,7 @@ updates:
       - starter:transaction
       - dependencies
     ignore:
-      - dependency-name: "@aotterclam/*"
+      - dependency-name: "@aotter/*"
     groups:
       types:
         patterns: ["@types/*"]

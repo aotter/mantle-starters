@@ -1,6 +1,6 @@
 // @clam-override-class L4-template — see src/theme.default/README.md
 /** @jsxImportSource hono/jsx */
-import type { SiteConfig } from "@aotterclam/mantle/spec";
+import type { SiteConfig } from "@aotter/mantle/spec";
 import type { LayoutComponent } from "../components/Layout.js";
 import type { I18nBundle } from "../i18n/index.js";
 

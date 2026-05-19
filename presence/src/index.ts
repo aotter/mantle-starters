@@ -10,7 +10,7 @@ import {
   type Auth,
   type AuthMethodConfig,
   type PublicRouteContext,
-} from "@aotterclam/mantle/cloudflare";
+} from "@aotter/mantle/cloudflare";
 import { buildCmsConfig, type Env } from "./clamConfig.js";
 import {
   contactTemplate,

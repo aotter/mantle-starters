@@ -1,4 +1,4 @@
-import { createPublicPathResolver, type PublicPathResolver } from "@aotterclam/mantle/runtime";
+import { createPublicPathResolver, type PublicPathResolver } from "@aotter/mantle/runtime";
 
 /**
  * The starter's collection→URL routing table. Single source of truth

@@ -1,7 +1,7 @@
 # `mantle-starters/transaction`
 
 > **This README ships with your scaffolded project.** If you're reading
-> it on GitHub at `AotterClam/mantle-starters/transaction`, the
+> it on GitHub at `aotter/mantle-starters/transaction`, the
 > Getting-started block below **does not work on a raw clone** —
 > `src/clamConfig.ts` contains literal `{{BRAND}}` / `{{LOCALES}}` /
 > `{{DESCRIPTION}}` placeholders that the `create-mantle` scaffolder
@@ -12,7 +12,7 @@
 >
 > ```bash
 > cd /tmp
-> npx https://github.com/AotterClam/mantle-starters/releases/latest/download/aotterclam-create-mantle.tgz transaction \
+> npx https://github.com/aotter/mantle-starters/releases/latest/download/aotter-create-mantle.tgz transaction \
 >   --project-name eval-transaction \
 >   --brand "Eval Transaction" \
 >   --description "Throwaway transaction mantle evaluation" \
@@ -216,7 +216,7 @@ checks. `pnpm deploy` chains it in front of `wrangler deploy` automatically,
 so the manual form is only needed for an ahead-of-time check.
 
 Real-user installs go through the Mantle install Skill — see the
-[Mantle install brief](https://raw.githubusercontent.com/AotterClam/mantle/main/skills/install/SKILL.md)
+[Mantle install brief](https://raw.githubusercontent.com/aotter/mantle/main/skills/install/SKILL.md)
 and this starter's [`SKILL.md`](SKILL.md), which carries the payment
 provider interview + scaffolding procedure.
 
@@ -224,5 +224,5 @@ provider interview + scaffolding procedure.
 
 - [`SKILL.md`](SKILL.md) — Mantle's install-time interview + provider wiring
 - [`src/payment/providers/README.md`](src/payment/providers/README.md) — provider templates explained
-- [`skills/extend`](https://raw.githubusercontent.com/AotterClam/mantle/main/skills/extend/SKILL.md) — adding Schemas / Views / Procedures / Triggers
+- [`skills/extend`](https://raw.githubusercontent.com/aotter/mantle/main/skills/extend/SKILL.md) — adding Schemas / Views / Procedures / Triggers
 - [`reservation/`](../reservation/) — sibling starter (roadmap, v0.2) for time-bounded bookings. Same DO + Queue shape; documented as a forward-spec.

@@ -19,7 +19,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const STARTERS_REPO = "AotterClam/mantle-starters";
+const STARTERS_REPO = "aotter/mantle-starters";
 const STARTERS_REF = "main";
 
 function fail(msg) {

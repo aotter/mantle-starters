@@ -2,7 +2,7 @@
 
 Theme overlays for mantle v0.0.9+. Each theme ships files that
 overlay onto `src/theme/` in the scaffolded consumer project. The
-overlay merge happens in `@aotterclam/create-mantle` after
+overlay merge happens in `@aotter/create-mantle` after
 `_common/` + `<archetype>/` land, so theme files always win on
 conflict against archetype defaults.
 
@@ -33,7 +33,7 @@ the CSS var override, and the second registers it as
 `ThemeOverride.tokens` so the generated site actually appends it after
 the baseline. Component / template / icon / i18n overrides slot into
 the same paths the [`customize-design`
-skill](https://github.com/AotterClam/mantle/blob/main/skills/customize-design/SKILL.md)
+skill](https://github.com/aotter/mantle/blob/main/skills/customize-design/SKILL.md)
 documents.
 
 Removing an install-time token theme in a generated project should be
@@ -63,7 +63,7 @@ ship separately.
 
 `l4-editorial-journal` has the richest design provenance: it ports the
 visual system documented at
-[`mantle/docs/design-references/editorial-blog-2026-05-05.md`](https://github.com/AotterClam/mantle/blob/main/docs/design-references/editorial-blog-2026-05-05.md).
+[`mantle/docs/design-references/editorial-blog-2026-05-05.md`](https://github.com/aotter/mantle/blob/main/docs/design-references/editorial-blog-2026-05-05.md).
 The full design (drop caps, post-list grid, mono eyebrow metadata,
 vermilion mid-dot wordmark, hero block) requires component overrides
 that land when artist work resumes.

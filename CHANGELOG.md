@@ -4,7 +4,7 @@ All notable changes to this repository will be documented in this file.
 
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-The repository version reflects the `create-mantle` scaffolder tarball attached to each GitHub release. Individual starter packages pin `@aotterclam/mantle-*` versions independently inside their own `package.json`.
+The repository version reflects the `create-mantle` scaffolder tarball attached to each GitHub release. Individual starter packages pin `@aotter/mantle-*` versions independently inside their own `package.json`.
 
 ## [Unreleased]
 

@@ -1,7 +1,7 @@
 # `mantle-starters/intake`
 
 > **This README ships with your scaffolded project.** If you're reading
-> it on GitHub at `AotterClam/mantle-starters/intake`, the
+> it on GitHub at `aotter/mantle-starters/intake`, the
 > Getting-started block below **does not work on a raw clone** —
 > `src/clamConfig.ts` contains literal `{{BRAND}}` / `{{LOCALES}}` /
 > `{{DESCRIPTION}}` placeholders that the `create-mantle` scaffolder
@@ -12,7 +12,7 @@
 >
 > ```bash
 > cd /tmp
-> npx https://github.com/AotterClam/mantle-starters/releases/latest/download/aotterclam-create-mantle.tgz intake \
+> npx https://github.com/aotter/mantle-starters/releases/latest/download/aotter-create-mantle.tgz intake \
 >   --project-name eval-intake \
 >   --brand "Eval Intake" \
 >   --description "Throwaway intake mantle evaluation" \
@@ -54,7 +54,7 @@ For a publication-only starter without a leads form, use
 
 If your intake form needs additional fields, edit `manifests/leads.yaml`
 directly. To add a fully separate Schema, route through
-[`skills/extend`](https://github.com/AotterClam/mantle/blob/main/skills/extend/SKILL.md).
+[`skills/extend`](https://github.com/aotter/mantle/blob/main/skills/extend/SKILL.md).
 
 ## Getting started
 
@@ -104,5 +104,5 @@ It re-enables `MANTLE_LETTER_NOT_WRITTEN` and any future pre-deploy-only checks.
 is only needed when you want the gate without deploying.
 
 Real-user installs go through the install Skill — see the
-[Mantle install brief](https://github.com/AotterClam/mantle/blob/main/skills/install/SKILL.md)
-and the [`intake` archetype brief](https://github.com/AotterClam/mantle/blob/main/skills/install/archetypes/intake.md).
+[Mantle install brief](https://github.com/aotter/mantle/blob/main/skills/install/SKILL.md)
+and the [`intake` archetype brief](https://github.com/aotter/mantle/blob/main/skills/install/archetypes/intake.md).

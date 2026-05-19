@@ -1,7 +1,7 @@
 # `mantle-starters/presence`
 
 > **This README ships with your scaffolded project.** If you're reading
-> it on GitHub at `AotterClam/mantle-starters/presence`, the
+> it on GitHub at `aotter/mantle-starters/presence`, the
 > Getting-started block below **does not work on a raw clone** —
 > `src/clamConfig.ts` contains literal `{{BRAND}}` / `{{LOCALES}}` /
 > `{{DESCRIPTION}}` placeholders that the `create-mantle` scaffolder
@@ -12,7 +12,7 @@
 >
 > ```bash
 > cd /tmp
-> npx https://github.com/AotterClam/mantle-starters/releases/latest/download/aotterclam-create-mantle.tgz presence \
+> npx https://github.com/aotter/mantle-starters/releases/latest/download/aotter-create-mantle.tgz presence \
 >   --project-name eval-presence \
 >   --brand "Eval Presence" \
 >   --description "Throwaway presence mantle evaluation" \
@@ -102,8 +102,8 @@ checks. `pnpm deploy` chains it in front of `wrangler deploy`, so the
 manual form is only needed for an ahead-of-time check.
 
 Real-user installs go through the install Skill — see the
-[Mantle install brief](https://github.com/AotterClam/mantle/blob/main/skills/install/SKILL.md)
-and the [`presence` archetype brief](https://github.com/AotterClam/mantle/blob/main/skills/install/archetypes/presence.md).
+[Mantle install brief](https://github.com/aotter/mantle/blob/main/skills/install/SKILL.md)
+and the [`presence` archetype brief](https://github.com/aotter/mantle/blob/main/skills/install/archetypes/presence.md).
 
 ## Replacing the example
 
@@ -113,5 +113,5 @@ and the [`presence` archetype brief](https://github.com/AotterClam/mantle/blob/m
    doesn't need a contact form, or tighten the Schema if you want
    additional contact fields.
 3. `src/theme/` — customize visual tokens via `pnpm theme:fork
-   tokens.ts`. See [`skills/customize-design`](https://github.com/AotterClam/mantle/blob/main/skills/customize-design/SKILL.md).
+   tokens.ts`. See [`skills/customize-design`](https://github.com/aotter/mantle/blob/main/skills/customize-design/SKILL.md).
 4. `pnpm validate` after any manifest edit.

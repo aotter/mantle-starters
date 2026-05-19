@@ -19,8 +19,8 @@ import {
   listHtmlKey,
   llmsTxtKey,
   serializeEntryAsMarkdown,
-} from "@aotterclam/mantle/runtime";
-import type { ContentState, Entry, SiteConfig } from "@aotterclam/mantle/spec";
+} from "@aotter/mantle/runtime";
+import type { ContentState, Entry, SiteConfig } from "@aotter/mantle/spec";
 import {
   pageTemplate,
   postListTemplate,
@@ -148,7 +148,7 @@ function readSeed(path: string, overrides: { readonly origin?: string } = {}): N
     canonicalLocale,
     faviconUrl: raw.faviconUrl?.trim() || undefined,
     // Mirror intake's declared `siteDefaults.media.purposes`
-    // (AotterClam/mantle#262). v0.0.11-alpha.9 made `SiteConfig.media`
+    // (aotter/mantle#262). v0.0.11-alpha.9 made `SiteConfig.media`
     // required on the runtime read shape.
     media: { purposes: ["post-cover"] },
   };
@@ -246,7 +246,7 @@ function defaultAbout(brand: string): SeedText {
   return {
     title: "About",
     intro: `About ${brand}.`,
-    body: `${brand} is a new site managed by Clam CMS and AI agents. Replace this page with your story, services, and contact context.`,
+    body: `${brand} is a new site managed by AotterMantle and AI agents. Replace this page with your story, services, and contact context.`,
   };
 }
 

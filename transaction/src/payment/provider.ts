@@ -19,7 +19,7 @@
  * point, implement against the provider's docs, swap the import in
  * `index.ts`.
  *
- * Note: this lives in the STARTER, not in `@aotterclam/mantle-*`.
+ * Note: this lives in the STARTER, not in `@aotter/mantle-*`.
  * The SDK has no opinion on payments.
  */
 

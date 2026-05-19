@@ -5,7 +5,7 @@ import {
   R2MediaStorage,
   type Auth,
   type CmsConfig,
-} from "@aotterclam/mantle/cloudflare";
+} from "@aotter/mantle/cloudflare";
 import { AwsClient } from "aws4fetch";
 import { buildHandlers } from "./handlers/index.js";
 import { loadManifests } from "./loadManifests.js";
@@ -106,12 +106,12 @@ export function buildCmsConfig(env: Env, auth: Auth): CmsConfig {
       title: "{{BRAND}}",
       description: "{{DESCRIPTION}}",
       origin: "https://example.com",
-      // `{{LOCALES}}` is substituted by @aotterclam/create-mantle at install
+      // `{{LOCALES}}` is substituted by @aotter/create-mantle at install
       // time (ADR-0016). JSON.parse keeps this file TS-valid pre-substitution
       // so contributors can `pnpm typecheck` the starter directly; the runtime
       // cost is one tiny parse at worker cold-start.
       locales: JSON.parse('{{LOCALES}}') as readonly string[],
-      // Declared media purpose taxonomy (#262 / AotterClam/mantle#262).
+      // Declared media purpose taxonomy (#262 / aotter/mantle#262).
       // create_media_upload rejects any `purpose` not in this set with
       // MEDIA_PURPOSE_REJECTED; an empty list disables uploads entirely.
       // products.coverUrl is the only media-image field today; expand
