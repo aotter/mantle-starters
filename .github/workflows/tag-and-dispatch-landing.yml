@@ -6,10 +6,21 @@
 # `vX.Y.Z` and dispatches `mantle-landing`'s `bump-from-starters.yml`
 # workflow so the landing site rolls forward to the same version.
 #
+# Two-job structure (gate + tag) instead of a single job with
+# `if: contains(...)` at job level. Reason: when the job-level `if`
+# evaluated false, GitHub Actions surfaced the run as a workflow
+# `failure` with `total_count: 0 jobs` rather than a clean "skipped",
+# producing alarming red runs on every develop→main promote that
+# happened to come from a non-release PR. The gate job now ALWAYS
+# runs, emits a `should_release` boolean output, and exits success
+# either way. The downstream `tag` job runs only when the gate says
+# so, and skips cleanly otherwise. End state: no more no-job failure
+# noise; the chain still fires correctly for release commits.
+#
 # Filter uses `contains(...)` not `startsWith(...)` because the
-# develop→main merge is done with `gh pr merge --merge`, whose default
-# commit subject is `Merge pull request #N from owner/develop` with
-# the PR title (which we always start with `release: ...`) in the
+# develop→main merge can be done with `gh pr merge --merge`, whose
+# default commit subject is `Merge pull request #N from owner/develop`
+# with the PR title (which we always start with `release: ...`) in the
 # body. `contains` matches body text too; `startsWith` would silently
 # skip the run and leave the release un-tagged.
 #
@@ -28,17 +39,16 @@ permissions:
   contents: write   # for `git tag` + `git push`
 
 jobs:
-  tag:
-    if: contains(github.event.head_commit.message, 'release: bump @aotterclam/mantle* to v')
+  gate:
     runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.detect.outputs.should_release }}
+      version: ${{ steps.detect.outputs.version }}
     steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.RELEASE_FANOUT_TOKEN }}
-
-      - name: Extract version from commit message
-        id: ver
+      - name: Detect release-bump commit
+        id: detect
+        env:
+          MSG: ${{ github.event.head_commit.message }}
         run: |
           set -euo pipefail
           # Commit message shape: somewhere inside is `release: bump
@@ -46,22 +56,40 @@ jobs:
           # token from anywhere in the message, not just the first
           # line, so a merge-commit body works the same as a rebase
           # commit's first line.
-          MSG="${{ github.event.head_commit.message }}"
-          VERSION=$(echo "$MSG" | grep -oE 'release: bump @aotterclam/mantle\* to v[0-9][^[:space:]]+' | head -n1 | grep -oE 'v[0-9][^[:space:]]+' | sed 's/^v//')
+          VERSION=$(printf '%s\n' "$MSG" | grep -oE 'release: bump @aotterclam/mantle\* to v[0-9][^[:space:]]+' | head -n1 | grep -oE 'v[0-9][^[:space:]]+' | sed 's/^v//' || true)
           if [ -z "$VERSION" ]; then
-            echo "::error::Couldn't extract version from commit message: $MSG"
-            exit 1
+            echo "No release-bump subject detected — nothing to tag."
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Detected release version: v$VERSION"
+          echo "should_release=true" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+  tag:
+    needs: gate
+    if: needs.gate.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_FANOUT_TOKEN }}
 
       - name: Create + push tag
         run: |
           set -euo pipefail
           git config user.name 'mantle-release-bot'
           git config user.email '49699333+dependabot[bot]@users.noreply.github.com'
-          git tag "v${{ steps.ver.outputs.version }}"
-          git push origin "v${{ steps.ver.outputs.version }}"
+          # Idempotent — re-firing this workflow against an already-tagged
+          # commit shouldn't fail loudly; the operator-visible signal is
+          # the `Dispatch landing` step below, which always runs.
+          if git rev-parse "v${{ needs.gate.outputs.version }}" >/dev/null 2>&1; then
+            echo "Tag v${{ needs.gate.outputs.version }} already exists; skipping create+push."
+          else
+            git tag "v${{ needs.gate.outputs.version }}"
+            git push origin "v${{ needs.gate.outputs.version }}"
+          fi
 
       - name: Dispatch landing bump-from-starters
         env:
@@ -74,5 +102,5 @@ jobs:
           fi
           gh api repos/AotterClam/mantle-landing/dispatches \
             -f event_type=starters-released \
-            -F "client_payload[starters_version]=${{ steps.ver.outputs.version }}"
-          echo "Dispatched mantle-landing bump-from-starters for v${{ steps.ver.outputs.version }}"
+            -F "client_payload[starters_version]=${{ needs.gate.outputs.version }}"
+          echo "Dispatched mantle-landing bump-from-starters for v${{ needs.gate.outputs.version }}"
