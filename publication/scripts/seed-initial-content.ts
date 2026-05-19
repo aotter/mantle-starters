@@ -244,7 +244,7 @@ function defaultAbout(brand: string): SeedText {
   return {
     title: "About",
     intro: `About ${brand}.`,
-    body: `${brand} is a new site managed by Mantle CMS and AI agents. Replace this page with your story, services, and contact context.`,
+    body: `${brand} is a new site managed by AotterMantle and AI agents. Replace this page with your story, services, and contact context.`,
   };
 }
 
