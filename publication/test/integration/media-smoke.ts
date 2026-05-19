@@ -78,6 +78,8 @@ async function main(): Promise<void> {
     const err = await toolErr("create_media_upload", {
       filename: "x.exe",
       mimeType: "application/octet-stream",
+      byteSize: 100,
+      purpose: "post-cover",
     });
     assert.equal(err.data?.code, "MEDIA_MIME_REJECTED", `expected MEDIA_MIME_REJECTED, got ${JSON.stringify(err)}`);
     console.log(`[media] 3/5  create_media_upload(application/octet-stream) → MEDIA_MIME_REJECTED`);
@@ -88,6 +90,8 @@ async function main(): Promise<void> {
     const err = await toolErr("create_media_upload", {
       filename: "x.svg",
       mimeType: "image/svg+xml",
+      byteSize: 100,
+      purpose: "post-cover",
     });
     assert.equal(err.data?.code, "MEDIA_SVG_REJECTED", `expected MEDIA_SVG_REJECTED, got ${JSON.stringify(err)}`);
     console.log(`[media] 4/5  create_media_upload(image/svg+xml) → MEDIA_SVG_REJECTED`);
