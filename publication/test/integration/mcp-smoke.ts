@@ -100,7 +100,10 @@ async function main(): Promise<void> {
   {
     const row = await tool<EntryRow>("create_draft_posts", {
       slug: runSlug,
-      coverUrl: "https://example.com/x.jpg",
+      // coverAssetId omitted — populated separately via the
+      // create_media_upload + commit_media_upload lifecycle (#272).
+      // The smoke covers entry CRUD here; media smoke covers the
+      // upload side.
     });
     assert.equal(row.collection, "posts");
     assert.equal(row.status, "draft");
@@ -115,7 +118,6 @@ async function main(): Promise<void> {
       id: postId,
       expected_version: 1,
       slug: runSlug,
-      coverUrl: "https://example.com/y.jpg",
     });
     assert.equal(row.version, 2, `expected version 2 after update, got ${row.version}`);
     console.log(`[mcp]  6/12  update_draft_posts(${postId}) → version 2`);

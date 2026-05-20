@@ -48,7 +48,7 @@ interface InitialSeed {
   readonly home: SeedText | LocalizedSeedText;
   readonly about: SeedText | LocalizedSeedText;
   readonly contact?: SeedText | LocalizedSeedText;
-  readonly welcomePost: (SeedText & { readonly slug?: string; readonly coverUrl?: string }) | LocalizedWelcomePost;
+  readonly welcomePost: (SeedText & { readonly slug?: string; readonly coverAssetId?: string }) | LocalizedWelcomePost;
 }
 
 type LocalizedSeedText = {
@@ -57,7 +57,7 @@ type LocalizedSeedText = {
 
 type LocalizedWelcomePost = {
   readonly slug?: string;
-  readonly coverUrl?: string;
+  readonly coverAssetId?: string;
   readonly translations: Record<string, Partial<SeedText>>;
 };
 
@@ -75,7 +75,10 @@ interface NormalizedPage {
 
 interface NormalizedPost {
   readonly slug: string;
-  readonly coverUrl: string;
+  /** Optional MediaAsset.id (#272). Seeds omit this so a fresh deploy
+   *  ships a welcome post without a cover image; operators add one via
+   *  the admin upload widget or `mantle-media-tools upload`. */
+  readonly coverAssetId?: string;
   readonly translations: ReadonlyMap<string, SeedText>;
 }
 
@@ -146,9 +149,20 @@ function readSeed(path: string, overrides: { readonly origin?: string } = {}): N
     canonicalLocale,
     faviconUrl: raw.faviconUrl?.trim() || undefined,
     // Mirror publication's declared `siteDefaults.media.purposes`
-    // (aotter/mantle#262). v0.0.11-alpha.9 made `SiteConfig.media`
-    // required on the runtime read shape.
-    media: { purposes: ["post-cover"] },
+    // (aotter/mantle#262 + #272).
+    media: {
+      purposes: [
+        {
+          name: "post-cover",
+          required: ["image/avif", "image/webp", "image/jpeg"],
+          maxBytes: {
+            "image/avif": 200_000,
+            "image/webp": 300_000,
+            "image/jpeg": 500_000,
+          },
+        },
+      ],
+    },
   };
 
   return {
@@ -161,7 +175,11 @@ function readSeed(path: string, overrides: { readonly origin?: string } = {}): N
     ],
     welcomePost: {
       slug: normalizeSlug(getObject(raw.welcomePost)?.slug, "welcome"),
-      coverUrl: stringOr(getObject(raw.welcomePost)?.coverUrl, coverForMood(mood)),
+      // No cover by default — operators upload one via mantle-media-tools
+      // after first deploy, and write the returned MediaAsset.id here.
+      ...(typeof getObject(raw.welcomePost)?.coverAssetId === "string"
+        ? { coverAssetId: getObject(raw.welcomePost)?.coverAssetId as string }
+        : {}),
       translations: normalizeTextByLocale(raw.welcomePost, locales, "welcomePost", defaultWelcomePost(brand)),
     },
   };
@@ -264,16 +282,12 @@ function defaultWelcomePost(brand: string): SeedText {
   };
 }
 
-function coverForMood(mood: string): string {
-  const covers: Record<string, string> = {
-    editorial: "https://images.unsplash.com/photo-1495020689067-958852a7765e?w=1200",
-    minimal: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200",
-    playful: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1200",
-    technical: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200",
-    warm: "https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?w=1200",
-  };
-  return covers[mood] ?? covers.warm!;
-}
+// Pre-#272 the seed picked an Unsplash cover by mood. Post-#272 the
+// welcomePost has no cover unless the operator pre-seeds a media_assets
+// row (out of scope for first-deploy bootstrap) — they add one via
+// `mantle-media-tools upload` after the worker is live. The function is
+// kept as a place to swap in a mood-based AssetId once the install
+// skill grows a "seed a sample asset" step.
 
 function escapeSql(s: string): string {
   return s.replace(/'/g, "''");
@@ -332,7 +346,7 @@ function buildSql(seed: NormalizedSeed, now: number): string {
 
   const postData = JSON.stringify({
     slug: seed.welcomePost.slug,
-    coverUrl: seed.welcomePost.coverUrl,
+    ...(seed.welcomePost.coverAssetId ? { coverAssetId: seed.welcomePost.coverAssetId } : {}),
     authorId: SEED_AUTHOR_ID,
     publishedAt: now,
   });
@@ -348,7 +362,7 @@ function buildSql(seed: NormalizedSeed, now: number): string {
       locale,
       title: text.title,
       body: text.body,
-      coverUrl: seed.welcomePost.coverUrl,
+      ...(seed.welcomePost.coverAssetId ? { coverAssetId: seed.welcomePost.coverAssetId } : {}),
       publishedAt: now,
       authorId: SEED_AUTHOR_ID,
     });
@@ -461,7 +475,7 @@ function buildPostEntry(seed: NormalizedSeed, locale: string, text: SeedText, no
       locale,
       title: text.title,
       body: text.body,
-      coverUrl: seed.welcomePost.coverUrl,
+      ...(seed.welcomePost.coverAssetId ? { coverAssetId: seed.welcomePost.coverAssetId } : {}),
       publishedAt: now,
       authorId: SEED_AUTHOR_ID,
     },

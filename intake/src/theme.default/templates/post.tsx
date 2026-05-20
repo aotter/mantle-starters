@@ -11,7 +11,10 @@ export function postTemplate(ctx: EntryContext): string {
     title?: string;
     body?: string;
     locale?: string;
-    coverUrl?: string;
+    /** MediaAsset.id (#272). Templates currently degrade gracefully
+     *  when set: the cover is omitted. SDK render-pipeline change to
+     *  pre-resolve assets into EntryContext lands in a follow-up. */
+    coverAssetId?: string;
     publishedAt?: number;
   };
   const locale = data.locale ?? site.canonicalLocale ?? "en";
@@ -22,7 +25,6 @@ export function postTemplate(ctx: EntryContext): string {
       locale={locale}
       title={`${title} — ${site.brand}`}
       description={site.description}
-      ogImage={data.coverUrl}
       current="posts"
       seo={seo}
     >
@@ -35,7 +37,6 @@ export function postTemplate(ctx: EntryContext): string {
           ) : null}
           <h1>{title}</h1>
         </header>
-        {data.coverUrl ? <img class="post-cover" src={data.coverUrl} alt="" /> : null}
         <div class="post-body">{raw(renderMarkdown(data.body))}</div>
       </article>
     </Layout>
