@@ -312,7 +312,7 @@ Provision complete
 ==============================================
 
 Public URL:  ${ctx.workerUrl}
-Staff MCP:   ${ctx.workerUrl}/staff/mcp
+Staff MCP:   ${ctx.workerUrl}/mcp/staff
 User MCP:    ${ctx.workerUrl}/mcp
 Sign in:     ${ctx.workerUrl}/admin/sign-in
 

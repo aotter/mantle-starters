@@ -19,7 +19,7 @@ Headless CMS backend — API + MCP only, no public HTML. The user is bringing th
 - Confirm "bring your own frontend" explicitly. If the user expects public HTML, route them to `publication` instead.
 - Which frontend? (Inform card3 — the first-prompt example should reference their stack.)
 - What is the first Schema they want? (Defer the design; just capture the noun. They will design it through `extend`.)
-- Will the frontend talk to `/staff/mcp` (write) or `/mcp` (read) — or both?
+- Will the frontend talk to `/mcp/staff` (write) or `/mcp` (read) — or both?
 
 ## Site defaults
 

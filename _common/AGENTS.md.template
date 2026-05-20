@@ -17,7 +17,7 @@ Public site: {{SITE_URL}}  (placeholder until provision)
   [`mantle/site.md`](mantle/site.md). Read whole, edit sections, write
   whole; never partial mutation.
 - Daily content authoring: use the Editor MCP at
-  `<SITE_URL>/staff/mcp`. Do not write directly to D1 / KV.
+  `<SITE_URL>/mcp/staff`. Do not write directly to D1 / KV.
 - To rebuild site logic, change archetype, or rework prose: invoke the
   Mantle install skill again (URL in `mantle/site.md` frontmatter).
 
