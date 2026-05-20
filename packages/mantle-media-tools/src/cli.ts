@@ -5,16 +5,19 @@ import { encodeTrio } from "./encode.js";
 import { MediaUploadError, uploadVariants } from "./upload-client.js";
 
 /**
- * Single-purpose CLI: `mantle-media-tools upload --file ... --purpose ...`.
+ * Single-purpose CLI: `mantle-media-tools upload --file ... --purpose ...
+ *                       --endpoint <worker origin> --bearer <mcp token>`.
  *
  * Reads a source image, encodes the avif/webp/jpeg trio via sharp,
- * drives the multi-variant upload lifecycle against a deployed mantle
- * worker, prints the resulting MediaAsset to stdout as JSON. Non-zero
- * exit on any step's failure; structured diagnostics surface in
- * stderr for agent consumers to parse.
+ * drives the multi-variant upload lifecycle through the worker's
+ * MCP staff transport (`/mcp/staff`), prints the resulting
+ * MediaAsset to stdout as JSON. Non-zero exit on any step's failure;
+ * structured diagnostics surface in stderr for agent consumers.
  *
- * Mantle install skill consumes this via `npx <tarball>` — see
- * skills/media/SKILL.md once that lands.
+ * Bearer comes from the worker's OAuth provider (admin sign-in →
+ * grant token). The `/mcp/staff` route is OAuth-gated; the admin
+ * REST endpoint (`/admin/api/media/uploads`) is cookie-only and
+ * deliberately not used here.
  */
 async function main(argv: readonly string[]): Promise<number> {
   const [command, ...rest] = argv;
@@ -47,10 +50,8 @@ async function main(argv: readonly string[]): Promise<number> {
     const result = await uploadVariants({
       client: {
         baseUrl: opts.endpoint,
-        auth:
-          opts.bearer !== undefined
-            ? { kind: "bearer", value: opts.bearer }
-            : { kind: "cookie", value: opts.cookie! },
+        bearer: opts.bearer,
+        ...(opts.mcpPath !== undefined ? { mcpPath: opts.mcpPath } : {}),
       },
       purpose: opts.purpose,
       filename: opts.filename ?? basename(opts.file),
@@ -80,8 +81,8 @@ interface UploadArgs {
   readonly file: string;
   readonly purpose: string;
   readonly endpoint: string;
-  readonly bearer?: string;
-  readonly cookie?: string;
+  readonly bearer: string;
+  readonly mcpPath?: string;
   readonly filename?: string;
   readonly alt?: string;
   readonly caption?: string;
@@ -106,17 +107,15 @@ function parseUploadArgs(argv: readonly string[]): UploadArgs | null {
   const file = flags.get("file");
   const purpose = flags.get("purpose");
   const endpoint = flags.get("endpoint");
-  if (!file || !purpose || !endpoint) return null;
   const bearer = flags.get("bearer");
-  const cookie = flags.get("cookie");
-  if (!bearer && !cookie) return null;
+  if (!file || !purpose || !endpoint || !bearer) return null;
   const maxEdgeRaw = flags.get("max-edge");
   return {
     file,
     purpose,
     endpoint,
     bearer,
-    cookie,
+    mcpPath: flags.get("mcp-path"),
     filename: flags.get("filename"),
     alt: flags.get("alt"),
     caption: flags.get("caption"),
@@ -132,14 +131,21 @@ function printUsage(out: NodeJS.WritableStream): void {
       "    --file <path>           Source image (jpeg/png/etc — any sharp input)",
       "    --purpose <slug>        Declared in siteDefaults.media.purposes",
       "    --endpoint <origin>     Mantle Worker origin, e.g. https://my-blog.example",
-      "    [--bearer <token> | --cookie <name=value>]   Admin auth (exactly one)",
+      "    --bearer <token>        OAuth token for /mcp/staff (admin grant)",
+      "    [--mcp-path <path>]     Override default `/mcp/staff` MCP route",
       "    [--filename <name>]     Override basename(file) on the wire",
       "    [--alt <text>] [--caption <text>]",
       "    [--max-edge <px>]       Longest-edge cap; default 1600",
       "",
       "Encodes avif + webp + jpeg via sharp, uploads each variant directly to",
-      "R2 (Worker bypassed), commits the bundle, prints the committed MediaAsset",
-      "as JSON to stdout. Errors surface structured diagnostics on stderr.",
+      "R2 (Worker bypassed for the PUT), commits the bundle via the MCP staff",
+      "transport. Prints the committed MediaAsset JSON to stdout. Errors",
+      "surface structured diagnostics on stderr.",
+      "",
+      "Auth note: the admin REST endpoint (/admin/api/media/uploads) is",
+      "cookie-only by design and not used here. The CLI talks to /mcp/staff,",
+      "which is the bearer-friendly OAuth-gated path. Grab a bearer from the",
+      "worker's OAuth flow after admin sign-in.",
       "",
       "Distributed via mantle-starters' GitHub release tarball — not npm.",
       "See aotter/mantle#272 and ADR-0017.",
