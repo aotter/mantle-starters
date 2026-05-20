@@ -93,25 +93,35 @@ async function main(): Promise<void> {
     console.log(`[media] 2/5  create_media_upload → uploadGroupId=${res.uploadGroupId.slice(0, 8)}… (3 caps)`);
   }
 
-  // 3. mime allowlist rejection (octet-stream is never declared as a
-  //    required mime, so the variant manifest carries it as primary
-  //    and the use case rejects via the allowlist gate).
+  // 3. Extras rejected: variants outside policy.required (octet-stream
+  //    here) trip the closed-set branch of assertVariantsCoverPolicy.
+  //    The global mime allowlist gate (assertEachVariantAccepted) is
+  //    NOT reachable against this worker — the closed-set check runs
+  //    first and rejects octet-stream before the allowlist sees it.
+  //    That gate is covered at the unit-test layer (media.test.ts
+  //    "rejects mime types outside the allowlist on any variant").
   {
     const err = await toolErr("create_media_upload", {
-      filename: "x.exe",
+      filename: "extras.jpg",
       purpose: "post-cover",
       variants: [
-        { mimeType: "application/octet-stream", byteSize: 100, role: "primary" },
+        { mimeType: "image/avif", byteSize: 60_000, role: "alternate" },
+        { mimeType: "image/webp", byteSize: 80_000, role: "alternate" },
+        { mimeType: "image/jpeg", byteSize: 110_000, role: "primary" },
+        // Extra mime outside `required: [avif, webp, jpeg]` — should
+        // fire the extras-rejected branch of MEDIA_VARIANTS_INCOMPLETE.
+        { mimeType: "application/octet-stream", byteSize: 100, role: "alternate" },
       ],
     });
-    assert.ok(
-      err.data?.code === "MEDIA_MIME_REJECTED" || err.data?.code === "MEDIA_VARIANTS_INCOMPLETE",
-      `expected MEDIA_MIME_REJECTED or MEDIA_VARIANTS_INCOMPLETE, got ${JSON.stringify(err)}`,
+    assert.equal(
+      err.data?.code,
+      "MEDIA_VARIANTS_INCOMPLETE",
+      `expected MEDIA_VARIANTS_INCOMPLETE for extra octet-stream variant, got ${JSON.stringify(err)}`,
     );
-    console.log(`[media] 3/5  create_media_upload(application/octet-stream) → ${err.data?.code}`);
+    console.log(`[media] 3/5  create_media_upload(+ extra octet-stream) → MEDIA_VARIANTS_INCOMPLETE (extras branch)`);
   }
 
-  // 4. Missing required mime → MEDIA_VARIANTS_INCOMPLETE.
+  // 4. Missing required mime → MEDIA_VARIANTS_INCOMPLETE (missing branch).
   {
     const err = await toolErr("create_media_upload", {
       filename: "incomplete.jpg",
