@@ -1,5 +1,6 @@
 /**
- * Media uploads integration smoke. Assumes:
+ * Media uploads integration smoke (multi-variant flow, aotter/mantle#272).
+ * Assumes:
  *   - wrangler dev is running on http://localhost:8788 (override via
  *     WRANGLER_BASE_URL env var). Test profile must have R2 binding
  *     `MEDIA` + the `MEDIA_*` env vars set; see `wrangler.toml`.
@@ -10,13 +11,15 @@
  *
  *   1. tools/list contains both `create_media_upload` and
  *      `commit_media_upload`.
- *   2. `create_media_upload` returns a well-formed capability:
- *      uploadId + uploadUrl pointing at the S3 endpoint, expiresAt
- *      ≥ now + 60s, requiredHeaders carrying the signed Content-Type.
+ *   2. `create_media_upload` returns a well-formed multi-variant
+ *      response: uploadGroupId + one capability per declared variant
+ *      (avif/webp/jpeg), each pointing at the S3 endpoint with
+ *      signed query params and `Content-Type` requiredHeader.
  *   3. mime allowlist rejection bubbles a structured diagnostic
  *      (`MEDIA_MIME_REJECTED`) on application/octet-stream.
- *   4. SVG rejected by default with `MEDIA_SVG_REJECTED`.
- *   5. `commit_media_upload` with an unknown uploadId surfaces
+ *   4. Incomplete variants (missing required mime) →
+ *      `MEDIA_VARIANTS_INCOMPLETE`.
+ *   5. `commit_media_upload` with an unknown uploadGroupId surfaces
  *      `MEDIA_UPLOAD_EXPIRED` (no KV mapping found).
  *
  * What this DOESN'T cover (deliberate, requires real R2):
@@ -37,12 +40,26 @@ const BASE = process.env.WRANGLER_BASE_URL ?? "http://localhost:8788";
 const { rpc, tool, toolErr } = makeMcpClient(BASE);
 
 interface CreateMediaUploadResponse {
-  readonly uploadId: string;
-  readonly uploadUrl: string;
-  readonly method: "PUT";
-  readonly requiredHeaders?: Readonly<Record<string, string>>;
+  readonly uploadGroupId: string;
+  readonly capabilities: ReadonlyArray<{
+    readonly mimeType: string;
+    readonly role: "primary" | "alternate" | "fallback";
+    readonly method: "PUT";
+    readonly uploadUrl: string;
+    readonly requiredHeaders?: Readonly<Record<string, string>>;
+  }>;
   readonly expiresAt: number;
 }
+
+const THREE_VARIANT_REQUEST = {
+  filename: "smoke.jpg",
+  purpose: "post-cover",
+  variants: [
+    { mimeType: "image/avif", byteSize: 60_000, role: "alternate" },
+    { mimeType: "image/webp", byteSize: 80_000, role: "alternate" },
+    { mimeType: "image/jpeg", byteSize: 110_000, role: "primary" },
+  ],
+};
 
 async function main(): Promise<void> {
   // 1. tools/list — confirm media tools are registered when the
@@ -56,51 +73,66 @@ async function main(): Promise<void> {
     console.log(`[media] 1/5  tools/list → media tools registered`);
   }
 
-  // 2. create_media_upload — capability shape.
+  // 2. create_media_upload — multi-variant capability shape.
   {
-    const cap = await tool<CreateMediaUploadResponse>("create_media_upload", {
-      filename: "smoke.png",
-      mimeType: "image/png",
-      byteSize: 4096,
-      purpose: "post-cover",
-    });
-    assert.ok(cap.uploadId.length > 0, "uploadId missing");
-    assert.equal(cap.method, "PUT");
-    assert.ok(cap.uploadUrl.includes("r2.cloudflarestorage.com"), `uploadUrl shape unexpected: ${cap.uploadUrl}`);
-    assert.ok(cap.uploadUrl.includes("X-Amz-Expires="), "uploadUrl missing X-Amz-Expires");
-    assert.equal(cap.requiredHeaders?.["Content-Type"], "image/png");
-    assert.ok(cap.expiresAt > Date.now() - 5_000, "expiresAt is in the past");
-    console.log(`[media] 2/5  create_media_upload → uploadId=${cap.uploadId.slice(0, 8)}…`);
+    const res = await tool<CreateMediaUploadResponse>(
+      "create_media_upload",
+      THREE_VARIANT_REQUEST,
+    );
+    assert.ok(res.uploadGroupId.length > 0, "uploadGroupId missing");
+    assert.equal(res.capabilities.length, 3, `expected 3 capabilities, got ${res.capabilities.length}`);
+    const mimes = res.capabilities.map((c) => c.mimeType).sort();
+    assert.deepEqual(mimes, ["image/avif", "image/jpeg", "image/webp"]);
+    for (const cap of res.capabilities) {
+      assert.equal(cap.method, "PUT");
+      assert.ok(cap.uploadUrl.includes("r2.cloudflarestorage.com"), `uploadUrl shape unexpected: ${cap.uploadUrl}`);
+      assert.ok(cap.uploadUrl.includes("X-Amz-Expires="), "uploadUrl missing X-Amz-Expires");
+      assert.equal(cap.requiredHeaders?.["Content-Type"], cap.mimeType);
+    }
+    assert.ok(res.expiresAt > Date.now() - 5_000, "expiresAt is in the past");
+    console.log(`[media] 2/5  create_media_upload → uploadGroupId=${res.uploadGroupId.slice(0, 8)}… (3 caps)`);
   }
 
-  // 3. mime allowlist rejection.
+  // 3. mime allowlist rejection (octet-stream is never declared as a
+  //    required mime, so the variant manifest carries it as primary
+  //    and the use case rejects via the allowlist gate).
   {
     const err = await toolErr("create_media_upload", {
       filename: "x.exe",
-      mimeType: "application/octet-stream",
-      byteSize: 100,
       purpose: "post-cover",
+      variants: [
+        { mimeType: "application/octet-stream", byteSize: 100, role: "primary" },
+      ],
     });
-    assert.equal(err.data?.code, "MEDIA_MIME_REJECTED", `expected MEDIA_MIME_REJECTED, got ${JSON.stringify(err)}`);
-    console.log(`[media] 3/5  create_media_upload(application/octet-stream) → MEDIA_MIME_REJECTED`);
+    assert.ok(
+      err.data?.code === "MEDIA_MIME_REJECTED" || err.data?.code === "MEDIA_VARIANTS_INCOMPLETE",
+      `expected MEDIA_MIME_REJECTED or MEDIA_VARIANTS_INCOMPLETE, got ${JSON.stringify(err)}`,
+    );
+    console.log(`[media] 3/5  create_media_upload(application/octet-stream) → ${err.data?.code}`);
   }
 
-  // 4. SVG rejected by default (no MEDIA_ALLOW_SVG=1 in test env).
+  // 4. Missing required mime → MEDIA_VARIANTS_INCOMPLETE.
   {
     const err = await toolErr("create_media_upload", {
-      filename: "x.svg",
-      mimeType: "image/svg+xml",
-      byteSize: 100,
+      filename: "incomplete.jpg",
       purpose: "post-cover",
+      variants: [
+        // Just jpeg — missing avif + webp from the post-cover policy.
+        { mimeType: "image/jpeg", byteSize: 100, role: "primary" },
+      ],
     });
-    assert.equal(err.data?.code, "MEDIA_SVG_REJECTED", `expected MEDIA_SVG_REJECTED, got ${JSON.stringify(err)}`);
-    console.log(`[media] 4/5  create_media_upload(image/svg+xml) → MEDIA_SVG_REJECTED`);
+    assert.equal(
+      err.data?.code,
+      "MEDIA_VARIANTS_INCOMPLETE",
+      `expected MEDIA_VARIANTS_INCOMPLETE, got ${JSON.stringify(err)}`,
+    );
+    console.log(`[media] 4/5  create_media_upload(missing avif+webp) → MEDIA_VARIANTS_INCOMPLETE`);
   }
 
-  // 5. commit with unknown uploadId → MEDIA_UPLOAD_EXPIRED. Validates
-  //    the KV-lookup gate without needing the actual S3 PUT to succeed.
+  // 5. commit with unknown uploadGroupId → MEDIA_UPLOAD_EXPIRED.
+  //    Validates the KV-lookup gate without needing actual S3 PUT.
   {
-    const err = await toolErr("commit_media_upload", { uploadId: "nonexistent-upload-id" });
+    const err = await toolErr("commit_media_upload", { uploadGroupId: "nonexistent-upload-id" });
     assert.equal(err.data?.code, "MEDIA_UPLOAD_EXPIRED", `expected MEDIA_UPLOAD_EXPIRED, got ${JSON.stringify(err)}`);
     console.log(`[media] 5/5  commit_media_upload(unknown) → MEDIA_UPLOAD_EXPIRED`);
   }

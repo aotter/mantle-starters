@@ -135,7 +135,7 @@ function buildSql(opts: ApplyFixtureOptions): string {
     const postId = `fx-post-${postIndex++}`;
     const data = JSON.stringify({
       slug: post.slug,
-      coverUrl: post.coverUrl,
+      ...(post.coverAssetId ? { coverAssetId: post.coverAssetId } : {}),
       authorId: FIXTURE_AUTHOR_ID,
       publishedAt: FIXTURE_NOW,
     });
@@ -217,7 +217,7 @@ function buildKvEntries(): readonly KvEntry[] {
           locale: tr.locale,
           title: tr.title,
           body: tr.body,
-          coverUrl: post.coverUrl,
+          ...(post.coverAssetId ? { coverAssetId: post.coverAssetId } : {}),
           publishedAt: FIXTURE_NOW,
           authorId: FIXTURE_AUTHOR_ID,
         },
