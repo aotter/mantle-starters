@@ -7,7 +7,7 @@ Takes a source image, produces avif/webp/jpeg variants via [sharp](https://sharp
 **Distributed via `mantle-starters` GitHub releases, not npm.** Run via the release tarball URL:
 
 ```sh
-npx https://github.com/aotter/mantle-starters/releases/download/v0.0.11-alpha.13/aotter-mantle-media-tools.tgz \
+npx https://github.com/aotter/mantle-starters/releases/download/v0.0.11-alpha.14/aotter-mantle-media-tools.tgz \
   upload \
   --file ./hero.jpg \
   --purpose post-cover \
