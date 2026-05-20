@@ -18,7 +18,7 @@ npx https://github.com/aotter/mantle-starters/releases/latest/download/aotter-cr
   [--ref <git-ref>]
 ```
 
-Recommended end-user path: open [the Mantle landing page](https://the Mantle landing page/), pick an archetype and theme, then paste the generated prompt into Claude Code / Cursor / Codex. The Mantle install skill in [`aotter/mantle`](https://github.com/aotter/mantle/tree/develop/skills/install) invokes this package after it interviews the user for brand, locales, audience, and deployment intent.
+Recommended end-user path: open the Mantle landing page, pick an archetype and theme, then paste the generated prompt into Claude Code / Cursor / Codex. The Mantle install skill in [`aotter/mantle`](https://github.com/aotter/mantle/tree/develop/skills/install) invokes this package after it interviews the user for brand, locales, audience, and deployment intent.
 
 ## What it does
 

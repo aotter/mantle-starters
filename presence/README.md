@@ -23,7 +23,7 @@
 > # then follow the Getting-started block below in that directory
 > ```
 >
-> Or paste the two-URL prompt from <https://the Mantle landing page/> into
+> Or paste the two-URL prompt from the Mantle landing page into
 > your agent. See the [top-level README](../README.md) for the template
 > model.
 

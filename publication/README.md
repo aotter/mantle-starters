@@ -25,7 +25,7 @@
 > # then follow the Quickstart below in that directory
 > ```
 >
-> Or paste the two-URL prompt from <https://the Mantle landing page/> into
+> Or paste the two-URL prompt from the Mantle landing page into
 > Claude Code / Cursor / Codex — same scaffolder, agent-driven. See the
 > [top-level README](../README.md) for the template model.
 

@@ -8,7 +8,7 @@ Public monorepo of mantle starter templates.
 This repo is consumed by the `create-mantle` scaffolder tarball attached
 to each GitHub release. End users usually should not clone this repo
 directly: they start from
-[the Mantle landing page](https://the Mantle landing page/), paste the
+the Mantle landing page, paste the
 generated prompt into Claude Code / Cursor / Codex, and the install Skill
 in [`aotter/mantle`](https://github.com/aotter/mantle) invokes
 the release tarball. The scaffolder downloads a tagged tarball of this
@@ -23,7 +23,7 @@ That repo mirrors `_common/`; sync strategy is TBD.
 
 Recommended path:
 
-1. Open [the Mantle landing page](https://the Mantle landing page/).
+1. Open the Mantle landing page.
 2. Pick an archetype and optional theme.
 3. Paste the generated prompt into Claude Code / Cursor / Codex.
 
