@@ -97,6 +97,11 @@ jobs:
               'intake/package.json',
               'transaction/package.json',
               'packages/create-mantle/package.json',
+              // mantle-media-tools mirrors the SDK version (added in
+              // aotter/mantle#272 / starters #153). release.yml verifies
+              // every packed package matches the pushed tag, so missing
+              // this entry would block every future release after #153.
+              'packages/mantle-media-tools/package.json',
             ];
             const version = process.env.VERSION;
             for (const p of paths) {
