@@ -29,7 +29,7 @@ export interface McpClient {
   }>;
 }
 
-export function makeMcpClient(baseUrl: string, path = "/staff/mcp"): McpClient {
+export function makeMcpClient(baseUrl: string, path = "/mcp/staff"): McpClient {
   const bearer = `Bearer ${FIXTURE_MCP_ACCESS_TOKEN}`;
   let rpcId = 1;
 
