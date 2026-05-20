@@ -14,7 +14,7 @@
 >
 > ```bash
 > cd /tmp
-> npx https://github.com/aotter/mantle-starters/releases/latest/download/aotter-create-mantle.tgz publication \
+> npx https://github.com/aotter/mantle-starters/releases/download/v0.0.11-alpha.13/aotter-create-mantle.tgz publication \
 >   --project-name eval-publication \
 >   --brand "Eval Publication" \
 >   --description "Throwaway publication mantle evaluation" \
@@ -77,13 +77,17 @@ in a blank starter or a later starter family.
   Lands in v0.2.
 - **Editorial lifecycle** (approval queue). Schemas use `lifecycle:
   simple` only. Editorial runtime lands in v0.1.x.
-- **First-party media hosting**. `posts.coverUrl` is a hand-supplied
-  URL string marked with `x-mcp-hint: media-image` for agents/admin UI.
-  R2-backed uploads are an explicit opt-in add-on, not part of first-run
-  provisioning. When enabled, the only declared upload purpose is
-  `post-cover` (see `siteDefaults.media.purposes` in
-  `src/mantleConfig.ts`); agents calling `create_media_upload` must use
-  that purpose, not invent new prefixes.
+- **First-party media hosting**. `posts.coverAssetId` is a
+  `MediaAsset.id` ref (`x-mantle-ref: media_assets` + `x-mcp-hint:
+  media-image`). R2-backed uploads are an explicit opt-in add-on,
+  not part of first-run provisioning. When enabled, the only declared
+  upload purpose is `post-cover` (see `siteDefaults.media.purposes`
+  in `src/mantleConfig.ts`) — a policy object with required mimes
+  (`image/avif` + `image/webp` + `image/jpeg`) and per-mime byte caps.
+  Agents call `create_media_upload` with a variants manifest (multi-
+  variant since aotter/mantle#272); optimization runs agent-side via
+  `@aotter/mantle-media-tools` (sharp). The committed `MediaAsset.id`
+  goes into the entry's `coverAssetId`. See ADR-0017.
 - **Full admin SPA**. v0.1.0 ships a minimal owner landing at `/admin`.
   Real-user first content is created after provisioning, through
   agent interview + MCP / admin authoring. `fixture` is local-dev / OSS

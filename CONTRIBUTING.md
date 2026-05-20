@@ -126,8 +126,12 @@ The `create-mantle` scaffolder is attached to each GitHub release as a
 tarball. Consumers run it via:
 
 ```bash
-npx https://github.com/aotter/mantle-starters/releases/latest/download/aotter-create-mantle.tgz <archetype> ...
+npx https://github.com/aotter/mantle-starters/releases/download/vX.Y.Z/aotter-create-mantle.tgz <archetype> ...
 ```
+
+During alpha, use the exact prerelease tag such as `v0.0.11-alpha.13`.
+GitHub's `/releases/latest/` endpoint ignores prereleases and returns 404
+until a stable release exists.
 
 Release process:
 

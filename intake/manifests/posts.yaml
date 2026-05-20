@@ -6,7 +6,7 @@ spec:
   title: Posts
   description: |
     Language-neutral parent table for blog posts. Holds the slug, cover
-    image URL, author, and publish timestamp. Per-locale title + body
+    asset id, author, and publish timestamp. Per-locale title + body
     live in the `post-translations` Schema (translates -> posts on
     slug). Slug is the natural key joining the two.
   schema:
@@ -18,16 +18,19 @@ spec:
         type: string
         pattern: "^[a-z0-9-]+$"
         description: URL slug. Must match across post-translations.
-      coverUrl:
+      coverAssetId:
         type: string
-        format: uri
+        x-mantle-ref: media_assets
         x-mcp-hint: media-image
         description: |
-          Public URL of the cover image. v0.1.0: hand-supplied URL only
-          (consumer hosts the asset elsewhere — Imgur, S3, CDN, etc.).
-          v0.1.x may add explicit opt-in first-party media hosting
-          (R2 on Cloudflare) + a UI picker; this field stays a string
-          URL so existing posts keep working.
+          MediaAsset.id of the cover image (aotter/mantle#272). The
+          agent calls `create_media_upload` with `purpose: "post-cover"`
+          + a three-variant manifest (avif/webp/jpeg), PUTs every
+          variant directly to R2 via the returned presigned URLs,
+          then `commit_media_upload`. The committed asset's `id`
+          goes here. Renderers materialise the variants set via
+          `runtime.media.resolve(coverAssetId)` and emit `<picture>`.
+          Helper CLI: `@aotter/mantle-media-tools`.
       authorId:
         type: string
         x-mantle-bind: ctx.user

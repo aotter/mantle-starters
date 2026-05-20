@@ -45,10 +45,17 @@ spec:
       inventoryMode:
         type: string
         enum: [tracked, untracked]
-      coverUrl:
+      coverAssetId:
         type: string
-        format: uri
+        x-mantle-ref: media_assets
         x-mcp-hint: media-image
+        description: |
+          MediaAsset.id of the product cover image (aotter/mantle#272).
+          Agent calls `create_media_upload` with
+          `purpose: "product-cover"` + a three-variant manifest
+          (avif/webp/jpeg) and `commit_media_upload`. Renderers
+          resolve via `runtime.media.resolve(coverAssetId)`. Helper
+          CLI: `@aotter/mantle-media-tools`.
       createdAt:
         type: number
         x-mantle-bind: now

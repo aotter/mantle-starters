@@ -25,14 +25,29 @@ export const FIXTURE_SITE: SiteConfig = {
   locales: ["en", "zh-TW"],
   canonicalLocale: "en",
   // Mirror intake's declared `siteDefaults.media.purposes`
-  // (aotter/mantle#262). v0.0.11-alpha.9 made `SiteConfig.media`
-  // required on the runtime read shape.
-  media: { purposes: ["post-cover"] },
+  // (aotter/mantle#262 + #272). v0.0.11-alpha.14 reshaped purposes
+  // into MediaPurposePolicy objects.
+  media: {
+    purposes: [
+      {
+        name: "post-cover",
+        required: ["image/avif", "image/webp", "image/jpeg"],
+        maxBytes: {
+          "image/avif": 200_000,
+          "image/webp": 300_000,
+          "image/jpeg": 500_000,
+        },
+      },
+    ],
+  },
 };
 
 export interface FixturePost {
   readonly slug: string;
-  readonly coverUrl: string;
+  /** Optional MediaAsset.id (#272). Omitted on fixtures until the
+   *  test pre-seeds the media_assets table; templates degrade
+   *  gracefully when absent. */
+  readonly coverAssetId?: string;
   readonly translations: ReadonlyArray<{
     readonly locale: string;
     readonly title: string;
@@ -43,7 +58,6 @@ export interface FixturePost {
 export const FIXTURE_POSTS: readonly FixturePost[] = [
   {
     slug: "hello-world",
-    coverUrl: "https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?w=1200",
     translations: [
       {
         locale: "en",
@@ -59,7 +73,6 @@ export const FIXTURE_POSTS: readonly FixturePost[] = [
   },
   {
     slug: "lifecycle-hooks",
-    coverUrl: "https://images.unsplash.com/photo-1518655048521-f130df041f66?w=1200",
     translations: [
       {
         locale: "en",
@@ -75,7 +88,6 @@ export const FIXTURE_POSTS: readonly FixturePost[] = [
   },
   {
     slug: "translates-by-slug",
-    coverUrl: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=1200",
     translations: [
       {
         locale: "en",

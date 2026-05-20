@@ -87,10 +87,25 @@ export function buildCmsConfig(env: Env, auth: Auth): CmsConfig {
       // so contributors can `pnpm typecheck` the starter directly; the runtime
       // cost is one tiny parse at worker cold-start.
       locales: JSON.parse('{{LOCALES}}') as readonly string[],
-      // Declared media purpose taxonomy (#262 / aotter/mantle#262).
-      // create_media_upload rejects any `purpose` not in this set with
-      // MEDIA_PURPOSE_REJECTED; an empty list disables uploads entirely.
-      media: { purposes: ["post-cover"] },
+      // Declared media purpose taxonomy (aotter/mantle#262 + #272).
+      // Each purpose carries its required mime set + per-mime byte cap.
+      // Uploads MUST cover every required mime (multi-variant avif/webp/jpeg);
+      // the runtime rejects on missing variants, oversized variants, or
+      // suspicious sizing (modern format larger than the jpeg fallback).
+      // An empty list disables uploads entirely.
+      media: {
+        purposes: [
+          {
+            name: "post-cover",
+            required: ["image/avif", "image/webp", "image/jpeg"],
+            maxBytes: {
+              "image/avif": 200_000,
+              "image/webp": 300_000,
+              "image/jpeg": 500_000,
+            },
+          },
+        ],
+      },
     },
     publicPathResolver: PUBLIC_PATH_RESOLVER,
     bindings: {

@@ -189,8 +189,8 @@ check("scheduled handler exists (miniflare /__scheduled trigger)", async () => {
   }
 });
 
-check("MCP auth: POST /staff/mcp unauthenticated returns 401", async () => {
-  await expectStatus("/staff/mcp", 401, {
+check("MCP auth: POST /mcp/staff unauthenticated returns 401", async () => {
+  await expectStatus("/mcp/staff", 401, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }),

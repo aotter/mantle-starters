@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build-and-attach:
-    name: build scaffolder tarball + attach to release
+    name: build private packages + attach to release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: packages/create-mantle/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Extract version from tag
         id: ver
@@ -32,48 +32,76 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Tag $TAG -> version $VERSION"
 
-      - name: Install scaffolder deps
-        working-directory: packages/create-mantle
+      - name: Install workspace deps
         run: pnpm install --frozen-lockfile
 
-      - name: Verify package version matches ${{ steps.ver.outputs.version }}
-        working-directory: packages/create-mantle
+      - name: Verify packed-package versions match ${{ steps.ver.outputs.version }}
         run: |
           set -euo pipefail
           node --input-type=module -e "
             import { readFileSync } from 'node:fs';
-            const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
             const expected = '${{ steps.ver.outputs.version }}';
-            if (pkg.version !== expected) {
-              console.error('packages/create-mantle/package.json version ' + pkg.version + ' does not match tag version ' + expected);
-              process.exit(1);
+            const pkgs = [
+              'packages/create-mantle/package.json',
+              'packages/mantle-media-tools/package.json',
+            ];
+            for (const path of pkgs) {
+              const pkg = JSON.parse(readFileSync(path, 'utf8'));
+              if (pkg.version !== expected) {
+                console.error(path + ' version ' + pkg.version + ' does not match tag version ' + expected);
+                process.exit(1);
+              }
             }
           "
 
-      - name: Build scaffolder
+      - name: Build create-mantle
         working-directory: packages/create-mantle
         run: pnpm build
 
-      - name: Pack tarball
+      - name: Build mantle-media-tools
+        working-directory: packages/mantle-media-tools
+        run: pnpm build
+
+      - name: Pack create-mantle tarball
         working-directory: packages/create-mantle
+        run: pnpm pack
+
+      - name: Pack mantle-media-tools tarball
+        working-directory: packages/mantle-media-tools
         run: pnpm pack
 
       - name: Stage release assets
         run: |
           set -euo pipefail
           VER="${{ steps.ver.outputs.version }}"
-          TARBALL=$(ls packages/create-mantle/aotter-create-mantle-*.tgz | head -n 1)
-          if [ -z "$TARBALL" ]; then
-            echo "::error::pnpm pack did not produce a tarball"
+          mkdir -p out
+
+          # create-mantle scaffolder
+          SCAFFOLDER_TARBALL=$(ls packages/create-mantle/aotter-create-mantle-*.tgz | head -n 1)
+          if [ -z "$SCAFFOLDER_TARBALL" ]; then
+            echo "::error::pnpm pack did not produce the create-mantle tarball"
             exit 1
           fi
-          # Versioned + 'latest' aliases. The 'latest' alias powers:
-          # npx https://github.com/aotter/mantle-starters/releases/latest/download/aotter-create-mantle.tgz
-          mkdir -p out
-          cp "$TARBALL" "out/aotter-create-mantle-${VER}.tgz"
-          cp "$TARBALL" "out/aotter-create-mantle.tgz"
+          cp "$SCAFFOLDER_TARBALL" "out/aotter-create-mantle-${VER}.tgz"
+          cp "$SCAFFOLDER_TARBALL" "out/aotter-create-mantle.tgz"
           (cd out && sha256sum aotter-create-mantle-${VER}.tgz > aotter-create-mantle-${VER}.tgz.sha256)
           (cd out && sha256sum aotter-create-mantle.tgz > aotter-create-mantle.tgz.sha256)
+
+          # mantle-media-tools (#272)
+          MEDIA_TOOLS_TARBALL=$(ls packages/mantle-media-tools/aotter-mantle-media-tools-*.tgz | head -n 1)
+          if [ -z "$MEDIA_TOOLS_TARBALL" ]; then
+            echo "::error::pnpm pack did not produce the mantle-media-tools tarball"
+            exit 1
+          fi
+          cp "$MEDIA_TOOLS_TARBALL" "out/aotter-mantle-media-tools-${VER}.tgz"
+          cp "$MEDIA_TOOLS_TARBALL" "out/aotter-mantle-media-tools.tgz"
+          (cd out && sha256sum aotter-mantle-media-tools-${VER}.tgz > aotter-mantle-media-tools-${VER}.tgz.sha256)
+          (cd out && sha256sum aotter-mantle-media-tools.tgz > aotter-mantle-media-tools.tgz.sha256)
+
+          # Versioned + unversioned aliases under the same tag. Do not
+          # document `/releases/latest/` while releases are alpha-only:
+          # GitHub latest ignores prereleases and returns 404 until a
+          # stable release exists.
           ls -la out/
 
       - name: Attach to GitHub release
