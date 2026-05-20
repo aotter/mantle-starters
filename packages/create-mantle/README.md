@@ -6,7 +6,7 @@ package. The package name and `create-mantle` bin exist so `npx` can run
 the GitHub release tarball directly.
 
 ```bash
-npx https://github.com/aotter/mantle-starters/releases/latest/download/aotter-create-mantle.tgz \
+npx https://github.com/aotter/mantle-starters/releases/download/v0.0.11-alpha.13/aotter-create-mantle.tgz \
   <archetype> \
   --project-name <name> \
   --brand "<brand>" \
@@ -17,6 +17,9 @@ npx https://github.com/aotter/mantle-starters/releases/latest/download/aotter-cr
   [--theme <theme-key>] \
   [--ref <git-ref>]
 ```
+
+Use a versioned release URL for alpha builds. GitHub does not resolve
+prereleases through `/releases/latest/`.
 
 Recommended end-user path: open the Mantle landing page, pick an archetype and theme, then paste the generated prompt into Claude Code / Cursor / Codex. The Mantle install skill in [`aotter/mantle`](https://github.com/aotter/mantle/tree/develop/skills/install) invokes this package after it interviews the user for brand, locales, audience, and deployment intent.
 

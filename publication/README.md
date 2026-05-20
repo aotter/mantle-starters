@@ -14,7 +14,7 @@
 >
 > ```bash
 > cd /tmp
-> npx https://github.com/aotter/mantle-starters/releases/latest/download/aotter-create-mantle.tgz publication \
+> npx https://github.com/aotter/mantle-starters/releases/download/v0.0.11-alpha.13/aotter-create-mantle.tgz publication \
 >   --project-name eval-publication \
 >   --brand "Eval Publication" \
 >   --description "Throwaway publication mantle evaluation" \
