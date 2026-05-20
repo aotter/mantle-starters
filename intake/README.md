@@ -12,7 +12,7 @@
 >
 > ```bash
 > cd /tmp
-> npx https://github.com/aotter/mantle-starters/releases/latest/download/aotter-create-mantle.tgz intake \
+> npx https://github.com/aotter/mantle-starters/releases/download/v0.0.11-alpha.13/aotter-create-mantle.tgz intake \
 >   --project-name eval-intake \
 >   --brand "Eval Intake" \
 >   --description "Throwaway intake mantle evaluation" \

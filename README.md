@@ -38,7 +38,7 @@ command. If you're already past the interview or testing this repo and want to i
 scaffolder directly, the command shape is:
 
 ```bash
-npx https://github.com/aotter/mantle-starters/releases/latest/download/aotter-create-mantle.tgz <archetype> \
+npx https://github.com/aotter/mantle-starters/releases/download/v0.0.11-alpha.13/aotter-create-mantle.tgz <archetype> \
   --project-name "<my-site>" \
   --brand "<My Brand>" \
   --description "<one-line site description>" \
@@ -47,6 +47,10 @@ npx https://github.com/aotter/mantle-starters/releases/latest/download/aotter-cr
   --summary "<install-moment marker>"
   # optional: --theme <theme>     (l4-minimal-ink | l4-editorial-warm | l4-editorial-journal | l4-playful-pop)
 ```
+
+Use a versioned release URL while Mantle is on alpha prereleases. GitHub's
+`/releases/latest/` endpoint ignores prereleases, so it returns 404 when
+there is no stable release yet.
 
 `<archetype>` is one of: `presence`, `publication`, `intake`,
 `transaction`, `blank`. The CLI fetches `sources.json` at runtime,

@@ -12,7 +12,7 @@
 >
 > ```bash
 > cd /tmp
-> npx https://github.com/aotter/mantle-starters/releases/latest/download/aotter-create-mantle.tgz transaction \
+> npx https://github.com/aotter/mantle-starters/releases/download/v0.0.11-alpha.13/aotter-create-mantle.tgz transaction \
 >   --project-name eval-transaction \
 >   --brand "Eval Transaction" \
 >   --description "Throwaway transaction mantle evaluation" \

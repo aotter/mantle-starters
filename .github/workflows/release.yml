@@ -98,8 +98,10 @@ jobs:
           (cd out && sha256sum aotter-mantle-media-tools-${VER}.tgz > aotter-mantle-media-tools-${VER}.tgz.sha256)
           (cd out && sha256sum aotter-mantle-media-tools.tgz > aotter-mantle-media-tools.tgz.sha256)
 
-          # Versioned + 'latest' aliases. Latest alias powers:
-          #   npx https://github.com/aotter/mantle-starters/releases/latest/download/<asset>.tgz
+          # Versioned + unversioned aliases under the same tag. Do not
+          # document `/releases/latest/` while releases are alpha-only:
+          # GitHub latest ignores prereleases and returns 404 until a
+          # stable release exists.
           ls -la out/
 
       - name: Attach to GitHub release
