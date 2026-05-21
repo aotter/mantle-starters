@@ -14,13 +14,14 @@ import { buildCmsConfig, type Env } from "./mantleConfig.js";
 import { csrfGuard } from "./csrf.js";
 import { invokeHandler } from "./handlers/_context.js";
 import { buildQueueDispatcher, sendOrderWork } from "./handlers/orderConsumer.js";
-import { loadProductCatalog } from "./handlers/_productEnrichment.js";
+import { loadProductCatalog, loadPage } from "./handlers/_productEnrichment.js";
 import { buildReadOrderStatus } from "./handlers/readOrderStatus.js";
 import { buildReadCart } from "./handlers/readCart.js";
 import { buildCheckoutReturn } from "./handlers/checkoutReturn.js";
 import { restockProductCore } from "./handlers/restockProduct.js";
 import { renderProductList } from "./templates/productList.js";
 import { renderProductDetail } from "./templates/productDetail.js";
+import { renderPage } from "./templates/page.js";
 import { renderCart } from "./templates/cart.js";
 import { renderCheckout } from "./templates/checkout.js";
 import { renderOrderStatus } from "./templates/orderStatus.js";
@@ -207,6 +208,28 @@ function buildWorker(env: Env): WorkerFetch {
       const product = catalog.bySlug.get(slug);
       if (!product) return c.text("not found", 404);
       return c.html(renderProductDetail({ product, site }));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return c.text(`error: ${msg}`, 500);
+    }
+  });
+
+  // Generic page route — slug drives the lookup directly into the
+  // `page-translations` collection. The renderer prefers `blocks[]`
+  // when present (structured layout) and falls back to the markdown
+  // `body` field otherwise. Agents publishing a new page-translations
+  // row are immediately reachable at `/p/<slug>` with no code change.
+  app.get("/p/:slug", async (c) => {
+    const slug = c.req.param("slug");
+    if (!slug) return c.notFound();
+    try {
+      const runtime = await cms.get();
+      const [page, site] = await Promise.all([
+        loadPage(runtime, slug),
+        runtime.siteConfig.load(),
+      ]);
+      if (!page) return c.notFound();
+      return c.html(renderPage({ page, site }));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       return c.text(`error: ${msg}`, 500);

@@ -10,6 +10,23 @@ The repository version reflects the `create-mantle` scaffolder tarball attached 
 
 ### Added
 
+- **`transaction`**: block-based `page-translations` schema with five
+  block types — `hero`, `features`, `prose`, `cta`, `media` — and a
+  block-aware `/p/:slug` route. The renderer dispatches on the block's
+  `type` discriminator and threads `runtime.media.resolveMany` so
+  image fields (referenced by `*AssetId` via `x-mantle-ref:
+  media_assets`) emit `<picture>` with avif/webp/jpeg variants. The
+  existing markdown `body` field stays as the fallback render path for
+  simple text-only pages.
+- **`transaction`**: `src/templates/_picture.ts` — `pictureTag(asset, …)`
+  + `pictureFromAssetId(id, …, assets)` primitives for emitting
+  `<picture>` from `MediaAsset.variants[]`. Zero starter-specific
+  logic; mirrors `pickPrimaryVariant` from the SDK runtime.
+- **`transaction`**: `src/templates/_blocks.ts` — block dispatcher +
+  neutral default CSS. Color tokens via CSS custom properties
+  (`--block-ink`, `--block-surface`, `--block-accent`, etc.) so an
+  adopter can re-skin via a theme file without touching the block
+  markup. Closes aotter/mantle-starters#162. Refs aotter/project-toa-shop#14.
 - Initial OSS community-health files: `LICENSE` (MIT), `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `SUPPORT.md`, `AGENTS.md`, `CODEOWNERS`, issue templates, PR template, Dependabot config.
 - Repo metadata: 18 custom labels (`area:*`, `starter:*`, `status:roadmap`, `release-gate`, `needs-discussion`, `dependencies`); description and topics updated.
 

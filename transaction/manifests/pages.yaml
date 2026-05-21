@@ -1,0 +1,180 @@
+apiVersion: cms.mantle.aotter.net/v1
+kind: Schema
+metadata:
+  name: pages
+spec:
+  title: Pages
+  description: |
+    Static-ish content pages — about / support / privacy / terms / etc.
+    URL slug drives the route directly: agents can publish a new page
+    under any slug and it is immediately reachable at `/p/<slug>` with
+    no code change. Per-locale title + body + structured blocks live in
+    `page-translations`.
+
+    Use this for editorial content. Schema-driven pages with bespoke
+    data (e.g. a home page hero) belong to their own dedicated schema.
+  schema:
+    type: object
+    required: [slug]
+    properties:
+      slug:
+        type: string
+        pattern: "^[a-z0-9-]+$"
+        description: URL fragment after `/p/`. Must match across page-translations.
+      sortOrder:
+        type: integer
+        minimum: 0
+        description: Display order when listing pages (e.g. in a sitemap view).
+  lifecycle: simple
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Schema
+metadata:
+  name: page-translations
+spec:
+  title: Page translations
+  description: |
+    Per-locale page content. Two render modes coexist:
+
+    - `blocks: array` — structured layout, dispatcher renders each block
+      type (hero / features / prose / cta / media) with its own template.
+      Image fields reference `media_assets` via `x-mantle-ref`.
+    - `body: string` — markdown fallback for simple text-only pages. The
+      renderer uses this only when `blocks` is empty / absent.
+
+    `summary` is an optional lead paragraph that doubles as the SEO meta
+    description.
+  schema:
+    type: object
+    required: [slug, locale, title]
+    properties:
+      slug:
+        type: string
+        pattern: "^[a-z0-9-]+$"
+      locale:
+        type: string
+      title:
+        type: string
+      summary:
+        type: string
+        description: Optional lead paragraph + SEO description.
+      body:
+        type: string
+        x-mcp-hint: markdown
+        description: |
+          Markdown body for the simple-page render path. Ignored when
+          `blocks` is non-empty; the block dispatcher takes over.
+      blocks:
+        type: array
+        description: |
+          Structured layout. Each block has a `type` discriminator
+          driving a fixed renderer; ordering is significant. The
+          schema declares the union of every block-typed field flatly —
+          per-type required sets live in the renderer (a `hero` block
+          without `headline` renders nothing; a `features` block
+          without `cards` renders an empty section). Image fields
+          reference `media_assets` via `x-mantle-ref`.
+
+          Supported types: hero, features, prose, cta, media.
+        items:
+          type: object
+          required: [type]
+          properties:
+            type:
+              type: string
+              enum: [hero, features, prose, cta, media]
+            # hero: 2-col split (text + image). Headline allows `<br>`.
+            eyebrow:
+              type: string
+              description: Small-caps lead text above the headline (hero).
+            headline:
+              type: string
+              description: Large display headline (hero). `<br>` allowed.
+            paragraph:
+              type: string
+              description: Body paragraph beneath the headline (hero).
+            imageAssetId:
+              type: string
+              x-mantle-ref: media_assets
+              description: Hero image asset.
+            imageAlt:
+              type: string
+            # features: grid of cards. Variant drives color.
+            heading:
+              type: string
+              description: Section heading (features / cta share).
+            cards:
+              type: array
+              maxItems: 8
+              items:
+                type: object
+                required: [title]
+                properties:
+                  variant:
+                    type: string
+                    enum: [white, blue, teal, green]
+                    description: Card color variant. Defaults to white.
+                  tag:
+                    type: string
+                    description: Small-caps eyebrow tag inside the card.
+                  title:
+                    type: string
+                  body:
+                    type: string
+                  sideImageAssetId:
+                    type: string
+                    x-mantle-ref: media_assets
+                    description: Optional side image (renders when set).
+                  sideImageAlt:
+                    type: string
+            # prose: markdown block piped through `marked`.
+            markdown:
+              type: string
+              x-mcp-hint: markdown
+              description: Markdown body for `prose` blocks.
+            # cta: heading + body + button.
+            body:
+              type: string
+              description: Body paragraph for `cta` / `media` blocks.
+            buttonLabel:
+              type: string
+            buttonHref:
+              type: string
+              format: uri-reference
+            # media: single asset with optional caption.
+            sectionEyebrow:
+              type: string
+              description: Small-caps text above the figure (media).
+            assetId:
+              type: string
+              x-mantle-ref: media_assets
+              description: Image asset for `media` blocks.
+            assetAlt:
+              type: string
+            caption:
+              type: string
+  localized: true
+  translates:
+    parent: pages
+    on: slug
+  lifecycle: simple
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: View
+metadata:
+  name: page-by-slug
+spec:
+  from: page-translations
+  fields: [slug, locale, title, summary, body, blocks]
+  params:
+    type: object
+    required: [slug, locale]
+    properties:
+      slug: { type: string }
+      locale: { type: string }
+  filter:
+    and:
+      - eq: { field: status, value: published }
+      - eq: { field: slug, value: { $param: slug } }
+      - eq: { field: locale, value: { $param: locale } }
+  limit: 1
