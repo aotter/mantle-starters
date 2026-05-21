@@ -10,6 +10,20 @@ The repository version reflects the `create-mantle` scaffolder tarball attached 
 
 ### Added
 
+- **`transaction`**: stock-availability gate for `tracked` products at
+  `addToCart` time, not just at `checkoutStart` reserve time. New
+  `src/handlers/_stockCheck.ts` helper calls
+  `InventoryActor.snapshot(slug)` and returns a structured
+  `InsufficientItem` shortfall. `addToCart` sums existing-in-cart qty
+  + incoming delta before the check so repeated adds on the same line
+  can't drift past availability. `checkoutStart` replaces its open-
+  coded English `Error` with the shared `STOCK_ERROR_MESSAGE`
+  constant (vague-by-design: exact counts can leak inventory state).
+  Adopters localizing the storefront override the constant in their
+  fork. Closes aotter/mantle-starters#163. Refs aotter/project-toa-shop#14.
+
+### Added
+
 - **`transaction`**: block-based `page-translations` schema with five
   block types — `hero`, `features`, `prose`, `cta`, `media` — and a
   block-aware `/p/:slug` route. The renderer dispatches on the block's
