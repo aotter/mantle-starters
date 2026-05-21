@@ -8,6 +8,22 @@ The repository version reflects the `create-mantle` scaffolder tarball attached 
 
 ## [Unreleased]
 
+### Added
+
+- **`transaction`**: dev guardrails to close the lockfile-drift /
+  Node-version-mismatch loop that broke CI downstream. New
+  `transaction/.nvmrc` (`22`), `transaction/.npmrc`
+  (`engine-strict=true`), `package.json` gains
+  `engines.pnpm: >=9` + `packageManager: pnpm@9.15.0` (Corepack
+  pin). README install command switches to `pnpm install
+  --frozen-lockfile` with a paragraph explaining why. New
+  `transaction/CLAUDE.md` codifies the two daily-driver rules
+  (frozen-lockfile + no string-concat HTML in client scripts incl.
+  the JSON-in-`<script>` escape pattern). Partially closes
+  aotter/mantle-starters#166 (SPU/SKU + carousel event-delegation
+  remaining — bigger surface, separate PR). Refs
+  aotter/project-toa-shop#14.
+
 ### Fixed
 
 - **`transaction`**: storefront client JS was rendering the raw HTTP

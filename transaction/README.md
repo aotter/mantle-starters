@@ -153,9 +153,16 @@ cycle:
 ## Getting started
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
 cp .dev.vars.example .dev.vars
 ```
+
+> `--frozen-lockfile` matches what CI runs. Without it, a local install
+> can silently regenerate `pnpm-lock.yaml` against newer dep versions,
+> CI then runs against the stale committed lockfile, and you discover
+> the drift in a deploy that worked locally but failed in CI. The
+> first time this happens you lose an evening; the workflow rule
+> avoids that.
 
 Edit `.dev.vars` and fill in `BETTER_AUTH_SECRET=` — without it the worker
 returns `auth_not_configured` on every request. Generate a value:
