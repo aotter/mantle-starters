@@ -29,9 +29,9 @@ const ADD_TO_CART_JS = `
         }),
       });
       if (!res.ok) {
-        const txt = await res.text();
+        const msg = window.__parseErrorMessage(await res.text());
         out.innerHTML = '<div class="notice error">' +
-          window.__escapeHtml(txt.slice(0, 200)) + '</div>';
+          window.__escapeHtml(String(msg).slice(0, 200)) + '</div>';
         return;
       }
       out.innerHTML = '<div class="notice success">Added to cart. ' +

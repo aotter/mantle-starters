@@ -8,6 +8,18 @@ The repository version reflects the `create-mantle` scaffolder tarball attached 
 
 ## [Unreleased]
 
+### Fixed
+
+- **`transaction`**: storefront client JS was rendering the raw HTTP
+  error response body straight into the `.notice.error` strip, so
+  users saw the JSON envelope braces — e.g. `{"error":"Out of
+  stock"}` instead of just `Out of stock`. New
+  `window.__parseErrorMessage` bootstrap helper extracts the `.error`
+  field from a JSON body and falls back to the raw text on parse
+  failure (covers 5xx with non-JSON bodies). Wired into
+  `productDetail.tsx` and `checkout.tsx`. Closes
+  aotter/mantle-starters#164. Refs aotter/project-toa-shop#14.
+
 ### Added
 
 - **`transaction`**: stock-availability gate for `tracked` products at
