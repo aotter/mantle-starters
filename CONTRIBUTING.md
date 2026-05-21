@@ -6,9 +6,9 @@ Start here before changing code or docs. For project-wide doctrine, read the par
 
 ## Project shape
 
-- **`main` is the only long-lived branch.** This repo ships from `main` directly — there is no `develop` integration branch.
-- Why divergent from the parent? The parent `mantle` repo uses `develop → main` because engine versioning is staged. This repo's release cadence is tied to scaffolder tarball tags, which are cheap to roll back, so the extra branch buys nothing.
-- PRs target `main`.
+- **`develop` is the integration branch for all PRs.** It's the repo's default branch — `gh repo clone` lands you on it.
+- `main` is release-only and moves through `develop → main` release merges, mirroring the parent `mantle` repo's branch model.
+- PRs target `develop`, not `main`.
 - Merge completed PRs with `gh pr merge --merge --delete-branch`. Do not squash; reviewable commits are preserved.
 - Feature work should normally start from an issue unless it is a tiny docs or hygiene fix.
 
@@ -23,11 +23,11 @@ Each subdirectory under this monorepo is a **standalone project**. There is no m
 
 ## Branches
 
-Cut branches from `main`:
+Cut branches from `develop`:
 
 ```bash
 git fetch origin
-git checkout -b feat/issue-NN-topic origin/main
+git checkout -b feat/issue-NN-topic origin/develop
 ```
 
 Use these prefixes:
@@ -109,7 +109,7 @@ Apply at least one `starter:*` or `area:*` label.
 
 ## Pull requests
 
-Open PRs against `main`. A useful PR body includes:
+Open PRs against `develop`. A useful PR body includes:
 
 - Summary of the change.
 - Why the change is needed.
@@ -119,6 +119,8 @@ Open PRs against `main`. A useful PR body includes:
 - Related issues.
 
 Use [`.github/pull_request_template.md`](./.github/pull_request_template.md). Link issues with `Closes #NN` when fully resolved, `Refs #NN` otherwise.
+
+**Don't add `CHANGELOG.md` entries per PR.** The PR title + body + commit messages are the source of truth for what changed. Changelog entries are written at release time, aggregating the merged-since-last-tag commit log into Keep-a-Changelog buckets. Per-PR entries are noise — they bloat unboundedly, force conflict-merging every release-cycle, and duplicate information that's already in git. See § Release process below for who writes the entry and when.
 
 ## Release process
 
@@ -135,9 +137,10 @@ until a stable release exists.
 
 Release process:
 
-1. Land changes on `main`.
-2. Tag `v<version>` from `main` (e.g. `v0.0.11-alpha`).
-3. CI release workflow builds the scaffolder and attaches a `pnpm pack` tarball + sha256 to the GitHub release.
+1. Land changes on `develop`.
+2. Write the `CHANGELOG.md` entry for the new version. Aggregate the `git log` since the previous tag into Keep-a-Changelog buckets (`Added` / `Changed` / `Deprecated` / `Removed` / `Fixed` / `Security`). Prefix scope when relevant: `**transaction**: ...`. Cross-link the closing PR + issue. The entry lives under a new `## [vX.Y.Z] — YYYY-MM-DD` heading; no `[Unreleased]` placeholder.
+3. Pre-v0.1 alpha cadence: tag `v<version>` directly from `develop` (e.g. `v0.0.11-alpha.15`). Promotion to `main` happens when an alpha graduates to beta/stable — `main` updates intentionally lag the alpha cadence so the canonical "released" pointer doesn't churn daily. (Mirrors the parent `mantle` repo's release-process.md § "Pre-v0.1 alpha cadence".)
+4. CI release workflow builds the scaffolder and attaches a `pnpm pack` tarball + sha256 to the GitHub release.
 
 Per-starter `@aotter/mantle-*` version pins move on their own cadence — independent of the tarball tag.
 
