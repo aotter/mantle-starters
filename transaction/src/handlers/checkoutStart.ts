@@ -22,6 +22,7 @@ import { getInventoryActor } from "../durableObjects/InventoryActor.js";
 import { buildPaymentProvider, type PaymentEnv } from "../payment/index.js";
 import { defineHandler } from "./_context.js";
 import { loadProductCatalog } from "./_productEnrichment.js";
+import { STOCK_ERROR_MESSAGE } from "./_stockCheck.js";
 import { stashOrderCart } from "./orderCart.js";
 import { verifyTurnstile } from "./turnstile.js";
 
@@ -106,10 +107,16 @@ export function buildCheckoutStart(env: CheckoutStartEnv): AnyHandler {
         items: reserveItems.map((i) => ({ productSlug: i.productSlug, qty: i.qty })),
       });
       if (!result.ok) {
+        // Customer-facing message — vague by design (exact counts can
+        // leak inventory state to a hostile client). Structured detail
+        // stays server-side via the log line below.
         const detail = result.insufficient
-          .map((i) => `${i.productSlug}(need ${i.requested}, have ${i.available})`)
+          .map(
+            (i) => `${i.productSlug}(need ${i.requested}, have ${i.available})`,
+          )
           .join(", ");
-        throw new Error(`checkoutStart: insufficient stock — ${detail}`);
+        console.warn(`checkoutStart: insufficient stock — ${detail}`);
+        throw new Error(STOCK_ERROR_MESSAGE);
       }
     }
 

@@ -18,6 +18,11 @@
 
 import type { AnyHandler, CmsRuntime } from "@aotter/mantle/runtime";
 import { defineHandler } from "./_context.js";
+import {
+  checkSingleItemStock,
+  STOCK_ERROR_MESSAGE,
+  type StockCheckEnv,
+} from "./_stockCheck.js";
 
 interface CartState {
   items: { productSlug: string; qty: number }[];
@@ -34,7 +39,7 @@ interface ProductLookup {
 const CART_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days
 const MAX_QTY_PER_LINE = 99;
 
-export interface AddToCartEnv {
+export interface AddToCartEnv extends StockCheckEnv {
   readonly KV: KVNamespace;
 }
 
@@ -73,6 +78,21 @@ export function buildAddToCart(env: AddToCartEnv): AnyHandler {
       items: [],
       updatedAt: 0,
     };
+    // Gate against the InventoryActor BEFORE the KV write — the
+    // resulting qty (existing line qty + incoming delta) has to fit
+    // within current `available`. Repeated add-calls on the same
+    // line therefore can't drift past availability.
+    const existingQty =
+      existing.items.find((i) => i.productSlug === input.productSlug)?.qty ??
+      0;
+    const shortfall = await checkSingleItemStock(
+      env,
+      product,
+      existingQty + input.qty,
+    );
+    if (shortfall) {
+      throw new Error(STOCK_ERROR_MESSAGE);
+    }
     const merged = coalesce(existing.items, input.productSlug, input.qty);
     const next: CartState = { items: merged, updatedAt: Date.now() };
     await env.KV.put(key, JSON.stringify(next), {
