@@ -24,17 +24,14 @@ packages:
 # version), not via routine dependabot churn. See the workflow file
 # for the bump list.
 #
-# Deps with version drift across starters (marked, yaml) are NOT in
-# the catalog — aligning them would change runtime behavior in this
-# refactor, which should stay version-neutral. A separate PR can
-# fold them into the catalog after intentionally picking the target
-# version.
 catalog:
   # Runtime — every starter ships these.
   '@cloudflare/workers-oauth-provider': ^0.7.0
   aws4fetch: ^1.0.20
   better-auth: ^1.6.11
   hono: ^4.12.19
+  marked: ^18.0.3
+  yaml: ^2.9.0
   zod: ^4.4.2
   # Toolchain — every starter and (most) packages/.
   '@cloudflare/workers-types': ^4.20260522.1

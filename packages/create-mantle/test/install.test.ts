@@ -25,6 +25,20 @@ function fixtureExtractedRoot(): string {
   mkdirSync(join(root, "blank", "src"), { recursive: true });
 
   writeFile(
+    join(root, "pnpm-workspace.yaml"),
+    [
+      "packages:",
+      '  - "publication"',
+      '  - "blank"',
+      "",
+      "catalog:",
+      "  hono: ^4.12.19",
+      "  '@types/node': ^25",
+      "",
+    ].join("\n"),
+  );
+
+  writeFile(
     join(root, "_common", "AGENTS.md.template"),
     "# {{BRAND}} ({{ARCHETYPE}})\nPublic site: {{SITE_URL}}\nOwner: {{GITHUB_OWNER}}\n",
   );
@@ -53,7 +67,16 @@ body
   // publication starter (minimal)
   writeFile(
     join(root, "publication", "package.json"),
-    JSON.stringify({ name: "{{BRAND}}", private: true }, null, 2) + "\n",
+    JSON.stringify(
+      {
+        name: "{{BRAND}}",
+        private: true,
+        dependencies: { hono: "catalog:" },
+        devDependencies: { "@types/node": "catalog:" },
+      },
+      null,
+      2,
+    ) + "\n",
   );
   writeFile(
     join(root, "publication", "src", "mantleConfig.ts"),
@@ -117,6 +140,25 @@ describe("installFromExtractedRoot", () => {
 
     const cfg = readFileSync(join(destination, "src", "mantleConfig.ts"), "utf8");
     expect(cfg).toContain('brand: "Lab Cafe"');
+  });
+
+  it("resolves pnpm catalog specifiers in the scaffolded package.json", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    const destination = join(tempRoot, "out-catalog");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      destination,
+      extractedRoot,
+    });
+
+    const pkg = JSON.parse(
+      readFileSync(join(destination, "package.json"), "utf8"),
+    );
+    expect(pkg.dependencies.hono).toBe("^4.12.19");
+    expect(pkg.devDependencies["@types/node"]).toBe("^25");
   });
 
   it("blank archetype skips publication-specific files", () => {
