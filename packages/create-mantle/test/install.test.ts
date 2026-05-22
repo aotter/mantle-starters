@@ -1592,9 +1592,9 @@ describe("installFromExtractedRoot", () => {
     const merged = readFileSync(join(destination, "wrangler.toml"), "utf8");
     expect(merged).toContain('binding = "DB_ACCOUNTS"');
     expect(merged).toContain('binding = "DB_MAIN"');
-    // Bindings are emitted in sorted order for determinism.
-    expect(merged.indexOf('"DB_ACCOUNTS"')).toBeLessThan(
-      merged.indexOf('"DB_MAIN"'),
+    // Base-layer bindings come first; incoming bindings appended after.
+    expect(merged.indexOf('"DB_MAIN"')).toBeLessThan(
+      merged.indexOf('"DB_ACCOUNTS"'),
     );
   });
 
@@ -1643,6 +1643,134 @@ describe("installFromExtractedRoot", () => {
         },
       }),
     ).toThrow(/Wrangler \[\[d1_databases\]\] binding "DB" declared with conflicting config/);
+  });
+
+  it("rejects multi-line strings in wrangler.toml fragments", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "publication", "wrangler.toml"),
+      ["[vars]", 'A = "x"', ""].join("\n"),
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "alpha", "wrangler.toml"),
+      [
+        "[vars]",
+        'B = """',
+        "multi",
+        'line"""',
+        "",
+      ].join("\n"),
+    );
+    const destination = join(tempRoot, "out-wrangler-multiline");
+    mkdirSync(destination, { recursive: true });
+
+    expect(() =>
+      installFromExtractedRoot({
+        ...commonOpts(),
+        archetype: "publication",
+        features: [{ name: "alpha" }],
+        destination,
+        extractedRoot,
+        sources: {
+          archetypes: { publication: { path: "publication" } },
+          features: {
+            alpha: {
+              path: "registry/features/alpha",
+              applicableArchetypes: ["publication"],
+            },
+          },
+          themes: {},
+          roadmap: [],
+        },
+      }),
+    ).toThrow(/multi-line strings/);
+  });
+
+  it("rejects inline tables in wrangler.toml fragments", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "publication", "wrangler.toml"),
+      ["[vars]", 'A = "x"', ""].join("\n"),
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "alpha", "wrangler.toml"),
+      ["[vars]", 'B = { a = 1, b = 2 }', ""].join("\n"),
+    );
+    const destination = join(tempRoot, "out-wrangler-inline");
+    mkdirSync(destination, { recursive: true });
+
+    expect(() =>
+      installFromExtractedRoot({
+        ...commonOpts(),
+        archetype: "publication",
+        features: [{ name: "alpha" }],
+        destination,
+        extractedRoot,
+        sources: {
+          archetypes: { publication: { path: "publication" } },
+          features: {
+            alpha: {
+              path: "registry/features/alpha",
+              applicableArchetypes: ["publication"],
+            },
+          },
+          themes: {},
+          roadmap: [],
+        },
+      }),
+    ).toThrow(/inline tables/);
+  });
+
+  it("preserves base-layer ordering for wrangler.toml tables", () => {
+    // Base writes [env.test.vars] then [env.production.vars]. Alphabetical
+    // sort would flip them to production-first, which is semantically wrong.
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "publication", "wrangler.toml"),
+      [
+        "[env.test.vars]",
+        'TIER = "test"',
+        "",
+        "[env.production.vars]",
+        'TIER = "production"',
+        "",
+      ].join("\n"),
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "alpha", "wrangler.toml"),
+      [
+        "[env.production.vars]",
+        'FEATURE_TOKEN = "x"',
+        "",
+      ].join("\n"),
+    );
+    const destination = join(tempRoot, "out-wrangler-order");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      features: [{ name: "alpha" }],
+      destination,
+      extractedRoot,
+      sources: {
+        archetypes: { publication: { path: "publication" } },
+        features: {
+          alpha: {
+            path: "registry/features/alpha",
+            applicableArchetypes: ["publication"],
+          },
+        },
+        themes: {},
+        roadmap: [],
+      },
+    });
+
+    const merged = readFileSync(join(destination, "wrangler.toml"), "utf8");
+    expect(merged.indexOf("[env.test.vars]")).toBeLessThan(
+      merged.indexOf("[env.production.vars]"),
+    );
+    expect(merged).toContain('FEATURE_TOKEN = "x"');
   });
 
   it("rejects unsupported wrangler.toml sections from a feature fragment", () => {
