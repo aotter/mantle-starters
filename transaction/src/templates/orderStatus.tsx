@@ -87,7 +87,9 @@ const ORDER_STATUS_JS = `
         '<th>Line total</th></tr></thead><tbody>';
       for (const item of data.items) {
         const total = (item.priceMinorAtPurchase * item.qty / 100).toFixed(2);
-        html += '<tr><td>' + esc(item.title || item.productSlug) +
+        const titleCell = '<strong>' + esc(item.title || item.skuCode || item.productSlug) + '</strong>' +
+          (item.variantLabel ? '<br><small>' + esc(item.variantLabel) + '</small>' : '');
+        html += '<tr><td>' + titleCell +
           '</td><td>' + item.qty + '</td><td>' + total + ' ' +
           esc(data.currency || '') + '</td></tr>';
       }

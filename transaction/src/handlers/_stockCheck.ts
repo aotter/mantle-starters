@@ -1,19 +1,15 @@
 /**
- * Stock-availability gate for `tracked` products. Used by `addToCart`
- * and `checkoutStart` so the same diagnostic surfaces wherever stock
- * can fall short. Adopters wiring a `/api/cart/set-qty` route should
- * also call this before the KV write — same signature.
+ * Stock-availability gate for `tracked` SKUs. Used by addToCart,
+ * `/api/cart/set-qty`, and checkoutStart. The callers already hold a
+ * resolved SKU (via `loadPublishedSkuIndex` or `loadProductCatalog`),
+ * so this helper takes the SKU value, not a runtime — no listEntries
+ * here.
  *
  * Returns a structured failure on insufficient stock so the same
- * shape can serve the checkout-time bulk-reserve path where multiple
- * lines may fail at once. The customer-facing message (`STOCK_ERROR_MESSAGE`)
- * is intentionally vague — exact counts can leak inventory state to
- * a hostile client; the structured `InsufficientItem[]` stays
- * server-side for logs / metrics.
- *
- * For localization, override `STOCK_ERROR_MESSAGE` (or the wider
- * envelope) per locale. The starter ships English; adopters writing
- * for zh-TW, ja, etc. swap the constant in their fork.
+ * shape can also serve the checkout-time bulk-reserve path where
+ * multiple lines may fail at once. The customer-facing message is
+ * intentionally vague (counts can leak inventory state); server logs
+ * retain the structured detail via the return value.
  */
 
 import { getInventoryActor } from "../durableObjects/InventoryActor.js";
@@ -22,38 +18,33 @@ export interface StockCheckEnv {
   readonly INVENTORY_ACTOR: DurableObjectNamespace;
 }
 
-interface ProductInventoryDescriptor {
-  readonly slug: string;
+interface SkuInventoryDescriptor {
+  readonly skuCode: string;
   readonly inventoryMode: "tracked" | "untracked";
 }
 
 export interface InsufficientItem {
-  readonly slug: string;
+  readonly skuCode: string;
   readonly available: number;
   readonly requested: number;
 }
 
-/** Customer-facing message — single phrase, no counts, no slug. */
+/**
+ * Customer-facing wording — single phrase, no counts, no SKU code.
+ * The constant is exported so adopters override in their fork to
+ * localise per starter audience (zh-TW, ja, ko, etc.). Vague by
+ * design: exact counts can leak inventory state to a hostile client;
+ * server logs retain the structured `InsufficientItem` detail.
+ */
 export const STOCK_ERROR_MESSAGE = "Out of stock";
 
-/**
- * Check `requestedQty` against the InventoryActor's live `available`
- * for one `tracked` product. Returns `null` when stock satisfies the
- * request OR when the product is `untracked` (unlimited). Returns a
- * structured `InsufficientItem` otherwise — caller decides whether
- * to throw, render, or aggregate across multiple items.
- */
-export async function checkSingleItemStock(
+export async function checkSingleSkuStock(
   env: StockCheckEnv,
-  product: ProductInventoryDescriptor,
+  sku: SkuInventoryDescriptor,
   requestedQty: number,
 ): Promise<InsufficientItem | null> {
-  if (product.inventoryMode !== "tracked") return null;
-  const snap = await getInventoryActor(env).snapshot(product.slug);
+  if (sku.inventoryMode !== "tracked") return null;
+  const snap = await getInventoryActor(env).snapshot(sku.skuCode);
   if (snap.available >= requestedQty) return null;
-  return {
-    slug: product.slug,
-    available: snap.available,
-    requested: requestedQty,
-  };
+  return { skuCode: sku.skuCode, available: snap.available, requested: requestedQty };
 }

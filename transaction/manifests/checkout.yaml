@@ -5,7 +5,7 @@ metadata:
 spec:
   input:
     type: object
-    required: [cartId, productSlug, qty]
+    required: [cartId, skuCode, qty]
     properties:
       cartId:
         type: string
@@ -16,12 +16,12 @@ spec:
           (transaction is sized for ≤100 orders/day; KV is cheap
           enough; 60s KV eventual consistency is a non-issue at this
           scale).
-      productSlug: { type: string, pattern: "^[a-z0-9-]+$" }
+      skuCode: { type: string, pattern: "^[A-Za-z0-9_-]+$" }
       qty: { type: integer, minimum: 1, maximum: 99 }
   output:
     type: object
     description: |
-      { cartId, items: [{ productSlug, qty }], subtotalMinor }
+      { cartId, items: [{ skuCode, qty }], subtotalMinor }
       The cart state after the add. Frontend uses this to update the
       cart drawer.
   handler:
