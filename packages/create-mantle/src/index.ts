@@ -844,6 +844,7 @@ function mergeComposableWrangler(
 }
 
 function parseWranglerBlocks(text: string, source: string): WranglerBlock[] {
+  rejectUnsupportedTomlForms(text, source);
   const lines = text.split(/\r?\n/);
   const blocks: WranglerBlock[] = [];
   let current: { header: string | null; kind: WranglerBlock["kind"]; key: string; body: string[] } = {
@@ -883,6 +884,31 @@ function parseWranglerBlocks(text: string, source: string): WranglerBlock[] {
   return blocks;
 }
 
+function rejectUnsupportedTomlForms(text: string, source: string): void {
+  // The composer only handles single-line key=value, plain section headers,
+  // and array-table headers. Anything fancier needs a real TOML parser.
+  if (text.includes('"""') || text.includes("'''")) {
+    throw new Error(
+      `Wrangler composer cannot handle multi-line strings in ${source}. Use single-line values.`,
+    );
+  }
+  for (const rawLine of text.split(/\r?\n/)) {
+    const trimmed = rawLine.trim();
+    if (trimmed.startsWith("[") && trimmed.includes("#")) {
+      throw new Error(
+        `Wrangler composer cannot handle inline comments in section headers (${source}): ${trimmed}`,
+      );
+    }
+    // Inline tables only matter when they appear as a value of a key=value
+    // line; we still reject so the composer never silently mishandles them.
+    if (/=\s*\{/.test(trimmed) && !trimmed.startsWith("#")) {
+      throw new Error(
+        `Wrangler composer cannot handle inline tables in ${source}: ${trimmed}`,
+      );
+    }
+  }
+}
+
 function mergeWranglerBlocks(
   base: ReadonlyArray<WranglerBlock>,
   incoming: ReadonlyArray<WranglerBlock>,
@@ -909,10 +935,14 @@ function mergeWranglerBlocks(
       mergeKeyValueLines(existing, block.body, source, `[${block.key}]`),
     );
   }
-  for (const key of [...tablesByKey.keys()].sort()) {
-    result.push({ kind: "table", header: `[${key}]`, key, body: tablesByKey.get(key)! });
+  // Tables preserve base-layer insertion order; incoming-only sections fall
+  // at the end in their incoming order. Sorting alphabetically would break
+  // meaningful ordering like `[env.test.vars]` before `[env.production.vars]`.
+  for (const [key, body] of tablesByKey) {
+    result.push({ kind: "table", header: `[${key}]`, key, body });
   }
   // Array tables ([[d1_databases]] etc.): collect by binding name, unique.
+  // Preserve base-layer order; incoming-only bindings follow in incoming order.
   const arrayBindings = new Map<string, Map<string, string[]>>();
   for (const block of [...base, ...incoming]) {
     if (block.kind !== "array-table") continue;
@@ -930,15 +960,9 @@ function mergeWranglerBlocks(
     }
     slot.set(binding, [...block.body]);
   }
-  for (const key of [...arrayBindings.keys()].sort()) {
-    const slot = arrayBindings.get(key)!;
-    for (const binding of [...slot.keys()].sort()) {
-      result.push({
-        kind: "array-table",
-        header: `[[${key}]]`,
-        key,
-        body: slot.get(binding)!,
-      });
+  for (const [key, slot] of arrayBindings) {
+    for (const [, body] of slot) {
+      result.push({ kind: "array-table", header: `[[${key}]]`, key, body });
     }
   }
   return result;
