@@ -132,6 +132,11 @@ export function installFromExtractedRoot(
   const values = buildPlaceholderValues(opts);
   substitutePlaceholdersInTree(opts.destination, values, filesWritten);
   renameDotfilesAfterTemplate(opts.destination, filesWritten);
+  resolveCatalogSpecifiers({
+    extractedRoot: opts.extractedRoot,
+    destination: opts.destination,
+    filesWritten,
+  });
   validateNoLeftovers(opts.destination, filesWritten);
   if (!opts.skipGitInit) {
     gitInit(opts.destination);
@@ -221,6 +226,75 @@ function walkRel(root: string): ReadonlyArray<string> {
     }
   }
   return out;
+}
+
+function resolveCatalogSpecifiers(args: {
+  extractedRoot: string;
+  destination: string;
+  filesWritten: ReadonlyArray<string>;
+}): void {
+  if (!args.filesWritten.includes("package.json")) return;
+  const catalog = readDefaultPnpmCatalog(args.extractedRoot);
+  if (catalog.size === 0) return;
+
+  const packageJsonPath = join(args.destination, "package.json");
+  const pkg = JSON.parse(readFileSync(packageJsonPath, "utf8")) as Record<
+    string,
+    unknown
+  >;
+  let changed = false;
+  for (const field of [
+    "dependencies",
+    "devDependencies",
+    "peerDependencies",
+    "optionalDependencies",
+  ]) {
+    const deps = pkg[field];
+    if (!deps || typeof deps !== "object" || Array.isArray(deps)) continue;
+    for (const [name, spec] of Object.entries(deps as Record<string, unknown>)) {
+      if (spec !== "catalog:") continue;
+      const resolved = catalog.get(name);
+      if (!resolved) {
+        throw new Error(`pnpm catalog is missing an entry for ${name}`);
+      }
+      (deps as Record<string, string>)[name] = resolved;
+      changed = true;
+    }
+  }
+  if (changed) {
+    writeFileSync(packageJsonPath, JSON.stringify(pkg, null, 2) + "\n");
+  }
+}
+
+function readDefaultPnpmCatalog(
+  extractedRoot: string,
+): ReadonlyMap<string, string> {
+  const workspacePath = join(extractedRoot, "pnpm-workspace.yaml");
+  if (!existsSync(workspacePath)) return new Map();
+
+  const catalog = new Map<string, string>();
+  let inCatalog = false;
+  for (const line of readFileSync(workspacePath, "utf8").split(/\r?\n/)) {
+    if (line.trim() === "catalog:") {
+      inCatalog = true;
+      continue;
+    }
+    if (!inCatalog) continue;
+    if (line.trim() === "" || line.trimStart().startsWith("#")) continue;
+    if (!line.startsWith("  ")) break;
+
+    const trimmed = line.trim();
+    const separator = trimmed.indexOf(":");
+    if (separator === -1) continue;
+    const rawName = trimmed.slice(0, separator).trim();
+    const name = rawName.replace(/^['"]|['"]$/g, "");
+    const spec = trimmed
+      .slice(separator + 1)
+      .trim()
+      .replace(/\s+#.*$/, "");
+    if (name && spec) catalog.set(name, spec);
+  }
+  return catalog;
 }
 
 function substitutePlaceholdersInTree(

@@ -70,7 +70,7 @@ jobs:
         with:
           node-version: 22
 
-      - name: Check if PR touched any package.json
+      - name: Check if PR touched dependency metadata
         id: changed
         run: |
           # Compare against the PR base branch — fetch-depth: 0 above
@@ -87,18 +87,18 @@ jobs:
           # `ERR_PNPM_OUTDATED_LOCKFILE`.
           BASE="${{ github.event.pull_request.base.ref }}"
           git fetch --no-tags --depth=1 origin "$BASE" 2>/dev/null || true
-          CHANGED=$(git diff --name-only "origin/$BASE...HEAD" -- ':(glob)**/package.json' 'package.json' 2>/dev/null || echo "")
+          CHANGED=$(git diff --name-only "origin/$BASE...HEAD" -- 'pnpm-workspace.yaml' ':(glob)**/package.json' 'package.json' 2>/dev/null || echo "")
           if [ -z "$CHANGED" ]; then
-            echo "no_pkg=true" >> "$GITHUB_OUTPUT"
-            echo "No package.json change detected; nothing to do."
+            echo "no_deps=true" >> "$GITHUB_OUTPUT"
+            echo "No package/catalog change detected; nothing to do."
           else
-            echo "no_pkg=false" >> "$GITHUB_OUTPUT"
-            echo "Changed package.json files:"
+            echo "no_deps=false" >> "$GITHUB_OUTPUT"
+            echo "Changed dependency metadata:"
             echo "$CHANGED"
           fi
 
       - name: Regenerate workspace lockfiles
-        if: steps.changed.outputs.no_pkg == 'false'
+        if: steps.changed.outputs.no_deps == 'false'
         run: |
           # Recursive install hits the workspace + every starter, so
           # both `/pnpm-lock.yaml` and the per-starter ones stay in
@@ -106,7 +106,7 @@ jobs:
           pnpm install --no-frozen-lockfile
 
       - name: Commit lockfile deltas if any
-        if: steps.changed.outputs.no_pkg == 'false'
+        if: steps.changed.outputs.no_deps == 'false'
         run: |
           # Same pathspec gotcha as the detection step — `:(glob)` so
           # nested per-starter `pnpm-lock.yaml` files are picked up.
