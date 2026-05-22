@@ -1041,6 +1041,134 @@ describe("installFromExtractedRoot", () => {
     expect(notes.theme_source).toBeNull();
   });
 
+  it("emits an empty scripts/.mantle-provision.mjs when no feature contributes provision", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    const destination = join(tempRoot, "out-provision-empty");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      destination,
+      extractedRoot,
+    });
+
+    const provision = readFileSync(
+      join(destination, "scripts", ".mantle-provision.mjs"),
+      "utf8",
+    );
+    expect(provision).toContain("export const featureSteps = [];");
+    expect(provision).not.toContain("import");
+  });
+
+  it("aggregates provision step arrays from features in resolver topological order", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "alpha", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        provision: { from: "../features/alpha/provision.js" },
+      }),
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "beta", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        provision: {
+          from: "../features/beta/provision.js",
+          binding: "steps",
+        },
+      }),
+    );
+    const destination = join(tempRoot, "out-provision-merge");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      features: [{ name: "beta" }, { name: "alpha" }],
+      destination,
+      extractedRoot,
+      sources: {
+        archetypes: { publication: { path: "publication" } },
+        features: {
+          alpha: { path: "registry/features/alpha", applicableArchetypes: ["publication"] },
+          beta: {
+            path: "registry/features/beta",
+            applicableArchetypes: ["publication"],
+            registryDependencies: ["alpha"],
+          },
+        },
+        themes: {},
+        roadmap: [],
+      },
+    });
+
+    const provision = readFileSync(
+      join(destination, "scripts", ".mantle-provision.mjs"),
+      "utf8",
+    );
+    // Dependency-first ordering: alpha resolves before beta.
+    expect(provision).toContain(
+      'import { installSteps as alphaProvision } from "../features/alpha/provision.js";',
+    );
+    expect(provision).toContain(
+      'import { steps as betaProvision } from "../features/beta/provision.js";',
+    );
+    expect(provision.indexOf("alphaProvision")).toBeLessThan(
+      provision.indexOf("betaProvision"),
+    );
+    expect(provision).toContain("  ...alphaProvision,");
+    expect(provision).toContain("  ...betaProvision,");
+  });
+
+  it("derives a safe identifier for features whose names contain non-identifier chars", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(
+        extractedRoot,
+        "registry",
+        "features",
+        "customer-account",
+        "_compose",
+        "glue.json",
+      ),
+      JSON.stringify({
+        schemaVersion: 1,
+        provision: { from: "../features/customer-account/provision.js" },
+      }),
+    );
+    const destination = join(tempRoot, "out-provision-ident");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      features: [{ name: "customer-account" }],
+      destination,
+      extractedRoot,
+      sources: {
+        archetypes: { publication: { path: "publication" } },
+        features: {
+          "customer-account": {
+            path: "registry/features/customer-account",
+            applicableArchetypes: ["publication"],
+          },
+        },
+        themes: {},
+        roadmap: [],
+      },
+    });
+
+    const provision = readFileSync(
+      join(destination, "scripts", ".mantle-provision.mjs"),
+      "utf8",
+    );
+    expect(provision).toContain("customer_accountProvision");
+    // Spread uses the safe identifier, not the original name.
+    expect(provision).toContain("...customer_accountProvision,");
+  });
+
   it("aggregates FeatureHandlerEnv declarations across features", () => {
     const extractedRoot = fixtureExtractedRoot();
     writeFile(
