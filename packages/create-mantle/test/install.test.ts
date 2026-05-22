@@ -232,6 +232,255 @@ describe("installFromExtractedRoot", () => {
     ).toContain("../../manifests/contact.yaml");
   });
 
+  it("emits empty feature glue stubs when no features are requested", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    const destination = join(tempRoot, "out-no-features");
+    mkdirSync(destination, { recursive: true });
+
+    const notes = installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      destination,
+      extractedRoot,
+    });
+
+    expect(notes.features).toEqual([]);
+    expect(notes.files_written).toContain("src/.mantle/generated.handlers.ts");
+    expect(notes.files_written).toContain("src/.mantle/generated.manifests.ts");
+    expect(notes.files_written).toContain("src/.mantle/generated.routes.ts");
+
+    const manifests = readFileSync(
+      join(destination, "src", ".mantle", "generated.manifests.ts"),
+      "utf8",
+    );
+    expect(manifests).toContain(
+      "export const featureManifestYamls: readonly string[] = [];",
+    );
+
+    const handlers = readFileSync(
+      join(destination, "src", ".mantle", "generated.handlers.ts"),
+      "utf8",
+    );
+    expect(handlers).toContain("export function buildFeatureHandlers(");
+    expect(handlers).toContain("return {};");
+    expect(handlers).not.toContain("contact");
+
+    const routes = readFileSync(
+      join(destination, "src", ".mantle", "generated.routes.ts"),
+      "utf8",
+    );
+    expect(routes).toContain("export function buildFeatureSlugOverrides(");
+    expect(routes).toContain("return [];");
+    expect(routes).not.toContain("contact");
+  });
+
+  it("generates contact feature glue with the expected imports and route override", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "contact", "README.md"),
+      "contact feature\n",
+    );
+    const destination = join(tempRoot, "out-feature-glue");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "intake",
+      features: [{ name: "contact" }],
+      destination,
+      extractedRoot,
+      sources: {
+        archetypes: { intake: { path: "publication" } },
+        features: {
+          contact: {
+            path: "registry/features/contact",
+            applicableArchetypes: ["intake"],
+          },
+        },
+        themes: {},
+        roadmap: [],
+      },
+    });
+
+    const handlers = readFileSync(
+      join(destination, "src", ".mantle", "generated.handlers.ts"),
+      "utf8",
+    );
+    expect(handlers).toContain(
+      'import { slackNotify } from "../features/contact/slackNotify.js";',
+    );
+    expect(handlers).toContain("captchaCheck: cloudflareTurnstileCheck(");
+    expect(handlers).toContain("slackNotify: slackNotify as AnyHandler,");
+
+    const routes = readFileSync(
+      join(destination, "src", ".mantle", "generated.routes.ts"),
+      "utf8",
+    );
+    // Non-publication archetypes import the contact template from theme.default.
+    expect(routes).toContain(
+      'import { contactTemplate } from "../theme.default/templates/index.js";',
+    );
+    expect(routes).toContain('slug: "contact",');
+    expect(routes).toContain("renderContact(ctx, env)");
+  });
+
+  it("composes .dev.vars.example from archetype and a feature fragment", () => {
+    // Previously: any feature writing .dev.vars.example would throw
+    // "Feature overlay collision" because the file was not a composable target.
+    // Now: the feature fragment is concatenated onto the archetype's file with
+    // a "# --- from feature:<name> ---" separator so both vars survive.
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "publication", ".dev.vars.example"),
+      "ARCHETYPE_VAR=base\n",
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "alpha", ".dev.vars.example"),
+      "ALPHA_VAR=hello\n",
+    );
+
+    const destination = join(tempRoot, "out-devvars");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      features: [{ name: "alpha" }],
+      destination,
+      extractedRoot,
+      sources: {
+        archetypes: { publication: { path: "publication" } },
+        features: {
+          alpha: {
+            path: "registry/features/alpha",
+            applicableArchetypes: ["publication"],
+          },
+        },
+        themes: {},
+        roadmap: [],
+      },
+    });
+
+    const composed = readFileSync(
+      join(destination, ".dev.vars.example"),
+      "utf8",
+    );
+    expect(composed).toContain("ARCHETYPE_VAR=base");
+    expect(composed).toContain("# --- from feature:alpha ---");
+    expect(composed).toContain("ALPHA_VAR=hello");
+    expect(composed.indexOf("ARCHETYPE_VAR")).toBeLessThan(
+      composed.indexOf("ALPHA_VAR"),
+    );
+  });
+
+  it("composes .dev.vars.example from multiple features in resolver topological order", () => {
+    // Previously: the layer push loop split features into two passes
+    // (_common-pathed first, then the rest), which could re-order a dependent
+    // ahead of its dependency. Now a single iteration over args.features
+    // preserves the order resolveFeatures returns.
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "_common", "features", "alpha", ".dev.vars.example"),
+      "ALPHA_VAR=from-alpha\n",
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "beta", ".dev.vars.example"),
+      "BETA_VAR=from-beta\n",
+    );
+
+    const destination = join(tempRoot, "out-multi-devvars");
+    mkdirSync(destination, { recursive: true });
+
+    // beta depends on alpha. resolveFeatures returns [alpha, beta] (deps first).
+    // Even though alpha lives under _common/features/ and beta does not, the
+    // composed .dev.vars.example must record alpha's fragment first.
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      features: [{ name: "beta" }],
+      destination,
+      extractedRoot,
+      sources: {
+        archetypes: { publication: { path: "publication" } },
+        features: {
+          alpha: {
+            path: "_common/features/alpha",
+            applicableArchetypes: ["publication"],
+          },
+          beta: {
+            path: "registry/features/beta",
+            applicableArchetypes: ["publication"],
+            registryDependencies: ["alpha"],
+          },
+        },
+        themes: {},
+        roadmap: [],
+      },
+    });
+
+    const composed = readFileSync(
+      join(destination, ".dev.vars.example"),
+      "utf8",
+    );
+    // alpha is the initial writer (no separator); beta appends below.
+    expect(composed).toContain("ALPHA_VAR=from-alpha");
+    expect(composed).toContain("# --- from feature:beta ---");
+    expect(composed).toContain("BETA_VAR=from-beta");
+    expect(composed.indexOf("ALPHA_VAR")).toBeLessThan(
+      composed.indexOf("BETA_VAR"),
+    );
+  });
+
+  it("installs a feature without a known glue contribution as files only", () => {
+    // Previously: writeGeneratedFeatureGlue checked `hasContact: boolean`.
+    // Any feature would force-flip handlers/routes to the contact-shaped
+    // glue if its name matched. Now: a feature whose name has no entry in
+    // FEATURE_CONTRIBUTIONS contributes nothing to glue, but its files are
+    // still copied. Lets future features ship pure-overlay files without
+    // touching the scaffolder.
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "static-only", "static-file.txt"),
+      "hello\n",
+    );
+
+    const destination = join(tempRoot, "out-static-only");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      features: [{ name: "static-only" }],
+      destination,
+      extractedRoot,
+      sources: {
+        archetypes: { publication: { path: "publication" } },
+        features: {
+          "static-only": {
+            path: "registry/features/static-only",
+            applicableArchetypes: ["publication"],
+          },
+        },
+        themes: {},
+        roadmap: [],
+      },
+    });
+
+    expect(existsSync(join(destination, "static-file.txt"))).toBe(true);
+    const handlers = readFileSync(
+      join(destination, "src", ".mantle", "generated.handlers.ts"),
+      "utf8",
+    );
+    expect(handlers).toContain("return {};");
+    const manifests = readFileSync(
+      join(destination, "src", ".mantle", "generated.manifests.ts"),
+      "utf8",
+    );
+    expect(manifests).toContain(
+      "export const featureManifestYamls: readonly string[] = [];",
+    );
+  });
+
   it("fails when two non-theme layers write the same non-composable path", () => {
     const extractedRoot = fixtureExtractedRoot();
     writeFile(
