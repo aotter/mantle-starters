@@ -69,8 +69,8 @@ state in the DO, orders in D1. The seams are:
   will otherwise crash checkout. (This was learned the hard way on
   the SPU/SKU refactor downstream.)
 
-- **Inventory gate** — `tracked` products go through
-  `_stockCheck.ts`'s `checkSingleItemStock` BEFORE the KV write, not
+- **Inventory gate** — `tracked` SKUs go through
+  `_stockCheck.ts`'s `checkSingleSkuStock` BEFORE the KV write, not
   just at `checkoutStart` reserve time. Users hit "out of stock" at
   the add-to-cart click, not three pages later. Customer-facing
   message stays vague (`STOCK_ERROR_MESSAGE`); exact counts in logs
