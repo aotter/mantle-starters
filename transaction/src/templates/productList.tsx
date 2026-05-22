@@ -14,9 +14,14 @@ import { Layout, renderHtml } from "./layout.js";
 export interface ProductListItem {
   readonly slug: string;
   readonly title: string;
-  readonly priceMinor: number;
+  /** Minimum priceMinor across this SPU's SKUs (#166). Shown as
+   *  "from $X" when the SPU has more than one purchasable SKU. */
+  readonly minPriceMinor: number;
   readonly currency: string;
-  readonly inventoryMode: "tracked" | "untracked";
+  /** Number of published SKUs for this SPU. `> 1` triggers the
+   *  "from $X" display; otherwise the price renders as a fixed
+   *  amount. */
+  readonly skuCount: number;
   /** Short blurb shown under the card title. From `product-translations.shortDescription`. */
   readonly shortDescription?: string;
 }
@@ -44,10 +49,10 @@ export function renderProductList(ctx: ProductListContext): string {
               {p.shortDescription ? (
                 <p class="muted">{p.shortDescription}</p>
               ) : null}
-              <div class="price">{formatPrice(p.priceMinor, p.currency)}</div>
-              {p.inventoryMode === "tracked" ? (
-                <div class="muted">Limited stock</div>
-              ) : null}
+              <div class="price">
+                {p.skuCount > 1 ? "from " : ""}
+                {formatPrice(p.minPriceMinor, p.currency)}
+              </div>
             </div>
           ))}
         </div>

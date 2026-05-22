@@ -1,14 +1,14 @@
 /**
- * snapshotInventory — reads InventoryActor state for one product and
+ * snapshotInventory — reads InventoryActor state for one SKU and
  * upserts the inventory_snapshots entry in D1. Called by the
  * `inventory.snapshot.requested` orderWorkConsumer branch + by the
  * cron-driven `inventory.reconcile.tick` (which fans out one
- * snapshot.requested per product).
+ * snapshot.requested per tracked SKU).
  *
- * Idempotent — same productSlug repeatedly produces the same row
- * (upsert on entries.id derived from productSlug).
+ * Idempotent — same skuCode repeatedly produces the same row
+ * (upsert on entries.id derived from skuCode).
  *
- * Input shape enforced by the manifest (`required: [productSlug]`).
+ * Input shape enforced by the manifest (`required: [skuCode]`).
  */
 
 import type { AnyHandler } from "@aotter/mantle/runtime";
@@ -21,17 +21,17 @@ export interface SnapshotInventoryEnv {
 }
 
 export interface SnapshotInventoryInput {
-  readonly productSlug: string;
+  readonly skuCode: string;
 }
 
 export interface SnapshotInventoryOutput {
-  readonly productSlug: string;
+  readonly skuCode: string;
   readonly available: number;
   readonly reserved: number;
 }
 
-export function inventorySnapshotEntryId(productSlug: string): string {
-  return `entry_inv_${productSlug}`;
+export function inventorySnapshotEntryId(skuCode: string): string {
+  return `entry_inv_${skuCode}`;
 }
 
 /**
@@ -43,13 +43,13 @@ export function inventorySnapshotEntryId(productSlug: string): string {
  */
 export async function upsertInventorySnapshot(
   db: D1Database,
-  productSlug: string,
+  skuCode: string,
   available: number,
   reserved: number,
 ): Promise<void> {
   const now = Date.now();
-  const entryId = inventorySnapshotEntryId(productSlug);
-  const data = JSON.stringify({ productSlug, available, reserved, updatedAt: now });
+  const entryId = inventorySnapshotEntryId(skuCode);
+  const data = JSON.stringify({ skuCode, available, reserved, updatedAt: now });
   await db
     .prepare(
       `INSERT OR REPLACE INTO entries
@@ -66,9 +66,9 @@ export function buildSnapshotInventory(env: SnapshotInventoryEnv): AnyHandler {
   return defineHandler<SnapshotInventoryInput, SnapshotInventoryOutput>(
     async (input) => {
       const inv = getInventoryActor(env);
-      const { available, reserved } = await inv.snapshot(input.productSlug);
-      await upsertInventorySnapshot(env.DB, input.productSlug, available, reserved);
-      return { productSlug: input.productSlug, available, reserved };
+      const { available, reserved } = await inv.snapshot(input.skuCode);
+      await upsertInventorySnapshot(env.DB, input.skuCode, available, reserved);
+      return { skuCode: input.skuCode, available, reserved };
     },
   );
 }

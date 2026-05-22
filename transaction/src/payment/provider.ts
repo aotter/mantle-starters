@@ -24,6 +24,10 @@
  */
 
 export interface CartItem {
+  readonly skuCode: string;
+  /** Snapshot of the parent SPU slug at checkout — useful for the
+   *  provider's line-item description without re-joining the
+   *  catalog. */
   readonly productSlug: string;
   readonly qty: number;
   readonly priceMinor: number;
