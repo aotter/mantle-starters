@@ -16,8 +16,9 @@
  * add).
  */
 
-import type { AnyHandler, CmsRuntime } from "@aotter/mantle/runtime";
+import type { AnyHandler } from "@aotter/mantle/runtime";
 import { defineHandler } from "./_context.js";
+import { loadProductCatalog } from "./_productEnrichment.js";
 import {
   checkSingleItemStock,
   STOCK_ERROR_MESSAGE,
@@ -27,13 +28,6 @@ import {
 interface CartState {
   items: { productSlug: string; qty: number }[];
   updatedAt: number;
-}
-
-interface ProductLookup {
-  readonly slug: string;
-  readonly priceMinor: number;
-  readonly currency: string;
-  readonly inventoryMode: "tracked" | "untracked";
 }
 
 const CART_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days
@@ -69,7 +63,14 @@ export function buildAddToCart(env: AddToCartEnv): AnyHandler {
     if (input.qty < 1 || input.qty > MAX_QTY_PER_LINE) {
       throw new Error(`addToCart: qty must be 1..${MAX_QTY_PER_LINE}`);
     }
-    const product = await lookupProduct(ctx.runtime, input.productSlug);
+    // One catalog load per request — used by (a) the incoming-product
+    // lookup, (b) the stock-gate check, and (c) the enrichment fan-out
+    // for the cart display payload. Previously each call site issued
+    // its own `runtime.listEntries`, producing N+1 round trips on
+    // multi-line carts (e.g. a 5-line cart with one add-to-cart click
+    // fired 6 listEntries scans of the entire products collection).
+    const catalog = await loadProductCatalog(ctx.runtime);
+    const product = catalog.bySlug.get(input.productSlug);
     if (!product) {
       throw new Error(`addToCart: unknown productSlug '${input.productSlug}'`);
     }
@@ -99,21 +100,11 @@ export function buildAddToCart(env: AddToCartEnv): AnyHandler {
       expirationTtl: CART_TTL_SECONDS,
     });
 
-    // Build display payload — look up each product's current price.
-    // For v0.1 (≤100 orders/day, small catalogs) the N+1 read is
-    // acceptable; multi-product carts can fan-out with Promise.all.
-    const productSlugs = next.items.map((i) => i.productSlug);
-    const products = await Promise.all(
-      productSlugs.map((slug) => lookupProduct(ctx.runtime, slug)),
-    );
-    const enriched = next.items.map((item, idx) => {
-      const p = products[idx];
-      return {
-        productSlug: item.productSlug,
-        qty: item.qty,
-        priceMinor: p?.priceMinor ?? 0,
-      };
-    });
+    const enriched = next.items.map((item) => ({
+      productSlug: item.productSlug,
+      qty: item.qty,
+      priceMinor: catalog.bySlug.get(item.productSlug)?.priceMinor ?? 0,
+    }));
     const subtotalMinor = enriched.reduce(
       (sum, i) => sum + i.priceMinor * i.qty,
       0,
@@ -142,32 +133,4 @@ function coalesce(
   return out;
 }
 
-async function lookupProduct(
-  runtime: CmsRuntime,
-  slug: string,
-): Promise<ProductLookup | null> {
-  // Use the runtime's listEntries — filter by collection + slug.
-  // Empty result if not found / not published.
-  const entries = await runtime.listEntries.execute({
-    collection: "products",
-    status: "published",
-    limit: 1000,
-  });
-  const hit = entries.find(
-    (e) => (e.data as { slug?: string }).slug === slug,
-  );
-  if (!hit) return null;
-  const d = hit.data as {
-    slug: string;
-    priceMinor: number;
-    currency: string;
-    inventoryMode: "tracked" | "untracked";
-  };
-  return {
-    slug: d.slug,
-    priceMinor: d.priceMinor,
-    currency: d.currency,
-    inventoryMode: d.inventoryMode,
-  };
-}
 

@@ -1,9 +1,9 @@
 /** @jsxImportSource hono/jsx */
 import { raw } from "hono/html";
-import { marked } from "marked";
 import type { SiteConfig } from "@aotter/mantle/spec";
 import { Layout, renderHtml } from "./layout.js";
 import { BLOCKS_CSS, renderBlocks } from "./_blocks.js";
+import { renderMarkdownSafe } from "./_markdown.js";
 import { EMPTY_ASSETS } from "./_picture.js";
 import type { PageContent } from "../handlers/_productEnrichment.js";
 
@@ -50,9 +50,7 @@ export function renderPage(ctx: PageContext): string {
   const useBlocks = blocks && blocks.length > 0;
   const assets = ctx.page.assets ?? EMPTY_ASSETS;
   const bodyHtml =
-    !useBlocks && ctx.page.body
-      ? (marked.parse(ctx.page.body, { async: false }) as string)
-      : "";
+    !useBlocks && ctx.page.body ? renderMarkdownSafe(ctx.page.body) : "";
   const tree = (
     <Layout title={ctx.page.title} site={ctx.site}>
       <style>{raw(useBlocks ? BLOCKS_CSS : PAGE_MD_CSS)}</style>
