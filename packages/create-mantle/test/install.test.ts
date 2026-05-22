@@ -1422,6 +1422,41 @@ describe("installFromExtractedRoot", () => {
     ).toThrow(/i18n merge conflict at "header\.brand"/);
   });
 
+  it("rejects forbidden keys (__proto__, constructor, prototype) in i18n fragments", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "publication", "src", "i18n", "en.json"),
+      JSON.stringify({}, null, 2) + "\n",
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "evil", "src", "i18n", "en.json"),
+      '{"__proto__":{"polluted":true}}',
+    );
+    const destination = join(tempRoot, "out-i18n-proto");
+    mkdirSync(destination, { recursive: true });
+
+    expect(() =>
+      installFromExtractedRoot({
+        ...commonOpts(),
+        archetype: "publication",
+        features: [{ name: "evil" }],
+        destination,
+        extractedRoot,
+        sources: {
+          archetypes: { publication: { path: "publication" } },
+          features: {
+            evil: {
+              path: "registry/features/evil",
+              applicableArchetypes: ["publication"],
+            },
+          },
+          themes: {},
+          roadmap: [],
+        },
+      }),
+    ).toThrow(/i18n merge rejected forbidden key/);
+  });
+
   it("emits merged i18n with sorted keys for deterministic output", () => {
     const extractedRoot = fixtureExtractedRoot();
     writeFile(
