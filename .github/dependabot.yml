@@ -38,6 +38,10 @@ updates:
       - dependencies
     ignore:
       - dependency-name: "@aotter/*"
+      # Vitest 4 requires Vite 6+; this repo currently does not carry Vite
+      # directly, and the generated lockfile resolves Vite 5 via peers.
+      - dependency-name: "vitest"
+        update-types: ["version-update:semver-major"]
     groups:
       types:
         patterns: ["@types/*"]
