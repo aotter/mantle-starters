@@ -388,6 +388,9 @@ function writeGeneratedFeatureGlue(args: {
   return files.map(([relPath]) => relPath);
 }
 
+const PROVISION_FROM_RE = /^[A-Za-z0-9_./@\-]+$/;
+const PROVISION_BINDING_RE = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
+
 function generatedProvisionSource(pairs: ReadonlyArray<FeatureWithSpec>): string | null {
   const contributors = pairs.filter((p) => p.spec.provision);
   if (contributors.length === 0) {
@@ -405,6 +408,16 @@ function generatedProvisionSource(pairs: ReadonlyArray<FeatureWithSpec>): string
   for (const { feature, spec } of contributors) {
     const provision = spec.provision!;
     const binding = provision.binding ?? "installSteps";
+    if (!PROVISION_FROM_RE.test(provision.from)) {
+      throw new Error(
+        `Invalid provision.from for feature "${feature.name}": "${provision.from}" contains characters that are not safe in a module specifier.`,
+      );
+    }
+    if (!PROVISION_BINDING_RE.test(binding)) {
+      throw new Error(
+        `Invalid provision.binding for feature "${feature.name}": "${binding}" is not a valid TypeScript identifier.`,
+      );
+    }
     const ident = uniqueProvisionIdent(feature.name, seenIdent);
     importLines.push(
       `import { ${binding} as ${ident} } from "${provision.from}";`,

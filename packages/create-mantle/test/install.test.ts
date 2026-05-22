@@ -1122,6 +1122,117 @@ describe("installFromExtractedRoot", () => {
     expect(provision).toContain("  ...betaProvision,");
   });
 
+  it("rejects provision.from containing characters unsafe in a module specifier", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "bad", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        provision: { from: '../bad"; import { evil } from "./payload.js' },
+      }),
+    );
+    const destination = join(tempRoot, "out-provision-injection");
+    mkdirSync(destination, { recursive: true });
+
+    expect(() =>
+      installFromExtractedRoot({
+        ...commonOpts(),
+        archetype: "publication",
+        features: [{ name: "bad" }],
+        destination,
+        extractedRoot,
+        sources: {
+          archetypes: { publication: { path: "publication" } },
+          features: {
+            bad: { path: "registry/features/bad", applicableArchetypes: ["publication"] },
+          },
+          themes: {},
+          roadmap: [],
+        },
+      }),
+    ).toThrow(/Invalid provision.from/);
+  });
+
+  it("rejects provision.binding that is not a valid TypeScript identifier", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "bad", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        provision: { from: "../features/bad/provision.js", binding: "bad-name" },
+      }),
+    );
+    const destination = join(tempRoot, "out-provision-bad-binding");
+    mkdirSync(destination, { recursive: true });
+
+    expect(() =>
+      installFromExtractedRoot({
+        ...commonOpts(),
+        archetype: "publication",
+        features: [{ name: "bad" }],
+        destination,
+        extractedRoot,
+        sources: {
+          archetypes: { publication: { path: "publication" } },
+          features: {
+            bad: { path: "registry/features/bad", applicableArchetypes: ["publication"] },
+          },
+          themes: {},
+          roadmap: [],
+        },
+      }),
+    ).toThrow(/Invalid provision\.binding/);
+  });
+
+  it("allows two features to share the default binding from different paths", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "alpha", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        provision: { from: "../features/alpha/provision.js" },
+      }),
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "beta", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        provision: { from: "../features/beta/provision.js" },
+      }),
+    );
+    const destination = join(tempRoot, "out-provision-shared-binding");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      features: [{ name: "alpha" }, { name: "beta" }],
+      destination,
+      extractedRoot,
+      sources: {
+        archetypes: { publication: { path: "publication" } },
+        features: {
+          alpha: { path: "registry/features/alpha", applicableArchetypes: ["publication"] },
+          beta: { path: "registry/features/beta", applicableArchetypes: ["publication"] },
+        },
+        themes: {},
+        roadmap: [],
+      },
+    });
+
+    const provision = readFileSync(
+      join(destination, "scripts", ".mantle-provision.mjs"),
+      "utf8",
+    );
+    // Both export `installSteps` but aliased to per-feature identifiers.
+    expect(provision).toContain(
+      'import { installSteps as alphaProvision } from "../features/alpha/provision.js";',
+    );
+    expect(provision).toContain(
+      'import { installSteps as betaProvision } from "../features/beta/provision.js";',
+    );
+  });
+
   it("derives a safe identifier for features whose names contain non-identifier chars", () => {
     const extractedRoot = fixtureExtractedRoot();
     writeFile(
