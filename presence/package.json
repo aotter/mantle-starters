@@ -28,7 +28,7 @@
     "aws4fetch": "catalog:",
     "better-auth": "catalog:",
     "hono": "catalog:",
-    "marked": "^14.1.3",
+    "marked": "^18.0.2",
     "yaml": "^2.9.0",
     "zod": "catalog:"
   },
