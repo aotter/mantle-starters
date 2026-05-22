@@ -167,6 +167,16 @@ describe("installFromExtractedRoot", () => {
       join(extractedRoot, "registry", "features", "contact", "README.md"),
       "contact feature\n",
     );
+    writeFile(
+      join(extractedRoot, "registry", "features", "contact", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        manifests: {
+          imports: [{ default: "contactYaml", from: "../../manifests/contact.yaml" }],
+          entries: ["contactYaml"],
+        },
+      }),
+    );
     const destination = join(tempRoot, "out-features");
     mkdirSync(destination, { recursive: true });
 
@@ -274,11 +284,48 @@ describe("installFromExtractedRoot", () => {
     expect(routes).not.toContain("contact");
   });
 
-  it("generates contact feature glue with the expected imports and route override", () => {
+  it("generates feature glue from a feature's _compose/glue.json", () => {
     const extractedRoot = fixtureExtractedRoot();
     writeFile(
       join(extractedRoot, "registry", "features", "contact", "README.md"),
       "contact feature\n",
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "contact", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        handlers: {
+          imports: [
+            { named: ["cloudflareTurnstileCheck"], from: "@aotter/mantle/cloudflare" },
+            { named: ["slackNotify"], from: "../features/contact/slackNotify.js" },
+          ],
+          entries: [
+            "    captchaCheck: cloudflareTurnstileCheck({",
+            '      secret: env.TURNSTILE_SECRET_KEY ?? "dev-stub",',
+            "    }) as AnyHandler,",
+            "    slackNotify: slackNotify as AnyHandler,",
+          ],
+        },
+        routes: {
+          perArchetype: {
+            default: {
+              imports: [
+                { named: ["contactTemplate"], from: "../theme.default/templates/index.js" },
+              ],
+            },
+          },
+          imports: [
+            { named: ["renderContact"], from: "../features/contact/renderContact.js" },
+          ],
+          overrides: [
+            {
+              collection: "page-translations",
+              slug: "contact",
+              render: "renderContact(ctx, env, contactTemplate)",
+            },
+          ],
+        },
+      }),
     );
     const destination = join(tempRoot, "out-feature-glue");
     mkdirSync(destination, { recursive: true });
@@ -316,12 +363,138 @@ describe("installFromExtractedRoot", () => {
       join(destination, "src", ".mantle", "generated.routes.ts"),
       "utf8",
     );
-    // Non-publication archetypes import the contact template from theme.default.
+    // Non-publication archetypes fall through to the "default" perArchetype block.
     expect(routes).toContain(
       'import { contactTemplate } from "../theme.default/templates/index.js";',
     );
+    expect(routes).toContain(
+      'import { renderContact } from "../features/contact/renderContact.js";',
+    );
     expect(routes).toContain('slug: "contact",');
-    expect(routes).toContain("renderContact(ctx, env)");
+    expect(routes).toContain("renderContact(ctx, env, contactTemplate)");
+  });
+
+  it("uses the publication perArchetype block when archetype matches", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "contact", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        routes: {
+          perArchetype: {
+            publication: {
+              imports: [{ named: ["baseline"], from: "../themeWiring.js" }],
+              decls: ["const { contact: contactTemplate } = baseline.templates;"],
+            },
+            default: {
+              imports: [
+                { named: ["contactTemplate"], from: "../theme.default/templates/index.js" },
+              ],
+            },
+          },
+          overrides: [
+            {
+              collection: "page-translations",
+              slug: "contact",
+              render: "contactTemplate({})",
+            },
+          ],
+        },
+      }),
+    );
+    const destination = join(tempRoot, "out-feature-glue-publication");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      features: [{ name: "contact" }],
+      destination,
+      extractedRoot,
+      sources: {
+        archetypes: { publication: { path: "publication" } },
+        features: {
+          contact: {
+            path: "registry/features/contact",
+            applicableArchetypes: ["publication"],
+          },
+        },
+        themes: {},
+        roadmap: [],
+      },
+    });
+
+    const routes = readFileSync(
+      join(destination, "src", ".mantle", "generated.routes.ts"),
+      "utf8",
+    );
+    expect(routes).toContain('import { baseline } from "../themeWiring.js";');
+    expect(routes).toContain(
+      "const { contact: contactTemplate } = baseline.templates;",
+    );
+    expect(routes).not.toContain('../theme.default/templates/index.js');
+  });
+
+  it("rejects a _compose/glue.json with an unsupported schemaVersion", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "future", "_compose", "glue.json"),
+      JSON.stringify({ schemaVersion: 99 }),
+    );
+    const destination = join(tempRoot, "out-bad-schema");
+    mkdirSync(destination, { recursive: true });
+
+    expect(() =>
+      installFromExtractedRoot({
+        ...commonOpts(),
+        archetype: "publication",
+        features: [{ name: "future" }],
+        destination,
+        extractedRoot,
+        sources: {
+          archetypes: { publication: { path: "publication" } },
+          features: {
+            future: {
+              path: "registry/features/future",
+              applicableArchetypes: ["publication"],
+            },
+          },
+          themes: {},
+          roadmap: [],
+        },
+      }),
+    ).toThrow(/Unsupported _compose\/glue\.json schemaVersion 99/);
+  });
+
+  it("rejects a malformed _compose/glue.json with a helpful message", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "broken", "_compose", "glue.json"),
+      "{not json",
+    );
+    const destination = join(tempRoot, "out-bad-json");
+    mkdirSync(destination, { recursive: true });
+
+    expect(() =>
+      installFromExtractedRoot({
+        ...commonOpts(),
+        archetype: "publication",
+        features: [{ name: "broken" }],
+        destination,
+        extractedRoot,
+        sources: {
+          archetypes: { publication: { path: "publication" } },
+          features: {
+            broken: {
+              path: "registry/features/broken",
+              applicableArchetypes: ["publication"],
+            },
+          },
+          themes: {},
+          roadmap: [],
+        },
+      }),
+    ).toThrow(/Invalid JSON in "registry\/features\/broken\/_compose\/glue\.json"/);
   });
 
   it("composes .dev.vars.example from archetype and a feature fragment", () => {

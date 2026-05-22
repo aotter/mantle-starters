@@ -176,6 +176,7 @@ export function installFromExtractedRoot(
     destination: opts.destination,
     archetype: opts.archetype,
     features: resolvedFeatures,
+    extractedRoot: opts.extractedRoot,
   });
   const allFiles = [...filesWritten, ...generatedFiles, ...generatedGlueFiles].sort();
   validateNoLeftovers(opts.destination, allFiles);
@@ -270,112 +271,87 @@ export interface ImportSpec {
   readonly named?: ReadonlyArray<string>;
 }
 
-interface FeatureContribution {
-  readonly manifestImports?: ReadonlyArray<ImportSpec>;
-  readonly manifestEntries?: ReadonlyArray<string>;
-  readonly handlerImports?: ReadonlyArray<ImportSpec>;
-  readonly handlerEntries?: ReadonlyArray<string>;
-  readonly routeTemplateImport?: (archetype: string) => string;
-  readonly routeOverrides?: ReadonlyArray<{
+interface FeatureGlueRoutes {
+  readonly perArchetype?: Readonly<
+    Record<string, { readonly imports?: ReadonlyArray<ImportSpec>; readonly decls?: ReadonlyArray<string> }>
+  >;
+  readonly imports?: ReadonlyArray<ImportSpec>;
+  readonly overrides?: ReadonlyArray<{
     readonly collection: string;
     readonly slug: string;
     readonly render: string;
   }>;
-  readonly routeHelpers?: ReadonlyArray<string>;
 }
 
-const FEATURE_CONTRIBUTIONS: Readonly<Record<string, FeatureContribution>> = {
-  contact: {
-    manifestImports: [
-      { default: "contactYaml", from: "../../manifests/contact.yaml" },
-    ],
-    manifestEntries: ["contactYaml"],
-    handlerImports: [
-      { named: ["cloudflareTurnstileCheck"], from: "@aotter/mantle/cloudflare" },
-      { named: ["slackNotify"], from: "../features/contact/slackNotify.js" },
-    ],
-    handlerEntries: [
-      "    captchaCheck: cloudflareTurnstileCheck({",
-      "      secret: env.TURNSTILE_SECRET_KEY ?? \"dev-stub\",",
-      "    }) as AnyHandler,",
-      "    slackNotify: slackNotify as AnyHandler,",
-    ],
-    routeTemplateImport: (archetype) =>
-      archetype === "publication"
-        ? [
-            "import { baseline } from \"../themeWiring.js\";",
-            "",
-            "const { contact: contactTemplate } = baseline.templates;",
-          ].join("\n")
-        : "import { contactTemplate } from \"../theme.default/templates/index.js\";",
-    routeOverrides: [
-      {
-        collection: "page-translations",
-        slug: "contact",
-        render: "renderContact(ctx, env)",
-      },
-    ],
-    routeHelpers: [
-      "async function renderContact(",
-      "  ctx: PublicRouteContext,",
-      "  env: Env,",
-      "): Promise<Response> {",
-      "  const { runtime, site, locale } = ctx;",
-      "  const all = await runtime.listEntries.execute({",
-      "    collection: \"page-translations\",",
-      "    status: \"published\",",
-      "    limit: 50,",
-      "  });",
-      "  const entry = all.find(",
-      "    (e) =>",
-      "      (e.data as { slug?: string }).slug === \"contact\" &&",
-      "      (e.data as { locale?: string }).locale === locale,",
-      "  );",
-      "  const data = (entry?.data ?? {}) as {",
-      "    title?: string;",
-      "    intro?: string;",
-      "    body?: string;",
-      "  };",
-      "  const html = contactTemplate({",
-      "    site,",
-      "    locale,",
-      "    page: {",
-      "      title: data.title ?? \"\",",
-      "      intro: data.intro,",
-      "      body: data.body ?? \"\",",
-      "    },",
-      "    turnstileSiteKey: env.TURNSTILE_SITE_KEY ?? \"1x00000000000000000000AA\",",
-      "  });",
-      "  return new Response(html, {",
-      "    status: 200,",
-      "    headers: {",
-      "      \"content-type\": \"text/html; charset=utf-8\",",
-      "      \"cache-control\": \"public, max-age=60, s-maxage=60\",",
-      "    },",
-      "  });",
-      "}",
-    ],
-  },
-};
+interface FeatureGlueSpec {
+  readonly schemaVersion: number;
+  readonly manifests?: {
+    readonly imports?: ReadonlyArray<ImportSpec>;
+    readonly entries?: ReadonlyArray<string>;
+  };
+  readonly handlers?: {
+    readonly imports?: ReadonlyArray<ImportSpec>;
+    readonly entries?: ReadonlyArray<string>;
+  };
+  readonly routes?: FeatureGlueRoutes;
+}
+
+const SUPPORTED_GLUE_SCHEMA_VERSIONS: ReadonlySet<number> = new Set([1]);
+
+function loadFeatureGlueSpec(
+  extractedRoot: string,
+  feature: ResolvedFeature,
+): FeatureGlueSpec | null {
+  if (!feature.path) return null;
+  const gluePath = join(extractedRoot, feature.path, "_compose", "glue.json");
+  if (!existsSync(gluePath)) return null;
+  let raw: unknown;
+  try {
+    raw = JSON.parse(readFileSync(gluePath, "utf8"));
+  } catch (err) {
+    throw new Error(
+      `Invalid JSON in "${feature.path}/_compose/glue.json": ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    throw new Error(
+      `Invalid "${feature.path}/_compose/glue.json": expected a JSON object.`,
+    );
+  }
+  const spec = raw as { schemaVersion?: unknown };
+  if (typeof spec.schemaVersion !== "number") {
+    throw new Error(
+      `Missing numeric "schemaVersion" in "${feature.path}/_compose/glue.json".`,
+    );
+  }
+  if (!SUPPORTED_GLUE_SCHEMA_VERSIONS.has(spec.schemaVersion)) {
+    const supported = [...SUPPORTED_GLUE_SCHEMA_VERSIONS].sort().join(", ");
+    throw new Error(
+      `Unsupported _compose/glue.json schemaVersion ${spec.schemaVersion} in "${feature.path}". Scaffolder upgrade required (supported: ${supported}).`,
+    );
+  }
+  return spec as FeatureGlueSpec;
+}
 
 function writeGeneratedFeatureGlue(args: {
   destination: string;
   archetype: string;
   features: readonly ResolvedFeature[];
+  extractedRoot: string;
 }): readonly string[] {
   const dir = join(args.destination, "src", ".mantle");
   mkdirSync(dir, { recursive: true });
 
-  const contributions = args.features
-    .map((feature) => FEATURE_CONTRIBUTIONS[feature.name])
-    .filter((c): c is FeatureContribution => Boolean(c));
+  const specs = args.features
+    .map((feature) => loadFeatureGlueSpec(args.extractedRoot, feature))
+    .filter((s): s is FeatureGlueSpec => Boolean(s));
 
   const files: Array<[string, string]> = [
-    ["src/.mantle/generated.manifests.ts", generatedManifestsSource(contributions)],
-    ["src/.mantle/generated.handlers.ts", generatedHandlersSource(contributions)],
+    ["src/.mantle/generated.manifests.ts", generatedManifestsSource(specs)],
+    ["src/.mantle/generated.handlers.ts", generatedHandlersSource(specs)],
     [
       "src/.mantle/generated.routes.ts",
-      generatedRoutesSource(contributions, args.archetype),
+      generatedRoutesSource(specs, args.archetype),
     ],
   ];
   for (const [relPath, content] of files) {
@@ -421,14 +397,12 @@ export function renderImports(imports: ReadonlyArray<ImportSpec>): string[] {
   });
 }
 
-function generatedManifestsSource(
-  contributions: ReadonlyArray<FeatureContribution>,
-): string {
+function generatedManifestsSource(specs: ReadonlyArray<FeatureGlueSpec>): string {
   const imports: ImportSpec[] = [];
   const entries: string[] = [];
-  for (const c of contributions) {
-    if (c.manifestImports) imports.push(...c.manifestImports);
-    if (c.manifestEntries) entries.push(...c.manifestEntries);
+  for (const spec of specs) {
+    for (const imp of spec.manifests?.imports ?? []) imports.push(imp);
+    for (const e of spec.manifests?.entries ?? []) entries.push(e);
   }
   if (entries.length === 0) {
     return "export const featureManifestYamls: readonly string[] = [];\n";
@@ -441,14 +415,12 @@ function generatedManifestsSource(
   ].join("\n");
 }
 
-function generatedHandlersSource(
-  contributions: ReadonlyArray<FeatureContribution>,
-): string {
+function generatedHandlersSource(specs: ReadonlyArray<FeatureGlueSpec>): string {
   const imports: ImportSpec[] = [];
   const entries: string[] = [];
-  for (const c of contributions) {
-    if (c.handlerImports) imports.push(...c.handlerImports);
-    if (c.handlerEntries) entries.push(...c.handlerEntries);
+  for (const spec of specs) {
+    for (const imp of spec.handlers?.imports ?? []) imports.push(imp);
+    for (const e of spec.handlers?.entries ?? []) entries.push(e);
   }
   const envParam = entries.length === 0 ? "_env" : "env";
   const body = entries.length === 0
@@ -472,17 +444,20 @@ function generatedHandlersSource(
 }
 
 function generatedRoutesSource(
-  contributions: ReadonlyArray<FeatureContribution>,
+  specs: ReadonlyArray<FeatureGlueSpec>,
   archetype: string,
 ): string {
-  const templateImports: string[] = [];
+  const imports: ImportSpec[] = [];
+  const decls: string[] = [];
   const overrideLines: string[] = [];
-  const helperBlocks: string[] = [];
-  for (const c of contributions) {
-    if (c.routeTemplateImport) {
-      templateImports.push(c.routeTemplateImport(archetype));
-    }
-    for (const o of c.routeOverrides ?? []) {
+  for (const spec of specs) {
+    const routes = spec.routes;
+    if (!routes) continue;
+    for (const imp of routes.imports ?? []) imports.push(imp);
+    const archBlock = routes.perArchetype?.[archetype] ?? routes.perArchetype?.["default"];
+    for (const imp of archBlock?.imports ?? []) imports.push(imp);
+    for (const decl of archBlock?.decls ?? []) decls.push(decl);
+    for (const o of routes.overrides ?? []) {
       overrideLines.push(
         "    {",
         `      collection: "${o.collection}",`,
@@ -491,18 +466,17 @@ function generatedRoutesSource(
         "    },",
       );
     }
-    if (c.routeHelpers && c.routeHelpers.length > 0) {
-      helperBlocks.push(c.routeHelpers.join("\n"));
-    }
   }
   const envParam = overrideLines.length === 0 ? "_env" : "env";
   const overridesBody = overrideLines.length === 0
     ? "  return [];"
     : ["  return [", ...overrideLines, "  ];"].join("\n");
+  const declBlock = decls.length > 0 ? ["", ...decls] : [];
   return [
     "import type { PublicRouteContext } from \"@aotter/mantle/cloudflare\";",
     "import type { Env } from \"../mantleConfig.js\";",
-    ...templateImports,
+    ...renderImports(imports),
+    ...declBlock,
     "",
     "export interface FeatureSlugOverride {",
     "  readonly collection: string;",
@@ -516,7 +490,6 @@ function generatedRoutesSource(
     overridesBody,
     "}",
     "",
-    ...helperBlocks.flatMap((block) => [block, ""]),
   ].join("\n");
 }
 
