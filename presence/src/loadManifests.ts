@@ -3,7 +3,7 @@ import { parseManifestsOrThrow, type Manifest } from "@aotter/mantle/spec";
 // makes esbuild bundle these imports as inline string exports — the
 // manifests travel with the worker code, no FS access at runtime.
 import pagesYaml from "../manifests/pages.yaml";
-import contactYaml from "../manifests/contact.yaml";
+import { featureManifestYamls } from "./.mantle/generated.manifests.js";
 
 /**
  * Parse + validate the starter's manifests at module-load time. Throws
@@ -13,7 +13,7 @@ import contactYaml from "../manifests/contact.yaml";
  */
 export function loadManifests(): readonly Manifest[] {
   return parseManifestsOrThrow(
-    [pagesYaml, contactYaml],
+    [pagesYaml, ...featureManifestYamls],
     { context: "mantle-starter-presence" },
   );
 }

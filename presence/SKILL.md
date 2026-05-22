@@ -12,7 +12,7 @@ Follow the [Mantle install brief](https://raw.githubusercontent.com/aotter/mantl
 
 ## What this is
 
-A small public site that exists to **be there** — a brand page, an event page, a personal page, a quiet hotel-lobby kind of presence. Light on content, heavy on tone. Own starter directory in `mantle-starters/presence/`; trimmed for the presence shape (`pages` + `page-translations` + `contact-messages`; no `posts`).
+A small public site that exists to **be there** — a brand page, an event page, a personal page, a quiet hotel-lobby kind of presence. Light on content, heavy on tone. Own starter directory in `mantle-starters/presence/`; trimmed for the presence shape (`pages` + `page-translations`; no `posts`). Contact form behavior is opt-in via the `contact` feature overlay.
 
 ## Interview probes to emphasize
 

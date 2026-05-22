@@ -31,13 +31,13 @@
 
 Reference `publication` starter for mantle v0.1.0 — the
 owner-published-content family in the starter taxonomy (#58). Covers
-landing pages, articles, docs-lite, project updates, and basic contact
-capture. Not for inventory / order workflows (`micro-shop`), lead
+landing pages, articles, docs-lite, and project updates. Basic contact
+capture is available as the optional `contact` feature overlay. Not for inventory / order workflows (`micro-shop`), lead
 qualification pipelines (`leads-inbox`), member-created content
 (`community`), or private/paid creator content (`fan-club`).
 
 It wraps the runtime + Cloudflare adapter into a runnable Worker with
-three Schemas (posts, post-translations, contact-messages) and a
+core publication Schemas (posts, post-translations, pages) and a
 public read path served from KV. Schema-level names (`posts`,
 `/posts` route, MCP tool names) are intentionally kept stable through
 v0.1.0 even though the family rename happened — runtime route
@@ -57,12 +57,14 @@ in a blank starter or a later starter family.
   (slug, cover image, author, publish time); `post-translations`
   carries per-locale title + body and joins on `slug`. ADR-0010 cross-
   Schema invariants run at boot.
-- **Builtin Procedure** — `submit-contact` declares
-  `handler.kind: builtin`, `op: create`, `schema: contact-messages`.
+- **Optional contact feature** — `submit-contact` declares
+  `handler.kind: builtin`, `op: create`, `schema: contact-messages`
+  when the `contact` feature overlay is selected.
   The runtime projects input, stamps `x-mantle-bind: now`, drops side-
   channel fields (CAPTCHA token), routes through the entry-writer
   chokepoint.
-- **Lifecycle hooks** — `before_create` on `contact-messages` runs a
+- **Lifecycle hooks** — the optional `contact` overlay adds
+  `before_create` on `contact-messages`, which runs a
   CAPTCHA-check Procedure (`errorPolicy: abort`); `after_create` runs
   a Slack-notify Procedure (default `errorPolicy: continue`, rides
   `ctx.waitUntil` when CF supplies it).
