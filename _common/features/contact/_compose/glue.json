@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "manifests": {
+    "imports": [
+      { "default": "contactYaml", "from": "../../manifests/contact.yaml" }
+    ],
+    "entries": ["contactYaml"]
+  },
+  "handlers": {
+    "imports": [
+      { "named": ["cloudflareTurnstileCheck"], "from": "@aotter/mantle/cloudflare" },
+      { "named": ["slackNotify"], "from": "../features/contact/slackNotify.js" }
+    ],
+    "entries": [
+      "    captchaCheck: cloudflareTurnstileCheck({",
+      "      secret: env.TURNSTILE_SECRET_KEY ?? \"dev-stub\",",
+      "    }) as AnyHandler,",
+      "    slackNotify: slackNotify as AnyHandler,"
+    ]
+  },
+  "routes": {
+    "perArchetype": {
+      "publication": {
+        "imports": [
+          { "named": ["baseline"], "from": "../themeWiring.js" }
+        ],
+        "decls": [
+          "const { contact: contactTemplate } = baseline.templates;"
+        ]
+      },
+      "default": {
+        "imports": [
+          { "named": ["contactTemplate"], "from": "../theme.default/templates/index.js" }
+        ]
+      }
+    },
+    "imports": [
+      { "named": ["renderContact"], "from": "../features/contact/renderContact.js" }
+    ],
+    "overrides": [
+      {
+        "collection": "page-translations",
+        "slug": "contact",
+        "render": "renderContact(ctx, env, contactTemplate)"
+      }
+    ]
+  }
+}
