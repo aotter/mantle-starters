@@ -264,6 +264,100 @@ function writeFeaturesManifest(args: {
   return [relPath];
 }
 
+interface ImportSpec {
+  readonly from: string;
+  readonly default?: string;
+  readonly named?: ReadonlyArray<string>;
+}
+
+interface FeatureContribution {
+  readonly manifestImports?: ReadonlyArray<ImportSpec>;
+  readonly manifestEntries?: ReadonlyArray<string>;
+  readonly handlerImports?: ReadonlyArray<ImportSpec>;
+  readonly handlerEntries?: ReadonlyArray<string>;
+  readonly routeTemplateImport?: (archetype: string) => string;
+  readonly routeOverrides?: ReadonlyArray<{
+    readonly collection: string;
+    readonly slug: string;
+    readonly render: string;
+  }>;
+  readonly routeHelpers?: ReadonlyArray<string>;
+}
+
+const FEATURE_CONTRIBUTIONS: Readonly<Record<string, FeatureContribution>> = {
+  contact: {
+    manifestImports: [
+      { default: "contactYaml", from: "../../manifests/contact.yaml" },
+    ],
+    manifestEntries: ["contactYaml"],
+    handlerImports: [
+      { named: ["cloudflareTurnstileCheck"], from: "@aotter/mantle/cloudflare" },
+      { named: ["slackNotify"], from: "../features/contact/slackNotify.js" },
+    ],
+    handlerEntries: [
+      "    captchaCheck: cloudflareTurnstileCheck({",
+      "      secret: env.TURNSTILE_SECRET_KEY ?? \"dev-stub\",",
+      "    }) as AnyHandler,",
+      "    slackNotify: slackNotify as AnyHandler,",
+    ],
+    routeTemplateImport: (archetype) =>
+      archetype === "publication"
+        ? [
+            "import { baseline } from \"../themeWiring.js\";",
+            "",
+            "const { contact: contactTemplate } = baseline.templates;",
+          ].join("\n")
+        : "import { contactTemplate } from \"../theme.default/templates/index.js\";",
+    routeOverrides: [
+      {
+        collection: "page-translations",
+        slug: "contact",
+        render: "renderContact(ctx, env)",
+      },
+    ],
+    routeHelpers: [
+      "async function renderContact(",
+      "  ctx: PublicRouteContext,",
+      "  env: Env,",
+      "): Promise<Response> {",
+      "  const { runtime, site, locale } = ctx;",
+      "  const all = await runtime.listEntries.execute({",
+      "    collection: \"page-translations\",",
+      "    status: \"published\",",
+      "    limit: 50,",
+      "  });",
+      "  const entry = all.find(",
+      "    (e) =>",
+      "      (e.data as { slug?: string }).slug === \"contact\" &&",
+      "      (e.data as { locale?: string }).locale === locale,",
+      "  );",
+      "  const data = (entry?.data ?? {}) as {",
+      "    title?: string;",
+      "    intro?: string;",
+      "    body?: string;",
+      "  };",
+      "  const html = contactTemplate({",
+      "    site,",
+      "    locale,",
+      "    page: {",
+      "      title: data.title ?? \"\",",
+      "      intro: data.intro,",
+      "      body: data.body ?? \"\",",
+      "    },",
+      "    turnstileSiteKey: env.TURNSTILE_SITE_KEY ?? \"1x00000000000000000000AA\",",
+      "  });",
+      "  return new Response(html, {",
+      "    status: 200,",
+      "    headers: {",
+      "      \"content-type\": \"text/html; charset=utf-8\",",
+      "      \"cache-control\": \"public, max-age=60, s-maxage=60\",",
+      "    },",
+      "  });",
+      "}",
+    ],
+  },
+};
+
 function writeGeneratedFeatureGlue(args: {
   destination: string;
   archetype: string;
@@ -272,13 +366,16 @@ function writeGeneratedFeatureGlue(args: {
   const dir = join(args.destination, "src", ".mantle");
   mkdirSync(dir, { recursive: true });
 
-  const hasContact = args.features.some((feature) => feature.name === "contact");
+  const contributions = args.features
+    .map((feature) => FEATURE_CONTRIBUTIONS[feature.name])
+    .filter((c): c is FeatureContribution => Boolean(c));
+
   const files: Array<[string, string]> = [
-    ["src/.mantle/generated.manifests.ts", generatedManifestsSource(hasContact)],
-    ["src/.mantle/generated.handlers.ts", generatedHandlersSource(hasContact)],
+    ["src/.mantle/generated.manifests.ts", generatedManifestsSource(contributions)],
+    ["src/.mantle/generated.handlers.ts", generatedHandlersSource(contributions)],
     [
       "src/.mantle/generated.routes.ts",
-      generatedRoutesSource({ hasContact, archetype: args.archetype }),
+      generatedRoutesSource(contributions, args.archetype),
     ],
   ];
   for (const [relPath, content] of files) {
@@ -287,94 +384,115 @@ function writeGeneratedFeatureGlue(args: {
   return files.map(([relPath]) => relPath);
 }
 
-function generatedManifestsSource(hasContact: boolean): string {
-  if (!hasContact) {
+function renderImportStatement(spec: ImportSpec): string {
+  const named = spec.named && spec.named.length > 0
+    ? `{ ${spec.named.join(", ")} }`
+    : null;
+  const clause = spec.default && named
+    ? `${spec.default}, ${named}`
+    : spec.default ?? named;
+  if (!clause) {
+    throw new Error(
+      `ImportSpec from "${spec.from}" needs a default or named binding.`,
+    );
+  }
+  return `import ${clause} from "${spec.from}";`;
+}
+
+function renderImports(imports: ReadonlyArray<ImportSpec>): string[] {
+  const seen = new Set<string>();
+  const lines: string[] = [];
+  for (const imp of imports) {
+    const line = renderImportStatement(imp);
+    if (seen.has(line)) continue;
+    seen.add(line);
+    lines.push(line);
+  }
+  return lines;
+}
+
+function generatedManifestsSource(
+  contributions: ReadonlyArray<FeatureContribution>,
+): string {
+  const imports: ImportSpec[] = [];
+  const entries: string[] = [];
+  for (const c of contributions) {
+    if (c.manifestImports) imports.push(...c.manifestImports);
+    if (c.manifestEntries) entries.push(...c.manifestEntries);
+  }
+  if (entries.length === 0) {
     return "export const featureManifestYamls: readonly string[] = [];\n";
   }
   return [
-    "import contactYaml from \"../../manifests/contact.yaml\";",
+    ...renderImports(imports),
     "",
-    "export const featureManifestYamls: readonly string[] = [contactYaml];",
+    `export const featureManifestYamls: readonly string[] = [${entries.join(", ")}];`,
     "",
   ].join("\n");
 }
 
-function generatedHandlersSource(hasContact: boolean): string {
-  if (!hasContact) {
-    return [
-      "import type { AnyHandler } from \"@aotter/mantle/runtime\";",
-      "",
-      "export interface FeatureHandlerEnv {",
-      "  readonly TURNSTILE_SECRET_KEY?: string;",
-      "}",
-      "",
-      "export function buildFeatureHandlers(",
-      "  _env: FeatureHandlerEnv,",
-      "): Readonly<Record<string, AnyHandler>> {",
-      "  return {};",
-      "}",
-      "",
-    ].join("\n");
+function generatedHandlersSource(
+  contributions: ReadonlyArray<FeatureContribution>,
+): string {
+  const imports: ImportSpec[] = [];
+  const entries: string[] = [];
+  for (const c of contributions) {
+    if (c.handlerImports) imports.push(...c.handlerImports);
+    if (c.handlerEntries) entries.push(...c.handlerEntries);
   }
+  const envParam = entries.length === 0 ? "_env" : "env";
+  const body = entries.length === 0
+    ? "  return {};"
+    : ["  return {", ...entries, "  };"].join("\n");
   return [
     "import type { AnyHandler } from \"@aotter/mantle/runtime\";",
-    "import { cloudflareTurnstileCheck } from \"@aotter/mantle/cloudflare\";",
-    "import { slackNotify } from \"../features/contact/slackNotify.js\";",
+    ...renderImports(imports),
     "",
     "export interface FeatureHandlerEnv {",
     "  readonly TURNSTILE_SECRET_KEY?: string;",
     "}",
     "",
     "export function buildFeatureHandlers(",
-    "  env: FeatureHandlerEnv,",
+    `  ${envParam}: FeatureHandlerEnv,`,
     "): Readonly<Record<string, AnyHandler>> {",
-    "  return {",
-    "    captchaCheck: cloudflareTurnstileCheck({",
-    "      secret: env.TURNSTILE_SECRET_KEY ?? \"dev-stub\",",
-    "    }) as AnyHandler,",
-    "    slackNotify: slackNotify as AnyHandler,",
-    "  };",
+    body,
     "}",
     "",
   ].join("\n");
 }
 
-function generatedRoutesSource(args: {
-  hasContact: boolean;
-  archetype: string;
-}): string {
-  if (!args.hasContact) {
-    return [
-      "import type { PublicRouteContext } from \"@aotter/mantle/cloudflare\";",
-      "import type { Env } from \"../mantleConfig.js\";",
-      "",
-      "export interface FeatureSlugOverride {",
-      "  readonly collection: string;",
-      "  readonly slug: string;",
-      "  readonly render: (ctx: PublicRouteContext) => Promise<Response>;",
-      "}",
-      "",
-      "export function buildFeatureSlugOverrides(",
-      "  _env: Env,",
-      "): readonly FeatureSlugOverride[] {",
-      "  return [];",
-      "}",
-      "",
-    ].join("\n");
+function generatedRoutesSource(
+  contributions: ReadonlyArray<FeatureContribution>,
+  archetype: string,
+): string {
+  const templateImports: string[] = [];
+  const overrideLines: string[] = [];
+  const helperBlocks: string[] = [];
+  for (const c of contributions) {
+    if (c.routeTemplateImport) {
+      templateImports.push(c.routeTemplateImport(archetype));
+    }
+    for (const o of c.routeOverrides ?? []) {
+      overrideLines.push(
+        "    {",
+        `      collection: "${o.collection}",`,
+        `      slug: "${o.slug}",`,
+        `      render: (ctx) => ${o.render},`,
+        "    },",
+      );
+    }
+    if (c.routeHelpers && c.routeHelpers.length > 0) {
+      helperBlocks.push(c.routeHelpers.join("\n"));
+    }
   }
-
-  const importContactTemplate = args.archetype === "publication"
-    ? [
-        "import { baseline } from \"../themeWiring.js\";",
-        "",
-        "const { contact: contactTemplate } = baseline.templates;",
-      ].join("\n")
-    : "import { contactTemplate } from \"../theme.default/templates/index.js\";";
-
+  const envParam = overrideLines.length === 0 ? "_env" : "env";
+  const overridesBody = overrideLines.length === 0
+    ? "  return [];"
+    : ["  return [", ...overrideLines, "  ];"].join("\n");
   return [
     "import type { PublicRouteContext } from \"@aotter/mantle/cloudflare\";",
     "import type { Env } from \"../mantleConfig.js\";",
-    importContactTemplate,
+    ...templateImports,
     "",
     "export interface FeatureSlugOverride {",
     "  readonly collection: string;",
@@ -383,56 +501,12 @@ function generatedRoutesSource(args: {
     "}",
     "",
     "export function buildFeatureSlugOverrides(",
-    "  env: Env,",
+    `  ${envParam}: Env,`,
     "): readonly FeatureSlugOverride[] {",
-    "  return [",
-    "    {",
-    "      collection: \"page-translations\",",
-    "      slug: \"contact\",",
-    "      render: (ctx) => renderContact(ctx, env),",
-    "    },",
-    "  ];",
+    overridesBody,
     "}",
     "",
-    "async function renderContact(",
-    "  ctx: PublicRouteContext,",
-    "  env: Env,",
-    "): Promise<Response> {",
-    "  const { runtime, site, locale } = ctx;",
-    "  const all = await runtime.listEntries.execute({",
-    "    collection: \"page-translations\",",
-    "    status: \"published\",",
-    "    limit: 50,",
-    "  });",
-    "  const entry = all.find(",
-    "    (e) =>",
-    "      (e.data as { slug?: string }).slug === \"contact\" &&",
-    "      (e.data as { locale?: string }).locale === locale,",
-    "  );",
-    "  const data = (entry?.data ?? {}) as {",
-    "    title?: string;",
-    "    intro?: string;",
-    "    body?: string;",
-    "  };",
-    "  const html = contactTemplate({",
-    "    site,",
-    "    locale,",
-    "    page: {",
-    "      title: data.title ?? \"\",",
-    "      intro: data.intro,",
-    "      body: data.body ?? \"\",",
-    "    },",
-    "    turnstileSiteKey: env.TURNSTILE_SITE_KEY ?? \"1x00000000000000000000AA\",",
-    "  });",
-    "  return new Response(html, {",
-    "    status: 200,",
-    "    headers: {",
-    "      \"content-type\": \"text/html; charset=utf-8\",",
-    "      \"cache-control\": \"public, max-age=60, s-maxage=60\",",
-    "    },",
-    "  });",
-    "}",
-    "",
+    ...helperBlocks.flatMap((block) => [block, ""]),
   ].join("\n");
 }
 
@@ -462,10 +536,7 @@ function mergeStarterIntoDestination(args: {
       root: join(args.extractedRoot, overlay),
     });
   }
-  for (const feature of args.features.filter(isCommonFeaturePath)) {
-    layers.push(featureCopyLayer(args.extractedRoot, feature));
-  }
-  for (const feature of args.features.filter((feature) => !isCommonFeaturePath(feature))) {
+  for (const feature of args.features) {
     layers.push(featureCopyLayer(args.extractedRoot, feature));
   }
   if (args.themeSource) {
@@ -490,10 +561,6 @@ interface CopyLayer {
   readonly id: string;
   readonly kind: CopyLayerKind;
   readonly root: string;
-}
-
-function isCommonFeaturePath(feature: ResolvedFeature): boolean {
-  return feature.path?.startsWith("_common/features/") ?? false;
 }
 
 function featureCopyLayer(extractedRoot: string, feature: ResolvedFeature): CopyLayer {
@@ -521,13 +588,7 @@ function copyTreeRecording(
     if (entry.isDirectory()) {
       copyTreeChildren(srcPath, dstPath, dst, layer, writtenRelativeToDst, owners);
     } else if (entry.isFile()) {
-      const relPath = relative(dst, dstPath);
-      if (!shouldCopyPath(relPath, layer)) continue;
-      assertCopyAllowed(relPath, layer, owners);
-      mkdirSync(dirname(dstPath), { recursive: true });
-      cpSync(srcPath, dstPath);
-      owners.set(relPath, layer);
-      writtenRelativeToDst.add(relPath);
+      writeFileForLayer(srcPath, dstPath, relative(dst, dstPath), layer, writtenRelativeToDst, owners);
     }
   }
 }
@@ -555,15 +616,45 @@ function copyTreeChildren(
         owners,
       );
     } else if (entry.isFile()) {
-      const relPath = relative(destinationRoot, dstPath);
-      if (!shouldCopyPath(relPath, layer)) continue;
-      assertCopyAllowed(relPath, layer, owners);
-      mkdirSync(dirname(dstPath), { recursive: true });
-      cpSync(srcPath, dstPath);
-      owners.set(relPath, layer);
-      writtenRelativeToDst.add(relPath);
+      writeFileForLayer(
+        srcPath,
+        dstPath,
+        relative(destinationRoot, dstPath),
+        layer,
+        writtenRelativeToDst,
+        owners,
+      );
     }
   }
+}
+
+function writeFileForLayer(
+  srcPath: string,
+  dstPath: string,
+  relPath: string,
+  layer: CopyLayer,
+  writtenRelativeToDst: Set<string>,
+  owners: Map<string, CopyLayer>,
+): void {
+  if (!shouldCopyPath(relPath, layer)) return;
+  if (owners.has(relPath) && COMPOSABLE_TARGETS.has(relPath)) {
+    appendComposable(srcPath, dstPath, layer);
+    // owner stays as first writer; relPath already in writtenRelativeToDst.
+    return;
+  }
+  assertCopyAllowed(relPath, layer, owners);
+  mkdirSync(dirname(dstPath), { recursive: true });
+  cpSync(srcPath, dstPath);
+  owners.set(relPath, layer);
+  writtenRelativeToDst.add(relPath);
+}
+
+function appendComposable(srcPath: string, dstPath: string, layer: CopyLayer): void {
+  const existing = readFileSync(dstPath, "utf8").replace(/\s+$/, "");
+  const incoming = readFileSync(srcPath, "utf8").replace(/^\s+|\s+$/g, "");
+  if (incoming.length === 0) return;
+  const composed = `${existing}\n\n# --- from ${layer.id} ---\n${incoming}\n`;
+  writeFileSync(dstPath, composed);
 }
 
 function assertCopyAllowed(
@@ -572,6 +663,8 @@ function assertCopyAllowed(
   owners: ReadonlyMap<string, CopyLayer>,
 ): void {
   if (layer.kind === "theme") {
+    // Defensive: shouldCopyPath filters non-theme paths before we reach here,
+    // but keep the check so a future caller cannot bypass the constraint.
     if (!isThemeOverridePath(relPath)) {
       throw new Error(
         `Theme layer "${layer.id}" attempted to write non-theme path "${relPath}".`,
@@ -582,7 +675,6 @@ function assertCopyAllowed(
 
   const owner = owners.get(relPath);
   if (!owner) return;
-  if (COMPOSABLE_TARGETS.has(relPath)) return;
   throw new Error(
     `Feature overlay collision at "${relPath}": ${owner.id} already wrote it, ` +
       `${layer.id} attempted to write it again. Register a composable target instead.`,
@@ -602,7 +694,9 @@ function isThemeOverridePath(relPath: string): boolean {
   return relPath === "src/theme/index.ts" || relPath.startsWith("src/theme/");
 }
 
-const COMPOSABLE_TARGETS = new Set<string>();
+const COMPOSABLE_TARGETS: ReadonlySet<string> = new Set([
+  ".dev.vars.example",
+]);
 
 function resolveCatalogSpecifiers(args: {
   extractedRoot: string;

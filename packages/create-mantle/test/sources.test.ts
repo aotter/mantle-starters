@@ -237,6 +237,15 @@ describe("resolveFeatures", () => {
     ).toThrow(/requires a variant/);
   });
 
+  it("throws when a transitive dependency requires a variant and the user did not supply one", () => {
+    // `customer-account` depends on `email-sender`, which is `requiresVariant: true`.
+    // Requesting only `customer-account` surfaces the missing-variant error on the
+    // auto-included dependency so callers get a clear hint about what to add.
+    expect(() =>
+      resolveFeatures([{ name: "customer-account" }], "transaction", sources),
+    ).toThrow(/email-sender.*requires a variant/);
+  });
+
   it("throws when a variant is unknown", () => {
     expect(() =>
       resolveFeatures(

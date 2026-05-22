@@ -876,17 +876,26 @@ Do not migrate contact yet.
 
 ### Phase 2: Compose framework
 
-Ship:
+Already shipped in the Phase 1 PR (built on top of the resolver to avoid a
+single-feature-only generator):
 
 - default-deny collision policy;
-- `registry:compose` handling;
-- generated manifests registry;
-- generated handlers registry;
-- generated routes registry;
-- generated env declarations;
-- `.dev.vars.example` fragment concat;
+- generated manifests/handlers/routes glue driven by an internal
+  `FEATURE_CONTRIBUTIONS` registry (one entry per feature) rather than a
+  hardcoded `hasContact` boolean — adding a feature is one entry, not a
+  threaded boolean parameter through every generator;
+- `.dev.vars.example` fragment concat (registered as the first composable
+  target; subsequent feature layers append below a
+  `# --- from <layer-id> ---` separator).
+
+Still deferred:
+
+- `registry:compose` JSON fragment loading from per-feature `_compose/`
+  directories (current generator dispatches on `feature.name` from the
+  built-in registry; the design above describes the eventual data-driven
+  shape);
 - targeted `wrangler.toml` composition;
-- generated feature provision step loader.
+- generated env declarations and feature provision step loader.
 
 Use fake features and a small non-contact sample feature to test composition.
 
