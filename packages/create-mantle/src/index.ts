@@ -686,8 +686,9 @@ function writeFileForLayer(
   owners: Map<string, CopyLayer>,
 ): void {
   if (!shouldCopyPath(relPath, layer)) return;
-  if (owners.has(relPath) && COMPOSABLE_TARGETS.has(relPath)) {
-    appendComposable(srcPath, dstPath, layer);
+  const composer = owners.has(relPath) ? findComposer(relPath) : null;
+  if (composer) {
+    composer(srcPath, dstPath, layer);
     // owner stays as first writer; relPath already in writtenRelativeToDst.
     return;
   }
@@ -696,6 +697,27 @@ function writeFileForLayer(
   cpSync(srcPath, dstPath);
   owners.set(relPath, layer);
   writtenRelativeToDst.add(relPath);
+}
+
+type ComposerFn = (srcPath: string, dstPath: string, layer: CopyLayer) => void;
+
+interface ComposerRule {
+  readonly match: (relPath: string) => boolean;
+  readonly compose: ComposerFn;
+}
+
+const LOCALE_JSON_RE = /^src\/i18n\/[^/]+\.json$/;
+
+const COMPOSER_RULES: ReadonlyArray<ComposerRule> = [
+  { match: (p) => p === ".dev.vars.example", compose: appendComposable },
+  { match: (p) => LOCALE_JSON_RE.test(p), compose: mergeComposableLocale },
+];
+
+function findComposer(relPath: string): ComposerFn | null {
+  for (const rule of COMPOSER_RULES) {
+    if (rule.match(relPath)) return rule.compose;
+  }
+  return null;
 }
 
 function appendComposable(srcPath: string, dstPath: string, layer: CopyLayer): void {
@@ -707,6 +729,70 @@ function appendComposable(srcPath: string, dstPath: string, layer: CopyLayer): v
     ? `${separator}${incoming}\n`
     : `${existing}\n\n${separator}${incoming}\n`;
   writeFileSync(dstPath, composed);
+}
+
+function mergeComposableLocale(
+  srcPath: string,
+  dstPath: string,
+  layer: CopyLayer,
+): void {
+  const existing = parseLocaleJson(dstPath);
+  const incoming = parseLocaleJson(srcPath);
+  const merged = deepMergeStrict(existing, incoming, layer.id, []);
+  writeFileSync(dstPath, JSON.stringify(sortObjectKeys(merged), null, 2) + "\n");
+}
+
+function parseLocaleJson(path: string): unknown {
+  try {
+    return JSON.parse(readFileSync(path, "utf8"));
+  } catch (err) {
+    throw new Error(
+      `Invalid locale JSON at "${path}": ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+}
+
+function deepMergeStrict(
+  base: unknown,
+  incoming: unknown,
+  source: string,
+  path: ReadonlyArray<string>,
+): unknown {
+  if (incoming === undefined) return base;
+  if (base === undefined) return incoming;
+  if (isPlainObject(base) && isPlainObject(incoming)) {
+    const result: Record<string, unknown> = { ...base };
+    for (const key of Object.keys(incoming)) {
+      result[key] = deepMergeStrict(base[key], incoming[key], source, [...path, key]);
+    }
+    return result;
+  }
+  // Leaf: must match by value equality. Same key + same value passes;
+  // divergent value throws per the i18n collision policy (#194).
+  if (jsonEqual(base, incoming)) return base;
+  const location = path.length === 0 ? "<root>" : path.join(".");
+  throw new Error(
+    `i18n merge conflict at "${location}" (from ${source}): ` +
+      `${JSON.stringify(base)} vs ${JSON.stringify(incoming)}.`,
+  );
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function jsonEqual(a: unknown, b: unknown): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+function sortObjectKeys(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortObjectKeys);
+  if (!isPlainObject(value)) return value;
+  const sorted: Record<string, unknown> = {};
+  for (const k of Object.keys(value).sort()) {
+    sorted[k] = sortObjectKeys(value[k]);
+  }
+  return sorted;
 }
 
 function assertCopyAllowed(
@@ -745,10 +831,6 @@ function shouldCopyPath(relPath: string, layer: CopyLayer): boolean {
 function isThemeOverridePath(relPath: string): boolean {
   return relPath === "src/theme/index.ts" || relPath.startsWith("src/theme/");
 }
-
-const COMPOSABLE_TARGETS: ReadonlySet<string> = new Set([
-  ".dev.vars.example",
-]);
 
 function resolveCatalogSpecifiers(args: {
   extractedRoot: string;

@@ -1305,6 +1305,163 @@ describe("installFromExtractedRoot", () => {
       }),
     ).toThrow(/Conflicting env declaration for "MAYBE_SECRET"/);
   });
+
+  it("deep-merges feature i18n fragments into the archetype's locale JSON", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "publication", "src", "i18n", "en.json"),
+      JSON.stringify({ header: { home: "Home" }, label: "English" }, null, 2) + "\n",
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "alpha", "src", "i18n", "en.json"),
+      JSON.stringify({ alpha: { greeting: "Hello" }, header: { alpha: "Alpha" } }, null, 2) + "\n",
+    );
+    const destination = join(tempRoot, "out-i18n-merge");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      features: [{ name: "alpha" }],
+      destination,
+      extractedRoot,
+      sources: {
+        archetypes: { publication: { path: "publication" } },
+        features: {
+          alpha: {
+            path: "registry/features/alpha",
+            applicableArchetypes: ["publication"],
+          },
+        },
+        themes: {},
+        roadmap: [],
+      },
+    });
+
+    const merged = JSON.parse(
+      readFileSync(join(destination, "src", "i18n", "en.json"), "utf8"),
+    );
+    expect(merged).toEqual({
+      alpha: { greeting: "Hello" },
+      header: { alpha: "Alpha", home: "Home" },
+      label: "English",
+    });
+  });
+
+  it("allows i18n same-key-same-value merges", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "publication", "src", "i18n", "en.json"),
+      JSON.stringify({ shared: { brand: "Mantle" } }, null, 2) + "\n",
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "alpha", "src", "i18n", "en.json"),
+      JSON.stringify({ shared: { brand: "Mantle" }, alpha: "ok" }, null, 2) + "\n",
+    );
+    const destination = join(tempRoot, "out-i18n-same");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      features: [{ name: "alpha" }],
+      destination,
+      extractedRoot,
+      sources: {
+        archetypes: { publication: { path: "publication" } },
+        features: {
+          alpha: {
+            path: "registry/features/alpha",
+            applicableArchetypes: ["publication"],
+          },
+        },
+        themes: {},
+        roadmap: [],
+      },
+    });
+
+    const merged = JSON.parse(
+      readFileSync(join(destination, "src", "i18n", "en.json"), "utf8"),
+    );
+    expect(merged.shared.brand).toBe("Mantle");
+    expect(merged.alpha).toBe("ok");
+  });
+
+  it("rejects i18n merge conflicts on diverging values", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "publication", "src", "i18n", "en.json"),
+      JSON.stringify({ header: { brand: "Original" } }, null, 2) + "\n",
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "alpha", "src", "i18n", "en.json"),
+      JSON.stringify({ header: { brand: "FeatureChange" } }, null, 2) + "\n",
+    );
+    const destination = join(tempRoot, "out-i18n-conflict");
+    mkdirSync(destination, { recursive: true });
+
+    expect(() =>
+      installFromExtractedRoot({
+        ...commonOpts(),
+        archetype: "publication",
+        features: [{ name: "alpha" }],
+        destination,
+        extractedRoot,
+        sources: {
+          archetypes: { publication: { path: "publication" } },
+          features: {
+            alpha: {
+              path: "registry/features/alpha",
+              applicableArchetypes: ["publication"],
+            },
+          },
+          themes: {},
+          roadmap: [],
+        },
+      }),
+    ).toThrow(/i18n merge conflict at "header\.brand"/);
+  });
+
+  it("emits merged i18n with sorted keys for deterministic output", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "publication", "src", "i18n", "en.json"),
+      JSON.stringify({ z: "1", a: "2" }) + "\n",
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "alpha", "src", "i18n", "en.json"),
+      JSON.stringify({ m: "3" }) + "\n",
+    );
+    const destination = join(tempRoot, "out-i18n-sorted");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      features: [{ name: "alpha" }],
+      destination,
+      extractedRoot,
+      sources: {
+        archetypes: { publication: { path: "publication" } },
+        features: {
+          alpha: {
+            path: "registry/features/alpha",
+            applicableArchetypes: ["publication"],
+          },
+        },
+        themes: {},
+        roadmap: [],
+      },
+    });
+
+    const raw = readFileSync(
+      join(destination, "src", "i18n", "en.json"),
+      "utf8",
+    );
+    // Keys appear alphabetically: a, m, z.
+    expect(raw.indexOf('"a"')).toBeLessThan(raw.indexOf('"m"'));
+    expect(raw.indexOf('"m"')).toBeLessThan(raw.indexOf('"z"'));
+  });
 });
 
 describe("renderImports", () => {
