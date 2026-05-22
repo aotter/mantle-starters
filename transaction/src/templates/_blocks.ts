@@ -21,7 +21,7 @@
  * don't outlive a render.
  */
 
-import { marked } from "marked";
+import { renderMarkdownSafe } from "./_markdown.js";
 import { escapeAttr, pictureFromAssetId } from "./_picture.js";
 import type { MediaAsset } from "@aotter/mantle/runtime";
 import type { PageBlock, PageBlockCard } from "../handlers/_productEnrichment.js";
@@ -87,7 +87,7 @@ function renderFeatureCard(c: PageBlockCard, assets: ReadonlyMap<string, MediaAs
 
 function renderProse(b: PageBlock): string {
   if (!b.markdown) return "";
-  const html = marked.parse(b.markdown, { async: false }) as string;
+  const html = renderMarkdownSafe(b.markdown);
   return `<section class="block-prose"><div class="block-prose-body">${html}</div></section>`;
 }
 
