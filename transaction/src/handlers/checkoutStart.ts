@@ -62,6 +62,18 @@ export function buildCheckoutStart(env: CheckoutStartEnv): AnyHandler {
       loadProductCatalog(ctx.runtime),
     ]);
     if (cart.items.length === 0) {
+      // Distinguish "never added anything (or cart expired)" from
+      // "had items before deploy but the SPU/SKU split made them
+      // incompatible". The latter is recoverable — the customer
+      // re-adds — but the generic empty message gives no clue that
+      // anything was there. Frontend can route on the message text
+      // (or, for a richer UI, swap this throw for a structured
+      // error envelope).
+      if (cart.legacyDropped) {
+        throw new Error(
+          "Your cart was updated by a catalog change — please re-add your items.",
+        );
+      }
       throw new Error("checkoutStart: cart empty or expired");
     }
     const enrichedItems = cart.items.map((item) => {
@@ -192,7 +204,18 @@ async function generateOrderId(runtime: CmsRuntime): Promise<string> {
     const candidate = `o_${ymd}-${randomTail(ID_TAIL_LEN)}`;
     if (!(await orderIdExists(runtime, candidate))) return candidate;
   }
-  return `o_${ymd}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+  // Fallback after 5 collisions — RNG is broken or the day's space is
+  // saturated. Widen by re-mapping a fresh UUID through the same
+  // no-confusables alphabet so the resulting id stays structurally
+  // identical to a normal one (a raw `randomUUID().slice(0,8)` would
+  // mix hex `0`/`1` and `[A-F]` back into otherwise-confusable-free
+  // ids, exactly when you want maximum readability for the on-call).
+  const fallbackBytes = new TextEncoder().encode(crypto.randomUUID());
+  let tail = "";
+  for (let i = 0; i < ID_TAIL_LEN * 2 && tail.length < ID_TAIL_LEN * 2; i++) {
+    tail += ID_ALPHABET.charAt(fallbackBytes[i % fallbackBytes.length]! % ID_ALPHABET.length);
+  }
+  return `o_${ymd}-${tail}`;
 }
 
 function randomTail(len: number): string {

@@ -101,6 +101,15 @@ export function buildAddToCart(env: AddToCartEnv): AnyHandler {
   });
 }
 
+/**
+ * Coalesce by skuCode — assumes the caller already verified
+ * `existing.qty + add <= MAX_QTY_PER_LINE`. Earlier drafts clamped
+ * inside this function via `Math.min`; that was removed because it
+ * masked the "max-per-line exceeded" failure mode (caller threw,
+ * coalesce silently clamped → if the throw is ever bypassed, the
+ * customer's add succeeds with fewer items than requested). The
+ * caller in `addToCart` is now the sole enforcer.
+ */
 function coalesce(
   items: ReadonlyArray<{ skuCode: string; qty: number }>,
   skuCode: string,
@@ -109,7 +118,7 @@ function coalesce(
   const out = items.map((i) => ({ ...i }));
   const existing = out.find((i) => i.skuCode === skuCode);
   if (existing) {
-    existing.qty = Math.min(MAX_QTY_PER_LINE, existing.qty + add);
+    existing.qty += add;
     return out;
   }
   out.push({ skuCode, qty: add });
