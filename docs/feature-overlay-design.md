@@ -855,6 +855,155 @@ Do not build these in the first iteration:
 
 The first version should be a source registry and create-time installer.
 
+## Compose Policy
+
+This section is the implementation contract for the [Compose Targets](#compose-targets)
+and [Collision Policy](#collision-policy) sections. Today `create-mantle` ships
+only `.dev.vars.example` composition through `COMPOSABLE_TARGETS` and
+`appendComposable`; the other composers described below are policy that future
+implementations must follow.
+
+### 1. Compose Collision Matrix
+
+Error-message shape for hard collisions:
+
+```text
+Feature overlay collision at `<path>`: `<owner.id>` already wrote it, `<layer.id>` attempted to write it again.
+```
+
+| Target path/kind | Conflict detection point | Policy | Error-message shape |
+|---|---|---|---|
+| `.dev.vars.example` | `writeFileForLayer` when `COMPOSABLE_TARGETS` routes a second write to `appendComposable` | Append non-empty fragments in layer order. `appendComposable` does not prefix the first writer with a separator; only the second layer onward is appended below `# --- from <layer.id> ---`. No key parsing. This codifies the behavior already shipped for #190. | No collision error for repeated writes; malformed file content is outside compose policy. |
+| `wrangler.toml` `[vars]` section | Future Wrangler composer while merging feature `_compose/wrangler.toml` fragments into the generated TOML target | Merge by key. Same key and same value is allowed; same key and different value is a hard error. | Template above with `<path>` = `wrangler.toml [vars].<key>`. |
+| `wrangler.toml` `[env.<env>.vars]` section | Future Wrangler composer per environment block | Merge by `<env>` and key. Same env/key/value is allowed; same env/key with different value is a hard error. | Template above with `<path>` = `wrangler.toml [env.<env>.vars].<key>`. |
+| `wrangler.toml` `[[d1_databases]]` binding | Future Wrangler composer while indexing array-style binding blocks | Binding names are unique by the `binding` field. Two bindings may legitimately point at the same `database_id`. Re-declaring the same binding with the same binding object is allowed only by structural equality: deep equality, key order insensitive. Divergent config is a hard error. | Template above with `<path>` = `wrangler.toml [[d1_databases]].<binding>`. |
+| `wrangler.toml` `[[kv_namespaces]]` binding | Future Wrangler composer while indexing array-style binding blocks | Binding names are unique. Re-declaring the same binding with the same binding object is allowed only by structural equality: deep equality, key order insensitive. Divergent config is a hard error. | Template above with `<path>` = `wrangler.toml [[kv_namespaces]].<binding>`. |
+| `wrangler.toml` queues | Future Wrangler composer while indexing producer and consumer queue bindings | Queue binding identifiers are unique within their queue kind. Re-declaring the same binding object is allowed only by structural equality: deep equality, key order insensitive. Divergent producer or consumer config is a hard error. | Template above with `<path>` = `wrangler.toml queues.<binding>`. |
+| Manifest ref IDs | Future manifest composer before emitting `generated.manifests.ts` | Manifest refs are unique. Reusing a ref for the same manifest source is allowed; reusing it for a different source is a hard error. | Template above with `<path>` = `src/.mantle/generated.manifests.ts#<ref>`. |
+| Handler refs (`generatedHandlersSource`) | `generatedHandlersSource` or its future data-driven replacement before object emission | Handler refs are unique across base and feature handlers. Duplicate ref is allowed only when factory/options match by structural equality: deep equality, key order insensitive. Any different factory/options is a hard error. | Template above with `<path>` = `src/.mantle/generated.handlers.ts#<ref>`. |
+| Route slug overrides | `generatedRoutesSource` or its future data-driven replacement before emitting `buildFeatureSlugOverrides` | A `(collection, slug)` pair may be owned by one feature. Same pair from another feature is a hard error unless a future schema adds an explicit override marker. | Template above with `<path>` = `src/.mantle/generated.routes.ts#<collection>/<slug>`. |
+| i18n keys | Future i18n composer while merging locale JSON objects | Same locale/key/value is allowed. Same locale/key with different value is a hard error unless explicitly marked as an override. Missing locale follows the archetype locale policy. | Template above with `<path>` = `i18n/<locale>#<key>`. |
+| Provision step IDs | Future provision composer before emitting `scripts/.mantle-provision.mjs` | Step IDs are unique after phase scoping. Same phase/id from another feature is a hard error; same feature cannot emit duplicate IDs. | Template above with `<path>` = `scripts/.mantle-provision.mjs#<phase>/<step.id>`. |
+| `generated.*` glue files (`src/.mantle/generated.*.ts`) | `writeGeneratedFeatureGlue` and future generated-output writers | Scaffolder-owned output is regenerated as a whole. Feature fragments do not write these files directly; collisions are detected on refs inside the generated file, not on the file path. | Use the ref-specific generated file messages above. Direct feature writes to `src/.mantle/generated.*.ts` use the generic path collision shape. |
+| Theme bounds (`src/theme/**`) | `shouldCopyPath`, `isThemeOverridePath`, and future registry target validation | Theme layers may write only bounded theme paths. Features must not write `src/theme/**`. Theme attempts outside the bound are hard errors. | Template above with `<path>` = `src/theme/<path>`. |
+
+### 2. Generated-Output Stability Contract
+
+Scaffolder-owned paths are regenerated by install and by future
+`create-mantle update` runs:
+
+- `src/.mantle/generated.*.ts`
+- `.mantle/features.json`
+- future `scripts/.mantle-provision.mjs`
+
+Scaffolder-owned means users and agents should treat the file as derived
+output. The scaffolder may overwrite it without a three-way merge, and user
+customizations belong in copied source files or upstream feature compose fragments
+instead.
+
+User-owned paths are everything copied from `_common/`, the selected archetype,
+feature layers, and the selected theme. `update` must preserve user edits to
+these paths: it applies upstream changes only when the lock proves the local
+file is still clean, otherwise it reports a conflict.
+
+Receipts split intent from machine state:
+
+- `.mantle/features.json` is the scaffolder-owned canonical feature receipt.
+  It is regenerated on every install, and no hand-edits are supported.
+  `writeFeaturesManifest` in `packages/create-mantle/src/index.ts` currently
+  overwrites this receipt unconditionally.
+- Future `.mantle/scaffold.lock.json` records final bytes for update safety, as
+  proposed in #192. It is machine-only and should not be hand-edited.
+
+### 3. Ordering / Determinism
+
+Two installs with the same inputs must produce byte-identical
+scaffolder-owned output.
+
+Determinism rules:
+
+- Feature iteration order is the `resolveFeatures` topological sort, with an
+  alphabetical tiebreak for independent features.
+- Composable text fragment order follows layer push order, which is resolver
+  topological order with the same alphabetical tiebreak as feature iteration.
+  This applies to `.dev.vars.example` and future array-style Wrangler targets
+  such as `[[d1_databases]]`, `[[kv_namespaces]]`, and queues.
+- `appendComposable` emits the first non-empty fragment without a separator;
+  only subsequent fragments receive `# --- from <layer.id> ---`.
+- Import dedup is sorted by module specifier, then imported binding name. The
+  current `renderImports` first-seen behavior must be tightened when
+  `registry:compose` fragments replace the built-in `FEATURE_CONTRIBUTIONS`
+  table.
+- Manifest entry order is a stable sort by feature declaration order after the
+  stable topological sort.
+- Route override emission is alphabetical by slug, then collection.
+- Provision step emission is phase order, then feature topological order, then
+  in-array order.
+
+### 4. `_compose/` Schema Versioning
+
+`_compose/glue.json` lives in the upstream `mantle-starters` tarball at
+`<feature-path>/_compose/glue.json`. It carries `schemaVersion: 1` when JSON
+fragments replace the current built-in contribution registry. Version 1 is the
+initial contract for manifest refs, handler refs, route overrides, env
+declarations, Wrangler fragments, i18n fragments, and provision references.
+
+The user's project stores `.mantle/features.json` and future
+`.mantle/scaffold.lock.json`; it does not store migrate-able `_compose/`
+fragments. At install or update time, `create-mantle` reads the upstream
+feature fragments and declares the `_compose/` schemaVersion range it supports.
+Encountering a newer fragment schemaVersion stops with a clear
+`scaffolder upgrade required` error before regenerating scaffolder-owned
+output.
+
+### 5. Theme vs Feature Collision Matrix
+
+| Path pattern | Who can write it | Co-write allowed? | Resolution |
+|---|---|---|---|
+| `src/theme/**` | Theme layer only | No | Feature attempts are hard errors. Theme files replace the starter theme within the bounded slot. |
+| `src/theme/index.ts` | Theme layer only | No | Same as `src/theme/**`; this explicit file is included in `isThemeOverridePath`. |
+| `src/theme.default/**` | Archetype layer only | No | Themes and features must not write archetype baseline theme templates such as `src/theme.default/templates/index.ts`. |
+| Feature source paths such as `src/features/**` | Feature layer only | No | Theme attempts outside `src/theme/**` fail in `shouldCopyPath`. |
+| Generated glue such as `src/.mantle/generated.routes.ts` | Scaffolder only | No direct co-write | Features and themes contribute through approved compose inputs; the scaffolder owns the generated file. |
+| Approved theme imports from generated glue | Scaffolder-generated code may read theme modules | Read-only only | The contact `generatedRoutesSource` import from `../themeWiring.js` is an allowed read-only import, not a co-write. |
+| Any path outside `src/theme/**` | Base, archetype, or feature layers depending on registry target | No for themes | Theme attempts fail; non-theme duplicate paths follow the compose collision matrix. |
+
+Features must not write `src/theme/**` or `src/theme.default/**`. Themes must
+not write outside `src/theme/**` except through approved glue imports generated
+by the scaffolder.
+
+### 6. Provision Step Semantics (Sketch)
+
+Full provision design is tracked in #199. This section only fixes the compose
+contract that the future provision loader must implement.
+
+Provision steps are emitted into future `scripts/.mantle-provision.mjs`, ordered
+by phase, feature topological order, then in-array order. Step IDs are unique
+within phase, and completed steps are recorded in a lock-style receipt so
+failed runs can resume without repeating completed work.
+`scripts/provision.mjs` is user-invoked separately from `create-mantle`
+install/update; provision steps do not run during scaffolding.
+
+Provision `up()` operations must be idempotent where the provider API allows
+it. When an API is not naturally idempotent, the step must check recorded state
+or provider state before creating resources. Partial failure stops execution
+and reports the failed step, completed step IDs, and any state needed for
+manual recovery.
+
+Rollback is not automatic. A future optional `down()` hook may support manual
+cleanup, but v1 does not promise transactional rollback across Cloudflare
+resources, Wrangler config, secrets, and post-deploy actions. Atomicity is
+therefore best-effort at the step boundary: a step either records completion
+after its side effects are durable, or leaves enough state for the next run to
+detect and reconcile the partial side effect.
+
+### Open Questions
+
+- Should provision progress live in `.mantle/scaffold.lock.json` or a separate
+  `.mantle/provision.lock.json`?
+- Should route override conflicts allow an explicit override marker in schema
+  version 1, or wait for a later schema bump?
+
 ## Suggested Implementation Phases
 
 ### Phase 1: Registry and resolver
