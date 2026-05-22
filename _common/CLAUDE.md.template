@@ -1,0 +1,56 @@
+# CLAUDE.md — orientation for AI contributors to a `{{ARCHETYPE}}` site
+
+This file is the entry point for an AI agent (Claude, Cursor, etc.)
+opening a freshly-scaffolded site. The two rules below are universal
+across mantle starters; archetype-specific guidance (cart hot path,
+inventory gates, block dispatcher, etc.) lives in any longer
+`CLAUDE.md` your archetype overlays on top of this one.
+
+For the install / interview contract that scaffolded this site, see
+[`SKILL.md`](SKILL.md) (Mantle install voice) and
+[`AGENTS.md`](AGENTS.md) (per-site cached interview answers).
+
+## The two daily-driver rules
+
+**1. `pnpm install --frozen-lockfile` for every install.**
+
+`pnpm install` without the flag will quietly regenerate
+`pnpm-lock.yaml` against any dep version that's been published since
+the lockfile was committed. CI runs `--frozen-lockfile` and rejects
+drift, so the drift only surfaces in CI long after you've deployed
+the local-only state. The fix is always "go look at the lockfile
+diff" but the symptoms (deploy fails, local works) are confusing.
+Run with the flag from the start; pin per
+[`packageManager`](./package.json) + [`.nvmrc`](./.nvmrc).
+
+**2. Never `innerHTML +=` server-trusted strings in storefront JS.**
+
+Inline page scripts can `innerHTML = "..."` user-facing notice strips
+without escaping — `window.__escapeHtml` exists for exactly that
+purpose, and any error/success path that renders into a `.notice`
+element must route through it. Concatenating raw `res.text()` lets
+operator-controlled CMS strings (or malformed JSON envelopes from
+upstream) break out of the markup; the same applies to
+`document.write` with anything you didn't build server-side.
+
+For JSON-in-`<script>` (`window.__pdpData = ...`), use the pattern:
+
+```ts
+JSON.stringify(data).replace(/</g, "\\u003c")
+```
+
+The literal `</script>` inside operator-controlled strings (a product
+description, a category title, etc.) otherwise terminates the
+inline-script element. The replacement is one line, completely free
+of side effects, and the only correct default.
+
+## Local CI parity
+
+```bash
+pnpm install --frozen-lockfile   # 1
+pnpm check                       # 2: validate + typecheck
+pnpm test:integration            # 3 (when present)
+```
+
+Run all three before pushing. The deploy workflow in CI runs the
+same gates; passing locally means you won't be debugging in CI.
