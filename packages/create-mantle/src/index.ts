@@ -283,6 +283,15 @@ interface FeatureGlueRoutes {
   }>;
 }
 
+interface FeatureEnvVar {
+  readonly name: string;
+  readonly type: "string" | "number" | "boolean";
+  readonly optional?: boolean;
+  readonly secret?: boolean;
+  readonly devDefault?: string;
+  readonly description?: string;
+}
+
 interface FeatureGlueSpec {
   readonly schemaVersion: number;
   readonly manifests?: {
@@ -294,6 +303,7 @@ interface FeatureGlueSpec {
     readonly entries?: ReadonlyArray<string>;
   };
   readonly routes?: FeatureGlueRoutes;
+  readonly env?: ReadonlyArray<FeatureEnvVar>;
 }
 
 const SUPPORTED_GLUE_SCHEMA_VERSIONS: ReadonlySet<number> = new Set([1]);
@@ -418,6 +428,7 @@ function generatedManifestsSource(specs: ReadonlyArray<FeatureGlueSpec>): string
 function generatedHandlersSource(specs: ReadonlyArray<FeatureGlueSpec>): string {
   const imports: ImportSpec[] = [];
   const entries: string[] = [];
+  const envVars = collectEnvVars(specs);
   for (const spec of specs) {
     for (const imp of spec.handlers?.imports ?? []) imports.push(imp);
     for (const e of spec.handlers?.entries ?? []) entries.push(e);
@@ -430,9 +441,7 @@ function generatedHandlersSource(specs: ReadonlyArray<FeatureGlueSpec>): string 
     "import type { AnyHandler } from \"@aotter/mantle/runtime\";",
     ...renderImports(imports),
     "",
-    "export interface FeatureHandlerEnv {",
-    "  readonly TURNSTILE_SECRET_KEY?: string;",
-    "}",
+    ...renderFeatureHandlerEnv(envVars),
     "",
     "export function buildFeatureHandlers(",
     `  ${envParam}: FeatureHandlerEnv,`,
@@ -441,6 +450,52 @@ function generatedHandlersSource(specs: ReadonlyArray<FeatureGlueSpec>): string 
     "}",
     "",
   ].join("\n");
+}
+
+function collectEnvVars(
+  specs: ReadonlyArray<FeatureGlueSpec>,
+): ReadonlyMap<string, FeatureEnvVar> {
+  const merged = new Map<string, FeatureEnvVar>();
+  for (const spec of specs) {
+    for (const v of spec.env ?? []) {
+      const existing = merged.get(v.name);
+      if (!existing) {
+        merged.set(v.name, v);
+        continue;
+      }
+      if (existing.type !== v.type || (existing.secret ?? false) !== (v.secret ?? false)) {
+        throw new Error(
+          `Conflicting env declaration for "${v.name}": ` +
+            `${existing.type}${existing.secret ? " (secret)" : ""} vs ` +
+            `${v.type}${v.secret ? " (secret)" : ""}.`,
+        );
+      }
+    }
+  }
+  return merged;
+}
+
+function renderFeatureHandlerEnv(
+  envVars: ReadonlyMap<string, FeatureEnvVar>,
+): string[] {
+  const names = [...envVars.keys()].sort();
+  if (names.length === 0) {
+    return [
+      "export interface FeatureHandlerEnv {",
+      "  // No feature declares env vars.",
+      "}",
+    ];
+  }
+  const lines = names.map((name) => {
+    const v = envVars.get(name)!;
+    const opt = (v.optional ?? true) ? "?" : "";
+    return `  readonly ${name}${opt}: ${v.type};`;
+  });
+  return [
+    "export interface FeatureHandlerEnv {",
+    ...lines,
+    "}",
+  ];
 }
 
 function generatedRoutesSource(

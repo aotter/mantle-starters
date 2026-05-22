@@ -18,6 +18,16 @@
       "    slackNotify: slackNotify as AnyHandler,"
     ]
   },
+  "env": [
+    {
+      "name": "TURNSTILE_SECRET_KEY",
+      "type": "string",
+      "optional": true,
+      "secret": true,
+      "devDefault": "dev-stub",
+      "description": "Cloudflare Turnstile secret key"
+    }
+  ],
   "routes": {
     "perArchetype": {
       "publication": {

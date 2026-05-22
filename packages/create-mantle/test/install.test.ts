@@ -274,6 +274,8 @@ describe("installFromExtractedRoot", () => {
     expect(handlers).toContain("export function buildFeatureHandlers(");
     expect(handlers).toContain("return {};");
     expect(handlers).not.toContain("contact");
+    expect(handlers).toContain("// No feature declares env vars.");
+    expect(handlers).not.toContain("TURNSTILE_SECRET_KEY");
 
     const routes = readFileSync(
       join(destination, "src", ".mantle", "generated.routes.ts"),
@@ -1035,6 +1037,189 @@ describe("installFromExtractedRoot", () => {
 
     expect(notes.theme).toBeNull();
     expect(notes.theme_source).toBeNull();
+  });
+
+  it("aggregates FeatureHandlerEnv declarations across features", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "alpha", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        env: [
+          { name: "ZED_KEY", type: "string", optional: true, secret: true },
+          { name: "ALPHA_FLAG", type: "boolean", optional: false },
+        ],
+      }),
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "beta", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        env: [{ name: "BETA_TIMEOUT", type: "number" }],
+      }),
+    );
+    const destination = join(tempRoot, "out-env-merge");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      features: [{ name: "alpha" }, { name: "beta" }],
+      destination,
+      extractedRoot,
+      sources: {
+        archetypes: { publication: { path: "publication" } },
+        features: {
+          alpha: {
+            path: "registry/features/alpha",
+            applicableArchetypes: ["publication"],
+          },
+          beta: {
+            path: "registry/features/beta",
+            applicableArchetypes: ["publication"],
+          },
+        },
+        themes: {},
+        roadmap: [],
+      },
+    });
+
+    const handlers = readFileSync(
+      join(destination, "src", ".mantle", "generated.handlers.ts"),
+      "utf8",
+    );
+    // Sorted alphabetically per the compose policy determinism rule.
+    expect(handlers).toContain("readonly ALPHA_FLAG: boolean;");
+    expect(handlers).toContain("readonly BETA_TIMEOUT?: number;");
+    expect(handlers).toContain("readonly ZED_KEY?: string;");
+    expect(handlers.indexOf("ALPHA_FLAG")).toBeLessThan(
+      handlers.indexOf("BETA_TIMEOUT"),
+    );
+    expect(handlers.indexOf("BETA_TIMEOUT")).toBeLessThan(
+      handlers.indexOf("ZED_KEY"),
+    );
+  });
+
+  it("collapses identical env declarations across features", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "a", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        env: [{ name: "SHARED_KEY", type: "string", secret: true }],
+      }),
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "b", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        env: [{ name: "SHARED_KEY", type: "string", secret: true }],
+      }),
+    );
+    const destination = join(tempRoot, "out-env-dedupe");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      features: [{ name: "a" }, { name: "b" }],
+      destination,
+      extractedRoot,
+      sources: {
+        archetypes: { publication: { path: "publication" } },
+        features: {
+          a: { path: "registry/features/a", applicableArchetypes: ["publication"] },
+          b: { path: "registry/features/b", applicableArchetypes: ["publication"] },
+        },
+        themes: {},
+        roadmap: [],
+      },
+    });
+
+    const handlers = readFileSync(
+      join(destination, "src", ".mantle", "generated.handlers.ts"),
+      "utf8",
+    );
+    const occurrences = handlers.split("readonly SHARED_KEY").length - 1;
+    expect(occurrences).toBe(1);
+  });
+
+  it("rejects conflicting env declarations across features", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "a", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        env: [{ name: "CONFLICT_KEY", type: "string" }],
+      }),
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "b", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        env: [{ name: "CONFLICT_KEY", type: "number" }],
+      }),
+    );
+    const destination = join(tempRoot, "out-env-conflict");
+    mkdirSync(destination, { recursive: true });
+
+    expect(() =>
+      installFromExtractedRoot({
+        ...commonOpts(),
+        archetype: "publication",
+        features: [{ name: "a" }, { name: "b" }],
+        destination,
+        extractedRoot,
+        sources: {
+          archetypes: { publication: { path: "publication" } },
+          features: {
+            a: { path: "registry/features/a", applicableArchetypes: ["publication"] },
+            b: { path: "registry/features/b", applicableArchetypes: ["publication"] },
+          },
+          themes: {},
+          roadmap: [],
+        },
+      }),
+    ).toThrow(/Conflicting env declaration for "CONFLICT_KEY"/);
+  });
+
+  it("rejects mismatched secret-vs-public flags for the same env var", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "a", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        env: [{ name: "MAYBE_SECRET", type: "string", secret: true }],
+      }),
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "b", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        env: [{ name: "MAYBE_SECRET", type: "string", secret: false }],
+      }),
+    );
+    const destination = join(tempRoot, "out-env-secret");
+    mkdirSync(destination, { recursive: true });
+
+    expect(() =>
+      installFromExtractedRoot({
+        ...commonOpts(),
+        archetype: "publication",
+        features: [{ name: "a" }, { name: "b" }],
+        destination,
+        extractedRoot,
+        sources: {
+          archetypes: { publication: { path: "publication" } },
+          features: {
+            a: { path: "registry/features/a", applicableArchetypes: ["publication"] },
+            b: { path: "registry/features/b", applicableArchetypes: ["publication"] },
+          },
+          themes: {},
+          roadmap: [],
+        },
+      }),
+    ).toThrow(/Conflicting env declaration for "MAYBE_SECRET"/);
   });
 });
 
