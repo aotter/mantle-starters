@@ -711,6 +711,7 @@ const LOCALE_JSON_RE = /^src\/i18n\/[^/]+\.json$/;
 const COMPOSER_RULES: ReadonlyArray<ComposerRule> = [
   { match: (p) => p === ".dev.vars.example", compose: appendComposable },
   { match: (p) => LOCALE_JSON_RE.test(p), compose: mergeComposableLocale },
+  { match: (p) => p === "wrangler.toml", compose: mergeComposableWrangler },
 ];
 
 function findComposer(relPath: string): ComposerFn | null {
@@ -804,6 +805,252 @@ function sortObjectKeys(value: unknown): unknown {
     sorted[k] = sortObjectKeys(value[k]);
   }
   return sorted;
+}
+
+// --- wrangler.toml composer ---
+//
+// Hand-rolled section merger covering the subset the design doc and #198
+// require: `[vars]`, `[env.<env>.vars]`, `[[d1_databases]]`, `[[kv_namespaces]]`,
+// and top-level scalar keys. Any other section (queues, services, durable
+// objects, etc.) is a hard error until a follow-up extends the parser.
+
+interface WranglerBlock {
+  readonly kind: "top" | "table" | "array-table";
+  readonly header: string | null;
+  readonly key: string;
+  readonly body: string[];
+}
+
+const KEY_VALUE_LINE = /^([A-Za-z_][A-Za-z0-9_\-.]*)\s*=\s*(.+)$/;
+const TABLE_HEADER = /^\[([^[\]]+)\]\s*$/;
+const ARRAY_TABLE_HEADER = /^\[\[([^[\]]+)\]\]\s*$/;
+const MERGE_TABLE_KEY_RE = /^(vars|env\.[A-Za-z0-9_-]+\.vars)$/;
+const ARRAY_TABLE_ALLOWED: ReadonlySet<string> = new Set([
+  "d1_databases",
+  "kv_namespaces",
+]);
+
+function mergeComposableWrangler(
+  srcPath: string,
+  dstPath: string,
+  layer: CopyLayer,
+): void {
+  const baseText = readFileSync(dstPath, "utf8");
+  const incomingText = readFileSync(srcPath, "utf8");
+  const baseBlocks = parseWranglerBlocks(baseText, "existing wrangler.toml");
+  const incomingBlocks = parseWranglerBlocks(incomingText, layer.id);
+  const merged = mergeWranglerBlocks(baseBlocks, incomingBlocks, layer.id);
+  writeFileSync(dstPath, emitWranglerBlocks(merged));
+}
+
+function parseWranglerBlocks(text: string, source: string): WranglerBlock[] {
+  const lines = text.split(/\r?\n/);
+  const blocks: WranglerBlock[] = [];
+  let current: { header: string | null; kind: WranglerBlock["kind"]; key: string; body: string[] } = {
+    header: null,
+    kind: "top",
+    key: "<top>",
+    body: [],
+  };
+  for (const rawLine of lines) {
+    const line = rawLine;
+    const tableMatch = line.match(TABLE_HEADER);
+    const arrayMatch = line.match(ARRAY_TABLE_HEADER);
+    if (arrayMatch || tableMatch) {
+      blocks.push({ ...current, body: current.body });
+      const rawKey = (arrayMatch ?? tableMatch)?.[1];
+      if (rawKey === undefined) continue;
+      current = {
+        header: line.trim(),
+        kind: arrayMatch ? "array-table" : "table",
+        key: rawKey.trim(),
+        body: [],
+      };
+      continue;
+    }
+    current.body.push(line);
+  }
+  blocks.push({ ...current, body: current.body });
+  // Reject unsupported sections eagerly so we don't silently swallow content.
+  for (const block of blocks) {
+    if (block.kind === "top") continue;
+    if (block.kind === "table" && MERGE_TABLE_KEY_RE.test(block.key)) continue;
+    if (block.kind === "array-table" && ARRAY_TABLE_ALLOWED.has(block.key)) continue;
+    throw new Error(
+      `Wrangler composer cannot handle section [${block.kind === "array-table" ? `[${block.key}]` : block.key}] from ${source}. Supported sections: [vars], [env.<env>.vars], [[d1_databases]], [[kv_namespaces]]. Other sections (queues, services, durable objects, etc.) are not yet supported.`,
+    );
+  }
+  return blocks;
+}
+
+function mergeWranglerBlocks(
+  base: ReadonlyArray<WranglerBlock>,
+  incoming: ReadonlyArray<WranglerBlock>,
+  source: string,
+): WranglerBlock[] {
+  const result: WranglerBlock[] = [];
+  // Top-level scalar keys merge by key with same-value-pass rule.
+  const baseTop = base.find((b) => b.kind === "top");
+  const incomingTop = incoming.find((b) => b.kind === "top");
+  result.push({
+    kind: "top",
+    header: null,
+    key: "<top>",
+    body: mergeKeyValueLines(baseTop?.body ?? [], incomingTop?.body ?? [], source, "<top-level>"),
+  });
+  // Tables ([vars], [env.X.vars]): merge by key.
+  const tablesByKey = new Map<string, string[]>();
+  for (const block of base) if (block.kind === "table") tablesByKey.set(block.key, [...block.body]);
+  for (const block of incoming) {
+    if (block.kind !== "table") continue;
+    const existing = tablesByKey.get(block.key) ?? [];
+    tablesByKey.set(
+      block.key,
+      mergeKeyValueLines(existing, block.body, source, `[${block.key}]`),
+    );
+  }
+  for (const key of [...tablesByKey.keys()].sort()) {
+    result.push({ kind: "table", header: `[${key}]`, key, body: tablesByKey.get(key)! });
+  }
+  // Array tables ([[d1_databases]] etc.): collect by binding name, unique.
+  const arrayBindings = new Map<string, Map<string, string[]>>();
+  for (const block of [...base, ...incoming]) {
+    if (block.kind !== "array-table") continue;
+    if (!arrayBindings.has(block.key)) arrayBindings.set(block.key, new Map());
+    const binding = extractBindingName(block.body, `[[${block.key}]]`);
+    const slot = arrayBindings.get(block.key)!;
+    const existing = slot.get(binding);
+    if (existing) {
+      if (!arrayBlockBodiesEquivalent(existing, block.body)) {
+        throw new Error(
+          `Wrangler [[${block.key}]] binding "${binding}" declared with conflicting config (from ${source}).`,
+        );
+      }
+      continue;
+    }
+    slot.set(binding, [...block.body]);
+  }
+  for (const key of [...arrayBindings.keys()].sort()) {
+    const slot = arrayBindings.get(key)!;
+    for (const binding of [...slot.keys()].sort()) {
+      result.push({
+        kind: "array-table",
+        header: `[[${key}]]`,
+        key,
+        body: slot.get(binding)!,
+      });
+    }
+  }
+  return result;
+}
+
+function mergeKeyValueLines(
+  baseLines: ReadonlyArray<string>,
+  incomingLines: ReadonlyArray<string>,
+  source: string,
+  scope: string,
+): string[] {
+  const merged = new Map<string, { value: string; raw: string }>();
+  const order: string[] = [];
+  const preserve = (line: string): boolean => {
+    const trimmed = line.trim();
+    if (trimmed.length === 0) return true;
+    if (trimmed.startsWith("#")) return true;
+    return false;
+  };
+  const preserved: string[] = [];
+  const ingest = (lines: ReadonlyArray<string>, fromLabel: string) => {
+    for (const rawLine of lines) {
+      if (preserve(rawLine)) {
+        if (!merged.size && fromLabel === "base") preserved.push(rawLine);
+        continue;
+      }
+      const match = rawLine.match(KEY_VALUE_LINE);
+      if (!match) continue;
+      const [, key, rawValue] = match;
+      if (key === undefined || rawValue === undefined) continue;
+      const value = rawValue.trim();
+      const existing = merged.get(key);
+      if (existing) {
+        if (existing.value === value) continue;
+        throw new Error(
+          `Wrangler ${scope} key "${key}" set to conflicting values: "${existing.value}" (existing) vs "${value}" (from ${source}).`,
+        );
+      }
+      merged.set(key, { value, raw: rawLine });
+      order.push(key);
+    }
+  };
+  ingest(baseLines, "base");
+  ingest(incomingLines, "incoming");
+  const out: string[] = [...preserved];
+  if (preserved.length > 0 && order.length > 0) out.push("");
+  for (const key of order) {
+    const entry = merged.get(key);
+    if (entry) out.push(entry.raw);
+  }
+  return out;
+}
+
+function extractBindingName(body: ReadonlyArray<string>, scope: string): string {
+  for (const line of body) {
+    const m = line.match(KEY_VALUE_LINE);
+    if (!m) continue;
+    const [, key, value] = m;
+    if (key === "binding" && value !== undefined) {
+      return value.trim().replace(/^["']|["']$/g, "");
+    }
+  }
+  throw new Error(`Wrangler ${scope} block has no "binding" field.`);
+}
+
+function arrayBlockBodiesEquivalent(
+  a: ReadonlyArray<string>,
+  b: ReadonlyArray<string>,
+): boolean {
+  const parse = (lines: ReadonlyArray<string>): Map<string, string> => {
+    const map = new Map<string, string>();
+    for (const line of lines) {
+      const m = line.match(KEY_VALUE_LINE);
+      if (!m) continue;
+      const [, key, value] = m;
+      if (key !== undefined && value !== undefined) {
+        map.set(key, value.trim());
+      }
+    }
+    return map;
+  };
+  const pa = parse(a);
+  const pb = parse(b);
+  if (pa.size !== pb.size) return false;
+  for (const [k, v] of pa) if (pb.get(k) !== v) return false;
+  return true;
+}
+
+function emitWranglerBlocks(blocks: ReadonlyArray<WranglerBlock>): string {
+  const out: string[] = [];
+  let needSeparator = false;
+  for (const block of blocks) {
+    const meaningful = block.body.some((line) => line.trim().length > 0);
+    if (block.kind === "top") {
+      if (meaningful) {
+        for (const line of block.body) out.push(line);
+        needSeparator = true;
+      }
+      continue;
+    }
+    if (needSeparator) out.push("");
+    if (block.header) out.push(block.header);
+    for (const line of block.body) out.push(line);
+    needSeparator = meaningful;
+  }
+  // Trim trailing blank lines and add one final newline.
+  while (out.length > 0) {
+    const last = out[out.length - 1];
+    if (last === undefined || last.trim() !== "") break;
+    out.pop();
+  }
+  return out.join("\n") + "\n";
 }
 
 function assertCopyAllowed(

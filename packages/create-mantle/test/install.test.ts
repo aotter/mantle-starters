@@ -1457,6 +1457,229 @@ describe("installFromExtractedRoot", () => {
     ).toThrow(/i18n merge rejected forbidden key/);
   });
 
+  it("merges wrangler.toml [vars] from archetype and feature with same-value-pass", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "publication", "wrangler.toml"),
+      [
+        'name = "demo"',
+        'main = "src/index.ts"',
+        "",
+        "[vars]",
+        'BRAND_NAME = "Demo"',
+        "",
+      ].join("\n"),
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "alpha", "wrangler.toml"),
+      [
+        'name = "demo"',
+        "",
+        "[vars]",
+        'TURNSTILE_SITE_KEY = "1x00"',
+        "",
+      ].join("\n"),
+    );
+    const destination = join(tempRoot, "out-wrangler-merge");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      features: [{ name: "alpha" }],
+      destination,
+      extractedRoot,
+      sources: {
+        archetypes: { publication: { path: "publication" } },
+        features: {
+          alpha: {
+            path: "registry/features/alpha",
+            applicableArchetypes: ["publication"],
+          },
+        },
+        themes: {},
+        roadmap: [],
+      },
+    });
+
+    const merged = readFileSync(join(destination, "wrangler.toml"), "utf8");
+    expect(merged).toContain('name = "demo"');
+    expect(merged).toContain('BRAND_NAME = "Demo"');
+    expect(merged).toContain('TURNSTILE_SITE_KEY = "1x00"');
+  });
+
+  it("rejects wrangler.toml [vars] divergent value with both layers named", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "publication", "wrangler.toml"),
+      ["[vars]", 'KEY = "alpha"', ""].join("\n"),
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "alpha", "wrangler.toml"),
+      ["[vars]", 'KEY = "beta"', ""].join("\n"),
+    );
+    const destination = join(tempRoot, "out-wrangler-conflict");
+    mkdirSync(destination, { recursive: true });
+
+    expect(() =>
+      installFromExtractedRoot({
+        ...commonOpts(),
+        archetype: "publication",
+        features: [{ name: "alpha" }],
+        destination,
+        extractedRoot,
+        sources: {
+          archetypes: { publication: { path: "publication" } },
+          features: {
+            alpha: {
+              path: "registry/features/alpha",
+              applicableArchetypes: ["publication"],
+            },
+          },
+          themes: {},
+          roadmap: [],
+        },
+      }),
+    ).toThrow(/Wrangler \[vars\] key "KEY" set to conflicting values/);
+  });
+
+  it("appends [[d1_databases]] from a feature with a unique binding", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "publication", "wrangler.toml"),
+      [
+        'name = "demo"',
+        "",
+        "[[d1_databases]]",
+        'binding = "DB_MAIN"',
+        'database_name = "demo-main"',
+        'database_id = "abc"',
+        "",
+      ].join("\n"),
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "alpha", "wrangler.toml"),
+      [
+        "[[d1_databases]]",
+        'binding = "DB_ACCOUNTS"',
+        'database_name = "demo-accounts"',
+        'database_id = "def"',
+        "",
+      ].join("\n"),
+    );
+    const destination = join(tempRoot, "out-wrangler-d1");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      features: [{ name: "alpha" }],
+      destination,
+      extractedRoot,
+      sources: {
+        archetypes: { publication: { path: "publication" } },
+        features: {
+          alpha: {
+            path: "registry/features/alpha",
+            applicableArchetypes: ["publication"],
+          },
+        },
+        themes: {},
+        roadmap: [],
+      },
+    });
+
+    const merged = readFileSync(join(destination, "wrangler.toml"), "utf8");
+    expect(merged).toContain('binding = "DB_ACCOUNTS"');
+    expect(merged).toContain('binding = "DB_MAIN"');
+    // Bindings are emitted in sorted order for determinism.
+    expect(merged.indexOf('"DB_ACCOUNTS"')).toBeLessThan(
+      merged.indexOf('"DB_MAIN"'),
+    );
+  });
+
+  it("rejects [[d1_databases]] duplicate binding with diverging config", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "publication", "wrangler.toml"),
+      [
+        "[[d1_databases]]",
+        'binding = "DB"',
+        'database_name = "demo"',
+        'database_id = "abc"',
+        "",
+      ].join("\n"),
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "alpha", "wrangler.toml"),
+      [
+        "[[d1_databases]]",
+        'binding = "DB"',
+        'database_name = "demo"',
+        'database_id = "DIFFERENT"',
+        "",
+      ].join("\n"),
+    );
+    const destination = join(tempRoot, "out-wrangler-d1-conflict");
+    mkdirSync(destination, { recursive: true });
+
+    expect(() =>
+      installFromExtractedRoot({
+        ...commonOpts(),
+        archetype: "publication",
+        features: [{ name: "alpha" }],
+        destination,
+        extractedRoot,
+        sources: {
+          archetypes: { publication: { path: "publication" } },
+          features: {
+            alpha: {
+              path: "registry/features/alpha",
+              applicableArchetypes: ["publication"],
+            },
+          },
+          themes: {},
+          roadmap: [],
+        },
+      }),
+    ).toThrow(/Wrangler \[\[d1_databases\]\] binding "DB" declared with conflicting config/);
+  });
+
+  it("rejects unsupported wrangler.toml sections from a feature fragment", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "publication", "wrangler.toml"),
+      ["[vars]", 'A = "x"', ""].join("\n"),
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "alpha", "wrangler.toml"),
+      ["[durable_objects]", 'bindings = []', ""].join("\n"),
+    );
+    const destination = join(tempRoot, "out-wrangler-unsupported");
+    mkdirSync(destination, { recursive: true });
+
+    expect(() =>
+      installFromExtractedRoot({
+        ...commonOpts(),
+        archetype: "publication",
+        features: [{ name: "alpha" }],
+        destination,
+        extractedRoot,
+        sources: {
+          archetypes: { publication: { path: "publication" } },
+          features: {
+            alpha: {
+              path: "registry/features/alpha",
+              applicableArchetypes: ["publication"],
+            },
+          },
+          themes: {},
+          roadmap: [],
+        },
+      }),
+    ).toThrow(/cannot handle section/);
+  });
+
   it("emits merged i18n with sorted keys for deterministic output", () => {
     const extractedRoot = fixtureExtractedRoot();
     writeFile(
