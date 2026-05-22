@@ -624,7 +624,7 @@ enough.
 Generated output includes source separators:
 
 ```text
-# --- from feature: contact ---
+# --- from feature:contact ---
 TURNSTILE_SECRET_KEY=dev-stub
 ```
 

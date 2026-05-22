@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, existsSync
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { installFromExtractedRoot } from "../src/index.js";
+import { installFromExtractedRoot, renderImports } from "../src/index.js";
 
 let tempRoot: string;
 
@@ -431,6 +431,95 @@ describe("installFromExtractedRoot", () => {
     );
   });
 
+  it("composes .dev.vars.example onto an empty archetype target without leading blank lines", () => {
+    // Previously: appendComposable hard-coded "\n\n# --- from ..." which
+    // produced a file starting with two blank lines when the existing target
+    // was empty. Now the separator path collapses when there is no preceding
+    // content, so the file starts directly with the source marker.
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "publication", ".dev.vars.example"),
+      "", // empty archetype target
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "alpha", ".dev.vars.example"),
+      "ALPHA_VAR=hello\n",
+    );
+
+    const destination = join(tempRoot, "out-devvars-empty");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      features: [{ name: "alpha" }],
+      destination,
+      extractedRoot,
+      sources: {
+        archetypes: { publication: { path: "publication" } },
+        features: {
+          alpha: {
+            path: "registry/features/alpha",
+            applicableArchetypes: ["publication"],
+          },
+        },
+        themes: {},
+        roadmap: [],
+      },
+    });
+
+    const composed = readFileSync(
+      join(destination, ".dev.vars.example"),
+      "utf8",
+    );
+    expect(composed.startsWith("# --- from feature:alpha ---")).toBe(true);
+    expect(composed).toBe("# --- from feature:alpha ---\nALPHA_VAR=hello\n");
+  });
+
+  it("preserves leading whitespace in composable feature fragments", () => {
+    // Previously: appendComposable stripped both leading and trailing
+    // whitespace, which would silently mangle indented fragments in future
+    // composable targets (TOML / YAML). Now only trailing whitespace is
+    // trimmed; intentional indentation lands verbatim.
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "publication", ".dev.vars.example"),
+      "ARCHETYPE_VAR=base\n",
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "alpha", ".dev.vars.example"),
+      "  INDENTED_VAR=hello\n",
+    );
+
+    const destination = join(tempRoot, "out-devvars-indent");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      features: [{ name: "alpha" }],
+      destination,
+      extractedRoot,
+      sources: {
+        archetypes: { publication: { path: "publication" } },
+        features: {
+          alpha: {
+            path: "registry/features/alpha",
+            applicableArchetypes: ["publication"],
+          },
+        },
+        themes: {},
+        roadmap: [],
+      },
+    });
+
+    const composed = readFileSync(
+      join(destination, ".dev.vars.example"),
+      "utf8",
+    );
+    expect(composed).toContain("  INDENTED_VAR=hello");
+  });
+
   it("installs a feature without a known glue contribution as files only", () => {
     // Previously: writeGeneratedFeatureGlue checked `hasContact: boolean`.
     // Any feature would force-flip handlers/routes to the contact-shaped
@@ -645,5 +734,67 @@ describe("installFromExtractedRoot", () => {
 
     expect(notes.theme).toBeNull();
     expect(notes.theme_source).toBeNull();
+  });
+});
+
+describe("renderImports", () => {
+  it("merges named bindings from the same module into one statement", () => {
+    expect(
+      renderImports([
+        { named: ["X"], from: "x" },
+        { named: ["Y"], from: "x" },
+      ]),
+    ).toEqual([`import { X, Y } from "x";`]);
+  });
+
+  it("dedupes repeated bindings within the same module", () => {
+    expect(
+      renderImports([
+        { named: ["X", "Y"], from: "x" },
+        { named: ["Y", "Z"], from: "x" },
+      ]),
+    ).toEqual([`import { X, Y, Z } from "x";`]);
+  });
+
+  it("sorts named bindings alphabetically", () => {
+    expect(
+      renderImports([{ named: ["foo", "bar", "baz"], from: "x" }]),
+    ).toEqual([`import { bar, baz, foo } from "x";`]);
+  });
+
+  it("sorts modules alphabetically", () => {
+    expect(
+      renderImports([
+        { named: ["A"], from: "z" },
+        { named: ["B"], from: "a" },
+      ]),
+    ).toEqual([
+      `import { B } from "a";`,
+      `import { A } from "z";`,
+    ]);
+  });
+
+  it("combines default and named imports from the same module", () => {
+    expect(
+      renderImports([
+        { default: "Yaml", from: "y" },
+        { named: ["parse"], from: "y" },
+      ]),
+    ).toEqual([`import Yaml, { parse } from "y";`]);
+  });
+
+  it("rejects conflicting default imports for the same module", () => {
+    expect(() =>
+      renderImports([
+        { default: "A", from: "x" },
+        { default: "B", from: "x" },
+      ]),
+    ).toThrow(/Conflicting default imports/);
+  });
+
+  it("throws when a spec has neither default nor named bindings", () => {
+    expect(() => renderImports([{ from: "x" }])).toThrow(
+      /needs a default or named binding/,
+    );
   });
 });

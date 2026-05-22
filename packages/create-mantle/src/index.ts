@@ -264,7 +264,7 @@ function writeFeaturesManifest(args: {
   return [relPath];
 }
 
-interface ImportSpec {
+export interface ImportSpec {
   readonly from: string;
   readonly default?: string;
   readonly named?: ReadonlyArray<string>;
@@ -384,31 +384,41 @@ function writeGeneratedFeatureGlue(args: {
   return files.map(([relPath]) => relPath);
 }
 
-function renderImportStatement(spec: ImportSpec): string {
-  const named = spec.named && spec.named.length > 0
-    ? `{ ${spec.named.join(", ")} }`
-    : null;
-  const clause = spec.default && named
-    ? `${spec.default}, ${named}`
-    : spec.default ?? named;
-  if (!clause) {
-    throw new Error(
-      `ImportSpec from "${spec.from}" needs a default or named binding.`,
-    );
-  }
-  return `import ${clause} from "${spec.from}";`;
+interface MergedImport {
+  defaults: Set<string>;
+  named: Set<string>;
 }
 
-function renderImports(imports: ReadonlyArray<ImportSpec>): string[] {
-  const seen = new Set<string>();
-  const lines: string[] = [];
+export function renderImports(imports: ReadonlyArray<ImportSpec>): string[] {
+  const byModule = new Map<string, MergedImport>();
   for (const imp of imports) {
-    const line = renderImportStatement(imp);
-    if (seen.has(line)) continue;
-    seen.add(line);
-    lines.push(line);
+    const slot = byModule.get(imp.from) ?? { defaults: new Set(), named: new Set() };
+    if (imp.default) slot.defaults.add(imp.default);
+    for (const name of imp.named ?? []) slot.named.add(name);
+    if (!slot.defaults.size && !slot.named.size) {
+      throw new Error(
+        `ImportSpec from "${imp.from}" needs a default or named binding.`,
+      );
+    }
+    byModule.set(imp.from, slot);
   }
-  return lines;
+  const modules = [...byModule.keys()].sort();
+  return modules.map((from) => {
+    const slot = byModule.get(from)!;
+    if (slot.defaults.size > 1) {
+      throw new Error(
+        `Conflicting default imports for "${from}": ${[...slot.defaults].sort().join(", ")}.`,
+      );
+    }
+    const defaultName = slot.defaults.values().next().value;
+    const namedClause = slot.named.size > 0
+      ? `{ ${[...slot.named].sort().join(", ")} }`
+      : null;
+    const clause = defaultName && namedClause
+      ? `${defaultName}, ${namedClause}`
+      : defaultName ?? namedClause;
+    return `import ${clause} from "${from}";`;
+  });
 }
 
 function generatedManifestsSource(
@@ -651,9 +661,12 @@ function writeFileForLayer(
 
 function appendComposable(srcPath: string, dstPath: string, layer: CopyLayer): void {
   const existing = readFileSync(dstPath, "utf8").replace(/\s+$/, "");
-  const incoming = readFileSync(srcPath, "utf8").replace(/^\s+|\s+$/g, "");
+  const incoming = readFileSync(srcPath, "utf8").replace(/\s+$/, "");
   if (incoming.length === 0) return;
-  const composed = `${existing}\n\n# --- from ${layer.id} ---\n${incoming}\n`;
+  const separator = `# --- from ${layer.id} ---\n`;
+  const composed = existing.length === 0
+    ? `${separator}${incoming}\n`
+    : `${existing}\n\n${separator}${incoming}\n`;
   writeFileSync(dstPath, composed);
 }
 
