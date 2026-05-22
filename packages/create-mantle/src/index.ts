@@ -752,6 +752,12 @@ function parseLocaleJson(path: string): unknown {
   }
 }
 
+const FORBIDDEN_KEYS: ReadonlySet<string> = new Set([
+  "__proto__",
+  "constructor",
+  "prototype",
+]);
+
 function deepMergeStrict(
   base: unknown,
   incoming: unknown,
@@ -761,8 +767,13 @@ function deepMergeStrict(
   if (incoming === undefined) return base;
   if (base === undefined) return incoming;
   if (isPlainObject(base) && isPlainObject(incoming)) {
-    const result: Record<string, unknown> = { ...base };
+    const result: Record<string, unknown> = Object.assign(Object.create(null), base);
     for (const key of Object.keys(incoming)) {
+      if (FORBIDDEN_KEYS.has(key)) {
+        throw new Error(
+          `i18n merge rejected forbidden key "${key}" at "${[...path, key].join(".")}" (from ${source}).`,
+        );
+      }
       result[key] = deepMergeStrict(base[key], incoming[key], source, [...path, key]);
     }
     return result;
@@ -788,7 +799,7 @@ function jsonEqual(a: unknown, b: unknown): boolean {
 function sortObjectKeys(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(sortObjectKeys);
   if (!isPlainObject(value)) return value;
-  const sorted: Record<string, unknown> = {};
+  const sorted: Record<string, unknown> = Object.create(null);
   for (const k of Object.keys(value).sort()) {
     sorted[k] = sortObjectKeys(value[k]);
   }
