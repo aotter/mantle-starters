@@ -865,11 +865,15 @@ implementations must follow.
 
 ### 1. Compose Collision Matrix
 
-Error-message shape for hard collisions:
+Error-message shape for hard collisions (as emitted by `assertCopyAllowed` in
+`packages/create-mantle/src/index.ts`):
 
 ```text
-Feature overlay collision at `<path>`: `<owner.id>` already wrote it, `<layer.id>` attempted to write it again.
+Feature overlay collision at "<path>": <owner.id> already wrote it, <layer.id> attempted to write it again. Register a composable target instead.
 ```
+
+Composer-specific messages below use the same shape with `<path>` replaced by
+the composer-scoped identifier (e.g. `wrangler.toml [vars].<key>`).
 
 | Target path/kind | Conflict detection point | Policy | Error-message shape |
 |---|---|---|---|
@@ -879,13 +883,15 @@ Feature overlay collision at `<path>`: `<owner.id>` already wrote it, `<layer.id
 | `wrangler.toml` `[[d1_databases]]` binding | Future Wrangler composer while indexing array-style binding blocks | Binding names are unique by the `binding` field. Two bindings may legitimately point at the same `database_id`. Re-declaring the same binding with the same binding object is allowed only by structural equality: deep equality, key order insensitive. Divergent config is a hard error. | Template above with `<path>` = `wrangler.toml [[d1_databases]].<binding>`. |
 | `wrangler.toml` `[[kv_namespaces]]` binding | Future Wrangler composer while indexing array-style binding blocks | Binding names are unique. Re-declaring the same binding with the same binding object is allowed only by structural equality: deep equality, key order insensitive. Divergent config is a hard error. | Template above with `<path>` = `wrangler.toml [[kv_namespaces]].<binding>`. |
 | `wrangler.toml` queues | Future Wrangler composer while indexing producer and consumer queue bindings | Queue binding identifiers are unique within their queue kind. Re-declaring the same binding object is allowed only by structural equality: deep equality, key order insensitive. Divergent producer or consumer config is a hard error. | Template above with `<path>` = `wrangler.toml queues.<binding>`. |
+| `wrangler.toml` top-level scalar keys (`name`, `main`, `compatibility_date`, etc.) | Future Wrangler composer before merging fragments | Same key and same value is allowed; same key and different value is a hard error. | Template above with `<path>` = `wrangler.toml <key>`. |
+| `wrangler.toml` unmodeled sections | Future Wrangler composer when a fragment contains a section the composer does not recognize | Hard error. The composer must reject unknown sections explicitly so future Wrangler additions cannot be silently swallowed. | Template above with `<path>` = `wrangler.toml <section>` and the message names the unknown section. |
 | Manifest ref IDs | Future manifest composer before emitting `generated.manifests.ts` | Manifest refs are unique. Reusing a ref for the same manifest source is allowed; reusing it for a different source is a hard error. | Template above with `<path>` = `src/.mantle/generated.manifests.ts#<ref>`. |
 | Handler refs (`generatedHandlersSource`) | `generatedHandlersSource` or its future data-driven replacement before object emission | Handler refs are unique across base and feature handlers. Duplicate ref is allowed only when factory/options match by structural equality: deep equality, key order insensitive. Any different factory/options is a hard error. | Template above with `<path>` = `src/.mantle/generated.handlers.ts#<ref>`. |
 | Route slug overrides | `generatedRoutesSource` or its future data-driven replacement before emitting `buildFeatureSlugOverrides` | A `(collection, slug)` pair may be owned by one feature. Same pair from another feature is a hard error unless a future schema adds an explicit override marker. | Template above with `<path>` = `src/.mantle/generated.routes.ts#<collection>/<slug>`. |
 | i18n keys | Future i18n composer while merging locale JSON objects | Same locale/key/value is allowed. Same locale/key with different value is a hard error unless explicitly marked as an override. Missing locale follows the archetype locale policy. | Template above with `<path>` = `i18n/<locale>#<key>`. |
 | Provision step IDs | Future provision composer before emitting `scripts/.mantle-provision.mjs` | Step IDs are unique after phase scoping. Same phase/id from another feature is a hard error; same feature cannot emit duplicate IDs. | Template above with `<path>` = `scripts/.mantle-provision.mjs#<phase>/<step.id>`. |
 | `generated.*` glue files (`src/.mantle/generated.*.ts`) | `writeGeneratedFeatureGlue` and future generated-output writers | Scaffolder-owned output is regenerated as a whole. Feature fragments do not write these files directly; collisions are detected on refs inside the generated file, not on the file path. | Use the ref-specific generated file messages above. Direct feature writes to `src/.mantle/generated.*.ts` use the generic path collision shape. |
-| Theme bounds (`src/theme/**`) | `shouldCopyPath`, `isThemeOverridePath`, and future registry target validation | Theme layers may write only bounded theme paths. Features must not write `src/theme/**`. Theme attempts outside the bound are hard errors. | Template above with `<path>` = `src/theme/<path>`. |
+| Theme bounds (`src/theme/**`) | `shouldCopyPath`, `isThemeOverridePath`, and future registry target validation | Theme layers may write only bounded theme paths. Features must not write `src/theme/**`. Theme attempts outside the bound are hard errors today (`shouldCopyPath` throws for theme-layer non-theme paths). Feature-layer writes to `src/theme/**` are NOT actively rejected today — they will succeed unless a theme layer also targets the same path. Enforcing the feature-side bound is tracked as a follow-up; the spec requires it. | Template above with `<path>` = `src/theme/<path>`. |
 
 ### 2. Generated-Output Stability Contract
 
@@ -917,8 +923,18 @@ Receipts split intent from machine state:
 
 ### 3. Ordering / Determinism
 
-Two installs with the same inputs must produce byte-identical
-scaffolder-owned output.
+Two installs with the same inputs must produce byte-identical scaffolder-owned
+output, with one explicit exception: timestamp fields that record when an
+install happened. Today `writeFeaturesManifest` writes
+`resolvedAt: new Date().toISOString()` into `.mantle/features.json`; that field
+is non-deterministic by design (the install time is the install time). When
+`create-mantle update` (#192) records an `installTimestamp` in the receipt, it
+must preserve the original install's timestamp literally — re-deriving from
+`now()` would force every update to diverge byte-wise even when the install
+inputs are unchanged.
+
+Other than enumerated timestamp fields, scaffolder-owned files must be
+byte-identical across runs with the same inputs.
 
 Determinism rules:
 
@@ -960,7 +976,7 @@ output.
 
 | Path pattern | Who can write it | Co-write allowed? | Resolution |
 |---|---|---|---|
-| `src/theme/**` | Theme layer only | No | Feature attempts are hard errors. Theme files replace the starter theme within the bounded slot. |
+| `src/theme/**` | Theme layer only | No | Feature attempts should fail per spec; today the bound is enforced only against theme layers via `shouldCopyPath`, and feature writes to `src/theme/**` succeed until a theme layer races them. Tightening this is a follow-up. Theme files replace the starter theme within the bounded slot. |
 | `src/theme/index.ts` | Theme layer only | No | Same as `src/theme/**`; this explicit file is included in `isThemeOverridePath`. |
 | `src/theme.default/**` | Archetype layer only | No | Themes and features must not write archetype baseline theme templates such as `src/theme.default/templates/index.ts`. |
 | Feature source paths such as `src/features/**` | Feature layer only | No | Theme attempts outside `src/theme/**` fail in `shouldCopyPath`. |
