@@ -212,7 +212,6 @@ updates:
     open-pull-requests-limit: 5
     cooldown:
       default-days: 14
-      semver-major-days: 21
     labels:
       - area:ci
       - dependencies

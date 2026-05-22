@@ -8,3 +8,38 @@ packages:
   - "reservation"
   - "community"
   - "transaction"
+
+# Catalog centralizes shared third-party version specifiers so
+# dependabot edits one place per dependency and starter package.jsons
+# stop drifting. pnpm 9.5+ ships catalogs; dependabot supports the
+# protocol as of Feb 2025 GA. See https://pnpm.io/catalogs.
+#
+# Starters are *application* packages (they ship as runnable Worker
+# projects), not libraries — so unlike the mantle SDK we don't need
+# the `peer` / default catalog split. A single catalog suffices.
+#
+# `@aotter/mantle*` is intentionally excluded — those bumps land via
+# `.github/workflows/bump-from-sdk.yml` (which rewrites every
+# package.json + lockfile in lockstep when the SDK publishes a new
+# version), not via routine dependabot churn. See the workflow file
+# for the bump list.
+#
+# Deps with version drift across starters (marked, yaml) are NOT in
+# the catalog — aligning them would change runtime behavior in this
+# refactor, which should stay version-neutral. A separate PR can
+# fold them into the catalog after intentionally picking the target
+# version.
+catalog:
+  # Runtime — every starter ships these.
+  '@cloudflare/workers-oauth-provider': ^0.7.0
+  aws4fetch: ^1.0.20
+  better-auth: ^1.6.11
+  hono: ^4.12.19
+  zod: ^4.4.2
+  # Toolchain — every starter and (most) packages/.
+  '@cloudflare/workers-types': ^4.20260522.1
+  '@types/node': ^25
+  tsx: ^4.22.1
+  typescript: ^5.6.3
+  vitest: ^2.1.4
+  wrangler: ^4.93.1
