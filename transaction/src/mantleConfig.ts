@@ -111,13 +111,23 @@ export function buildCmsConfig(env: Env, auth: Auth): CmsConfig {
       // so contributors can `pnpm typecheck` the starter directly; the runtime
       // cost is one tiny parse at worker cold-start.
       locales: JSON.parse('{{LOCALES}}') as readonly string[],
-      // Declared media purpose taxonomy (aotter/mantle#262 + #272).
+      // Declared media purpose taxonomy (aotter/mantle#139 + #262 + #272).
       // Each purpose carries its required mime set + per-mime byte cap.
       // Uploads MUST cover every required mime (multi-variant avif/webp/jpeg);
       // the runtime rejects on missing variants, oversized variants, or
-      // suspicious sizing. products.coverAssetId is the only media-asset
-      // field today; expand this list when adding gallery images,
-      // hero banners, etc. — each new purpose gets its own caps.
+      // suspicious sizing. Agents discover the declared set via the
+      // `create_media_upload` MCP tool's policy summary — they should
+      // never invent ad-hoc purpose strings (those fail closed with
+      // `MEDIA_PURPOSE_REJECTED`).
+      //
+      // Three default purposes covering the manifest fields the
+      // transaction starter ships:
+      //   - product-cover  → products.coverAssetId (list / PDP fallback)
+      //   - product-image  → products.images[].assetId (PDP gallery)
+      //   - page-image     → page-translations.blocks[].imageAssetId / .cards[].sideImageAssetId
+      // Width caps roughly mirror the typical render width per purpose;
+      // adopters tighten or loosen as their photography demands. Caps
+      // are server-side ceilings — sharp output should sit well below.
       media: {
         purposes: [
           {
@@ -127,6 +137,24 @@ export function buildCmsConfig(env: Env, auth: Auth): CmsConfig {
               "image/avif": 250_000,
               "image/webp": 400_000,
               "image/jpeg": 600_000,
+            },
+          },
+          {
+            name: "product-image",
+            required: ["image/avif", "image/webp", "image/jpeg"],
+            maxBytes: {
+              "image/avif": 500_000,
+              "image/webp": 600_000,
+              "image/jpeg": 800_000,
+            },
+          },
+          {
+            name: "page-image",
+            required: ["image/avif", "image/webp", "image/jpeg"],
+            maxBytes: {
+              "image/avif": 600_000,
+              "image/webp": 800_000,
+              "image/jpeg": 1_000_000,
             },
           },
         ],
