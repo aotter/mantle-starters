@@ -2,25 +2,35 @@ import { execFileSync } from "node:child_process";
 import {
   cpSync,
   existsSync,
+  mkdirSync,
   readFileSync,
   readdirSync,
   statSync,
   writeFileSync,
 } from "node:fs";
-import { join, relative } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { findLeftovers, substitute, type PlaceholderValues } from "./placeholder.js";
 import {
   fetchSourcesJson,
   resolveArchetype,
+  resolveFeatures,
   resolveTheme,
   STALE_FALLBACK_SOURCES,
   type ArchetypeSource,
+  type FeatureSelection,
+  type ResolvedFeature,
   type SourcesJson,
   type ThemeSource,
 } from "./sources.js";
 import { cleanupTempDir, downloadAndExtractTarball } from "./tarball.js";
 
-export type { ArchetypeSource, SourcesJson, ThemeSource } from "./sources.js";
+export type {
+  ArchetypeSource,
+  FeatureSelection,
+  ResolvedFeature,
+  SourcesJson,
+  ThemeSource,
+} from "./sources.js";
 export type { PlaceholderValues } from "./placeholder.js";
 export {
   STARTERS_REPO,
@@ -30,6 +40,7 @@ export {
   ROADMAP_ARCHETYPES,
   fetchSourcesJson,
   resolveArchetype,
+  resolveFeatures,
   resolveTheme,
   resolveSource,
 } from "./sources.js";
@@ -46,6 +57,8 @@ export interface CreateOptions {
   readonly summary: string;
   /** Optional theme overlay key (resolves against `sources.themes`). */
   readonly theme?: string | null;
+  /** Optional source-first feature recipes to install. */
+  readonly features?: ReadonlyArray<FeatureSelection>;
   /** Override the starter ref (e.g., release tag); defaults to `main`. */
   readonly starterRef?: string;
   /** Skip `pnpm install` (used in tests). */
@@ -57,11 +70,20 @@ export interface CreateOptions {
 export interface RunNotes {
   readonly archetype: string;
   readonly theme: string | null;
+  readonly features: ReadonlyArray<RunNoteFeature>;
   readonly starter_source: string;
   readonly theme_source: string | null;
   readonly overlays: ReadonlyArray<string>;
   readonly files_written: ReadonlyArray<string>;
   readonly next_step: string;
+}
+
+export interface RunNoteFeature {
+  readonly name: string;
+  readonly type: "registry:feature";
+  readonly variant: string | null;
+  readonly path?: string;
+  readonly registry_dependencies: readonly string[];
 }
 
 const PLACEHOLDER_PATH_BLOCKLIST = new Set([
@@ -122,11 +144,17 @@ export function installFromExtractedRoot(
   const sources = opts.sources ?? STALE_FALLBACK_SOURCES;
   const source = resolveArchetype(opts.archetype, sources);
   const themeSource = resolveTheme(opts.theme ?? null, sources);
+  const resolvedFeatures = resolveFeatures(
+    opts.features ?? [],
+    opts.archetype,
+    sources,
+  );
 
   const filesWritten = mergeStarterIntoDestination({
     extractedRoot: opts.extractedRoot,
     source,
     themeSource,
+    features: resolvedFeatures,
     destination: opts.destination,
   });
   const values = buildPlaceholderValues(opts);
@@ -137,7 +165,20 @@ export function installFromExtractedRoot(
     destination: opts.destination,
     filesWritten,
   });
-  validateNoLeftovers(opts.destination, filesWritten);
+  const generatedFiles = writeFeaturesManifest({
+    destination: opts.destination,
+    sources,
+    archetype: opts.archetype,
+    theme: opts.theme ?? null,
+    features: resolvedFeatures,
+  });
+  const generatedGlueFiles = writeGeneratedFeatureGlue({
+    destination: opts.destination,
+    archetype: opts.archetype,
+    features: resolvedFeatures,
+  });
+  const allFiles = [...filesWritten, ...generatedFiles, ...generatedGlueFiles].sort();
+  validateNoLeftovers(opts.destination, allFiles);
   if (!opts.skipGitInit) {
     gitInit(opts.destination);
   }
@@ -147,12 +188,23 @@ export function installFromExtractedRoot(
   return {
     archetype: opts.archetype,
     theme: opts.theme ?? null,
+    features: resolvedFeatures.map(toRunNoteFeature),
     starter_source: `${source.repo}/${source.path}`,
     theme_source: themeSource ? `${source.repo}/${themeSource.path}` : null,
     overlays: source.overlays ?? [],
-    files_written: filesWritten,
+    files_written: allFiles,
     next_step:
       "Mantle: replace HTML comments in mantle/site.md with prose from interview; then commit + invoke provision skill.",
+  };
+}
+
+function toRunNoteFeature(feature: ResolvedFeature): RunNoteFeature {
+  return {
+    name: feature.name,
+    type: feature.type,
+    variant: feature.variant,
+    path: feature.path,
+    registry_dependencies: feature.registryDependencies,
   };
 }
 
@@ -170,63 +222,387 @@ function buildPlaceholderValues(opts: CreateOptions): PlaceholderValues {
   };
 }
 
+function writeFeaturesManifest(args: {
+  destination: string;
+  sources: SourcesJson;
+  archetype: string;
+  theme: string | null;
+  features: readonly ResolvedFeature[];
+}): readonly string[] {
+  const dir = join(args.destination, ".mantle");
+  mkdirSync(dir, { recursive: true });
+  const relPath = ".mantle/features.json";
+  const path = join(args.destination, relPath);
+  const manifest = {
+    registry: {
+      name: "mantle-starters",
+      url: "https://mantle.tools/registry.json",
+      ...(args.sources.version ? { version: args.sources.version } : {}),
+    },
+    archetype: {
+      name: args.archetype,
+      type: "registry:archetype",
+    },
+    theme: args.theme
+      ? {
+          name: args.theme,
+          type: "registry:theme",
+        }
+      : null,
+    features: args.features.map((feature) => ({
+      name: feature.name,
+      type: feature.type,
+      ...(feature.path ? { path: feature.path } : {}),
+      ...(feature.title ? { title: feature.title } : {}),
+      ...(feature.description ? { description: feature.description } : {}),
+      ...(feature.variant ? { variant: feature.variant } : {}),
+      registryDependencies: feature.registryDependencies,
+    })),
+    resolvedAt: new Date().toISOString(),
+  };
+  writeFileSync(path, JSON.stringify(manifest, null, 2) + "\n");
+  return [relPath];
+}
+
+function writeGeneratedFeatureGlue(args: {
+  destination: string;
+  archetype: string;
+  features: readonly ResolvedFeature[];
+}): readonly string[] {
+  const dir = join(args.destination, "src", ".mantle");
+  mkdirSync(dir, { recursive: true });
+
+  const hasContact = args.features.some((feature) => feature.name === "contact");
+  const files: Array<[string, string]> = [
+    ["src/.mantle/generated.manifests.ts", generatedManifestsSource(hasContact)],
+    ["src/.mantle/generated.handlers.ts", generatedHandlersSource(hasContact)],
+    [
+      "src/.mantle/generated.routes.ts",
+      generatedRoutesSource({ hasContact, archetype: args.archetype }),
+    ],
+  ];
+  for (const [relPath, content] of files) {
+    writeFileSync(join(args.destination, relPath), content);
+  }
+  return files.map(([relPath]) => relPath);
+}
+
+function generatedManifestsSource(hasContact: boolean): string {
+  if (!hasContact) {
+    return "export const featureManifestYamls: readonly string[] = [];\n";
+  }
+  return [
+    "import contactYaml from \"../../manifests/contact.yaml\";",
+    "",
+    "export const featureManifestYamls: readonly string[] = [contactYaml];",
+    "",
+  ].join("\n");
+}
+
+function generatedHandlersSource(hasContact: boolean): string {
+  if (!hasContact) {
+    return [
+      "import type { AnyHandler } from \"@aotter/mantle/runtime\";",
+      "",
+      "export interface FeatureHandlerEnv {",
+      "  readonly TURNSTILE_SECRET_KEY?: string;",
+      "}",
+      "",
+      "export function buildFeatureHandlers(",
+      "  _env: FeatureHandlerEnv,",
+      "): Readonly<Record<string, AnyHandler>> {",
+      "  return {};",
+      "}",
+      "",
+    ].join("\n");
+  }
+  return [
+    "import type { AnyHandler } from \"@aotter/mantle/runtime\";",
+    "import { cloudflareTurnstileCheck } from \"@aotter/mantle/cloudflare\";",
+    "import { slackNotify } from \"../features/contact/slackNotify.js\";",
+    "",
+    "export interface FeatureHandlerEnv {",
+    "  readonly TURNSTILE_SECRET_KEY?: string;",
+    "}",
+    "",
+    "export function buildFeatureHandlers(",
+    "  env: FeatureHandlerEnv,",
+    "): Readonly<Record<string, AnyHandler>> {",
+    "  return {",
+    "    captchaCheck: cloudflareTurnstileCheck({",
+    "      secret: env.TURNSTILE_SECRET_KEY ?? \"dev-stub\",",
+    "    }) as AnyHandler,",
+    "    slackNotify: slackNotify as AnyHandler,",
+    "  };",
+    "}",
+    "",
+  ].join("\n");
+}
+
+function generatedRoutesSource(args: {
+  hasContact: boolean;
+  archetype: string;
+}): string {
+  if (!args.hasContact) {
+    return [
+      "import type { PublicRouteContext } from \"@aotter/mantle/cloudflare\";",
+      "import type { Env } from \"../mantleConfig.js\";",
+      "",
+      "export interface FeatureSlugOverride {",
+      "  readonly collection: string;",
+      "  readonly slug: string;",
+      "  readonly render: (ctx: PublicRouteContext) => Promise<Response>;",
+      "}",
+      "",
+      "export function buildFeatureSlugOverrides(",
+      "  _env: Env,",
+      "): readonly FeatureSlugOverride[] {",
+      "  return [];",
+      "}",
+      "",
+    ].join("\n");
+  }
+
+  const importContactTemplate = args.archetype === "publication"
+    ? [
+        "import { baseline } from \"../themeWiring.js\";",
+        "",
+        "const { contact: contactTemplate } = baseline.templates;",
+      ].join("\n")
+    : "import { contactTemplate } from \"../theme.default/templates/index.js\";";
+
+  return [
+    "import type { PublicRouteContext } from \"@aotter/mantle/cloudflare\";",
+    "import type { Env } from \"../mantleConfig.js\";",
+    importContactTemplate,
+    "",
+    "export interface FeatureSlugOverride {",
+    "  readonly collection: string;",
+    "  readonly slug: string;",
+    "  readonly render: (ctx: PublicRouteContext) => Promise<Response>;",
+    "}",
+    "",
+    "export function buildFeatureSlugOverrides(",
+    "  env: Env,",
+    "): readonly FeatureSlugOverride[] {",
+    "  return [",
+    "    {",
+    "      collection: \"page-translations\",",
+    "      slug: \"contact\",",
+    "      render: (ctx) => renderContact(ctx, env),",
+    "    },",
+    "  ];",
+    "}",
+    "",
+    "async function renderContact(",
+    "  ctx: PublicRouteContext,",
+    "  env: Env,",
+    "): Promise<Response> {",
+    "  const { runtime, site, locale } = ctx;",
+    "  const all = await runtime.listEntries.execute({",
+    "    collection: \"page-translations\",",
+    "    status: \"published\",",
+    "    limit: 50,",
+    "  });",
+    "  const entry = all.find(",
+    "    (e) =>",
+    "      (e.data as { slug?: string }).slug === \"contact\" &&",
+    "      (e.data as { locale?: string }).locale === locale,",
+    "  );",
+    "  const data = (entry?.data ?? {}) as {",
+    "    title?: string;",
+    "    intro?: string;",
+    "    body?: string;",
+    "  };",
+    "  const html = contactTemplate({",
+    "    site,",
+    "    locale,",
+    "    page: {",
+    "      title: data.title ?? \"\",",
+    "      intro: data.intro,",
+    "      body: data.body ?? \"\",",
+    "    },",
+    "    turnstileSiteKey: env.TURNSTILE_SITE_KEY ?? \"1x00000000000000000000AA\",",
+    "  });",
+    "  return new Response(html, {",
+    "    status: 200,",
+    "    headers: {",
+    "      \"content-type\": \"text/html; charset=utf-8\",",
+    "      \"cache-control\": \"public, max-age=60, s-maxage=60\",",
+    "    },",
+    "  });",
+    "}",
+    "",
+  ].join("\n");
+}
+
 function mergeStarterIntoDestination(args: {
   extractedRoot: string;
   source: ArchetypeSource;
   themeSource: ThemeSource | null;
+  features: readonly ResolvedFeature[];
   destination: string;
 }): ReadonlyArray<string> {
-  const layers: string[] = [join(args.extractedRoot, "_common")];
-  layers.push(join(args.extractedRoot, args.source.path));
+  const layers: CopyLayer[] = [
+    {
+      id: "_common",
+      kind: "base",
+      root: join(args.extractedRoot, "_common"),
+    },
+    {
+      id: args.source.path,
+      kind: "base",
+      root: join(args.extractedRoot, args.source.path),
+    },
+  ];
   for (const overlay of args.source.overlays ?? []) {
-    layers.push(join(args.extractedRoot, overlay));
+    layers.push({
+      id: overlay,
+      kind: "base",
+      root: join(args.extractedRoot, overlay),
+    });
+  }
+  for (const feature of args.features.filter(isCommonFeaturePath)) {
+    layers.push(featureCopyLayer(args.extractedRoot, feature));
+  }
+  for (const feature of args.features.filter((feature) => !isCommonFeaturePath(feature))) {
+    layers.push(featureCopyLayer(args.extractedRoot, feature));
   }
   if (args.themeSource) {
-    layers.push(join(args.extractedRoot, args.themeSource.path));
+    layers.push({
+      id: args.themeSource.path,
+      kind: "theme",
+      root: join(args.extractedRoot, args.themeSource.path),
+    });
   }
   const writtenSet = new Set<string>();
+  const owners = new Map<string, CopyLayer>();
   for (const layer of layers) {
-    if (!existsSync(layer)) continue;
-    copyTreeRecording(layer, args.destination, writtenSet);
+    if (!existsSync(layer.root)) continue;
+    copyTreeRecording(layer, args.destination, writtenSet, owners);
   }
   return [...writtenSet].sort();
 }
 
+type CopyLayerKind = "base" | "feature" | "theme";
+
+interface CopyLayer {
+  readonly id: string;
+  readonly kind: CopyLayerKind;
+  readonly root: string;
+}
+
+function isCommonFeaturePath(feature: ResolvedFeature): boolean {
+  return feature.path?.startsWith("_common/features/") ?? false;
+}
+
+function featureCopyLayer(extractedRoot: string, feature: ResolvedFeature): CopyLayer {
+  if (!feature.path) {
+    throw new Error(`Feature "${feature.name}" does not declare a source path.`);
+  }
+  return {
+    id: `feature:${feature.name}`,
+    kind: "feature",
+    root: join(extractedRoot, feature.path),
+  };
+}
+
 function copyTreeRecording(
-  src: string,
+  layer: CopyLayer,
   dst: string,
   writtenRelativeToDst: Set<string>,
+  owners: Map<string, CopyLayer>,
 ): void {
-  for (const entry of readdirSync(src, { withFileTypes: true })) {
+  for (const entry of readdirSync(layer.root, { withFileTypes: true })) {
     if (PLACEHOLDER_PATH_BLOCKLIST.has(entry.name)) continue;
-    const srcPath = join(src, entry.name);
+    if (entry.name === "_compose") continue;
+    const srcPath = join(layer.root, entry.name);
     const dstPath = join(dst, entry.name);
     if (entry.isDirectory()) {
-      cpSync(srcPath, dstPath, { recursive: true });
-      for (const f of walkRel(dstPath)) {
-        writtenRelativeToDst.add(relative(dst, join(dstPath, f)));
-      }
+      copyTreeChildren(srcPath, dstPath, dst, layer, writtenRelativeToDst, owners);
     } else if (entry.isFile()) {
+      const relPath = relative(dst, dstPath);
+      if (!shouldCopyPath(relPath, layer)) continue;
+      assertCopyAllowed(relPath, layer, owners);
+      mkdirSync(dirname(dstPath), { recursive: true });
       cpSync(srcPath, dstPath);
-      writtenRelativeToDst.add(relative(dst, dstPath));
+      owners.set(relPath, layer);
+      writtenRelativeToDst.add(relPath);
     }
   }
 }
 
-function walkRel(root: string): ReadonlyArray<string> {
-  const out: string[] = [];
-  for (const entry of readdirSync(root, { withFileTypes: true })) {
-    const child = join(root, entry.name);
+function copyTreeChildren(
+  src: string,
+  dst: string,
+  destinationRoot: string,
+  layer: CopyLayer,
+  writtenRelativeToDst: Set<string>,
+  owners: Map<string, CopyLayer>,
+): void {
+  for (const entry of readdirSync(src, { withFileTypes: true })) {
+    if (PLACEHOLDER_PATH_BLOCKLIST.has(entry.name)) continue;
+    if (entry.name === "_compose") continue;
+    const srcPath = join(src, entry.name);
+    const dstPath = join(dst, entry.name);
     if (entry.isDirectory()) {
-      for (const sub of walkRel(child)) {
-        out.push(join(entry.name, sub));
-      }
+      copyTreeChildren(
+        srcPath,
+        dstPath,
+        destinationRoot,
+        layer,
+        writtenRelativeToDst,
+        owners,
+      );
     } else if (entry.isFile()) {
-      out.push(entry.name);
+      const relPath = relative(destinationRoot, dstPath);
+      if (!shouldCopyPath(relPath, layer)) continue;
+      assertCopyAllowed(relPath, layer, owners);
+      mkdirSync(dirname(dstPath), { recursive: true });
+      cpSync(srcPath, dstPath);
+      owners.set(relPath, layer);
+      writtenRelativeToDst.add(relPath);
     }
   }
-  return out;
 }
+
+function assertCopyAllowed(
+  relPath: string,
+  layer: CopyLayer,
+  owners: ReadonlyMap<string, CopyLayer>,
+): void {
+  if (layer.kind === "theme") {
+    if (!isThemeOverridePath(relPath)) {
+      throw new Error(
+        `Theme layer "${layer.id}" attempted to write non-theme path "${relPath}".`,
+      );
+    }
+    return;
+  }
+
+  const owner = owners.get(relPath);
+  if (!owner) return;
+  if (COMPOSABLE_TARGETS.has(relPath)) return;
+  throw new Error(
+    `Feature overlay collision at "${relPath}": ${owner.id} already wrote it, ` +
+      `${layer.id} attempted to write it again. Register a composable target instead.`,
+  );
+}
+
+function shouldCopyPath(relPath: string, layer: CopyLayer): boolean {
+  if (layer.kind !== "theme") return true;
+  if (isThemeOverridePath(relPath)) return true;
+  if (relPath === "README.md") return false;
+  throw new Error(
+    `Theme layer "${layer.id}" attempted to write non-theme path "${relPath}".`,
+  );
+}
+
+function isThemeOverridePath(relPath: string): boolean {
+  return relPath === "src/theme/index.ts" || relPath.startsWith("src/theme/");
+}
+
+const COMPOSABLE_TARGETS = new Set<string>();
 
 function resolveCatalogSpecifiers(args: {
   extractedRoot: string;

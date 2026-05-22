@@ -12,7 +12,7 @@ Follow the [Mantle install brief](https://raw.githubusercontent.com/aotter/mantl
 
 ## What this is
 
-A site that publishes — articles, notes, project updates, a docs-lite section, plus a basic contact form. The `publication` starter carries the Schemas (`posts`, `post-translations`, `pages`, `contact-messages`), the public read path via KV, and the lifecycle/Procedure scaffolding for CAPTCHA + Slack-notify.
+A site that publishes — articles, notes, project updates, and a docs-lite section. The `publication` starter carries the core Schemas (`posts`, `post-translations`, `pages`) and the public read path via KV. Basic contact form behavior is opt-in via the `contact` feature overlay.
 
 ## Interview probes (pickers — present one at a time, not all at once)
 

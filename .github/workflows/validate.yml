@@ -94,6 +94,9 @@ jobs:
             for (const [k, v] of Object.entries(src.themes ?? {})) {
               if (!fs.existsSync(v.path)) missing.push(\`theme \${k} -> \${v.path}\`);
             }
+            for (const [k, v] of Object.entries(src.features ?? {})) {
+              if (!fs.existsSync(v.path)) missing.push(\`feature \${k} -> \${v.path}\`);
+            }
             if (missing.length) {
               console.error('Missing paths referenced from sources.json:');
               for (const m of missing) console.error('  - ' + m);

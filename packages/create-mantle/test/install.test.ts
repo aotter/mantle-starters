@@ -161,6 +161,108 @@ describe("installFromExtractedRoot", () => {
     expect(pkg.devDependencies["@types/node"]).toBe("^25");
   });
 
+  it("emits a feature manifest for resolved source recipes", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "contact", "README.md"),
+      "contact feature\n",
+    );
+    const destination = join(tempRoot, "out-features");
+    mkdirSync(destination, { recursive: true });
+
+    const notes = installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      features: [{ name: "contact" }],
+      destination,
+      extractedRoot,
+      sources: {
+        archetypes: { publication: { path: "publication" } },
+        features: {
+          contact: {
+            path: "registry/features/contact",
+            title: "Contact Form",
+            applicableArchetypes: ["publication"],
+          },
+        },
+        themes: {},
+        roadmap: [],
+        version: "0.0.11-alpha.15",
+      },
+    });
+
+    expect(notes.features).toEqual([
+      {
+        name: "contact",
+        type: "registry:feature",
+        variant: null,
+        path: "registry/features/contact",
+        registry_dependencies: [],
+      },
+    ]);
+    expect(notes.files_written).toContain(".mantle/features.json");
+    expect(notes.files_written).toContain("src/.mantle/generated.handlers.ts");
+    expect(notes.files_written).toContain("src/.mantle/generated.manifests.ts");
+    expect(notes.files_written).toContain("src/.mantle/generated.routes.ts");
+
+    const manifest = JSON.parse(
+      readFileSync(join(destination, ".mantle", "features.json"), "utf8"),
+    );
+    expect(manifest.registry).toEqual({
+      name: "mantle-starters",
+      url: "https://mantle.tools/registry.json",
+      version: "0.0.11-alpha.15",
+    });
+    expect(manifest.archetype).toEqual({
+      name: "publication",
+      type: "registry:archetype",
+    });
+    expect(manifest.features).toEqual([
+      {
+        name: "contact",
+        type: "registry:feature",
+        path: "registry/features/contact",
+        title: "Contact Form",
+        registryDependencies: [],
+      },
+    ]);
+    expect(typeof manifest.resolvedAt).toBe("string");
+    expect(
+      readFileSync(join(destination, "src", ".mantle", "generated.manifests.ts"), "utf8"),
+    ).toContain("../../manifests/contact.yaml");
+  });
+
+  it("fails when two non-theme layers write the same non-composable path", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "bad", "package.json"),
+      JSON.stringify({ name: "bad" }, null, 2) + "\n",
+    );
+    const destination = join(tempRoot, "out-collision");
+    mkdirSync(destination, { recursive: true });
+
+    expect(() =>
+      installFromExtractedRoot({
+        ...commonOpts(),
+        archetype: "publication",
+        features: [{ name: "bad" }],
+        destination,
+        extractedRoot,
+        sources: {
+          archetypes: { publication: { path: "publication" } },
+          features: {
+            bad: {
+              path: "registry/features/bad",
+              applicableArchetypes: ["publication"],
+            },
+          },
+          themes: {},
+          roadmap: [],
+        },
+      }),
+    ).toThrow(/Feature overlay collision/);
+  });
+
   it("blank archetype skips publication-specific files", () => {
     const extractedRoot = fixtureExtractedRoot();
     const destination = join(tempRoot, "out-blank");
@@ -224,15 +326,10 @@ describe("installFromExtractedRoot", () => {
 
   it("applies a theme overlay on top of the archetype starter", () => {
     const extractedRoot = fixtureExtractedRoot();
-    // Add a theme overlay that overrides the archetype's mantleConfig.ts
-    // and adds a token file the base doesn't carry.
+    // Theme overlays are bounded to src/theme/* override slots.
     mkdirSync(join(extractedRoot, "themes", "l4-test", "src", "theme"), {
       recursive: true,
     });
-    writeFile(
-      join(extractedRoot, "themes", "l4-test", "src", "mantleConfig.ts"),
-      `export const config = { brand: "{{BRAND}}", origin: "{{SITE_URL}}", theme: "l4-test" };\n`,
-    );
     writeFile(
       join(extractedRoot, "themes", "l4-test", "src", "theme", "tokens.ts"),
       `export const TOKENS_CSS = "--paper: #fff; --ink: #111;";\n`,
@@ -272,14 +369,6 @@ describe("installFromExtractedRoot", () => {
     expect(notes.theme_source).toBe(
       "aotter/mantle-starters/themes/l4-test",
     );
-
-    // Theme overlay wins: mantleConfig.ts now has `theme: "l4-test"`.
-    const cfg = readFileSync(
-      join(destination, "src", "mantleConfig.ts"),
-      "utf8",
-    );
-    expect(cfg).toContain('theme: "l4-test"');
-    expect(cfg).toContain('brand: "Lab Cafe"');
 
     // Theme-added file is present.
     expect(
