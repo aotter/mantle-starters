@@ -497,6 +497,134 @@ describe("installFromExtractedRoot", () => {
     ).toThrow(/Invalid JSON in "registry\/features\/broken\/_compose\/glue\.json"/);
   });
 
+  it("rejects a top-level JSON array as _compose/glue.json", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "arr", "_compose", "glue.json"),
+      "[1, 2, 3]",
+    );
+    const destination = join(tempRoot, "out-array-glue");
+    mkdirSync(destination, { recursive: true });
+
+    expect(() =>
+      installFromExtractedRoot({
+        ...commonOpts(),
+        archetype: "publication",
+        features: [{ name: "arr" }],
+        destination,
+        extractedRoot,
+        sources: {
+          archetypes: { publication: { path: "publication" } },
+          features: {
+            arr: {
+              path: "registry/features/arr",
+              applicableArchetypes: ["publication"],
+            },
+          },
+          themes: {},
+          roadmap: [],
+        },
+      }),
+    ).toThrow(/expected a JSON object/);
+  });
+
+  it("rejects a _compose/glue.json with a non-numeric schemaVersion", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "strver", "_compose", "glue.json"),
+      JSON.stringify({ schemaVersion: "1" }),
+    );
+    const destination = join(tempRoot, "out-str-schema");
+    mkdirSync(destination, { recursive: true });
+
+    expect(() =>
+      installFromExtractedRoot({
+        ...commonOpts(),
+        archetype: "publication",
+        features: [{ name: "strver" }],
+        destination,
+        extractedRoot,
+        sources: {
+          archetypes: { publication: { path: "publication" } },
+          features: {
+            strver: {
+              path: "registry/features/strver",
+              applicableArchetypes: ["publication"],
+            },
+          },
+          themes: {},
+          roadmap: [],
+        },
+      }),
+    ).toThrow(/Missing numeric "schemaVersion"/);
+  });
+
+  it("copies feature source files alongside emitting glue imports for them", () => {
+    // Covers the end-to-end path: feature ships a TS file under
+    // src/features/<name>/, generates glue that imports from that file,
+    // and the install lands both the import target and the generator output
+    // so the resulting project compiles without further wiring.
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "greeter", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        handlers: {
+          imports: [
+            { named: ["sayHello"], from: "../features/greeter/sayHello.js" },
+          ],
+          entries: ["    sayHello: sayHello as AnyHandler,"],
+        },
+      }),
+    );
+    writeFile(
+      join(
+        extractedRoot,
+        "registry",
+        "features",
+        "greeter",
+        "src",
+        "features",
+        "greeter",
+        "sayHello.ts",
+      ),
+      "export const sayHello = () => new Response('hi');\n",
+    );
+    const destination = join(tempRoot, "out-feature-source");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      features: [{ name: "greeter" }],
+      destination,
+      extractedRoot,
+      sources: {
+        archetypes: { publication: { path: "publication" } },
+        features: {
+          greeter: {
+            path: "registry/features/greeter",
+            applicableArchetypes: ["publication"],
+          },
+        },
+        themes: {},
+        roadmap: [],
+      },
+    });
+
+    expect(
+      existsSync(join(destination, "src", "features", "greeter", "sayHello.ts")),
+    ).toBe(true);
+    const handlers = readFileSync(
+      join(destination, "src", ".mantle", "generated.handlers.ts"),
+      "utf8",
+    );
+    expect(handlers).toContain(
+      'import { sayHello } from "../features/greeter/sayHello.js";',
+    );
+    expect(handlers).toContain("sayHello: sayHello as AnyHandler,");
+  });
+
   it("composes .dev.vars.example from archetype and a feature fragment", () => {
     // Previously: any feature writing .dev.vars.example would throw
     // "Feature overlay collision" because the file was not a composable target.
