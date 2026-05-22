@@ -1,9 +1,9 @@
 import type { HandlerContext } from "@aotter/mantle/runtime";
 
 /**
- * `after_create` hook on `contact-messages`. Notifies a Slack
+ * `after_create` hook on `leads`. Notifies a Slack
  * incoming webhook (or, in the v0.1.0 stub here, just logs to
- * `console.info`) so editors see new contact submissions.
+ * `console.info`) so editors see new lead submissions.
  *
  * `errorPolicy: continue` (the after_* default): if this throws, the
  * mutation already succeeded and the throw is swallowed via
@@ -16,12 +16,12 @@ import type { HandlerContext } from "@aotter/mantle/runtime";
  * one-line change.
  */
 export async function slackNotify(
-  input: { name?: string; email?: string; message?: string },
+  input: { name?: string; email?: string; need?: string },
   _ctx: HandlerContext,
 ): Promise<{ ok: true }> {
   console.info(
-    `[contact] new submission`,
-    JSON.stringify({ name: input.name, email: input.email, message: input.message }),
+    `[lead] new submission`,
+    JSON.stringify({ name: input.name, email: input.email, need: input.need }),
   );
   return { ok: true };
 }
