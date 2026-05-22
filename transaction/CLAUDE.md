@@ -43,6 +43,18 @@ description, a category title, etc.) otherwise terminates the
 inline-script element. The replacement is one line, completely free
 of side effects, and the only correct default.
 
+## Media uploads — use declared purposes only
+
+`siteDefaults.media.purposes` in [`src/mantleConfig.ts`](src/mantleConfig.ts) declares the closed set of upload purposes this starter accepts. Currently:
+
+- `product-cover` — `products.coverAssetId` (list view + PDP fallback).
+- `product-image` — `products.images[].assetId` (PDP gallery slides).
+- `page-image`    — `page-translations.blocks[].imageAssetId` and `.cards[].sideImageAssetId` (block-based pages).
+
+When you call `create_media_upload` over MCP, the tool's description (visible via `tools/list`) inlines the per-purpose mime + maxBytes summary. **Never invent ad-hoc purpose strings** — they fail closed with `MEDIA_PURPOSE_REJECTED`, and the storage-key layout depends on a known purpose prefix for the orphan sweeper. If your asset doesn't fit one of the declared purposes, add a new one to `mantleConfig.ts` with its own mime set + caps; don't shoehorn it under an existing purpose with a too-loose cap.
+
+Variant requirements + caps are server-enforced: `MEDIA_VARIANTS_INCOMPLETE` (missing required mime), `MEDIA_VARIANT_SIZE_EXCEEDED` (over `maxBytes[mime]`), `MEDIA_VARIANTS_SUSPICIOUS_SIZE` (modern format ≥ fallback size — uploader skipped optimization). The `@aotter/mantle-media-tools` agent CLI produces compliant variant bundles.
+
 ## Architecture seams
 
 The starter is a Cloudflare Worker + Hono + Better Auth + a single
