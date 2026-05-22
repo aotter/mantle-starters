@@ -953,8 +953,9 @@ Determinism rules:
 - Manifest entry order is a stable sort by feature declaration order after the
   stable topological sort.
 - Route override emission is alphabetical by slug, then collection.
-- Provision step emission is phase order, then feature topological order, then
-  in-array order.
+- Provision step emission in `scripts/.mantle-provision.mjs` is feature
+  topological order only (phase sorting happens at runtime in the user-
+  facing `scripts/provision.mjs`; see Section 6).
 
 ### 4. `_compose/` Schema Versioning
 
@@ -993,10 +994,19 @@ by the scaffolder.
 Full provision design is tracked in #199. This section only fixes the compose
 contract that the future provision loader must implement.
 
-Provision steps are emitted into future `scripts/.mantle-provision.mjs`, ordered
-by phase, feature topological order, then in-array order. Step IDs are unique
-within phase, and completed steps are recorded in a lock-style receipt so
-failed runs can resume without repeating completed work.
+Provision steps are emitted into `scripts/.mantle-provision.mjs`. The
+scaffolder concatenates each feature's step array in **feature topological
+order**; per-step phase ordering (`resources` → `config` → `secrets` →
+`postDeploy`) happens at runtime inside `scripts/provision.mjs` when it
+reads `featureSteps` — the scaffolder cannot statically inspect each
+step's `phase` field without executing the imported feature files. The
+runtime contract: every recognized step carries a `phase` and an `id`;
+the user-facing provisioner sorts by phase across all features, then by
+the original `featureSteps` order within a phase.
+
+Step IDs are unique within phase, and completed steps are recorded in a
+lock-style receipt so failed runs can resume without repeating completed
+work.
 `scripts/provision.mjs` is user-invoked separately from `create-mantle`
 install/update; provision steps do not run during scaffolding.
 
