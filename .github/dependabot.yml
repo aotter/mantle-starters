@@ -16,6 +16,12 @@
 # runs `pnpm install` on the PR branch and pushes the lockfile fix
 # back, so CI can pass and dependabot-automerge can fire for
 # patch/minor.
+#
+# Cooldown (added alpha.15): each ecosystem skips releases newer than
+# 14 days (21 for majors). Supply-chain buffer — a malicious release
+# that lands at npm and is yanked within ~2 weeks never enters our
+# pipeline. Emergency CVE inside the window goes through manual
+# `pnpm up <pkg>` or a one-off PR; cooldown is for steady-state churn.
 
 version: 2
 updates:
@@ -26,6 +32,9 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    cooldown:
+      default-days: 14
+      semver-major-days: 21
     labels:
       - starter:blank
       - dependencies
@@ -49,6 +58,9 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    cooldown:
+      default-days: 14
+      semver-major-days: 21
     labels:
       - starter:publication
       - dependencies
@@ -72,6 +84,9 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    cooldown:
+      default-days: 14
+      semver-major-days: 21
     labels:
       - starter:presence
       - dependencies
@@ -95,6 +110,9 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    cooldown:
+      default-days: 14
+      semver-major-days: 21
     labels:
       - starter:intake
       - dependencies
@@ -118,6 +136,9 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    cooldown:
+      default-days: 14
+      semver-major-days: 21
     labels:
       - starter:transaction
       - dependencies
@@ -142,6 +163,9 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    cooldown:
+      default-days: 14
+      semver-major-days: 21
     labels:
       - area:scaffolder
       - dependencies
@@ -152,6 +176,33 @@ updates:
         patterns: ["typescript", "tsx", "vitest"]
         update-types: ["minor", "patch"]
 
+  # ── Media-tools (agent-side optimizer) ──────────────────────────────
+  - package-ecosystem: npm
+    directory: /packages/mantle-media-tools
+    target-branch: develop
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 14
+      semver-major-days: 21
+    labels:
+      - area:media-tools
+      - dependencies
+    groups:
+      types:
+        patterns: ["@types/*"]
+      build-tooling:
+        patterns: ["typescript", "vitest"]
+        update-types: ["minor", "patch"]
+      # sharp ships native binaries via libvips; majors / minors are
+      # routinely interesting (libvips upstream changes) and rarely
+      # break the encoder. Patch group is fine; supply-chain cooldown
+      # covers the malicious-publish concern.
+      sharp:
+        patterns: ["sharp"]
+        update-types: ["minor", "patch"]
+
   # ── GitHub Actions ──────────────────────────────────────────────────
   - package-ecosystem: github-actions
     directory: /
@@ -159,6 +210,9 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    cooldown:
+      default-days: 14
+      semver-major-days: 21
     labels:
       - area:ci
       - dependencies
