@@ -452,12 +452,19 @@ function generatedHandlersSource(specs: ReadonlyArray<FeatureGlueSpec>): string 
   ].join("\n");
 }
 
+const ENV_VAR_NAME_RE = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
+
 function collectEnvVars(
   specs: ReadonlyArray<FeatureGlueSpec>,
 ): ReadonlyMap<string, FeatureEnvVar> {
   const merged = new Map<string, FeatureEnvVar>();
   for (const spec of specs) {
     for (const v of spec.env ?? []) {
+      if (!ENV_VAR_NAME_RE.test(v.name)) {
+        throw new Error(
+          `Invalid env declaration: "${v.name}" is not a valid TypeScript identifier.`,
+        );
+      }
       const existing = merged.get(v.name);
       if (!existing) {
         merged.set(v.name, v);
@@ -470,6 +477,12 @@ function collectEnvVars(
             `${v.type}${v.secret ? " (secret)" : ""}.`,
         );
       }
+      // Merge `optional`: stricter wins so the merged type reflects what any
+      // feature requires. Without this rule the kept value depends on feature
+      // iteration order and the emitted `?` marker can flip across runs.
+      if ((existing.optional ?? true) && !(v.optional ?? true)) {
+        merged.set(v.name, { ...existing, optional: false });
+      }
     }
   }
   return merged;
@@ -480,11 +493,9 @@ function renderFeatureHandlerEnv(
 ): string[] {
   const names = [...envVars.keys()].sort();
   if (names.length === 0) {
-    return [
-      "export interface FeatureHandlerEnv {",
-      "  // No feature declares env vars.",
-      "}",
-    ];
+    // Type alias avoids `@typescript-eslint/no-empty-interface` while still
+    // typing `buildFeatureHandlers(env: FeatureHandlerEnv)` correctly.
+    return ["export type FeatureHandlerEnv = Readonly<Record<string, never>>;"];
   }
   const lines = names.map((name) => {
     const v = envVars.get(name)!;
