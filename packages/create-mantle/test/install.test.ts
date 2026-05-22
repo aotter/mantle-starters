@@ -274,7 +274,9 @@ describe("installFromExtractedRoot", () => {
     expect(handlers).toContain("export function buildFeatureHandlers(");
     expect(handlers).toContain("return {};");
     expect(handlers).not.toContain("contact");
-    expect(handlers).toContain("// No feature declares env vars.");
+    expect(handlers).toContain(
+      "export type FeatureHandlerEnv = Readonly<Record<string, never>>;",
+    );
     expect(handlers).not.toContain("TURNSTILE_SECRET_KEY");
 
     const routes = readFileSync(
@@ -1181,6 +1183,88 @@ describe("installFromExtractedRoot", () => {
         },
       }),
     ).toThrow(/Conflicting env declaration for "CONFLICT_KEY"/);
+  });
+
+  it("merges `optional` env declarations using strict-wins semantics", () => {
+    // If one feature needs the env var to function (optional: false), the
+    // merged type must reflect that — even if other features can tolerate
+    // it missing. Without this rule the kept flag would depend on feature
+    // iteration order and the emitted `?` marker would flip across runs.
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "a", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        env: [{ name: "AUTH_TOKEN", type: "string", optional: true }],
+      }),
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "b", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        env: [{ name: "AUTH_TOKEN", type: "string", optional: false }],
+      }),
+    );
+    const destination = join(tempRoot, "out-env-optional-merge");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      features: [{ name: "a" }, { name: "b" }],
+      destination,
+      extractedRoot,
+      sources: {
+        archetypes: { publication: { path: "publication" } },
+        features: {
+          a: { path: "registry/features/a", applicableArchetypes: ["publication"] },
+          b: { path: "registry/features/b", applicableArchetypes: ["publication"] },
+        },
+        themes: {},
+        roadmap: [],
+      },
+    });
+
+    const handlers = readFileSync(
+      join(destination, "src", ".mantle", "generated.handlers.ts"),
+      "utf8",
+    );
+    expect(handlers).toContain("readonly AUTH_TOKEN: string;");
+    expect(handlers).not.toContain("readonly AUTH_TOKEN?: string;");
+  });
+
+  it("rejects an env declaration whose name is not a TypeScript identifier", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "bad", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        env: [{ name: "BAD-NAME", type: "string" }],
+      }),
+    );
+    const destination = join(tempRoot, "out-env-bad-name");
+    mkdirSync(destination, { recursive: true });
+
+    expect(() =>
+      installFromExtractedRoot({
+        ...commonOpts(),
+        archetype: "publication",
+        features: [{ name: "bad" }],
+        destination,
+        extractedRoot,
+        sources: {
+          archetypes: { publication: { path: "publication" } },
+          features: {
+            bad: {
+              path: "registry/features/bad",
+              applicableArchetypes: ["publication"],
+            },
+          },
+          themes: {},
+          roadmap: [],
+        },
+      }),
+    ).toThrow(/Invalid env declaration: "BAD-NAME"/);
   });
 
   it("rejects mismatched secret-vs-public flags for the same env var", () => {
