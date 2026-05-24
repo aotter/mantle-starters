@@ -1,7 +1,9 @@
 /** @jsxImportSource hono/jsx */
 import { raw } from "hono/html";
+import type { MediaAsset } from "@aotter/mantle/runtime";
 import type { SiteConfig } from "@aotter/mantle/spec";
 import { Layout, renderHtml } from "./layout.js";
+import { pictureFromAssetId } from "./_picture.js";
 
 /**
  * GET /product/:slug — single product page with SPU/SKU variant picker.
@@ -101,6 +103,7 @@ interface PdpSku {
   readonly skuCode: string;
   readonly optionValues: Readonly<Record<string, string>>;
   readonly priceMinor: number;
+  readonly images?: ReadonlyArray<ProductImage>;
 }
 
 interface PdpOptionAxis {
@@ -108,10 +111,18 @@ interface PdpOptionAxis {
   readonly values: ReadonlyArray<string>;
 }
 
+interface ProductImage {
+  readonly assetId: string;
+  readonly alt?: string;
+}
+
 export interface ProductDetailContext {
   readonly product: {
     readonly slug: string;
     readonly title: string;
+    readonly coverAssetId?: string;
+    readonly coverAlt?: string;
+    readonly images?: ReadonlyArray<ProductImage>;
     readonly currency: string;
     readonly shortDescription?: string;
     readonly body?: string;
@@ -119,6 +130,7 @@ export interface ProductDetailContext {
     readonly skus: ReadonlyArray<PdpSku>;
     readonly defaultSku: PdpSku;
   };
+  readonly assets: ReadonlyMap<string, MediaAsset>;
   readonly site: SiteConfig;
 }
 
@@ -134,6 +146,10 @@ export interface ProductDetailContext {
  */
 export function renderProductDetail(ctx: ProductDetailContext): string {
   const p = ctx.product;
+  const heroImage = p.defaultSku.images?.[0] ?? p.images?.[0];
+  const heroAssetId = heroImage?.assetId ?? p.coverAssetId;
+  const heroAlt = heroImage?.alt ?? p.coverAlt ?? p.title;
+  const heroHtml = pictureFromAssetId(heroAssetId, heroAlt, ctx.assets, "eager");
   const pdpData = {
     optionAxes: p.optionAxes.map((a) => ({ name: a.name, values: a.values })),
     variants: p.skus.map((s) => ({
@@ -149,6 +165,7 @@ export function renderProductDetail(ctx: ProductDetailContext): string {
       <p>
         <a href="/">← Back to shop</a>
       </p>
+      {heroHtml ? <figure class="product-hero">{raw(heroHtml)}</figure> : null}
       <h1>{p.title}</h1>
       {p.shortDescription ? <p class="lead">{p.shortDescription}</p> : null}
       <p class="price-tag" id="variant-price">

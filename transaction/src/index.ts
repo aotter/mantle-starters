@@ -195,11 +195,14 @@ function buildWorker(env: Env): WorkerFetch {
           products: catalog.rows.map((r) => ({
             slug: r.slug,
             title: r.title,
+            coverAssetId: r.coverAssetId,
+            coverAlt: r.coverAlt,
             minPriceMinor: r.minPriceMinor,
             currency: r.currency,
             skuCount: r.skus.length,
             shortDescription: r.shortDescription,
           })),
+          assets: catalog.assets,
           site,
         }),
       );
@@ -219,7 +222,7 @@ function buildWorker(env: Env): WorkerFetch {
       ]);
       const product = catalog.bySlug.get(slug);
       if (!product) return c.text("not found", 404);
-      return c.html(renderProductDetail({ product, site }));
+      return c.html(renderProductDetail({ product, assets: catalog.assets, site }));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       return c.text(`error: ${msg}`, 500);

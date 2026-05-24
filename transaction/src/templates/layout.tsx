@@ -61,7 +61,34 @@ const INLINE_CSS = `
     border-radius: 6px;
     padding: 1rem;
   }
+  .product-card picture,
+  .product-card img {
+    display: block;
+    width: 100%;
+  }
+  .product-card picture { margin-bottom: 0.85rem; }
+  .product-card img {
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
   .product-card .price { color: var(--accent); font-weight: 600; margin-top: 0.5rem; }
+  .product-hero {
+    margin: 0 0 1.5rem 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .product-hero picture,
+  .product-hero img {
+    display: block;
+    width: 100%;
+  }
+  .product-hero img {
+    max-height: 32rem;
+    object-fit: cover;
+  }
   .price-tag { font-size: 1.5rem; color: var(--accent); font-weight: 600; }
   form.checkout { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 1.5rem; max-width: 480px; }
   form.checkout label { display: block; margin-top: 1rem; font-weight: 500; }

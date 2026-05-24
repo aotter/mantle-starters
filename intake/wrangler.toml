@@ -50,6 +50,16 @@ fallthrough = true
 
 [env.test.vars]
 TURNSTILE_SITE_KEY = "1x00000000000000000000AA"
+TURNSTILE_SECRET_KEY = "dev-stub"
+MANTLE_LOCAL_DEV = "1"
+PUBLIC_ORIGIN = "http://localhost:8788"
+# Worker needs a BETTER_AUTH_SECRET to boot; the test profile uses a
+# fixed value because it's the same shape across runs and not a real
+# secret.
+BETTER_AUTH_SECRET = "test-better-auth-secret-32+-bytes-random-fixed"
+ADMIN_GITHUB_LOGIN = "test-admin"
+GITHUB_CLIENT_ID = "test-stub-client-id"
+GITHUB_CLIENT_SECRET = "test-stub-client-secret"
 # Media uploads enabled in test profile so integration smokes can
 # exercise the create/commit lifecycle. Stub credentials — miniflare's
 # local R2 emulation accepts the binding ops; real CF deploy needs

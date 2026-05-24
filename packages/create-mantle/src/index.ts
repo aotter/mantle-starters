@@ -706,6 +706,7 @@ function copyTreeRecording(
   for (const entry of readdirSync(layer.root, { withFileTypes: true })) {
     if (PLACEHOLDER_PATH_BLOCKLIST.has(entry.name)) continue;
     if (entry.name === "_compose") continue;
+    if (isCommonRegistryDirectory(layer, entry.name)) continue;
     const srcPath = join(layer.root, entry.name);
     const dstPath = join(dst, entry.name);
     if (entry.isDirectory()) {
@@ -714,6 +715,10 @@ function copyTreeRecording(
       writeFileForLayer(srcPath, dstPath, relative(dst, dstPath), layer, writtenRelativeToDst, owners);
     }
   }
+}
+
+function isCommonRegistryDirectory(layer: CopyLayer, entryName: string): boolean {
+  return layer.kind === "base" && layer.id === "_common" && entryName === "features";
 }
 
 function copyTreeChildren(

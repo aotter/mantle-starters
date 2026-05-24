@@ -736,6 +736,61 @@ describe("installFromExtractedRoot", () => {
     );
   });
 
+  it("does not copy _common/features registry sources unless the feature is selected", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "_common", "features", "alpha", "src", "features", "alpha", "handler.ts"),
+      "export const alpha = true;\n",
+    );
+
+    const withoutFeature = join(tempRoot, "out-common-feature-unselected");
+    mkdirSync(withoutFeature, { recursive: true });
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      destination: withoutFeature,
+      extractedRoot,
+      sources: {
+        archetypes: { publication: { path: "publication" } },
+        features: {
+          alpha: {
+            path: "_common/features/alpha",
+            applicableArchetypes: ["publication"],
+          },
+        },
+        themes: {},
+        roadmap: [],
+      },
+    });
+
+    expect(existsSync(join(withoutFeature, "features", "alpha"))).toBe(false);
+    expect(existsSync(join(withoutFeature, "src", "features", "alpha", "handler.ts"))).toBe(false);
+
+    const withFeature = join(tempRoot, "out-common-feature-selected");
+    mkdirSync(withFeature, { recursive: true });
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      features: [{ name: "alpha" }],
+      destination: withFeature,
+      extractedRoot,
+      sources: {
+        archetypes: { publication: { path: "publication" } },
+        features: {
+          alpha: {
+            path: "_common/features/alpha",
+            applicableArchetypes: ["publication"],
+          },
+        },
+        themes: {},
+        roadmap: [],
+      },
+    });
+
+    expect(existsSync(join(withFeature, "features", "alpha"))).toBe(false);
+    expect(existsSync(join(withFeature, "src", "features", "alpha", "handler.ts"))).toBe(true);
+  });
+
   it("composes .dev.vars.example onto an empty archetype target without leading blank lines", () => {
     // Previously: appendComposable hard-coded "\n\n# --- from ..." which
     // produced a file starting with two blank lines when the existing target
