@@ -567,9 +567,15 @@ function renderFeatureHandlerEnv(
 ): string[] {
   const names = [...envVars.keys()].sort();
   if (names.length === 0) {
-    // Type alias avoids `@typescript-eslint/no-empty-interface` while still
-    // typing `buildFeatureHandlers(env: FeatureHandlerEnv)` correctly.
-    return ["export type FeatureHandlerEnv = Readonly<Record<string, never>>;"];
+    // Empty interface is the top type for object shapes: any starter `Env`
+    // (with arbitrary fields) assigns to it. `Record<string, never>` would
+    // be too strict — it only accepts objects with no other keys, which
+    // breaks `...buildFeatureHandlers(env)` at the call site. The lint
+    // suppression is intentional: the empty body is the whole point.
+    return [
+      "// eslint-disable-next-line @typescript-eslint/no-empty-object-type",
+      "export interface FeatureHandlerEnv {}",
+    ];
   }
   const lines = names.map((name) => {
     const v = envVars.get(name)!;
