@@ -274,8 +274,9 @@ describe("installFromExtractedRoot", () => {
     expect(handlers).toContain("export function buildFeatureHandlers(");
     expect(handlers).toContain("return {};");
     expect(handlers).not.toContain("contact");
+    expect(handlers).toContain("export interface FeatureHandlerEnv {}");
     expect(handlers).toContain(
-      "export type FeatureHandlerEnv = Readonly<Record<string, never>>;",
+      "// eslint-disable-next-line @typescript-eslint/no-empty-object-type",
     );
     expect(handlers).not.toContain("TURNSTILE_SECRET_KEY");
 
