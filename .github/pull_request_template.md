@@ -32,7 +32,7 @@ Refs #
 
 ## Contributor checklist
 
-- [ ] Base branch is `main` (this repo has no `develop` branch).
+- [ ] Base branch is `develop` for normal work, or `main` for release fanout/promote PRs.
 - [ ] If adding/changing an archetype: `sources.json` updated and the directory layout matches `CONTRIBUTING.md` ▸ "Adding a starter archetype".
 - [ ] If adding/changing a theme: `sources.json` themes list updated.
 - [ ] Labels applied: `starter:*` and/or `area:*`.

@@ -5,8 +5,8 @@ import { parseManifestsOrThrow, type Manifest } from "@aotter/mantle/spec";
 import postsYaml from "../manifests/posts.yaml";
 import postTranslationsYaml from "../manifests/post-translations.yaml";
 import pagesYaml from "../manifests/pages.yaml";
-import contactYaml from "../manifests/contact.yaml";
 import leadsYaml from "../manifests/leads.yaml";
+import { featureManifestYamls } from "./.mantle/generated.manifests.js";
 
 /**
  * Parse + validate the starter's manifests at module-load time. Throws
@@ -16,7 +16,7 @@ import leadsYaml from "../manifests/leads.yaml";
  */
 export function loadManifests(): readonly Manifest[] {
   return parseManifestsOrThrow(
-    [postsYaml, postTranslationsYaml, pagesYaml, contactYaml, leadsYaml],
+    [postsYaml, postTranslationsYaml, pagesYaml, leadsYaml, ...featureManifestYamls],
     { context: "mantle-starter-intake" },
   );
 }

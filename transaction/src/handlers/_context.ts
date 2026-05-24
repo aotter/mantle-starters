@@ -60,3 +60,16 @@ export function invokeHandler<I, O>(
   const typed = handler as unknown as TxHandler<I, O>;
   return Promise.resolve(typed(input, ctx));
 }
+
+/** True when `err` is a runtime "entry not found" error — either the
+ *  message matches the common phrase or the structured diagnostic
+ *  code is `ENTRY_NOT_FOUND`. Used by orderId collision-detection in
+ *  `checkoutStart.generateOrderId` to distinguish "no such order" (a
+ *  fresh id) from a real failure. */
+export function isNotFoundError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const message = err.message ?? "";
+  if (/not.?found|ENTRY_NOT_FOUND|no entry with id/i.test(message)) return true;
+  const diag = (err as { diagnostic?: { code?: string } }).diagnostic;
+  return diag?.code === "ENTRY_NOT_FOUND";
+}

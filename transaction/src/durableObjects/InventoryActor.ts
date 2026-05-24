@@ -15,7 +15,7 @@
  *      for the rare sweeper-then-retry path.
  *
  *   2. **Inventory authority.** Reserve / commit / release per
- *      product slug; periodic snapshot to D1 inventory_snapshots for
+ *      `skuCode`; periodic snapshot to D1 inventory_snapshots for
  *      staff Views. The DO holds the canonical state; D1 row is a
  *      query-friendly mirror.
  *
@@ -31,8 +31,8 @@
  * Storage keys (in `state.storage`):
  *
  *   lock:<workId>             { state: "pending" | "completed", at: ms }
- *   product:<slug>            { available: number, reserved: number }
- *   reservation:<orderId>     { items: [{slug, qty}], expiresAt }
+ *   sku:<skuCode>             { available: number, reserved: number }
+ *   reservation:<orderId>     { items: [{skuCode, qty}], expiresAt }
  *
  * Method calls arrive via JSON-RPC over `stub.fetch(...)`. Single-
  * threaded per instance → no internal locks needed inside method
@@ -47,7 +47,7 @@ export interface AcquireResult {
 
 export interface ReserveRequest {
   readonly orderId: string;
-  readonly items: ReadonlyArray<{ productSlug: string; qty: number }>;
+  readonly items: ReadonlyArray<{ skuCode: string; qty: number }>;
 }
 
 export interface ReserveResult {
@@ -60,7 +60,7 @@ export interface ReserveFailure {
   readonly ok: false;
   readonly reason: "insufficient_stock";
   readonly insufficient: ReadonlyArray<{
-    productSlug: string;
+    skuCode: string;
     requested: number;
     available: number;
   }>;
@@ -71,13 +71,13 @@ interface LockEntry {
   readonly at: number;
 }
 
-interface ProductInventory {
+interface SkuInventory {
   readonly available: number;
   readonly reserved: number;
 }
 
 interface ReservationEntry {
-  readonly items: ReadonlyArray<{ productSlug: string; qty: number }>;
+  readonly items: ReadonlyArray<{ skuCode: string; qty: number }>;
   readonly expiresAt: number;
 }
 
@@ -144,20 +144,20 @@ export class InventoryActor implements DurableObject {
   // ── inventory surface ────────────────────────────────────────────
 
   async reserve(req: ReserveRequest): Promise<ReserveResult | ReserveFailure> {
-    // First pass: read all affected products in one shot; check stock.
-    const productKeys = req.items.map((i) => `product:${i.productSlug}`);
-    const products = await this.state.storage.get<ProductInventory>(productKeys);
+    // First pass: read all affected SKUs in one shot; check stock.
+    const skuKeys = req.items.map((i) => `sku:${i.skuCode}`);
+    const skus = await this.state.storage.get<SkuInventory>(skuKeys);
     const insufficient: Array<{
-      productSlug: string;
+      skuCode: string;
       requested: number;
       available: number;
     }> = [];
     for (const item of req.items) {
-      const inv = products.get(`product:${item.productSlug}`);
+      const inv = skus.get(`sku:${item.skuCode}`);
       const available = inv?.available ?? 0;
       if (available < item.qty) {
         insufficient.push({
-          productSlug: item.productSlug,
+          skuCode: item.skuCode,
           requested: item.qty,
           available,
         });
@@ -172,10 +172,10 @@ export class InventoryActor implements DurableObject {
     // method body is atomic.
     const now = Date.now();
     const expiresAt = now + RESERVATION_TTL_MS;
-    const updates = new Map<string, ProductInventory>();
+    const updates = new Map<string, SkuInventory>();
     for (const item of req.items) {
-      const inv = products.get(`product:${item.productSlug}`)!;
-      updates.set(`product:${item.productSlug}`, {
+      const inv = skus.get(`sku:${item.skuCode}`)!;
+      updates.set(`sku:${item.skuCode}`, {
         available: inv.available - item.qty,
         reserved: inv.reserved + item.qty,
       });
@@ -201,24 +201,24 @@ export class InventoryActor implements DurableObject {
 
   async commit(
     orderId: string,
-  ): Promise<{ committed: ReadonlyArray<{ productSlug: string; qty: number }> }> {
+  ): Promise<{ committed: ReadonlyArray<{ skuCode: string; qty: number }> }> {
     const reservation = await this.state.storage.get<ReservationEntry>(
       `reservation:${orderId}`,
     );
     if (!reservation) {
       // Idempotent: already committed (or never reserved — untracked
-      // products). Return empty so the caller's INSERT OR IGNORE on
-      // the order row remains the source-of-truth dedup signal.
+      // SKUs). Return empty so the caller's INSERT OR IGNORE on the
+      // order row remains the source-of-truth dedup signal.
       return { committed: [] };
     }
-    const updates = new Map<string, ProductInventory>();
+    const updates = new Map<string, SkuInventory>();
     for (const item of reservation.items) {
-      const inv = await this.state.storage.get<ProductInventory>(
-        `product:${item.productSlug}`,
+      const inv = await this.state.storage.get<SkuInventory>(
+        `sku:${item.skuCode}`,
       );
       const reserved = inv?.reserved ?? 0;
       const available = inv?.available ?? 0;
-      updates.set(`product:${item.productSlug}`, {
+      updates.set(`sku:${item.skuCode}`, {
         available,
         reserved: Math.max(0, reserved - item.qty),
       });
@@ -236,36 +236,29 @@ export class InventoryActor implements DurableObject {
     );
     if (!reservation) return; // already released (idempotent)
     for (const item of reservation.items) {
-      const inv = await this.state.storage.get<ProductInventory>(
-        `product:${item.productSlug}`,
+      const inv = await this.state.storage.get<SkuInventory>(
+        `sku:${item.skuCode}`,
       );
       const reserved = inv?.reserved ?? 0;
       const available = inv?.available ?? 0;
-      await this.state.storage.put<ProductInventory>(
-        `product:${item.productSlug}`,
-        {
-          available: available + item.qty,
-          reserved: Math.max(0, reserved - item.qty),
-        },
-      );
+      await this.state.storage.put<SkuInventory>(`sku:${item.skuCode}`, {
+        available: available + item.qty,
+        reserved: Math.max(0, reserved - item.qty),
+      });
     }
     await this.state.storage.delete(`reservation:${orderId}`);
   }
 
   async snapshot(
-    productSlug: string,
+    skuCode: string,
   ): Promise<{ available: number; reserved: number }> {
-    const inv = await this.state.storage.get<ProductInventory>(
-      `product:${productSlug}`,
-    );
+    const inv = await this.state.storage.get<SkuInventory>(`sku:${skuCode}`);
     return { available: inv?.available ?? 0, reserved: inv?.reserved ?? 0 };
   }
 
-  async restock(productSlug: string, addQty: number): Promise<void> {
-    const inv = await this.state.storage.get<ProductInventory>(
-      `product:${productSlug}`,
-    );
-    await this.state.storage.put<ProductInventory>(`product:${productSlug}`, {
+  async restock(skuCode: string, addQty: number): Promise<void> {
+    const inv = await this.state.storage.get<SkuInventory>(`sku:${skuCode}`);
+    await this.state.storage.put<SkuInventory>(`sku:${skuCode}`, {
       available: (inv?.available ?? 0) + addQty,
       reserved: inv?.reserved ?? 0,
     });
@@ -310,11 +303,11 @@ export class InventoryActor implements DurableObject {
         await this.release((args as { orderId: string }).orderId);
         return null;
       case "snapshot":
-        return this.snapshot((args as { productSlug: string }).productSlug);
+        return this.snapshot((args as { skuCode: string }).skuCode);
       case "restock":
         await this.restock(
-          (args as { productSlug: string; addQty: number }).productSlug,
-          (args as { productSlug: string; addQty: number }).addQty,
+          (args as { skuCode: string; addQty: number }).skuCode,
+          (args as { skuCode: string; addQty: number }).addQty,
         );
         return null;
       default:
@@ -355,11 +348,11 @@ export interface InventoryActorClient {
   sweepStaleLocks(): Promise<{ resetCount: number; gcCount: number }>;
   reserve(req: ReserveRequest): Promise<ReserveResult | ReserveFailure>;
   commit(orderId: string): Promise<{
-    committed: ReadonlyArray<{ productSlug: string; qty: number }>;
+    committed: ReadonlyArray<{ skuCode: string; qty: number }>;
   }>;
   release(orderId: string): Promise<void>;
-  snapshot(productSlug: string): Promise<{ available: number; reserved: number }>;
-  restock(productSlug: string, addQty: number): Promise<void>;
+  snapshot(skuCode: string): Promise<{ available: number; reserved: number }>;
+  restock(skuCode: string, addQty: number): Promise<void>;
 }
 
 /**
@@ -397,7 +390,7 @@ export function inventoryActorClient(stub: DurableObjectStub): InventoryActorCli
     reserve: (req) => call<ReserveResult | ReserveFailure>("reserve", req),
     commit: (orderId) => call("commit", { orderId }),
     release: (orderId) => call("release", { orderId }),
-    snapshot: (productSlug) => call("snapshot", { productSlug }),
-    restock: (productSlug, addQty) => call("restock", { productSlug, addQty }),
+    snapshot: (skuCode) => call("snapshot", { skuCode }),
+    restock: (skuCode, addQty) => call("restock", { skuCode, addQty }),
   };
 }

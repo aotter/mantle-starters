@@ -1,10 +1,10 @@
 {
   "name": "@aotter/mantle-media-tools",
-  "version": "0.0.11-alpha.14",
+  "version": "0.0.11-alpha.15",
   "description": "Agent-side helper for mantle multi-variant media uploads (aotter/mantle#272). Takes a source image, produces avif/webp/jpeg variants via sharp, drives the create_media_upload + commit_media_upload lifecycle against a deployed mantle worker. Private — distributed via mantle-starters' GitHub release tarball, not npm.",
   "license": "MIT",
   "private": true,
-  "homepage": "https://github.com/aotter/mantle-starters/tree/develop/packages/mantle-media-tools",
+  "homepage": "https://mantle.tools/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/aotter/mantle-starters.git",
@@ -37,9 +37,9 @@
     "sharp": "^0.34.0"
   },
   "devDependencies": {
-    "@types/node": "^25",
-    "typescript": "^5.6.3",
-    "vitest": "^2.1.4"
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "engines": {
     "node": ">=20"

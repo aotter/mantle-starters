@@ -14,13 +14,14 @@ import { buildCmsConfig, type Env } from "./mantleConfig.js";
 import { csrfGuard } from "./csrf.js";
 import { invokeHandler } from "./handlers/_context.js";
 import { buildQueueDispatcher, sendOrderWork } from "./handlers/orderConsumer.js";
-import { loadProductCatalog } from "./handlers/_productEnrichment.js";
+import { loadProductCatalog, loadPage } from "./handlers/_productEnrichment.js";
 import { buildReadOrderStatus } from "./handlers/readOrderStatus.js";
 import { buildReadCart } from "./handlers/readCart.js";
 import { buildCheckoutReturn } from "./handlers/checkoutReturn.js";
-import { restockProductCore } from "./handlers/restockProduct.js";
+import { restockSkuCore } from "./handlers/restockSku.js";
 import { renderProductList } from "./templates/productList.js";
 import { renderProductDetail } from "./templates/productDetail.js";
+import { renderPage } from "./templates/page.js";
 import { renderCart } from "./templates/cart.js";
 import { renderCheckout } from "./templates/checkout.js";
 import { renderOrderStatus } from "./templates/orderStatus.js";
@@ -189,7 +190,22 @@ function buildWorker(env: Env): WorkerFetch {
         loadProductCatalog(runtime),
         runtime.siteConfig.load(),
       ]);
-      return c.html(renderProductList({ products: catalog.rows, site }));
+      return c.html(
+        renderProductList({
+          products: catalog.rows.map((r) => ({
+            slug: r.slug,
+            title: r.title,
+            coverAssetId: r.coverAssetId,
+            coverAlt: r.coverAlt,
+            minPriceMinor: r.minPriceMinor,
+            currency: r.currency,
+            skuCount: r.skus.length,
+            shortDescription: r.shortDescription,
+          })),
+          assets: catalog.assets,
+          site,
+        }),
+      );
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       return c.text(`error: ${msg}`, 500);
@@ -206,7 +222,29 @@ function buildWorker(env: Env): WorkerFetch {
       ]);
       const product = catalog.bySlug.get(slug);
       if (!product) return c.text("not found", 404);
-      return c.html(renderProductDetail({ product, site }));
+      return c.html(renderProductDetail({ product, assets: catalog.assets, site }));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return c.text(`error: ${msg}`, 500);
+    }
+  });
+
+  // Generic page route — slug drives the lookup directly into the
+  // `page-translations` collection. The renderer prefers `blocks[]`
+  // when present (structured layout) and falls back to the markdown
+  // `body` field otherwise. Agents publishing a new page-translations
+  // row are immediately reachable at `/p/<slug>` with no code change.
+  app.get("/p/:slug", async (c) => {
+    const slug = c.req.param("slug");
+    if (!slug) return c.notFound();
+    try {
+      const runtime = await cms.get();
+      const [page, site] = await Promise.all([
+        loadPage(runtime, slug),
+        runtime.siteConfig.load(),
+      ]);
+      if (!page) return c.notFound();
+      return c.html(renderPage({ page, site }));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       return c.text(`error: ${msg}`, 500);
@@ -238,21 +276,21 @@ function buildWorker(env: Env): WorkerFetch {
   // making the same mistake as removing the gate on FakeProvider —
   // not subtle. See test/integration/smoke.ts for the only caller.
   //
-  // Delegates to `restockProductCore` so the cap + snapshot-enqueue
+  // Delegates to `restockSkuCore` so the cap + snapshot-enqueue
   // stay in sync with the staff-gated handler — only the auth gate
   // is skipped.
   if (env.FAKE_PAYMENT_PROVIDER === "1") {
     app.post("/__test/restock", async (c) => {
       const body = (await c.req.json()) as {
-        productSlug?: string;
+        skuCode?: string;
         addQty?: number;
       };
-      if (!body.productSlug || !body.addQty || body.addQty < 1) {
-        return c.json({ error: "missing productSlug / addQty" }, 400);
+      if (!body.skuCode || !body.addQty || body.addQty < 1) {
+        return c.json({ error: "missing skuCode / addQty" }, 400);
       }
       try {
-        const result = await restockProductCore(env, {
-          productSlug: body.productSlug,
+        const result = await restockSkuCore(env, {
+          skuCode: body.skuCode,
           addQty: body.addQty,
         });
         return c.json({ ok: true, ...result });

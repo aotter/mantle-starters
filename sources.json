@@ -16,6 +16,18 @@
       "path": "blank"
     }
   },
+  "features": {
+    "contact": {
+      "path": "_common/features/contact",
+      "title": "Contact Form",
+      "summary": "Contact form with CAPTCHA guard and Slack notification stub.",
+      "applicableArchetypes": [
+        "publication",
+        "presence",
+        "intake"
+      ]
+    }
+  },
   "themes": {
     "l4-minimal-ink": {
       "path": "themes/l4-minimal-ink"
@@ -35,5 +47,5 @@
     "community",
     "membership"
   ],
-  "version": "0.0.11-alpha.14"
+  "version": "0.0.11-alpha.15"
 }

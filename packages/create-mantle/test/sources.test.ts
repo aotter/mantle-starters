@@ -6,6 +6,7 @@ import {
   STARTERS_REPO,
   fetchSourcesJson,
   resolveArchetype,
+  resolveFeatures,
   resolveSource,
   resolveTheme,
   type SourcesJson,
@@ -142,6 +143,136 @@ describe("resolveTheme", () => {
       roadmap: [],
     };
     expect(() => resolveTheme("any", empty)).toThrow(/no themes/);
+  });
+});
+
+describe("resolveFeatures", () => {
+  const sources: SourcesJson = {
+    archetypes: {
+      publication: { path: "publication" },
+      transaction: { path: "transaction" },
+    },
+    features: {
+      contact: {
+        path: "registry/features/contact",
+        title: "Contact Form",
+        applicableArchetypes: ["publication"],
+      },
+      "email-sender": {
+        path: "registry/features/email-sender",
+        applicableArchetypes: ["transaction"],
+        requiresVariant: true,
+        variants: [{ name: "resend-stub" }, { name: "ses-stub" }],
+      },
+      "customer-account": {
+        path: "registry/features/customer-account",
+        applicableArchetypes: ["transaction"],
+        registryDependencies: ["email-sender"],
+      },
+      wishlist: {
+        path: "registry/features/wishlist",
+        applicableArchetypes: ["transaction"],
+        registryDependencies: ["customer-account"],
+      },
+      cycleA: {
+        applicableArchetypes: ["publication"],
+        registryDependencies: ["cycleB"],
+      },
+      cycleB: {
+        applicableArchetypes: ["publication"],
+        registryDependencies: ["cycleA"],
+      },
+    },
+    themes: {},
+    roadmap: [],
+  };
+
+  it("returns an empty list when no features are requested", () => {
+    expect(resolveFeatures([], "publication", sources)).toEqual([]);
+  });
+
+  it("resolves a direct feature", () => {
+    expect(resolveFeatures([{ name: "contact" }], "publication", sources)).toEqual([
+      {
+        name: "contact",
+        type: "registry:feature",
+        path: "registry/features/contact",
+        title: "Contact Form",
+        description: undefined,
+        variant: null,
+        registryDependencies: [],
+      },
+    ]);
+  });
+
+  it("auto-includes dependencies in topological order", () => {
+    expect(
+      resolveFeatures(
+        [{ name: "email-sender", variant: "resend-stub" }, { name: "wishlist" }],
+        "transaction",
+        sources,
+      ).map((feature) => [feature.name, feature.variant]),
+    ).toEqual([
+      ["email-sender", "resend-stub"],
+      ["customer-account", null],
+      ["wishlist", null],
+    ]);
+  });
+
+  it("throws for an unknown feature with the known list", () => {
+    expect(() =>
+      resolveFeatures([{ name: "not-real" }], "publication", sources),
+    ).toThrow(/Unknown feature/);
+  });
+
+  it("throws when a feature does not apply to the selected archetype", () => {
+    expect(() =>
+      resolveFeatures([{ name: "contact" }], "transaction", sources),
+    ).toThrow(/does not apply/);
+  });
+
+  it("throws when a required variant is missing", () => {
+    expect(() =>
+      resolveFeatures([{ name: "email-sender" }], "transaction", sources),
+    ).toThrow(/requires a variant/);
+  });
+
+  it("throws when a transitive dependency requires a variant and the user did not supply one", () => {
+    // `customer-account` depends on `email-sender`, which is `requiresVariant: true`.
+    // Requesting only `customer-account` surfaces the missing-variant error on the
+    // auto-included dependency so callers get a clear hint about what to add.
+    expect(() =>
+      resolveFeatures([{ name: "customer-account" }], "transaction", sources),
+    ).toThrow(/email-sender.*requires a variant/);
+  });
+
+  it("throws when a variant is unknown", () => {
+    expect(() =>
+      resolveFeatures(
+        [{ name: "email-sender", variant: "mailchannels-stub" }],
+        "transaction",
+        sources,
+      ),
+    ).toThrow(/Unknown variant/);
+  });
+
+  it("throws when the same feature has conflicting variants", () => {
+    expect(() =>
+      resolveFeatures(
+        [
+          { name: "email-sender", variant: "resend-stub" },
+          { name: "email-sender", variant: "ses-stub" },
+        ],
+        "transaction",
+        sources,
+      ),
+    ).toThrow(/conflicting variants/);
+  });
+
+  it("throws for feature dependency cycles", () => {
+    expect(() =>
+      resolveFeatures([{ name: "cycleA" }], "publication", sources),
+    ).toThrow(/cycle detected/);
   });
 });
 

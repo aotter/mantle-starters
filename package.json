@@ -1,10 +1,10 @@
 {
   "name": "mantle-starters",
   "private": true,
-  "version": "0.0.11-alpha.14",
+  "version": "0.0.11-alpha.15",
   "description": "Workspace root for the @aotter/mantle starter family — archetype source templates (publication, intake, presence, blank, transaction, ...) + theme overlays + the create-mantle scaffolder. Adopters never depend on this root; they scaffold from one archetype into a fresh consumer repo.",
   "license": "MIT",
-  "homepage": "https://github.com/aotter/mantle-starters",
+  "homepage": "https://mantle.tools/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/aotter/mantle-starters.git"

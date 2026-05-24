@@ -72,8 +72,9 @@ const CHECKOUT_JS = `
         body: JSON.stringify({ cartId, customerEmail: email }),
       });
       if (!res.ok) {
+        const msg = window.__parseErrorMessage(await res.text());
         out.innerHTML = '<div class="notice error">' +
-          esc((await res.text()).slice(0, 300)) + '</div>';
+          esc(String(msg).slice(0, 300)) + '</div>';
         submit.disabled = false;
         return;
       }

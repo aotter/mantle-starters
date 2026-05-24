@@ -1,28 +1,24 @@
 # Release fanout — between Step 2 and Step 3 of aotter/mantle#191.
 #
 # Triggered when a `release: bump @aotter/mantle* to vX.Y.Z` commit
-# lands on main (a develop→main promotion that brings the
-# bump-from-sdk.yml release commit forward). Tags the head commit
-# `vX.Y.Z` and dispatches `mantle-landing`'s `bump-from-starters.yml`
-# workflow so the landing site rolls forward to the same version.
+# lands on main. Tags the head commit `vX.Y.Z` and dispatches
+# `mantle-landing`'s `bump-from-starters.yml` workflow so the landing
+# site rolls forward to the same version.
 #
 # Two-job structure (gate + tag) instead of a single job with
 # `if: contains(...)` at job level. Reason: when the job-level `if`
 # evaluated false, GitHub Actions surfaced the run as a workflow
 # `failure` with `total_count: 0 jobs` rather than a clean "skipped",
-# producing alarming red runs on every develop→main promote that
-# happened to come from a non-release PR. The gate job now ALWAYS
+# producing alarming red runs on every main push that happened to come
+# from a non-release PR. The gate job now ALWAYS
 # runs, emits a `should_release` boolean output, and exits success
 # either way. The downstream `tag` job runs only when the gate says
 # so, and skips cleanly otherwise. End state: no more no-job failure
 # noise; the chain still fires correctly for release commits.
 #
-# Filter uses `contains(...)` not `startsWith(...)` because the
-# develop→main merge can be done with `gh pr merge --merge`, whose
-# default commit subject is `Merge pull request #N from owner/develop`
-# with the PR title (which we always start with `release: ...`) in the
-# body. `contains` matches body text too; `startsWith` would silently
-# skip the run and leave the release un-tagged.
+# Filter uses `contains(...)` not `startsWith(...)` so both rebase
+# release commits and merge commits whose body includes the release PR
+# title are detected.
 #
 # Why split from bump-from-sdk.yml: that workflow opens a PR and
 # returns. The PR's auto-merge fires asynchronously, so the tag +

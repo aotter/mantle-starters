@@ -61,7 +61,34 @@ const INLINE_CSS = `
     border-radius: 6px;
     padding: 1rem;
   }
+  .product-card picture,
+  .product-card img {
+    display: block;
+    width: 100%;
+  }
+  .product-card picture { margin-bottom: 0.85rem; }
+  .product-card img {
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
   .product-card .price { color: var(--accent); font-weight: 600; margin-top: 0.5rem; }
+  .product-hero {
+    margin: 0 0 1.5rem 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .product-hero picture,
+  .product-hero img {
+    display: block;
+    width: 100%;
+  }
+  .product-hero img {
+    max-height: 32rem;
+    object-fit: cover;
+  }
   .price-tag { font-size: 1.5rem; color: var(--accent); font-weight: 600; }
   form.checkout { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 1.5rem; max-width: 480px; }
   form.checkout label { display: block; margin-top: 1rem; font-weight: 500; }
@@ -98,11 +125,17 @@ const INLINE_CSS = `
   }
 `;
 
-// Bootstraps two things every page needs in client JS:
+// Bootstraps three things every page needs in client JS:
 //   1. window.__cartId — stable per-browser uuid (server holds cart
 //      state in KV under `cart:<cartId>`; this is just the key).
 //   2. window.__escapeHtml — shared HTML-escape for all inline scripts
 //      so each template doesn't redefine it.
+//   3. window.__parseErrorMessage — extract the `error` field from a
+//      JSON envelope returned by `/api/*` handlers on 4xx. Without
+//      this, page scripts render the raw response text and the user
+//      sees `{"error":"..."}` braces in the notice strip. Falls back
+//      to the raw text on parse failure so non-JSON 5xx bodies still
+//      surface something readable.
 const BOOTSTRAP_JS = `
   if (!localStorage.getItem("cartId")) {
     localStorage.setItem("cartId", "c_" + crypto.randomUUID());
@@ -113,6 +146,14 @@ const BOOTSTRAP_JS = `
       "&": "&amp;", "<": "&lt;", ">": "&gt;",
       '"': "&quot;", "'": "&#39;"
     }[c]));
+  };
+  window.__parseErrorMessage = function (rawText) {
+    if (typeof rawText !== "string" || rawText.length === 0) return rawText;
+    try {
+      var body = JSON.parse(rawText);
+      if (body && typeof body.error === "string") return body.error;
+    } catch (_) { /* keep raw — non-JSON body, e.g. HTML 5xx */ }
+    return rawText;
   };
 `;
 

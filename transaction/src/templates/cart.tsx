@@ -41,8 +41,10 @@ const CART_BOOTSTRAP_JS = `
       tbody.innerHTML = "";
       for (const item of data.items) {
         const tr = document.createElement("tr");
+        const titleCell = "<strong>" + esc(item.title || item.productSlug) + "</strong>" +
+          (item.variantLabel ? "<br><small>" + esc(item.variantLabel) + "</small>" : "");
         tr.innerHTML =
-          "<td>" + esc(item.productSlug) + "</td>" +
+          "<td>" + titleCell + "</td>" +
           "<td>" + item.qty + "</td>";
         tbody.appendChild(tr);
       }

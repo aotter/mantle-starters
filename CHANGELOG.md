@@ -6,13 +6,6 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The repository version reflects the `create-mantle` scaffolder tarball attached to each GitHub release. Individual starter packages pin `@aotter/mantle-*` versions independently inside their own `package.json`.
 
-## [Unreleased]
-
-### Added
-
-- Initial OSS community-health files: `LICENSE` (MIT), `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `SUPPORT.md`, `AGENTS.md`, `CODEOWNERS`, issue templates, PR template, Dependabot config.
-- Repo metadata: 18 custom labels (`area:*`, `starter:*`, `status:roadmap`, `release-gate`, `needs-discussion`, `dependencies`); description and topics updated.
-
 ## [v0.0.8-alpha] — 2026-05-13
 
 ### Added

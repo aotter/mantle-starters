@@ -17,18 +17,16 @@
  * can poll readOrderStatus while waiting for the async callback.
  */
 
-import type { AnyHandler } from "@aotter/mantle/runtime";
+import type { AnyHandler, CmsRuntime } from "@aotter/mantle/runtime";
 import { getInventoryActor } from "../durableObjects/InventoryActor.js";
 import { buildPaymentProvider, type PaymentEnv } from "../payment/index.js";
-import { defineHandler } from "./_context.js";
-import { loadProductCatalog } from "./_productEnrichment.js";
+import { readCartState } from "./_cartState.js";
+import { defineHandler, isNotFoundError } from "./_context.js";
+import { loadProductCatalog, renderVariantLabel } from "./_productEnrichment.js";
+import { STOCK_ERROR_MESSAGE } from "./_stockCheck.js";
 import { stashOrderCart } from "./orderCart.js";
+import { orderEntryId } from "./orderConsumer.js";
 import { verifyTurnstile } from "./turnstile.js";
-
-interface CartState {
-  items: { productSlug: string; qty: number }[];
-  updatedAt: number;
-}
 
 export interface CheckoutStartEnv extends PaymentEnv {
   readonly KV: KVNamespace;
@@ -55,29 +53,44 @@ export function buildCheckoutStart(env: CheckoutStartEnv): AnyHandler {
       throw new Error("checkoutStart: missing cartId / customerEmail");
     }
 
-    // 1. CAPTCHA gate
-    await verifyTurnstile(env.TURNSTILE_SECRET_KEY, input.turnstileToken);
-
-    // 2. Read cart
-    const cart = await env.KV.get<CartState>(`cart:${input.cartId}`, "json");
-    if (!cart || cart.items.length === 0) {
+    // Turnstile verify + KV cart read + catalog load are independent;
+    // run them concurrently. Catalog is the long pole (3 listEntries
+    // + media resolve) and dominates the wall time.
+    const [, cart, catalog] = await Promise.all([
+      verifyTurnstile(env.TURNSTILE_SECRET_KEY, input.turnstileToken),
+      readCartState(env.KV, input.cartId),
+      loadProductCatalog(ctx.runtime),
+    ]);
+    if (cart.items.length === 0) {
+      // Distinguish "never added anything (or cart expired)" from
+      // "had items before deploy but the SPU/SKU split made them
+      // incompatible". The latter is recoverable — the customer
+      // re-adds — but the generic empty message gives no clue that
+      // anything was there. Frontend can route on the message text
+      // (or, for a richer UI, swap this throw for a structured
+      // error envelope).
+      if (cart.legacyDropped) {
+        throw new Error(
+          "Your cart was updated by a catalog change — please re-add your items.",
+        );
+      }
       throw new Error("checkoutStart: cart empty or expired");
     }
-
-    // 3. Look up prices + currency
-    const catalog = await loadProductCatalog(ctx.runtime);
     const enrichedItems = cart.items.map((item) => {
-      const product = catalog.bySlug.get(item.productSlug);
-      if (!product) {
-        throw new Error(`checkoutStart: unknown product ${item.productSlug}`);
+      const hit = catalog.skuByCode.get(item.skuCode);
+      if (!hit) {
+        throw new Error(`checkoutStart: unknown sku ${item.skuCode}`);
       }
+      const { sku, product } = hit;
       return {
+        skuCode: sku.skuCode,
         productSlug: product.slug,
         qty: item.qty,
-        priceMinor: product.priceMinor,
-        currency: product.currency,
-        inventoryMode: product.inventoryMode,
+        priceMinor: sku.priceMinor,
+        currency: sku.currency,
+        inventoryMode: sku.inventoryMode,
         title: product.title,
+        variantLabel: renderVariantLabel(sku, product.optionAxes),
       };
     });
     const currency = enrichedItems[0]?.currency;
@@ -95,7 +108,7 @@ export function buildCheckoutStart(env: CheckoutStartEnv): AnyHandler {
     }
 
     // 4. Reserve inventory under a fresh orderId
-    const orderId = generateOrderId();
+    const orderId = await generateOrderId(ctx.runtime);
     const inv = getInventoryActor(env);
     const reserveItems = enrichedItems.filter(
       (i) => i.inventoryMode === "tracked",
@@ -103,13 +116,17 @@ export function buildCheckoutStart(env: CheckoutStartEnv): AnyHandler {
     if (reserveItems.length > 0) {
       const result = await inv.reserve({
         orderId,
-        items: reserveItems.map((i) => ({ productSlug: i.productSlug, qty: i.qty })),
+        items: reserveItems.map((i) => ({ skuCode: i.skuCode, qty: i.qty })),
       });
       if (!result.ok) {
+        // Customer-facing message — vague by design (exact counts can
+        // leak inventory state). Structured detail stays server-side
+        // for ops via the log line below.
         const detail = result.insufficient
-          .map((i) => `${i.productSlug}(need ${i.requested}, have ${i.available})`)
+          .map((i) => `${i.skuCode}(need ${i.requested}, have ${i.available})`)
           .join(", ");
-        throw new Error(`checkoutStart: insufficient stock — ${detail}`);
+        console.warn(`checkoutStart: insufficient stock — ${detail}`);
+        throw new Error(STOCK_ERROR_MESSAGE);
       }
     }
 
@@ -124,10 +141,12 @@ export function buildCheckoutStart(env: CheckoutStartEnv): AnyHandler {
       customerEmail: input.customerEmail,
       currency,
       items: enrichedItems.map((i) => ({
+        skuCode: i.skuCode,
         productSlug: i.productSlug,
         qty: i.qty,
         priceMinor: i.priceMinor,
         title: i.title,
+        variantLabel: i.variantLabel,
       })),
       subtotalMinor,
       createdAt: Date.now(),
@@ -135,10 +154,11 @@ export function buildCheckoutStart(env: CheckoutStartEnv): AnyHandler {
 
     // 6. Hand off to the payment provider
     const provider = buildPaymentProvider(env);
-    const origin = env.PUBLIC_ORIGIN ?? "http://localhost:8788";
+    const origin = env.PUBLIC_ORIGIN ?? "http://localhost:8787";
     const result = await provider.startCheckout({
       orderId,
       items: enrichedItems.map((i) => ({
+        skuCode: i.skuCode,
         productSlug: i.productSlug,
         qty: i.qty,
         priceMinor: i.priceMinor,
@@ -153,12 +173,69 @@ export function buildCheckoutStart(env: CheckoutStartEnv): AnyHandler {
   });
 }
 
+/**
+ * Order id format: `o_YYYYMMDD-XXXXXX` (UTC date; adopters override
+ * for merchant timezones — Asia/Taipei avoids the +1 UTC date for
+ * 23:59 local orders, US/Pacific covers North American storefronts,
+ * etc.).
+ *
+ *   - 6 chars from a no-confusables alphabet (30⁶ ≈ 729M per day).
+ *
+ * orderId is the reservation key + KV cart-stash key + `entries.id`
+ * primary key, so collisions silently overwrite the prior order and
+ * strand inventory. We pre-check D1 and retry on hit; after 5
+ * collisions we widen the tail with a UUID slice rather than loop
+ * forever, since 5 misses in a row means the RNG is broken or the
+ * day's space is genuinely saturated.
+ */
+const ID_ALPHABET = "23456789ABCDEFGHJKMNPQRSTVWXYZ";
+const ID_TAIL_LEN = 6;
+const ID_MAX_ATTEMPTS = 5;
+const UTC_DATE_FMT = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "UTC",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
 
-function generateOrderId(): string {
-  // orderId is the reservation key + the KV cart-stash key + the
-  // order-row entry id. Collisions silently overwrite the prior
-  // reservation, stranding stock. randomUUID() gives 122 bits of
-  // CSPRNG entropy — collision-resistant in practice.
-  return `o_${crypto.randomUUID()}`;
+async function generateOrderId(runtime: CmsRuntime): Promise<string> {
+  const ymd = UTC_DATE_FMT.format(new Date()).replace(/-/g, "");
+  for (let attempt = 0; attempt < ID_MAX_ATTEMPTS; attempt++) {
+    const candidate = `o_${ymd}-${randomTail(ID_TAIL_LEN)}`;
+    if (!(await orderIdExists(runtime, candidate))) return candidate;
+  }
+  // Fallback after 5 collisions — RNG is broken or the day's space is
+  // saturated. Widen by re-mapping a fresh UUID through the same
+  // no-confusables alphabet so the resulting id stays structurally
+  // identical to a normal one (a raw `randomUUID().slice(0,8)` would
+  // mix hex `0`/`1` and `[A-F]` back into otherwise-confusable-free
+  // ids, exactly when you want maximum readability for the on-call).
+  const fallbackBytes = new TextEncoder().encode(crypto.randomUUID());
+  let tail = "";
+  for (let i = 0; i < ID_TAIL_LEN * 2 && tail.length < ID_TAIL_LEN * 2; i++) {
+    tail += ID_ALPHABET.charAt(fallbackBytes[i % fallbackBytes.length]! % ID_ALPHABET.length);
+  }
+  return `o_${ymd}-${tail}`;
 }
 
+function randomTail(len: number): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(len));
+  let out = "";
+  for (const b of bytes) {
+    out += ID_ALPHABET.charAt(b % ID_ALPHABET.length);
+  }
+  return out;
+}
+
+async function orderIdExists(runtime: CmsRuntime, orderId: string): Promise<boolean> {
+  try {
+    await runtime.getEntry.execute({
+      id: orderEntryId(orderId),
+      collection: "orders",
+    });
+    return true;
+  } catch (err) {
+    if (isNotFoundError(err)) return false;
+    throw err;
+  }
+}

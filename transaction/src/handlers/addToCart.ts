@@ -1,56 +1,50 @@
 /**
- * addToCart — adds a product to a session's cart in KV.
+ * addToCart — adds a SKU to a session's cart in KV.
  *
  * Cart shape (KV at `cart:<cartId>`):
  *   {
- *     items: [{ productSlug, qty }],
+ *     items: [{ skuCode, qty }],
  *     updatedAt: <ms>
  *   }
  *
- * Coalesces by productSlug — adding qty=2 of an existing slug
- * increments its qty to 2+existing, not creating a separate line.
- *
- * Pricing is NOT stored in the cart. Subtotal is computed at read
- * time from the current `products` Schema entries — easier to handle
- * mid-cart price changes (last-price-at-checkout, never frozen on
- * add).
+ * Coalesces by skuCode. Pricing is NOT stored in the cart — subtotal
+ * is computed at read time from the current `product-skus` entries,
+ * so mid-cart price changes are handled by re-pricing at checkout
+ * (last-price-at-checkout, never frozen on add).
  */
 
-import type { AnyHandler, CmsRuntime } from "@aotter/mantle/runtime";
+import type { AnyHandler } from "@aotter/mantle/runtime";
 import { defineHandler } from "./_context.js";
+import {
+  CART_TTL_SECONDS,
+  readCartState,
+  type CartState,
+} from "./_cartState.js";
+import { loadPublishedSkuIndex } from "./_productEnrichment.js";
+import {
+  checkSingleSkuStock,
+  STOCK_ERROR_MESSAGE,
+} from "./_stockCheck.js";
 
-interface CartState {
-  items: { productSlug: string; qty: number }[];
-  updatedAt: number;
-}
-
-interface ProductLookup {
-  readonly slug: string;
-  readonly priceMinor: number;
-  readonly currency: string;
-  readonly inventoryMode: "tracked" | "untracked";
-}
-
-const CART_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days
-const MAX_QTY_PER_LINE = 99;
+export const MAX_QTY_PER_LINE = 99;
 
 export interface AddToCartEnv {
   readonly KV: KVNamespace;
+  readonly INVENTORY_ACTOR: DurableObjectNamespace;
 }
 
 export interface AddToCartInput {
   readonly cartId: string;
-  readonly productSlug: string;
+  readonly skuCode: string;
   readonly qty: number;
 }
 
 export interface AddToCartOutput {
   readonly cartId: string;
   readonly items: ReadonlyArray<{
-    productSlug: string;
+    skuCode: string;
     qty: number;
     priceMinor: number;
-    title?: string;
   }>;
   readonly subtotalMinor: number;
   readonly currency: string;
@@ -58,42 +52,42 @@ export interface AddToCartOutput {
 
 export function buildAddToCart(env: AddToCartEnv): AnyHandler {
   return defineHandler<AddToCartInput, AddToCartOutput>(async (input, ctx) => {
-    if (!input.cartId || !input.productSlug || !input.qty) {
-      throw new Error("addToCart: missing cartId / productSlug / qty");
+    if (!input.cartId || !input.skuCode || !input.qty) {
+      throw new Error("addToCart: missing cartId / skuCode / qty");
     }
     if (input.qty < 1 || input.qty > MAX_QTY_PER_LINE) {
       throw new Error(`addToCart: qty must be 1..${MAX_QTY_PER_LINE}`);
     }
-    const product = await lookupProduct(ctx.runtime, input.productSlug);
-    if (!product) {
-      throw new Error(`addToCart: unknown productSlug '${input.productSlug}'`);
+    const skuIndex = await loadPublishedSkuIndex(ctx.runtime);
+    const sku = skuIndex.get(input.skuCode);
+    if (!sku) {
+      throw new Error(`addToCart: unknown skuCode '${input.skuCode}'`);
     }
-    const key = `cart:${input.cartId}`;
-    const existing = (await env.KV.get<CartState>(key, "json")) ?? {
-      items: [],
-      updatedAt: 0,
-    };
-    const merged = coalesce(existing.items, input.productSlug, input.qty);
+    const existing = await readCartState(env.KV, input.cartId);
+    // Throw rather than silently clamp — a silent clamp lets the API
+    // say "ok" while adding fewer items than the customer requested.
+    const existingQty =
+      existing.items.find((i) => i.skuCode === input.skuCode)?.qty ?? 0;
+    const targetQty = existingQty + input.qty;
+    if (targetQty > MAX_QTY_PER_LINE) {
+      throw new Error(
+        `Max ${MAX_QTY_PER_LINE} per line (currently ${existingQty}, adding ${input.qty}).`,
+      );
+    }
+    const shortfall = await checkSingleSkuStock(env, sku, targetQty);
+    if (shortfall) throw new Error(STOCK_ERROR_MESSAGE);
+
+    const merged = coalesce(existing.items, input.skuCode, input.qty);
     const next: CartState = { items: merged, updatedAt: Date.now() };
-    await env.KV.put(key, JSON.stringify(next), {
+    await env.KV.put(`cart:${input.cartId}`, JSON.stringify(next), {
       expirationTtl: CART_TTL_SECONDS,
     });
 
-    // Build display payload — look up each product's current price.
-    // For v0.1 (≤100 orders/day, small catalogs) the N+1 read is
-    // acceptable; multi-product carts can fan-out with Promise.all.
-    const productSlugs = next.items.map((i) => i.productSlug);
-    const products = await Promise.all(
-      productSlugs.map((slug) => lookupProduct(ctx.runtime, slug)),
-    );
-    const enriched = next.items.map((item, idx) => {
-      const p = products[idx];
-      return {
-        productSlug: item.productSlug,
-        qty: item.qty,
-        priceMinor: p?.priceMinor ?? 0,
-      };
-    });
+    const enriched = next.items.map((item) => ({
+      skuCode: item.skuCode,
+      qty: item.qty,
+      priceMinor: skuIndex.get(item.skuCode)?.priceMinor ?? 0,
+    }));
     const subtotalMinor = enriched.reduce(
       (sum, i) => sum + i.priceMinor * i.qty,
       0,
@@ -102,52 +96,31 @@ export function buildAddToCart(env: AddToCartEnv): AnyHandler {
       cartId: input.cartId,
       items: enriched,
       subtotalMinor,
-      currency: product.currency,
+      currency: sku.currency,
     } satisfies AddToCartOutput;
   });
 }
 
+/**
+ * Coalesce by skuCode — assumes the caller already verified
+ * `existing.qty + add <= MAX_QTY_PER_LINE`. Earlier drafts clamped
+ * inside this function via `Math.min`; that was removed because it
+ * masked the "max-per-line exceeded" failure mode (caller threw,
+ * coalesce silently clamped → if the throw is ever bypassed, the
+ * customer's add succeeds with fewer items than requested). The
+ * caller in `addToCart` is now the sole enforcer.
+ */
 function coalesce(
-  items: ReadonlyArray<{ productSlug: string; qty: number }>,
-  slug: string,
+  items: ReadonlyArray<{ skuCode: string; qty: number }>,
+  skuCode: string,
   add: number,
-): { productSlug: string; qty: number }[] {
+): { skuCode: string; qty: number }[] {
   const out = items.map((i) => ({ ...i }));
-  const existing = out.find((i) => i.productSlug === slug);
+  const existing = out.find((i) => i.skuCode === skuCode);
   if (existing) {
-    existing.qty = Math.min(MAX_QTY_PER_LINE, existing.qty + add);
+    existing.qty += add;
     return out;
   }
-  out.push({ productSlug: slug, qty: add });
+  out.push({ skuCode, qty: add });
   return out;
 }
-
-async function lookupProduct(
-  runtime: CmsRuntime,
-  slug: string,
-): Promise<ProductLookup | null> {
-  // Use the runtime's listEntries — filter by collection + slug.
-  // Empty result if not found / not published.
-  const entries = await runtime.listEntries.execute({
-    collection: "products",
-    status: "published",
-    limit: 1000,
-  });
-  const hit = entries.find(
-    (e) => (e.data as { slug?: string }).slug === slug,
-  );
-  if (!hit) return null;
-  const d = hit.data as {
-    slug: string;
-    priceMinor: number;
-    currency: string;
-    inventoryMode: "tracked" | "untracked";
-  };
-  return {
-    slug: d.slug,
-    priceMinor: d.priceMinor,
-    currency: d.currency,
-    inventoryMode: d.inventoryMode,
-  };
-}
-

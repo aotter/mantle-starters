@@ -21,6 +21,23 @@ export interface ThemeSource {
   readonly path: string;
 }
 
+export interface FeatureVariantSource {
+  readonly name: string;
+  readonly title?: string;
+}
+
+export interface FeatureSourceEntry {
+  readonly path?: string;
+  readonly title?: string;
+  readonly summary?: string;
+  readonly description?: string;
+  readonly registryDependencies?: readonly string[];
+  readonly requires?: readonly string[];
+  readonly applicableArchetypes?: readonly string[];
+  readonly requiresVariant?: boolean;
+  readonly variants?: readonly FeatureVariantSource[];
+}
+
 export interface ArchetypeSourceEntry {
   readonly path: string;
   readonly overlays?: readonly string[];
@@ -28,8 +45,10 @@ export interface ArchetypeSourceEntry {
 
 export interface SourcesJson {
   readonly archetypes: Readonly<Record<string, ArchetypeSourceEntry>>;
+  readonly features?: Readonly<Record<string, FeatureSourceEntry>>;
   readonly themes: Readonly<Record<string, ThemeSource>>;
   readonly roadmap: readonly string[];
+  readonly version?: string;
 }
 
 /**
@@ -40,6 +59,21 @@ export interface SourcesJson {
 export interface ArchetypeSource extends ArchetypeSourceEntry {
   readonly kind: SourceKind;
   readonly repo: string;
+}
+
+export interface FeatureSelection {
+  readonly name: string;
+  readonly variant?: string | null;
+}
+
+export interface ResolvedFeature {
+  readonly name: string;
+  readonly type: "registry:feature";
+  readonly path?: string;
+  readonly title?: string;
+  readonly description?: string;
+  readonly variant: string | null;
+  readonly registryDependencies: readonly string[];
 }
 
 /**
@@ -57,6 +91,14 @@ export const STALE_FALLBACK_SOURCES: SourcesJson = {
     transaction: { path: "transaction" },
     blank: { path: "blank" },
   },
+  features: {
+    contact: {
+      path: "_common/features/contact",
+      title: "Contact Form",
+      summary: "Contact form with CAPTCHA guard and Slack notification stub.",
+      applicableArchetypes: ["publication", "presence", "intake"],
+    },
+  },
   themes: {
     "l4-minimal-ink": { path: "themes/l4-minimal-ink" },
     "l4-editorial-warm": { path: "themes/l4-editorial-warm" },
@@ -64,6 +106,7 @@ export const STALE_FALLBACK_SOURCES: SourcesJson = {
     "l4-playful-pop": { path: "themes/l4-playful-pop" },
   },
   roadmap: ["reservation", "community", "membership"],
+  version: "0.0.11-alpha.14",
 };
 
 /**
@@ -99,6 +142,12 @@ function validateSourcesJson(data: unknown): SourcesJson {
   }
   if (typeof obj.themes !== "object" || obj.themes === null) {
     throw new Error("sources.json: missing themes object");
+  }
+  if (
+    obj.features !== undefined &&
+    (typeof obj.features !== "object" || obj.features === null)
+  ) {
+    throw new Error("sources.json: features must be an object when present");
   }
   if (!Array.isArray(obj.roadmap)) {
     throw new Error("sources.json: roadmap is not an array");
@@ -148,6 +197,97 @@ export function resolveTheme(
   const known = Object.keys(sources.themes);
   const list = known.length > 0 ? known.join(", ") : "(no themes in bundled stale fallback)";
   throw new Error(`Unknown theme "${theme}". Known: ${list}.`);
+}
+
+export function resolveFeatures(
+  requested: ReadonlyArray<FeatureSelection>,
+  archetype: string,
+  sources: SourcesJson,
+): readonly ResolvedFeature[] {
+  if (requested.length === 0) return [];
+  const features = sources.features ?? {};
+  const requestedVariants = new Map<string, string | null>();
+  for (const selection of requested) {
+    const name = selection.name.trim();
+    if (!name) continue;
+    const variant = selection.variant?.trim() || null;
+    const existing = requestedVariants.get(name);
+    if (existing !== undefined && existing !== variant) {
+      throw new Error(
+        `Feature "${name}" was requested with conflicting variants: ` +
+          `${existing ?? "(none)"} and ${variant ?? "(none)"}.`,
+      );
+    }
+    requestedVariants.set(name, variant);
+  }
+
+  const resolved: ResolvedFeature[] = [];
+  const visiting = new Set<string>();
+  const visited = new Set<string>();
+
+  const visit = (name: string, stack: readonly string[]): void => {
+    const feature = features[name];
+    if (!feature) {
+      const known = Object.keys(features);
+      const list = known.length > 0 ? known.join(", ") : "(no features)";
+      throw new Error(`Unknown feature "${name}". Known: ${list}.`);
+    }
+    if (visited.has(name)) return;
+    if (visiting.has(name)) {
+      throw new Error(
+        `Feature dependency cycle detected: ${[...stack, name].join(" -> ")}.`,
+      );
+    }
+    if (
+      feature.applicableArchetypes &&
+      !feature.applicableArchetypes.includes(archetype)
+    ) {
+      throw new Error(
+        `Feature "${name}" does not apply to archetype "${archetype}". ` +
+          `Applicable archetypes: ${feature.applicableArchetypes.join(", ")}.`,
+      );
+    }
+
+    visiting.add(name);
+    const registryDependencies =
+      feature.registryDependencies ?? feature.requires ?? [];
+    for (const dep of registryDependencies) {
+      visit(dep, [...stack, name]);
+    }
+    visiting.delete(name);
+    visited.add(name);
+
+    const variant = requestedVariants.get(name) ?? null;
+    if (feature.requiresVariant && !variant) {
+      throw new Error(`Feature "${name}" requires a variant.`);
+    }
+    if (variant) {
+      const variants = feature.variants ?? [];
+      if (!variants.some((v) => v.name === variant)) {
+        const list = variants.length > 0
+          ? variants.map((v) => v.name).join(", ")
+          : "(no variants)";
+        throw new Error(
+          `Unknown variant "${variant}" for feature "${name}". Known: ${list}.`,
+        );
+      }
+    }
+
+    resolved.push({
+      name,
+      type: "registry:feature",
+      path: feature.path,
+      title: feature.title,
+      description: feature.description ?? feature.summary,
+      variant,
+      registryDependencies,
+    });
+  };
+
+  for (const name of requestedVariants.keys()) {
+    visit(name, []);
+  }
+  return resolved;
 }
 
 /**

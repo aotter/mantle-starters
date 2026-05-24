@@ -33,7 +33,7 @@ export type PaymentCallbackMessage = CallbackEvent;
 
 export type OrderWorkMessage =
   | { readonly type: "order.confirmed"; readonly orderId: string }
-  | { readonly type: "inventory.snapshot.requested"; readonly productSlug: string }
+  | { readonly type: "inventory.snapshot.requested"; readonly skuCode: string }
   | { readonly type: "inventory.reconcile.tick"; readonly at: number };
 
 /**
@@ -43,10 +43,14 @@ export type OrderWorkMessage =
  * changes later.
  */
 export interface OrderLineItem {
+  readonly skuCode: string;
+  /** Snapshot of the parent SPU slug at commit time — lets order
+   *  rendering link to `/product/:slug` without a SKU→SPU join. */
   readonly productSlug: string;
   readonly qty: number;
   readonly priceMinorAtPurchase: number;
   readonly title?: string;
+  readonly variantLabel?: string;
 }
 
 /**
@@ -274,10 +278,12 @@ function buildOrderRowData(
 ): OrderRowData {
   const items: OrderLineItem[] =
     cart?.items.map((i) => ({
+      skuCode: i.skuCode,
       productSlug: i.productSlug,
       qty: i.qty,
       priceMinorAtPurchase: i.priceMinor,
       title: i.title,
+      variantLabel: i.variantLabel,
     })) ?? [];
   return {
     orderNumber: event.orderId,
@@ -356,7 +362,7 @@ export async function orderWorkConsumer(
           await handleOrderConfirmed(msg.body.orderId, env);
           break;
         case "inventory.snapshot.requested":
-          await handleSnapshotRequested(msg.body.productSlug, inv, env);
+          await handleSnapshotRequested(msg.body.skuCode, inv, env);
           break;
         case "inventory.reconcile.tick":
           await handleReconcileTick(inv, env);
@@ -439,12 +445,12 @@ async function handleOrderConfirmed(
 }
 
 async function handleSnapshotRequested(
-  productSlug: string,
+  skuCode: string,
   inv: InventoryActorClient,
   env: ConsumerEnv,
 ): Promise<void> {
-  const { available, reserved } = await inv.snapshot(productSlug);
-  await upsertInventorySnapshot(env.DB, productSlug, available, reserved);
+  const { available, reserved } = await inv.snapshot(skuCode);
+  await upsertInventorySnapshot(env.DB, skuCode, available, reserved);
 }
 
 async function handleReconcileTick(
@@ -461,19 +467,21 @@ async function handleReconcileTick(
     );
   }
 
-  // Fan out one snapshot per tracked product. Untracked products
-  // have no inventory state to snapshot.
+  // Fan out one snapshot per tracked SKU. Untracked SKUs have no
+  // inventory state to snapshot. The reconcile reads from
+  // `product-skus` (the SKU is the inventory authority key) rather
+  // than `products` (which is the SPU level and doesn't carry stock).
   const rows = await env.DB.prepare(
     `SELECT data FROM entries WHERE collection = ? AND status = ?`,
   )
-    .bind("products", "published")
+    .bind("product-skus", "published")
     .all<{ data: string }>();
   for (const r of rows.results ?? []) {
-    const p = JSON.parse(r.data) as { slug?: string; inventoryMode?: string };
-    if (p.inventoryMode === "tracked" && p.slug) {
+    const s = JSON.parse(r.data) as { skuCode?: string; inventoryMode?: string };
+    if (s.inventoryMode === "tracked" && s.skuCode) {
       await sendOrderWork(env.ORDER_WORK_QUEUE, {
         type: "inventory.snapshot.requested",
-        productSlug: p.slug,
+        skuCode: s.skuCode,
       });
     }
   }

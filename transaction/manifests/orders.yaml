@@ -88,12 +88,18 @@ spec:
           adopters that prefer separate-row storage.
         items:
           type: object
-          required: [productSlug, qty, priceMinorAtPurchase]
+          required: [skuCode, qty, priceMinorAtPurchase]
           properties:
-            productSlug: { type: string }
+            skuCode: { type: string }
+            productSlug:
+              type: string
+              description: Snapshot of the SPU slug at order time — lets order rendering link to /product/:slug without a SKU→SPU join.
             qty: { type: integer, minimum: 1 }
             priceMinorAtPurchase: { type: integer, minimum: 0 }
             title: { type: string }
+            variantLabel:
+              type: string
+              description: Snapshot of the variant label (e.g. "Red / M") at order time.
       placedAt:
         type: number
         x-mantle-bind: now
@@ -115,14 +121,17 @@ spec:
     changes don't rewrite history.
   schema:
     type: object
-    required: [orderNumber, productSlug, qty, priceMinorAtPurchase]
+    required: [orderNumber, skuCode, qty, priceMinorAtPurchase]
     properties:
       orderNumber:
         type: string
         description: FK to orders.orderNumber.
+      skuCode:
+        type: string
+        description: FK to product-skus.skuCode at purchase time.
       productSlug:
         type: string
-        description: FK to products.slug at purchase time.
+        description: Snapshot of the SPU slug at order time. Lets line-item rendering link back to /product/:slug without a SKU→SPU join.
       qty:
         type: integer
         minimum: 1
@@ -133,6 +142,12 @@ spec:
         type: integer
         minimum: 0
         description: qty * priceMinorAtPurchase, stored for query convenience.
+      title:
+        type: string
+        description: Snapshot of the SPU title at order time.
+      variantLabel:
+        type: string
+        description: Snapshot of the variant label (e.g. "Red / M") at order time.
   lifecycle: simple
 ---
 apiVersion: cms.mantle.aotter.net/v1

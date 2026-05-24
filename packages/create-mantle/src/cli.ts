@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
-import { createMantle } from "./index.js";
+import { createMantle, type FeatureSelection } from "./index.js";
 
 interface ParsedArgs {
   readonly archetype: string;
@@ -13,6 +13,7 @@ interface ParsedArgs {
   readonly githubOwner: string;
   readonly summary: string;
   readonly theme?: string | null;
+  readonly features: ReadonlyArray<FeatureSelection>;
   readonly starterRef?: string;
 }
 
@@ -36,6 +37,7 @@ async function main(): Promise<void> {
     githubOwner: args.githubOwner,
     summary: args.summary,
     theme: args.theme ?? null,
+    features: args.features,
     starterRef: args.starterRef,
   });
   process.stdout.write(`${JSON.stringify(notes, null, 2)}\n`);
@@ -43,6 +45,7 @@ async function main(): Promise<void> {
 
 function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
   const flags: Record<string, string> = {};
+  const featureFlags: string[] = [];
   const positional: string[] = [];
   for (let i = 0; i < argv.length; i += 1) {
     const token = argv[i];
@@ -51,13 +54,24 @@ function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
     if (token.startsWith("--")) {
       const eq = token.indexOf("=");
       if (eq >= 0) {
-        flags[token.slice(2, eq)] = token.slice(eq + 1);
+        const name = token.slice(2, eq);
+        const value = token.slice(eq + 1);
+        if (name === "feature" || name === "features") {
+          featureFlags.push(value);
+        } else {
+          flags[name] = value;
+        }
       } else {
         const next = argv[i + 1];
         if (next === undefined || next.startsWith("--")) {
           throw new Error(`Missing value for ${token}`);
         }
-        flags[token.slice(2)] = next;
+        const name = token.slice(2);
+        if (name === "feature" || name === "features") {
+          featureFlags.push(next);
+        } else {
+          flags[name] = next;
+        }
         i += 1;
       }
     } else {
@@ -67,7 +81,7 @@ function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
   const archetype = positional[0];
   if (!archetype) {
     throw new Error(
-      "Usage: create-mantle <archetype> --project-name <name> --brand <...> --description <...> --locales <a,b> --github-owner <login> --summary <one-line> [--theme <key>] [--ref <git-ref>]",
+      "Usage: create-mantle <archetype> --project-name <name> --brand <...> --description <...> --locales <a,b> --github-owner <login> --summary <one-line> [--theme <key>] [--feature <name[,name:variant]>] [--ref <git-ref>]",
     );
   }
   const projectName = required(flags, "project-name");
@@ -86,6 +100,7 @@ function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
   // back-compat with v0.0.8-alpha install Skill invocations.
   const ref = flags["ref"] ?? flags["starter-ref"];
   const theme = flags["theme"];
+  const features = parseFeatures(featureFlags);
   return {
     archetype,
     projectName,
@@ -96,8 +111,30 @@ function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
     githubOwner,
     summary,
     ...(theme !== undefined ? { theme } : {}),
+    features,
     ...(ref !== undefined ? { starterRef: ref } : {}),
   };
+}
+
+function parseFeatures(raw: ReadonlyArray<string>): ReadonlyArray<FeatureSelection> {
+  if (raw.length === 0) return [];
+  return raw
+    .join(",")
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => {
+      const [name, variant, extra] = part.split(":");
+      if (!name || extra !== undefined) {
+        throw new Error(
+          `Invalid --feature entry "${part}". Use <name> or <name>:<variant>.`,
+        );
+      }
+      return {
+        name,
+        ...(variant ? { variant } : {}),
+      };
+    });
 }
 
 function required(flags: Record<string, string>, name: string): string {

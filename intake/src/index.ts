@@ -13,8 +13,8 @@ import {
   type PublicRouteContext,
 } from "@aotter/mantle/cloudflare";
 import { buildCmsConfig, type Env } from "./mantleConfig.js";
+import { buildFeatureSlugOverrides } from "./.mantle/generated.routes.js";
 import {
-  contactTemplate,
   homeTemplate,
   notFoundTemplate,
 } from "./theme.default/templates/index.js";
@@ -74,13 +74,7 @@ function buildWorker(env: Env): WorkerFetch {
     ],
     homeRenderer: renderHome,
     notFoundRenderer: renderNotFound,
-    slugOverrides: [
-      {
-        collection: "page-translations",
-        slug: "contact",
-        render: (ctx) => renderContact(ctx, env),
-      },
-    ],
+    slugOverrides: [...buildFeatureSlugOverrides(env)],
     liveDev: env.MANTLE_LOCAL_DEV === "1",
   });
 
@@ -147,38 +141,6 @@ async function renderHome(ctx: PublicRouteContext): Promise<Response> {
       body: data.body ?? "",
     },
     recentPosts: recentForLocale,
-  });
-  return new Response(html, {
-    status: 200,
-    headers: {
-      "content-type": "text/html; charset=utf-8",
-      "cache-control": "public, max-age=60, s-maxage=60",
-    },
-  });
-}
-
-async function renderContact(ctx: PublicRouteContext, env: Env): Promise<Response> {
-  const { runtime, site, locale } = ctx;
-  const all = await runtime.listEntries.execute({
-    collection: "page-translations",
-    status: "published",
-    limit: 50,
-  });
-  const entry = all.find(
-    (e) =>
-      (e.data as { slug?: string }).slug === "contact" &&
-      (e.data as { locale?: string }).locale === locale,
-  );
-  const data = (entry?.data ?? {}) as { title?: string; intro?: string; body?: string };
-  const html = contactTemplate({
-    site,
-    locale,
-    page: {
-      title: data.title ?? "",
-      intro: data.intro,
-      body: data.body ?? "",
-    },
-    turnstileSiteKey: env.TURNSTILE_SITE_KEY ?? "1x00000000000000000000AA",
   });
   return new Response(html, {
     status: 200,

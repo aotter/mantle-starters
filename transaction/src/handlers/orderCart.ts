@@ -25,10 +25,19 @@
 export const ORDER_CART_TTL_SECONDS = 7 * 24 * 60 * 60;
 
 export interface OrderCartLine {
+  readonly skuCode: string;
+  /** Snapshot of the parent product's slug at stash time. Lets the
+   *  callback consumer write order_items rows with both columns
+   *  populated without re-joining the SKU index. */
   readonly productSlug: string;
   readonly qty: number;
   readonly priceMinor: number;
   readonly title: string;
+  /** Rendered axis selection (e.g. "Red / M") snapshotted at stash
+   *  time so the receipt / order history can show what was bought
+   *  without re-joining the SKU's optionValues against the SPU's
+   *  optionAxes. Omitted for single-default-SKU products. */
+  readonly variantLabel?: string;
 }
 
 export interface OrderCart {

@@ -1,6 +1,9 @@
 /** @jsxImportSource hono/jsx */
+import { raw } from "hono/html";
+import type { MediaAsset } from "@aotter/mantle/runtime";
 import type { SiteConfig } from "@aotter/mantle/spec";
 import { Layout, renderHtml } from "./layout.js";
+import { pictureFromAssetId } from "./_picture.js";
 
 /**
  * GET / — product list. Reads from the `products-public` View (same
@@ -14,15 +17,23 @@ import { Layout, renderHtml } from "./layout.js";
 export interface ProductListItem {
   readonly slug: string;
   readonly title: string;
-  readonly priceMinor: number;
+  readonly coverAssetId?: string;
+  readonly coverAlt?: string;
+  /** Minimum priceMinor across this SPU's SKUs (#166). Shown as
+   *  "from $X" when the SPU has more than one purchasable SKU. */
+  readonly minPriceMinor: number;
   readonly currency: string;
-  readonly inventoryMode: "tracked" | "untracked";
+  /** Number of published SKUs for this SPU. `> 1` triggers the
+   *  "from $X" display; otherwise the price renders as a fixed
+   *  amount. */
+  readonly skuCount: number;
   /** Short blurb shown under the card title. From `product-translations.shortDescription`. */
   readonly shortDescription?: string;
 }
 
 export interface ProductListContext {
   readonly products: ReadonlyArray<ProductListItem>;
+  readonly assets: ReadonlyMap<string, MediaAsset>;
   readonly site: SiteConfig;
 }
 
@@ -36,20 +47,28 @@ export function renderProductList(ctx: ProductListContext): string {
         </div>
       ) : (
         <div class="product-grid">
-          {ctx.products.map((p) => (
-            <div class="product-card">
-              <h3>
-                <a href={`/product/${encodeURIComponent(p.slug)}`}>{p.title}</a>
-              </h3>
-              {p.shortDescription ? (
-                <p class="muted">{p.shortDescription}</p>
-              ) : null}
-              <div class="price">{formatPrice(p.priceMinor, p.currency)}</div>
-              {p.inventoryMode === "tracked" ? (
-                <div class="muted">Limited stock</div>
-              ) : null}
-            </div>
-          ))}
+          {ctx.products.map((p) => {
+            const coverHtml = pictureFromAssetId(
+              p.coverAssetId,
+              p.coverAlt ?? p.title,
+              ctx.assets,
+            );
+            return (
+              <div class="product-card">
+                {coverHtml ? raw(coverHtml) : null}
+                <h3>
+                  <a href={`/product/${encodeURIComponent(p.slug)}`}>{p.title}</a>
+                </h3>
+                {p.shortDescription ? (
+                  <p class="muted">{p.shortDescription}</p>
+                ) : null}
+                <div class="price">
+                  {p.skuCount > 1 ? "from " : ""}
+                  {formatPrice(p.minPriceMinor, p.currency)}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </Layout>
