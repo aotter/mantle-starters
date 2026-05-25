@@ -94,9 +94,17 @@ const headerHtml = `
 `;
 ```
 
-The helper emits a `<span data-account-slot>` for the swap target plus
+The helper emits a `<div data-account-slot>` for the swap target plus
 an inline `<script>` that bootstraps every slot on the page (header +
 mobile drawer = two slots, both auto-bound).
+
+**One config per page**: the bootstrap installs its document-level
+listeners and reads its config closure once. Two `renderAccountSlot`
+calls on the same page render their respective server-side anonymous
+markup, but the client-side refresh always rebuilds from the FIRST
+call's options (sign-in label, account href, etc.). For the storefront
+chrome + mobile drawer case this is intentional — both slots want the
+same labels. Diverge via CSS, not via separate `opts` per slot.
 
 Hooks for branding:
 
