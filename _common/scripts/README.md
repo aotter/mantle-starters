@@ -83,15 +83,17 @@ node _common/scripts/migrate-media.mjs encode \
   --config mantle/media-migration.config.json
 
 # 3. Drive create → PUT → commit against the Worker
+export MANTLE_STAFF_BEARER=...   # staff MCP token; see below
 node _common/scripts/migrate-media.mjs upload \
   --config mantle/media-migration.config.json \
-  --base-url https://my-shop.example \
-  --bearer  $MANTLE_STAFF_BEARER
+  --base-url https://my-shop.example
 ```
 
-- Pass the staff bearer either via `--bearer <token>` or env
-  `MANTLE_STAFF_BEARER`. Obtain via the Worker's `/admin` sign-in
-  → MCP grant flow (or `pnpm fixture` for local dev).
+- The staff bearer comes from env `MANTLE_STAFF_BEARER` (preferred —
+  shell history and `ps` output won't carry it). `--bearer <token>`
+  also works for ad-hoc runs but the script warns on stderr about the
+  leak surface. Obtain the token via the Worker's `/admin` sign-in →
+  MCP grant flow (or `pnpm fixture` for local dev).
 - The state file is written after each successful row, so an
   interrupted run resumes at the next `--upload` invocation.
 

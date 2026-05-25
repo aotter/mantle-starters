@@ -36,8 +36,8 @@
  * `sharp` is an opt-in peer dep — install via `pnpm i -D sharp` in the
  * starter project before running encode/upload.
  */
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
-import { dirname, extname, join, resolve } from "node:path";
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, writeFileSync } from "node:fs";
+import { basename, dirname, extname, join, resolve } from "node:path";
 
 // `@aotter/mantle-media-tools` is an opt-in dependency — `--help` and
 // `plan` should work in a project that hasn't installed it yet. Import
@@ -125,7 +125,13 @@ function readState(path) {
 
 function writeState(path, state) {
   mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, JSON.stringify(state, null, 2) + "\n", "utf8");
+  // Atomic write: serialize to a tmp file in the same directory, then
+  // rename. A crash mid-write leaves the previous state file intact —
+  // important because `upload` writes after every row, so a corrupt
+  // ledger would lose all uploaded asset IDs for that run.
+  const tmp = `${path}.${process.pid}.tmp`;
+  writeFileSync(tmp, JSON.stringify(state, null, 2) + "\n", "utf8");
+  renameSync(tmp, path);
 }
 
 function scanPurpose(rootDir, purpose) {
@@ -161,21 +167,17 @@ function planRows(config) {
 
 async function encodeRow(row, { encodeTrio }) {
   const buf = readFileSync(row.source);
-  const variants = await encodeTrio(buf);
-  return { ...row, variants };
+  return { ...row, variants: await encodeTrio(buf) };
 }
 
-async function uploadRow(row, client, { encodeTrio, uploadVariants }) {
+async function uploadRow(row, client, tools) {
   if (row.assetId) return row;
-  if (!row.variants) {
-    const buf = readFileSync(row.source);
-    row = { ...row, variants: await encodeTrio(buf) };
-  }
-  const { uploadGroupId, asset } = await uploadVariants({
+  const ready = row.variants ? row : await encodeRow(row, tools);
+  const { uploadGroupId, asset } = await tools.uploadVariants({
     client,
-    purpose: row.purpose,
-    filename: row.source.split("/").pop() ?? row.slug,
-    variants: row.variants,
+    purpose: ready.purpose,
+    filename: basename(ready.source),
+    variants: ready.variants,
   });
   return {
     slug: row.slug,
@@ -216,32 +218,52 @@ async function main() {
   if (args.verb === "encode") {
     // Encode is a dry run: it doesn't persist bytes, just validates that
     // every source decodes and can produce the variant trio. Useful as a
-    // pre-flight before upload spends Worker requests.
+    // pre-flight before upload spends Worker requests. Exits non-zero
+    // when any row fails so CI / scripts can gate on it.
     const tools = await loadMediaTools();
     let okCount = 0;
+    let failCount = 0;
     for (const row of state.rows) {
       if (row.assetId) continue;
       try {
         await encodeRow(row, tools);
         okCount++;
       } catch (err) {
+        failCount++;
         process.stderr.write(`encode failed for ${row.slug}: ${err.message}\n`);
       }
     }
     process.stdout.write(`Encoded ${okCount}/${state.rows.length} rows OK.\n`);
+    if (failCount > 0) process.exit(1);
     return;
   }
 
   if (args.verb === "upload") {
     const baseUrl = args.flags["base-url"];
-    const bearer = args.flags.bearer ?? process.env.MANTLE_STAFF_BEARER;
+    // Prefer env over CLI flag — tokens passed via `--bearer` land in
+    // shell history + `ps` output. The flag stays supported for one-
+    // off ad-hoc runs but emits a warning so the path is visible.
+    if ("bearer" in args.flags) {
+      process.stderr.write(
+        "warning: --bearer leaks the token via shell history / process listings. Prefer MANTLE_STAFF_BEARER env.\n",
+      );
+    }
+    const bearer = args.flags.bearer || process.env.MANTLE_STAFF_BEARER;
     if (!baseUrl) fail("--base-url <origin> is required for upload.");
-    if (!bearer) fail("--bearer <token> or env MANTLE_STAFF_BEARER is required for upload.");
+    if (!bearer) fail("env MANTLE_STAFF_BEARER (or --bearer <token>) is required for upload.");
     const tools = await loadMediaTools();
     const client = { baseUrl, bearer };
     const updated = [];
     for (const row of state.rows) {
-      const next = await uploadRow(row, client, tools);
+      let next;
+      try {
+        next = await uploadRow(row, client, tools);
+      } catch (err) {
+        process.stderr.write(`upload failed at row ${row.slug}: ${err?.message ?? err}\n`);
+        // Persist progress so a retry resumes from the failing row.
+        writeState(statePath, { rows: updated.concat(state.rows.slice(updated.length)) });
+        process.exit(1);
+      }
       updated.push(next);
       writeState(statePath, { rows: updated.concat(state.rows.slice(updated.length)) });
       process.stdout.write(`uploaded ${next.slug} → ${next.assetId}\n`);
