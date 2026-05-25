@@ -18,6 +18,7 @@ archetype-agnostic — any starter wiring Better Auth via the
 | `src/features/customer-account/renderLinkedAccounts.ts` | feature source | `GET /account/settings/linked-accounts` HTML renderer |
 | `src/features/customer-account/accountSlot.ts` | feature source | `renderAccountSlot(opts)` — header-chrome session-slot helper (#218) |
 | `src/features/customer-account/linkedAccounts.ts` | feature source | `listLinkedAccountsFor` / `unlinkProviderFor` wrappers + `renderLinkedAccountsSection` embeddable HTML fragment (#235) |
+| `src/features/customer-account/cartMerge.ts` | feature source | `userCartIdFor` + `mergeAnonIntoUser` — anon→user cart merge on sign-in (#234) |
 | `src/.mantle/generated.auth-methods.ts` | scaffolder | `buildFeatureAuthMethods(env, sender)` returns `[magic-link, email-otp]` |
 
 ## Wiring contract
@@ -329,6 +330,80 @@ reliable signal. If anonymous-traffic chatter against `/api/auth/*`
 becomes a real concern, the SDK-side fix is a non-HttpOnly
 session-present sentinel cookie (tracked separately as a future
 mantle change); local workarounds are not.
+
+## Cart binding — anon → user merge on sign-in (#234)
+
+`cartMerge.ts` exports two helpers so a scaffolded shop can carry
+an anonymous cart over to a stable per-user cart when the visitor
+signs in. Pure KV work over the existing `cart:<cartId>` shape; no
+SDK change.
+
+```ts
+import {
+  userCartIdFor,
+  mergeAnonIntoUser,
+} from "./features/customer-account/cartMerge.js";
+```
+
+### Adopter wire-up
+
+1. **Bind route** — add alongside the existing cart routes:
+
+   ```ts
+   app.use("/api/cart/bind", csrfGuard);
+   app.post("/api/cart/bind", async (c) => {
+     const session = await auth.getSession(c.req.raw);
+     if (!session) return c.json({ error: "unauthenticated" }, 401);
+     const body = (await c.req.json().catch(() => ({}))) as { anonCartId?: string };
+     if (!body.anonCartId) return c.json({ error: "missing-anon-cart-id" }, 400);
+     const result = await mergeAnonIntoUser(
+       (c.env as Env).KV,
+       session.user.id,
+       body.anonCartId,
+       { maxQtyPerLine: 99 }, // pass the archetype's MAX_QTY_PER_LINE
+     );
+     return c.json(result);
+   });
+   ```
+
+2. **JS bootstrap hook** — in the chrome's account-slot bootstrap
+   (or any client-side sign-in success handler), fire bind once
+   when a signed-in session is detected AND the stored `cartId`
+   doesn't already start with `uc_`:
+
+   ```js
+   const stored = localStorage.getItem("cartId");
+   if (stored && !stored.startsWith("uc_")) {
+     fetch("/api/cart/bind", {
+       method: "POST",
+       headers: { "content-type": "application/json", "x-csrf-token": csrfToken },
+       credentials: "include",
+       body: JSON.stringify({ anonCartId: stored }),
+     })
+       .then((r) => r.ok ? r.json() : null)
+       .then((data) => {
+         if (data?.cartId) localStorage.setItem("cartId", data.cartId);
+       });
+   }
+   ```
+
+   The `uc_` prefix check avoids re-firing on every page after the
+   first sign-in.
+
+3. **(Optional) cart-id source on signed-in adds** — for adopters
+   who want post-sign-in additions to land on the user cart
+   directly without an extra merge: read `localStorage.cartId`
+   client-side and pass it to `addToCart`; the server side already
+   uses whatever cartId the client supplies.
+
+### Race posture
+
+KV is eventually consistent. Two-tab concurrent binds can lose a
+few qty in the tight race window between the parallel reads and the
+final put. Acceptable at the starter's ≤100 orders/day sizing. If a
+future deploy hits real concurrency, the right answer is a
+`CartActor` Durable Object keyed by `uc_<userId>` — out of scope
+for this overlay.
 
 ## Compose schemaVersion
 
