@@ -150,6 +150,11 @@ export function buildCheckoutStart(env: CheckoutStartEnv): AnyHandler {
       })),
       subtotalMinor,
       createdAt: Date.now(),
+      // Snapshot the buyer's Better Auth user.id if they're signed in.
+      // The callback consumer runs server-to-server (no cookie), so it
+      // can't re-read the session — the cart stash is the only place
+      // the user→order link survives between checkoutStart and commit.
+      ...(ctx.user?.id ? { userId: ctx.user.id } : {}),
     });
 
     // 6. Hand off to the payment provider
