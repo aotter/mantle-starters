@@ -47,6 +47,12 @@ export interface OrderCart {
   readonly items: ReadonlyArray<OrderCartLine>;
   readonly subtotalMinor: number;
   readonly createdAt: number;
+  /** Better Auth `user.id` of the buyer at checkoutStart time, when a
+   *  customer session was present. Snapshotted on the cart stash so
+   *  the callback consumer can copy it to the order row without
+   *  re-reading the session (the callback runs server-to-server, no
+   *  cookie). Null for guest checkouts. (#175) */
+  readonly userId?: string;
 }
 
 export function orderCartKey(orderId: string): string {

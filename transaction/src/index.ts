@@ -18,6 +18,8 @@ import { loadProductCatalog, loadPage } from "./handlers/_productEnrichment.js";
 import { buildReadOrderStatus } from "./handlers/readOrderStatus.js";
 import { buildReadCart } from "./handlers/readCart.js";
 import { buildCheckoutReturn } from "./handlers/checkoutReturn.js";
+import { enforceCheckoutPolicy } from "./handlers/checkoutPolicy.js";
+import { enqueueDevCallback } from "./payment/devCallbackShim.js";
 import { restockSkuCore } from "./handlers/restockSku.js";
 import { renderProductList } from "./templates/productList.js";
 import { renderProductDetail } from "./templates/productDetail.js";
@@ -95,6 +97,17 @@ function buildWorker(env: Env): WorkerFetch {
   app.use("/api/checkout/start", csrfGuard);
   app.use("/api/staff/restock", csrfGuard);
 
+  // Members-only checkout gate (#210 release spine). Runs after CSRF
+  // and before mountServerEndpoints' Trigger dispatcher, so anonymous
+  // requests under `CHECKOUT_POLICY=members-only` short-circuit with
+  // a 302 (HTML) or 401 (XHR). Default policy "open" makes this a
+  // no-op for shops that don't gate checkout.
+  app.use("/api/checkout/start", async (c, next) => {
+    const guard = await enforceCheckoutPolicy(c.req.raw, c.env as Env, auth);
+    if (guard) return guard;
+    await next();
+  });
+
   mountServerEndpoints(app, cms);
   mountAuthorize(app, { auth, loginPath: "/admin/sign-in" });
 
@@ -143,6 +156,19 @@ function buildWorker(env: Env): WorkerFetch {
       const orderId = result.orderId ?? c.req.query("orderId") ?? "";
       if (!orderId) {
         return c.text("missing orderId after return", 400);
+      }
+      // Local-dev only: synthesize the success callback the merchant-
+      // form provider would have POSTed to a publicly-reachable URL
+      // (which localhost isn't). Hard-gated on MANTLE_LOCAL_DEV inside
+      // the helper; production calls return without touching the
+      // queue. See payment/devCallbackShim.ts.
+      const shim = await enqueueDevCallback(c.env as Env, orderId);
+      if (!shim.enqueued && shim.reason && shim.reason !== "MANTLE_LOCAL_DEV !== \"1\"") {
+        // Surface dev-only failures (queue.send threw, etc.) so the
+        // dev doesn't silently get a 302 to /order/:id while the
+        // consumer never runs. Production case (the gate short-
+        // circuited) is the expected silent path and stays quiet.
+        console.warn(`[devCallbackShim] not enqueued for ${orderId}: ${shim.reason}`);
       }
       return c.redirect(`/order/${encodeURIComponent(orderId)}`, 302);
     } catch (err) {
