@@ -138,6 +138,11 @@ export interface CheckoutContext {
    *  addresses yet. The POST handler reads `saveAddress` from the
    *  body and best-effort-calls `saveFirstAddressIfEmpty`. */
   readonly profileIsEmpty?: boolean;
+  /** ISO-3166-1 alpha-2 default for the country input when no
+   *  `defaultAddress` is provided. Defaults to "TW" since the
+   *  starter ships with a TW-focused address shape; international
+   *  adopters set this to their primary market. */
+  readonly defaultCountry?: string;
 }
 
 export function renderCheckout(ctx: CheckoutContext): string {
@@ -182,7 +187,7 @@ export function renderCheckout(ctx: CheckoutContext): string {
           name="country"
           type="text"
           required
-          value={a?.country ?? "TW"}
+          value={a?.country ?? ctx.defaultCountry ?? "TW"}
         />
         <label for="postalCode">Postal code</label>
         <input

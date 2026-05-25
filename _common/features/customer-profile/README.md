@@ -165,6 +165,20 @@ app.use("/api/checkout/start", async (c, next) => {
 `saveFirstAddressIfEmpty` is a no-op when the profile already has
 addresses, so repeat checkouts never overwrite an existing default.
 
+> **Middleware ordering**: register this BEFORE `mountServerEndpoints`
+> in your `src/index.ts`. The middleware uses `c.req.raw.clone()` to
+> peek at the body without consuming it; any earlier middleware
+> that reads the original body would leave the downstream
+> Trigger handler with an exhausted stream.
+
+> **First-checkout race**: load → check empty → save is not atomic.
+> Two concurrent first-checkouts (rare — usually the same user on
+> two tabs) can both pass the empty check and end up with two
+> address rows; the second becomes the default. Acceptable at the
+> starter's sizing per the "best-effort" contract; if a real
+> contention case emerges, route through a `ProfileActor` Durable
+> Object keyed by `userId`.
+
 
 
 ## Race / limits posture
