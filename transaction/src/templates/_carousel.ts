@@ -74,7 +74,7 @@ export function renderCarousel(args: RenderCarouselArgs): string {
     `  <div class="carousel__track" data-carousel-track>${slidesHtml}</div>`,
     `  <div class="carousel__controls" data-carousel-controls${controlsHidden}>`,
     `    <button type="button" class="carousel__btn" data-carousel-prev aria-label="Previous slide">‹</button>`,
-    `    <div class="carousel__dots" data-carousel-dots>${dotsHtml}</div>`,
+    `    <div class="carousel__dots" data-carousel-dots role="group" aria-label="Slide selector">${dotsHtml}</div>`,
     `    <button type="button" class="carousel__btn" data-carousel-next aria-label="Next slide">›</button>`,
     `  </div>`,
     `</div>`,
@@ -148,7 +148,12 @@ export const CAROUSEL_JS = `(function () {
     });
   }
   function currentIndex(carousel) {
-    var active = carousel.querySelector('[data-carousel-dot][aria-current="true"]');
+    // Read from the active slide, not the active dot — slides always
+    // exist; dots only render when slides.length > 1. Using one source
+    // of truth (slide aria-current) keeps prev/next correct for
+    // single-slide carousels and avoids state drift if a swap updates
+    // slides but forgets dots.
+    var active = carousel.querySelector('[data-carousel-slide][aria-current="true"]');
     var raw = active ? active.getAttribute('data-index') : '0';
     var n = parseInt(raw || '0', 10);
     return Number.isFinite(n) ? n : 0;
@@ -186,7 +191,9 @@ export const CAROUSEL_JS = `(function () {
     var carousel = target.closest('[data-carousel]');
     if (!carousel) return;
     var tag = target.tagName;
-    if (tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable) return;
+    // SELECT also captures arrow keys natively (option nav); skip
+    // it so adopters can ship a real form control inside a slide.
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable) return;
     ev.preventDefault();
     go(carousel, currentIndex(carousel) + (ev.key === 'ArrowLeft' ? -1 : 1));
   });
