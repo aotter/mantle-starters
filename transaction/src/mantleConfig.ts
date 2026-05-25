@@ -42,6 +42,14 @@ export interface Env {
    *  / page routes — every request re-renders via the registered
    *  templates against the current D1 state. Don't set in production. */
   readonly MANTLE_LOCAL_DEV?: string;
+  /** Members-only-purchase policy (#210 / #220-feature).
+   *  - "open" (default) — anonymous checkout permitted.
+   *  - "members-only" — checkoutStart requires a signed-in customer
+   *    session; anonymous requests get a 302 to /account/sign-in
+   *    (HTML) or 401 JSON with signInUrl (XHR / fetch).
+   *  Unknown values fall back to "open" with a console.warn so a
+   *  misconfigured env doesn't silently break checkout in production. */
+  readonly CHECKOUT_POLICY?: string;
   /** Optional **public** R2 media bucket. When bound (in `wrangler.toml`'s
    *  `[[r2_buckets]] binding = "MEDIA"`), the runtime registers
    *  `create_media_upload` / `commit_media_upload` MCP tools and the

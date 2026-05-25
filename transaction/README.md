@@ -227,6 +227,165 @@ Real-user installs go through the Mantle install Skill — see the
 and this starter's [`SKILL.md`](SKILL.md), which carries the payment
 provider interview + scaffolding procedure.
 
+## Customer accounts + members-only checkout (#210)
+
+The transaction archetype is wired to consume the `customer-account`
+and `members-only-purchase` feature overlays as soon as they're
+selected at scaffold time. Without them, checkout stays anonymous-
+with-email (`customerEmail` on the order row) and there's no
+`/account` surface. With them, you get:
+
+- Passwordless customer sign-in (magic-link + email-OTP) at
+  `/account/sign-in`
+- `/account` dashboard rendering the buyer's order history (filtered
+  by `userId`)
+- `/account/settings/linked-accounts` for social link / unlink
+- An optional `CHECKOUT_POLICY=members-only` gate that requires a
+  signed-in customer before `/api/checkout/start` proceeds
+
+### Data spine (shipped in archetype source — no scaffolder step)
+
+The archetype source already carries:
+
+| Path | Purpose |
+|---|---|
+| `manifests/orders.yaml` | `userId` column on `orders` (optional, snapshot at commit) |
+| `src/handlers/checkoutStart.ts` | Snapshots `ctx.user.id` onto the cart stash when a customer is signed in (and not a staff member acting on their behalf) |
+| `src/handlers/orderConsumer.ts` | Copies `userId` from cart stash to `OrderRowData` at commit; writes `null` explicitly for guest orders |
+| `src/handlers/listOrdersByUser.ts` | `loadOrdersByUser(runtime, userId, limit?)` — server-side query helper |
+| `src/handlers/checkoutPolicy.ts` | `enforceCheckoutPolicy(req, env, auth)` — gate honoured at the route layer in `src/index.ts` |
+
+Wire-up is the responsibility of the scaffolder when the
+`customer-account` feature is selected — the source files
+(`renderSignIn.ts`, `renderAccountHome.ts`, `renderLinkedAccounts.ts`,
+`linkedAccountsApi.ts`, `session.ts`, `accountSlot.ts`) land under
+`src/features/customer-account/`. The adopter then plugs them into
+the chrome + routes.
+
+### Adopter wiring (after scaffolding with the feature)
+
+1. **Auth methods** — splice `buildFeatureAuthMethods` into the
+   `createAuth` call:
+
+   ```ts
+   import { ConsoleEmailSender } from "@aotter/mantle/cloudflare";
+   import { ResendEmailSender } from "./auth/senders/resend.js"; // see customer-account README
+   import { buildFeatureAuthMethods } from "./.mantle/generated.auth-methods.js";
+
+   const customerEmailSender =
+     env.RESEND_API_KEY && env.EMAIL_FROM
+       ? new ResendEmailSender({ apiKey: env.RESEND_API_KEY, from: env.EMAIL_FROM })
+       : new ConsoleEmailSender();
+
+   const auth = createAuth({
+     /* ... */,
+     methods: [
+       /* archetype/staff methods first */,
+       ...buildFeatureAuthMethods(env, customerEmailSender),
+     ],
+   });
+   ```
+
+2. **HTTP routes** — under the existing `mountServerEndpoints(app, cms)`
+   call:
+
+   ```ts
+   import { renderSignIn } from "./features/customer-account/renderSignIn.js";
+   import { renderAccountHome } from "./features/customer-account/renderAccountHome.js";
+   import { renderLinkedAccounts } from "./features/customer-account/renderLinkedAccounts.js";
+   import {
+     handleListLinkedAccounts,
+     handleUnlinkAccount,
+   } from "./features/customer-account/linkedAccountsApi.js";
+   import { loadOrdersByUser } from "./handlers/listOrdersByUser.js";
+
+   app.get("/account/sign-in", (c) => renderSignIn({ request: c.req.raw, auth }));
+   app.get("/account", async (c) => {
+     const session = await auth.getSession(c.req.raw);
+     const runtime = await cms.get();
+     const orders = session
+       ? (await loadOrdersByUser(runtime, session.user.id, 20)).rows
+       : [];
+     return renderAccountHome({
+       request: c.req.raw,
+       auth,
+       orders: orders.map((o) => ({
+         id: o.orderNumber,
+         status: o.orderStatus,
+         createdAt: new Date(o.placedAt),
+         total: `${o.currency} ${(o.totalMinor / 100).toFixed(2)}`,
+       })),
+     });
+   });
+   app.get("/account/settings/linked-accounts", (c) =>
+     renderLinkedAccounts({ request: c.req.raw, auth }));
+   app.get("/account/api/linked-accounts", (c) =>
+     handleListLinkedAccounts(c.req.raw, auth));
+   app.post("/account/api/linked-accounts/unlink", (c) =>
+     handleUnlinkAccount(c.req.raw, auth));
+   ```
+
+3. **Chrome session indicator** — drop `renderAccountSlot()` into the
+   shared layout (`src/templates/layout.tsx`):
+
+   ```ts
+   import { renderAccountSlot } from "./features/customer-account/accountSlot.js";
+
+   <header>
+     <a class="brand" href="/">My Shop</a>
+     <nav>{/* … site links … */}</nav>
+     {/* injects the slot + inline script that swaps on /api/auth/get-session */}
+     {renderAccountSlot({ signInLabel: "登入" })}
+   </header>
+   ```
+
+4. **Members-only checkout** — set the env var. The route handler in
+   this archetype already calls `enforceCheckoutPolicy` before the
+   manifest-declared Trigger fires; no extra wiring needed.
+
+   ```toml
+   # wrangler.toml
+   [vars]
+   CHECKOUT_POLICY = "members-only"
+   ```
+
+   > **Fail-open caveat**: an unknown `CHECKOUT_POLICY` value (typo —
+   > `"member-only"`, `"signed-in"`, etc.) silently falls back to
+   > `"open"` with a `console.warn`. Double-check the env value
+   > matches `"members-only"` exactly when you flip the gate on.
+
+### Golden end-to-end flow
+
+1. Visitor lands on `/` — anonymous chrome.
+2. Adds to cart — cart cookie carries an anon `cartId`.
+3. Clicks "Checkout" — under `CHECKOUT_POLICY=members-only`, gets
+   302'd to `/account/sign-in?return_to=/checkout` (HTML) or 401
+   JSON with `signInUrl` (XHR).
+4. Signs in via magic-link / email-OTP. The bootstrap script in the
+   chrome slot probes `/api/auth/get-session` and swaps the slot.
+5. Returns to `/checkout`. `checkoutStart` runs with `ctx.user.id`
+   populated; the cart stash carries `userId`; the order row commits
+   with `userId` set.
+6. Provider redirect → return → `enqueueDevCallback` (in local dev)
+   → consumer commits → `/order/:id` renders.
+7. Visits `/account` — sees the order in the history list (filtered
+   by `userId`).
+
+### Deferred / out of scope for alpha.16
+
+- **Cart-binding (anon → user) on sign-in** — current behaviour: the
+  cart cookie keeps its anon `cartId` after sign-in. Adopters who
+  want cross-device cart merge add a Better Auth `signIn.after` hook
+  + KV rename. Tracked in #175.
+- **Customer profile / addresses Schema** — out of scope for
+  alpha.16. The order row's `shippingAddress` field already accepts
+  free-shape JSON from the provider; a real `customer-profile`
+  schema lands when the addresses UI does.
+- **MCP customer surface tools** — exposing customer-account
+  Procedures on the public MCP surface needs the `mcp` Trigger
+  source (#281, landed in alpha.16) plus follow-up wiring. Not
+  blocking the storefront flow.
+
 ## Local-dev callback shim (`MANTLE_LOCAL_DEV`)
 
 Merchant-form payment providers (ECPay, PayUni, NewebPay, most APAC

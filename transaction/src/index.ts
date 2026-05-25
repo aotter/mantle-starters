@@ -18,6 +18,7 @@ import { loadProductCatalog, loadPage } from "./handlers/_productEnrichment.js";
 import { buildReadOrderStatus } from "./handlers/readOrderStatus.js";
 import { buildReadCart } from "./handlers/readCart.js";
 import { buildCheckoutReturn } from "./handlers/checkoutReturn.js";
+import { enforceCheckoutPolicy } from "./handlers/checkoutPolicy.js";
 import { enqueueDevCallback } from "./payment/devCallbackShim.js";
 import { restockSkuCore } from "./handlers/restockSku.js";
 import { renderProductList } from "./templates/productList.js";
@@ -95,6 +96,17 @@ function buildWorker(env: Env): WorkerFetch {
   app.use("/api/cart/add", csrfGuard);
   app.use("/api/checkout/start", csrfGuard);
   app.use("/api/staff/restock", csrfGuard);
+
+  // Members-only checkout gate (#210 release spine). Runs after CSRF
+  // and before mountServerEndpoints' Trigger dispatcher, so anonymous
+  // requests under `CHECKOUT_POLICY=members-only` short-circuit with
+  // a 302 (HTML) or 401 (XHR). Default policy "open" makes this a
+  // no-op for shops that don't gate checkout.
+  app.use("/api/checkout/start", async (c, next) => {
+    const guard = await enforceCheckoutPolicy(c.req.raw, c.env as Env, auth);
+    if (guard) return guard;
+    await next();
+  });
 
   mountServerEndpoints(app, cms);
   mountAuthorize(app, { auth, loginPath: "/admin/sign-in" });
