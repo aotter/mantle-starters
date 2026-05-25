@@ -248,7 +248,10 @@ async function main() {
         "warning: --bearer leaks the token via shell history / process listings. Prefer MANTLE_STAFF_BEARER env.\n",
       );
     }
-    const bearer = args.flags.bearer || process.env.MANTLE_STAFF_BEARER;
+    // Env wins over the CLI flag — when both are set the env value is
+    // the canonical source (the warning above explains why the flag
+    // path is discouraged).
+    const bearer = process.env.MANTLE_STAFF_BEARER || args.flags.bearer;
     if (!baseUrl) fail("--base-url <origin> is required for upload.");
     if (!bearer) fail("env MANTLE_STAFF_BEARER (or --bearer <token>) is required for upload.");
     const tools = await loadMediaTools();
