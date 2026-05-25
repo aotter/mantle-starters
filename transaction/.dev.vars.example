@@ -30,6 +30,14 @@ BETTER_AUTH_SECRET=
 # Better Auth's baseURL. Production: the deployed Worker origin.
 PUBLIC_ORIGIN=http://localhost:8787
 
+# Members-only-purchase gate (#210). When set to "members-only", the
+# /api/checkout/start route enforces a signed-in customer session
+# before invoking the checkout-start handler. Anonymous browser
+# requests get a 302 redirect to /account/sign-in; XHR / fetch
+# requests get a 401 JSON with a signInUrl field. Default "open"
+# allows anonymous checkout (with customerEmail).
+CHECKOUT_POLICY=open
+
 # ── /admin sign-in (skip if you only need /api/views/* and /mcp) ──
 # /admin uses GitHub OAuth via Better Auth. Set up:
 #
