@@ -14,10 +14,11 @@
  * after a real callback already landed) is a no-op.
  *
  * **Production guard**: this helper is a no-op unless
- * `env.MANTLE_LOCAL_DEV === "1"`. The callsite must also gate on the
- * same flag; we keep the assertion inside as a second line of
- * defence so a stray import can't synthesize a fake "succeeded"
- * payment in prod.
+ * `env.MANTLE_LOCAL_DEV === "1"`. The gate lives ONLY inside this
+ * helper — call sites invoke `await enqueueDevCallback(env, id)`
+ * unconditionally and trust the early return. Keeping the gate in
+ * exactly one place means there's no second `if (env.MANTLE_LOCAL_DEV
+ * === "1")` block that could drift from this one.
  */
 import type { Env } from "../mantleConfig.js";
 import type { CallbackEvent } from "./provider.js";
@@ -47,6 +48,14 @@ export async function enqueueDevCallback(
   if (!orderId) return { enqueued: false, reason: "missing orderId" };
 
   const cart = await readOrderCart(env.KV, orderId);
+  if (!cart) {
+    // Stash expired / never written — the consumer still runs but
+    // commits a 0-minor order row. Log loudly so the dev notices
+    // this isn't representative of a real checkout.
+    console.warn(
+      `[devCallbackShim] no order:cart stash for ${orderId}; falling back to 0/TWD. Order row will be partially populated.`,
+    );
+  }
   const event: CallbackEvent = {
     eventId: `${DEV_PROVIDER_TAG}:${orderId}`,
     orderId,

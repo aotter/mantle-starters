@@ -150,7 +150,14 @@ function buildWorker(env: Env): WorkerFetch {
       // (which localhost isn't). Hard-gated on MANTLE_LOCAL_DEV inside
       // the helper; production calls return without touching the
       // queue. See payment/devCallbackShim.ts.
-      await enqueueDevCallback(c.env as Env, orderId);
+      const shim = await enqueueDevCallback(c.env as Env, orderId);
+      if (!shim.enqueued && shim.reason && shim.reason !== "MANTLE_LOCAL_DEV !== \"1\"") {
+        // Surface dev-only failures (queue.send threw, etc.) so the
+        // dev doesn't silently get a 302 to /order/:id while the
+        // consumer never runs. Production case (the gate short-
+        // circuited) is the expected silent path and stays quiet.
+        console.warn(`[devCallbackShim] not enqueued for ${orderId}: ${shim.reason}`);
+      }
       return c.redirect(`/order/${encodeURIComponent(orderId)}`, 302);
     } catch (err) {
       // Failed signature verification or transient error. Still try
