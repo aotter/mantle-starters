@@ -275,9 +275,11 @@ describe("installFromExtractedRoot", () => {
     expect(handlers).toContain("return {};");
     expect(handlers).not.toContain("contact");
     expect(handlers).toContain("export interface FeatureHandlerEnv {}");
-    expect(handlers).toContain(
-      "// eslint-disable-next-line @typescript-eslint/no-empty-object-type",
-    );
+    // Cover both the v6+ rule name and the v5 legacy name so the disable
+    // comment lands regardless of which typescript-eslint version the
+    // consumer project pins.
+    expect(handlers).toContain("@typescript-eslint/no-empty-object-type");
+    expect(handlers).toContain("@typescript-eslint/no-empty-interface");
     expect(handlers).not.toContain("TURNSTILE_SECRET_KEY");
 
     const routes = readFileSync(

@@ -573,7 +573,7 @@ function renderFeatureHandlerEnv(
     // breaks `...buildFeatureHandlers(env)` at the call site. The lint
     // suppression is intentional: the empty body is the whole point.
     return [
-      "// eslint-disable-next-line @typescript-eslint/no-empty-object-type",
+      "// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface",
       "export interface FeatureHandlerEnv {}",
     ];
   }
