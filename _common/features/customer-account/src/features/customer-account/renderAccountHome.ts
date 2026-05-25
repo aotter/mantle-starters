@@ -51,6 +51,11 @@ export async function renderAccountHome(args: {
     ? ""
     : renderOrdersSection(args.orders);
 
+  // Linked-accounts query adds one D1 hit per /account render.
+  // Adopters who already preload `orders` in their route handler can
+  // parallelize the two — `Promise.all([loadOrdersByUser(...),
+  // listLinkedAccountsFor(...)])` — and pass results in. The
+  // section is inlined here for the zero-config path.
   const showLinkedAccounts = args.showLinkedAccountsSection ?? true;
   const linkedAccountsHtml = showLinkedAccounts
     ? renderLinkedAccountsSection({
