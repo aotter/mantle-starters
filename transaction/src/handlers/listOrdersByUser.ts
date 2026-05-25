@@ -47,32 +47,55 @@ export function buildListOrdersByUser(): AnyHandler {
   );
 }
 
+/** Safety cap: stop paginating after this many rows scanned even if
+ *  we haven't filled the per-user `limit`. Above this point the shop
+ *  has enough volume that a parameterized View or direct D1 query
+ *  with an index on `data->>'userId'` is the right answer, and the
+ *  starter helper should fail loud-ish (return what it found and
+ *  emit a warning) instead of timing out a Worker invocation. */
+const MAX_ROWS_SCANNED = 10_000;
+const PAGE_SIZE = 500;
+
 export async function loadOrdersByUser(
   runtime: CmsRuntime,
   userId: string,
   limit: number = 50,
 ): Promise<ListOrdersByUserOutput> {
-  // Pull all order rows, then filter by userId in JS. listEntries
-  // doesn't support row-level filter on a JSON field yet; for v0.1
-  // this is fine — shop-side order volumes are bounded per user, and
-  // adopters with large catalogs can swap in a custom D1 query.
-  const entries = await runtime.listEntries.execute({
-    collection: "orders",
-    status: "published",
-    limit: 1000,
-  });
+  // Paginate via the cursored API so a shop with > PAGE_SIZE total
+  // orders doesn't silently drop the older ones. We stop as soon as
+  // we've filled `limit` for this user OR scanned `MAX_ROWS_SCANNED`
+  // entries total — whichever comes first.
   const out: OrderSummary[] = [];
-  for (const e of entries) {
-    const data = e.data as OrderRowData;
-    if (data.userId !== userId) continue;
-    out.push({
-      orderNumber: data.orderNumber ?? "",
-      orderStatus: data.orderStatus ?? "placed",
-      currency: data.currency ?? "",
-      totalMinor: data.totalMinor ?? 0,
-      placedAt: data.placedAt ?? 0,
+  let cursor: string | undefined = undefined;
+  let scanned = 0;
+  while (scanned < MAX_ROWS_SCANNED && out.length < limit) {
+    const page = await runtime.listEntries.executePage({
+      collection: "orders",
+      status: "published",
+      limit: PAGE_SIZE,
+      cursor,
     });
+    for (const e of page.rows) {
+      scanned++;
+      const data = e.data as OrderRowData;
+      if (data.userId !== userId) continue;
+      out.push({
+        orderNumber: data.orderNumber ?? "",
+        orderStatus: data.orderStatus ?? "placed",
+        currency: data.currency ?? "",
+        totalMinor: data.totalMinor ?? 0,
+        placedAt: data.placedAt ?? 0,
+      });
+      if (out.length >= limit) break;
+    }
+    if (!page.nextCursor) break;
+    cursor = page.nextCursor;
+  }
+  if (scanned >= MAX_ROWS_SCANNED && out.length < limit) {
+    console.warn(
+      `[loadOrdersByUser] scanned ${scanned} rows without filling ${limit} for user ${userId}; consider swapping for a userId-indexed View.`,
+    );
   }
   out.sort((a, b) => b.placedAt - a.placedAt);
-  return { rows: out.slice(0, limit) };
+  return { rows: out };
 }

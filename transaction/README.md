@@ -290,13 +290,13 @@ the chrome + routes.
    call:
 
    ```ts
+   import { renderSignIn } from "./features/customer-account/renderSignIn.js";
+   import { renderAccountHome } from "./features/customer-account/renderAccountHome.js";
+   import { renderLinkedAccounts } from "./features/customer-account/renderLinkedAccounts.js";
    import {
-     renderSignIn,
-     renderAccountHome,
-     renderLinkedAccounts,
      handleListLinkedAccounts,
      handleUnlinkAccount,
-   } from "./features/customer-account/index.js"; // or per-file imports
+   } from "./features/customer-account/linkedAccountsApi.js";
    import { loadOrdersByUser } from "./handlers/listOrdersByUser.js";
 
    app.get("/account/sign-in", (c) => renderSignIn({ request: c.req.raw, auth }));
@@ -348,6 +348,11 @@ the chrome + routes.
    [vars]
    CHECKOUT_POLICY = "members-only"
    ```
+
+   > **Fail-open caveat**: an unknown `CHECKOUT_POLICY` value (typo —
+   > `"member-only"`, `"signed-in"`, etc.) silently falls back to
+   > `"open"` with a `console.warn`. Double-check the env value
+   > matches `"members-only"` exactly when you flip the gate on.
 
 ### Golden end-to-end flow
 
