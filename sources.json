@@ -34,6 +34,17 @@
       "applicableArchetypes": [
         "transaction"
       ]
+    },
+    "members-only-purchase": {
+      "path": "_common/features/members-only-purchase",
+      "title": "Members-only Purchase",
+      "summary": "Requires a signed-in customer session before checkout. Reads CHECKOUT_POLICY env (\"open\" | \"members-only\"); host wires the guard at the top of /api/checkout/start.",
+      "applicableArchetypes": [
+        "transaction"
+      ],
+      "registryDependencies": [
+        "customer-account"
+      ]
     }
   },
   "themes": {
