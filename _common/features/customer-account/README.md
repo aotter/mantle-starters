@@ -369,11 +369,15 @@ import {
 2. **JS bootstrap hook** — in the chrome's account-slot bootstrap
    (or any client-side sign-in success handler), fire bind once
    when a signed-in session is detected AND the stored `cartId`
-   doesn't already start with `uc_`:
+   doesn't already start with `uc_`. Guard against double-fire
+   from two concurrent bootstrap runs (e.g. header + mobile
+   drawer both calling on the same DOMContentLoaded) with a
+   `sessionStorage` in-flight flag:
 
    ```js
    const stored = localStorage.getItem("cartId");
-   if (stored && !stored.startsWith("uc_")) {
+   if (stored && !stored.startsWith("uc_") && !sessionStorage.getItem("cartBindInFlight")) {
+     sessionStorage.setItem("cartBindInFlight", "1");
      fetch("/api/cart/bind", {
        method: "POST",
        headers: { "content-type": "application/json", "x-csrf-token": csrfToken },
@@ -383,12 +387,17 @@ import {
        .then((r) => r.ok ? r.json() : null)
        .then((data) => {
          if (data?.cartId) localStorage.setItem("cartId", data.cartId);
-       });
+         if (data?.clampedSkuCount > 0) {
+           // Optional: surface a toast — some lines hit the per-line cap.
+         }
+       })
+       .finally(() => sessionStorage.removeItem("cartBindInFlight"));
    }
    ```
 
    The `uc_` prefix check avoids re-firing on every page after the
-   first sign-in.
+   first sign-in. The `cartBindInFlight` flag prevents duplicate
+   POSTs when multiple bootstrap callers race within the same tab.
 
 3. **(Optional) cart-id source on signed-in adds** — for adopters
    who want post-sign-in additions to land on the user cart

@@ -67,6 +67,11 @@ export interface MergeAnonIntoUserResult {
    *  the bind response payload so the frontend can surface "we
    *  carried over your X items" toast. */
   readonly mergedItemCount: number;
+  /** Number of distinct skuCodes whose sum exceeded `maxQtyPerLine`
+   *  and were clamped — drove a silent qty loss on that line. The
+   *  adopter UI can surface a "we capped some lines" toast when
+   *  this is non-zero. (#234 Codex review) */
+  readonly clampedSkuCount: number;
 }
 
 /**
@@ -95,7 +100,7 @@ export async function mergeAnonIntoUser(
   // canonical user cartId. Saves one KV read on the common-case
   // second-tab refresh after sign-in.
   if (anonCartId === userCartId) {
-    return { cartId: userCartId, mergedItemCount: 0 };
+    return { cartId: userCartId, mergedItemCount: 0, clampedSkuCount: 0 };
   }
 
   const [anonRaw, userRaw] = await Promise.all([
@@ -110,13 +115,15 @@ export async function mergeAnonIntoUser(
     // Nothing to merge. Don't touch the user cart; clean up the
     // empty anon row so the cookie can rotate without dangling.
     if (anonRaw) await kv.delete(`cart:${anonCartId}`);
-    return { cartId: userCartId, mergedItemCount: 0 };
+    return { cartId: userCartId, mergedItemCount: 0, clampedSkuCount: 0 };
   }
 
   // Build the merged-by-sku index from the user cart first so that
   // subsequent additions from the anon cart sum on top, capped per
-  // line. Iteration order: anon items appended after user items,
-  // preserving "what you already had" stability.
+  // line. Iteration order preserves "what the user already had stays
+  // first in the rendered cart" — intentional: the signed-in cart is
+  // treated as the durable shopping list, anon items as additions
+  // layered on top.
   const bySku = new Map<string, number>();
   for (const i of userItems) {
     if (typeof i.skuCode === "string" && Number.isFinite(i.qty)) {
@@ -124,10 +131,13 @@ export async function mergeAnonIntoUser(
     }
   }
   let merged = 0;
+  let clamped = 0;
   for (const i of anonItems) {
     if (typeof i.skuCode !== "string" || !Number.isFinite(i.qty)) continue;
-    const next = (bySku.get(i.skuCode) ?? 0) + i.qty;
-    bySku.set(i.skuCode, Math.min(next, maxQtyPerLine));
+    const sum = (bySku.get(i.skuCode) ?? 0) + i.qty;
+    const capped = Math.min(sum, maxQtyPerLine);
+    if (capped < sum) clamped++;
+    bySku.set(i.skuCode, capped);
     merged++;
   }
 
@@ -139,5 +149,5 @@ export async function mergeAnonIntoUser(
   });
   await kv.delete(`cart:${anonCartId}`);
 
-  return { cartId: userCartId, mergedItemCount: merged };
+  return { cartId: userCartId, mergedItemCount: merged, clampedSkuCount: clamped };
 }
