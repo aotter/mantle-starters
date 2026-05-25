@@ -61,16 +61,29 @@ export function renderAccountSlot(opts: RenderAccountSlotOptions = {}): string {
   // script replaces this when a session is detected.
   const anonHtml = `<a data-account-slot-anon class="account-slot__signin" href="${signInHref}">${signInLabel}</a>`;
 
+  // The bootstrap rebuilds anonymous and signed-in markup client-side
+  // after the session probe, so it needs the SAME labels/URLs the
+  // server used. Without these the client falls back to hardcoded
+  // English defaults the moment the probe completes.
   const config = JSON.stringify({
     accountHref: opts.accountHref ?? "/account",
     linkedAccountsHref:
       opts.linkedAccountsHref ?? "/account/settings/linked-accounts",
+    signInHref: opts.signInHref ?? "/account/sign-in",
+    signInLabel: opts.signInLabel ?? "Sign in",
     signOutLabel: opts.signOutLabel ?? "Sign out",
   });
+  // JSON.stringify does not escape `</script>` — without this, a
+  // crafted href / label could break out of the inline script tag
+  // during HTML parsing. Per the OWASP JS-in-HTML guidance, replace
+  // `</` with `<\/`.
+  const safeConfig = config.replace(/<\/(script)/gi, "<\\/$1");
 
+  // Span → div: the rendered signed-in branch nests a `<div role="menu">`
+  // + `<form>` inside, which is invalid as descendants of <span>.
   return (
-    `<span class="account-slot" data-account-slot>${anonHtml}</span>` +
-    `<script>(${bootstrapAccountSlotSource})(${config});</script>`
+    `<div class="account-slot" data-account-slot>${anonHtml}</div>` +
+    `<script>(${bootstrapAccountSlotSource})(${safeConfig});</script>`
   );
 
   function escape(s: string): string {
@@ -98,6 +111,15 @@ export function renderAccountSlot(opts: RenderAccountSlotOptions = {}): string {
  * starter's build, but during dev they make the bundle inspectable.
  */
 const bootstrapAccountSlotSource = `function bootstrap(config) {
+  if (window.__mantleAccountSlotBound) {
+    // Two renderAccountSlot() calls on one page would otherwise install
+    // duplicate document-level listeners + overwrite the global. The
+    // second bootstrap is a no-op; binding still happens via the shared
+    // refreshAll() below because every [data-account-slot] is walked.
+    window.refreshAccountSlot();
+    return;
+  }
+  window.__mantleAccountSlotBound = true;
   function escape(s) {
     return String(s)
       .replace(/&/g, '&amp;')
@@ -121,47 +143,72 @@ const bootstrapAccountSlotSource = `function bootstrap(config) {
       '</div>',
     ].join('');
   }
+  function buildAnonHtml() {
+    return '<a data-account-slot-anon class="account-slot__signin" href="' +
+      escape(config.signInHref) + '">' + escape(config.signInLabel) + '</a>';
+  }
+  // Document-level listeners installed ONCE (guarded above). They use
+  // event delegation so dynamically-inserted slots also benefit, and
+  // they never accumulate across sign-in/out cycles.
+  document.addEventListener('click', function (ev) {
+    // Trigger toggle.
+    var trigger = ev.target.closest && ev.target.closest('[data-account-slot-trigger]');
+    if (trigger) {
+      var menu = trigger.parentElement && trigger.parentElement.querySelector('[data-account-slot-menu]');
+      if (menu) {
+        var open = !menu.hidden;
+        menu.hidden = open;
+        trigger.setAttribute('aria-expanded', String(!open));
+      }
+      return;
+    }
+    // Outside-click closes any open menu.
+    document.querySelectorAll('[data-account-slot] [data-account-slot-menu]').forEach(function (m) {
+      if (m.hidden) return;
+      if (m.parentElement && !m.parentElement.contains(ev.target)) {
+        m.hidden = true;
+        var t = m.parentElement.querySelector('[data-account-slot-trigger]');
+        if (t) t.setAttribute('aria-expanded', 'false');
+      }
+    });
+  });
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key !== 'Escape') return;
+    document.querySelectorAll('[data-account-slot] [data-account-slot-menu]').forEach(function (m) {
+      if (m.hidden) return;
+      m.hidden = true;
+      var t = m.parentElement && m.parentElement.querySelector('[data-account-slot-trigger]');
+      if (t) {
+        t.setAttribute('aria-expanded', 'false');
+        // Restore focus to the trigger so keyboard users aren't dumped
+        // into focus limbo after dismissing the menu.
+        t.focus();
+      }
+    });
+  });
+  document.addEventListener('submit', function (ev) {
+    var form = ev.target.closest && ev.target.closest('[data-account-slot-signout]');
+    if (!form) return;
+    ev.preventDefault();
+    var btn = form.querySelector('button[type="submit"]');
+    // Guard against double-clicks: a rapid second submit would issue
+    // a second POST before the first resolves. Disabling the button
+    // also gives a visible "in flight" cue.
+    if (btn && btn.disabled) return;
+    if (btn) btn.disabled = true;
+    fetch('/api/auth/sign-out', {
+      method: 'POST',
+      credentials: 'include',
+    })
+      .catch(function () { /* swallow — refresh below recovers */ })
+      .then(function () {
+        if (btn) btn.disabled = false;
+        refreshAll();
+      });
+  });
   function bindOneSlot(slot) {
     if (slot.dataset.accountSlotBound === '1') return;
     slot.dataset.accountSlotBound = '1';
-    function setAnonymous() {
-      slot.innerHTML =
-        '<a data-account-slot-anon class="account-slot__signin" href="/account/sign-in">Sign in</a>';
-    }
-    function setSignedIn(user) {
-      slot.innerHTML = buildSignedInHtml(user);
-      var trigger = slot.querySelector('[data-account-slot-trigger]');
-      var menu = slot.querySelector('[data-account-slot-menu]');
-      if (trigger && menu) {
-        trigger.addEventListener('click', function () {
-          var open = !menu.hidden;
-          menu.hidden = open;
-          trigger.setAttribute('aria-expanded', String(!open));
-        });
-        document.addEventListener('click', function (ev) {
-          if (!slot.contains(ev.target)) {
-            menu.hidden = true;
-            trigger.setAttribute('aria-expanded', 'false');
-          }
-        });
-        document.addEventListener('keydown', function (ev) {
-          if (ev.key === 'Escape') {
-            menu.hidden = true;
-            trigger.setAttribute('aria-expanded', 'false');
-          }
-        });
-      }
-      var form = slot.querySelector('[data-account-slot-signout]');
-      if (form) {
-        form.addEventListener('submit', function (ev) {
-          ev.preventDefault();
-          fetch('/api/auth/sign-out', {
-            method: 'POST',
-            credentials: 'include',
-          }).then(function () { refreshAll(); });
-        });
-      }
-    }
     slot.refresh = function () {
       // Always round-trip — Better Auth's session cookie is HttpOnly
       // so JS can't see it via document.cookie. Don't try to gate the
@@ -170,10 +217,9 @@ const bootstrapAccountSlotSource = `function bootstrap(config) {
       fetch('/api/auth/get-session', { credentials: 'include' })
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (data) {
-          if (data && data.user) setSignedIn(data.user);
-          else setAnonymous();
+          slot.innerHTML = data && data.user ? buildSignedInHtml(data.user) : buildAnonHtml();
         })
-        .catch(function () { setAnonymous(); });
+        .catch(function () { slot.innerHTML = buildAnonHtml(); });
     };
     slot.refresh();
   }
