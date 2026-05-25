@@ -70,11 +70,11 @@ export function renderCarousel(args: RenderCarouselArgs): string {
   const slidesHtml = renderSlides(args.slides);
   const dotsHtml = renderDots(args.slides);
   return [
-    `<div class="carousel" data-carousel id="${escape(args.id)}" role="region" aria-label="${ariaLabel}" aria-roledescription="carousel"${hidden}>`,
+    `<div class="carousel" data-carousel id="${escape(args.id)}" role="region" aria-label="${ariaLabel}" aria-roledescription="carousel" tabindex="0"${hidden}>`,
     `  <div class="carousel__track" data-carousel-track>${slidesHtml}</div>`,
     `  <div class="carousel__controls" data-carousel-controls${controlsHidden}>`,
     `    <button type="button" class="carousel__btn" data-carousel-prev aria-label="Previous slide">‹</button>`,
-    `    <div class="carousel__dots" data-carousel-dots role="tablist">${dotsHtml}</div>`,
+    `    <div class="carousel__dots" data-carousel-dots>${dotsHtml}</div>`,
     `    <button type="button" class="carousel__btn" data-carousel-next aria-label="Next slide">›</button>`,
     `  </div>`,
     `</div>`,
@@ -107,7 +107,7 @@ export function renderDots(slides: ReadonlyArray<CarouselSlide>): string {
     .map((s, i) => {
       const active = i === 0 ? ' aria-current="true"' : "";
       const label = escape(s.label ?? `Slide ${i + 1}`);
-      return `<button type="button" class="carousel__dot" data-carousel-dot data-index="${i}" role="tab" aria-label="${label}"${active}></button>`;
+      return `<button type="button" class="carousel__dot" data-carousel-dot data-index="${i}" aria-label="${label}"${active}></button>`;
     })
     .join("");
 }
@@ -174,10 +174,22 @@ export const CAROUSEL_JS = `(function () {
       return;
     }
   });
-  // Stub for adopter code that imported the older imperative API.
-  // Re-binding is a no-op in the delegated model — the listener
-  // above already covers carousels inserted at any time.
-  window.__bindCarousel = function () {};
+  // Keyboard navigation: ArrowLeft / ArrowRight when focus is inside
+  // a carousel (the root is tabindex="0" so users can Tab to it).
+  // Skip when focus is inside an input / textarea / contenteditable
+  // so adopters who add an inline editor in a slide don't see the
+  // arrows hijacked.
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight') return;
+    var target = ev.target;
+    if (!target || !target.closest) return;
+    var carousel = target.closest('[data-carousel]');
+    if (!carousel) return;
+    var tag = target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable) return;
+    ev.preventDefault();
+    go(carousel, currentIndex(carousel) + (ev.key === 'ArrowLeft' ? -1 : 1));
+  });
 })();`;
 
 function escape(s: string): string {
