@@ -17,6 +17,7 @@ archetype-agnostic — any starter wiring Better Auth via the
 | `src/features/customer-account/renderAccountHome.ts` | feature source | `GET /account` HTML renderer |
 | `src/features/customer-account/renderLinkedAccounts.ts` | feature source | `GET /account/settings/linked-accounts` HTML renderer |
 | `src/features/customer-account/accountSlot.ts` | feature source | `renderAccountSlot(opts)` — header-chrome session-slot helper (#218) |
+| `src/features/customer-account/linkedAccounts.ts` | feature source | `listLinkedAccountsFor` / `unlinkProviderFor` wrappers + `renderLinkedAccountsSection` embeddable HTML fragment (#235) |
 | `src/.mantle/generated.auth-methods.ts` | scaffolder | `buildFeatureAuthMethods(env, sender)` returns `[magic-link, email-otp]` |
 
 ## Wiring contract
@@ -270,6 +271,43 @@ After a sign-in flow that does NOT go through the slot's own
 `<form>` (e.g. magic-link redirect lands back on `/`), call
 `window.refreshAccountSlot()` from your page's success handler to
 re-run the probe.
+
+## Linked-accounts section helper (#235)
+
+`linkedAccounts.ts` exports a service-layer pair + a render helper
+so adopters can embed a "Sign-in methods" section into `/account`
+home (or a separate settings page) without re-implementing the
+listing/unlink HTML.
+
+```ts
+import {
+  listLinkedAccountsFor,
+  unlinkProviderFor,
+  renderLinkedAccountsSection,
+} from "./features/customer-account/linkedAccounts.js";
+```
+
+The default `renderAccountHome` call already embeds the section
+inline (pass `showLinkedAccountsSection: false` to suppress).
+
+### Magic-link is always available — render an implicit row
+
+Email-OTP / magic-link sign-ins **do not write to the `account`
+table** (see the SDK's `Auth.unlinkAccount` JSDoc). `listLinkedAccounts`
+therefore returns ONLY the social providers the user linked. A
+magic-link-only user otherwise sees an empty section and might
+think they have no way to sign back in.
+
+`renderLinkedAccountsSection` solves this by always rendering a
+final row keyed to the user's email — labelled "Email magic-link
+— always available" by default — with no unlink form attached.
+Adopters who localize the section pass `magicLinkLabel` /
+`heading` / `unlinkLabel`.
+
+Corollary: `unlinkAccount` does NOT need a "last sign-in method"
+guard in adopter code. Magic-link via the user's verified email is
+the safety net as long as the starter's `auth.methods` array
+declares it (which `buildFeatureAuthMethods` does by default).
 
 ### HttpOnly cookie trap — DO NOT sniff `document.cookie`
 
