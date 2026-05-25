@@ -77,9 +77,14 @@ mantle-starters/blank/
 ## Getting started
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
 cp .dev.vars.example .dev.vars
 ```
+
+> `--frozen-lockfile` matches what CI runs. Without it a local install
+> can quietly regenerate `pnpm-lock.yaml` against any dep version
+> published since the lockfile was committed; the drift only surfaces
+> when CI rejects it.
 
 Edit `.dev.vars` and fill in `BETTER_AUTH_SECRET=` — without it the worker
 returns `auth_not_configured` on every request. Generate a value:
