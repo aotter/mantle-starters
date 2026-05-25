@@ -297,6 +297,11 @@ interface FeatureProvisionSpec {
   readonly binding?: string;
 }
 
+interface FeatureAuthMethodsSpec {
+  readonly imports?: ReadonlyArray<ImportSpec>;
+  readonly entries?: ReadonlyArray<string>;
+}
+
 interface FeatureGlueSpec {
   readonly schemaVersion: number;
   readonly manifests?: {
@@ -310,9 +315,17 @@ interface FeatureGlueSpec {
   readonly routes?: FeatureGlueRoutes;
   readonly env?: ReadonlyArray<FeatureEnvVar>;
   readonly provision?: FeatureProvisionSpec;
+  /** schemaVersion >= 2. Features contributing customer-facing auth
+   *  methods (magic-link, email-OTP, OAuth socials) declare imports +
+   *  entries here; the scaffolder aggregates them into
+   *  `src/.mantle/generated.auth-methods.ts` exporting
+   *  `buildFeatureAuthMethods(env, sender)`. */
+  readonly auth_methods?: FeatureAuthMethodsSpec;
 }
 
-const SUPPORTED_GLUE_SCHEMA_VERSIONS: ReadonlySet<number> = new Set([1]);
+// schemaVersion 1: manifests / handlers / routes / env / provision.
+// schemaVersion 2: adds the `auth_methods` compose target.
+const SUPPORTED_GLUE_SCHEMA_VERSIONS: ReadonlySet<number> = new Set([1, 2]);
 
 function loadFeatureGlueSpec(
   extractedRoot: string,
@@ -375,6 +388,10 @@ function writeGeneratedFeatureGlue(args: {
     [
       "src/.mantle/generated.routes.ts",
       generatedRoutesSource(specs, args.archetype),
+    ],
+    [
+      "src/.mantle/generated.auth-methods.ts",
+      generatedAuthMethodsSource(specs),
     ],
   ];
   const provisionSource = generatedProvisionSource(pairs);
@@ -634,6 +651,41 @@ function generatedRoutesSource(
     `  ${envParam}: Env,`,
     "): readonly FeatureSlugOverride[] {",
     overridesBody,
+    "}",
+    "",
+  ].join("\n");
+}
+
+function generatedAuthMethodsSource(
+  specs: ReadonlyArray<FeatureGlueSpec>,
+): string {
+  const imports: ImportSpec[] = [];
+  const entries: string[] = [];
+  for (const spec of specs) {
+    for (const imp of spec.auth_methods?.imports ?? []) imports.push(imp);
+    for (const e of spec.auth_methods?.entries ?? []) entries.push(e);
+  }
+  // Always emit `FeatureAuthMethodsEnv` as the structural top object
+  // type so any starter `Env` shape assigns. Matches the pattern set
+  // by `FeatureHandlerEnv` post #213.
+  const envParam = entries.length === 0 ? "_env" : "env";
+  const senderParam = entries.length === 0 ? "_sender" : "sender";
+  const body = entries.length === 0
+    ? "  return [];"
+    : ["  return [", ...entries, "  ];"].join("\n");
+  return [
+    "import type { AuthMethodConfig } from \"@aotter/mantle/cloudflare\";",
+    "import type { EmailSender } from \"@aotter/mantle/runtime\";",
+    ...renderImports(imports),
+    "",
+    "// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface",
+    "export interface FeatureAuthMethodsEnv {}",
+    "",
+    "export function buildFeatureAuthMethods(",
+    `  ${envParam}: FeatureAuthMethodsEnv,`,
+    `  ${senderParam}: EmailSender,`,
+    "): readonly AuthMethodConfig[] {",
+    body,
     "}",
     "",
   ].join("\n");
