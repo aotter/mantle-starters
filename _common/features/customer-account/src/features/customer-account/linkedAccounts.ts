@@ -97,16 +97,21 @@ export function renderLinkedAccountsSection(
     })
     .join("");
 
-  // Magic-link row is always present, never has an unlink form —
-  // it represents "you can always sign in via email", which is true
-  // as long as the user's email-OTP / magic-link method stays
-  // declared in the starter's Auth methods config.
-  const magicLinkRow = [
-    `<li class="linked-accounts__row linked-accounts__row--magic-link">`,
-    `  <strong>${email}</strong>`,
-    `  <span class="linked-accounts__since">${magicLinkLabel}</span>`,
-    `</li>`,
-  ].join("");
+  // Magic-link row only renders when there's an email to key it
+  // to. Better Auth's User type declares `email: string` so this
+  // is always present for sessions that came through the SDK's
+  // `createAuth` mount — but a social-only future provider might
+  // produce a user without one, and an empty `<strong></strong>`
+  // beside the "always available" label reads weird. Skip the row
+  // cleanly in that edge case (#235 Codex review).
+  const magicLinkRow = args.userEmail.trim()
+    ? [
+        `<li class="linked-accounts__row linked-accounts__row--magic-link">`,
+        `  <strong>${email}</strong>`,
+        `  <span class="linked-accounts__since">${magicLinkLabel}</span>`,
+        `</li>`,
+      ].join("")
+    : "";
 
   return [
     `<section class="linked-accounts">`,
