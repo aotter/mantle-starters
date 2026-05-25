@@ -18,6 +18,7 @@ import { loadProductCatalog, loadPage } from "./handlers/_productEnrichment.js";
 import { buildReadOrderStatus } from "./handlers/readOrderStatus.js";
 import { buildReadCart } from "./handlers/readCart.js";
 import { buildCheckoutReturn } from "./handlers/checkoutReturn.js";
+import { enqueueDevCallback } from "./payment/devCallbackShim.js";
 import { restockSkuCore } from "./handlers/restockSku.js";
 import { renderProductList } from "./templates/productList.js";
 import { renderProductDetail } from "./templates/productDetail.js";
@@ -143,6 +144,19 @@ function buildWorker(env: Env): WorkerFetch {
       const orderId = result.orderId ?? c.req.query("orderId") ?? "";
       if (!orderId) {
         return c.text("missing orderId after return", 400);
+      }
+      // Local-dev only: synthesize the success callback the merchant-
+      // form provider would have POSTed to a publicly-reachable URL
+      // (which localhost isn't). Hard-gated on MANTLE_LOCAL_DEV inside
+      // the helper; production calls return without touching the
+      // queue. See payment/devCallbackShim.ts.
+      const shim = await enqueueDevCallback(c.env as Env, orderId);
+      if (!shim.enqueued && shim.reason && shim.reason !== "MANTLE_LOCAL_DEV !== \"1\"") {
+        // Surface dev-only failures (queue.send threw, etc.) so the
+        // dev doesn't silently get a 302 to /order/:id while the
+        // consumer never runs. Production case (the gate short-
+        // circuited) is the expected silent path and stays quiet.
+        console.warn(`[devCallbackShim] not enqueued for ${orderId}: ${shim.reason}`);
       }
       return c.redirect(`/order/${encodeURIComponent(orderId)}`, 302);
     } catch (err) {
