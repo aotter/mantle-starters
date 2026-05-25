@@ -45,6 +45,17 @@
       "registryDependencies": [
         "customer-account"
       ]
+    },
+    "customer-profile": {
+      "path": "_common/features/customer-profile",
+      "title": "Customer Profile (Addresses)",
+      "summary": "KV-backed profile + shipping-address book at /account/profile. Add / remove / set-default form-POST UI; no JS required. Depends on customer-account for the session helper.",
+      "applicableArchetypes": [
+        "transaction"
+      ],
+      "registryDependencies": [
+        "customer-account"
+      ]
     }
   },
   "themes": {
