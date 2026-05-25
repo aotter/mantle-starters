@@ -1,5 +1,9 @@
 import type { Auth } from "@aotter/mantle/cloudflare";
 import { requireCustomerSession } from "./session.js";
+import {
+  listLinkedAccountsFor,
+  renderLinkedAccountsSection,
+} from "./linkedAccounts.js";
 
 /**
  * GET /account — signed-in landing page. Greets the user, shows links
@@ -22,6 +26,12 @@ export async function renderAccountHome(args: {
     readonly total: string;
   }>;
   readonly brand?: string;
+  /** When true (default), embeds the linked-accounts section
+   *  inline on /account home so the user sees their sign-in
+   *  methods alongside the rest of the dashboard. Adopters who
+   *  prefer the separate `/account/settings/linked-accounts` page
+   *  only can pass `false`. (#235) */
+  readonly showLinkedAccountsSection?: boolean;
 }): Promise<Response> {
   const guard = await requireCustomerSession(args.request, args.auth);
   if (guard) return guard;
@@ -41,6 +51,14 @@ export async function renderAccountHome(args: {
     ? ""
     : renderOrdersSection(args.orders);
 
+  const showLinkedAccounts = args.showLinkedAccountsSection ?? true;
+  const linkedAccountsHtml = showLinkedAccounts
+    ? renderLinkedAccountsSection({
+        accounts: await listLinkedAccountsFor(session.user.id, args.auth),
+        userEmail: session.user.email,
+      })
+    : "";
+
   const html = page({
     title: `${brand} — Hi ${name}`,
     bodyHtml: [
@@ -48,6 +66,7 @@ export async function renderAccountHome(args: {
       `  <h1>Hi, ${name}</h1>`,
       `  <p>Signed in as ${escape(session.user.email)}.</p>`,
       ordersHtml,
+      linkedAccountsHtml,
       `  <nav class="account-home__nav">`,
       `    <a href="/account/settings/linked-accounts">Linked accounts</a>`,
       `    <form method="post" action="/api/auth/sign-out"><button type="submit">Sign out</button></form>`,
