@@ -50,9 +50,13 @@ For a structured-form intake starter (RSVPs, lead capture, etc.), use
 ## Getting started
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
 cp .dev.vars.example .dev.vars
 ```
+
+> `--frozen-lockfile` matches CI; without it a local install can
+> silently regenerate `pnpm-lock.yaml` against newer deps and the
+> drift only surfaces when CI rejects it.
 
 Edit `.dev.vars` and fill in `BETTER_AUTH_SECRET=` — without it the worker
 returns `auth_not_configured` on every request. Generate a value:
