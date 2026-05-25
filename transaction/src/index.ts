@@ -18,6 +18,7 @@ import { loadProductCatalog, loadPage } from "./handlers/_productEnrichment.js";
 import { buildReadOrderStatus } from "./handlers/readOrderStatus.js";
 import { buildReadCart } from "./handlers/readCart.js";
 import { buildCheckoutReturn } from "./handlers/checkoutReturn.js";
+import { enqueueDevCallback } from "./payment/devCallbackShim.js";
 import { restockSkuCore } from "./handlers/restockSku.js";
 import { renderProductList } from "./templates/productList.js";
 import { renderProductDetail } from "./templates/productDetail.js";
@@ -144,6 +145,12 @@ function buildWorker(env: Env): WorkerFetch {
       if (!orderId) {
         return c.text("missing orderId after return", 400);
       }
+      // Local-dev only: synthesize the success callback the merchant-
+      // form provider would have POSTed to a publicly-reachable URL
+      // (which localhost isn't). Hard-gated on MANTLE_LOCAL_DEV inside
+      // the helper; production calls return without touching the
+      // queue. See payment/devCallbackShim.ts.
+      await enqueueDevCallback(c.env as Env, orderId);
       return c.redirect(`/order/${encodeURIComponent(orderId)}`, 302);
     } catch (err) {
       // Failed signature verification or transient error. Still try

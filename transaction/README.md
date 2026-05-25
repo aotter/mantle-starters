@@ -227,6 +227,41 @@ Real-user installs go through the Mantle install Skill — see the
 and this starter's [`SKILL.md`](SKILL.md), which carries the payment
 provider interview + scaffolding procedure.
 
+## Local-dev callback shim (`MANTLE_LOCAL_DEV`)
+
+Merchant-form payment providers (ECPay, PayUni, NewebPay, most APAC
+gateways) send the success notification to a server-to-server URL the
+provider can reach. Localhost is not reachable without a tunnel
+(`cloudflared` / `ngrok`), so the `PAYMENT_CALLBACK_QUEUE` never
+receives the verified envelope, `orderConsumer` never commits the
+order row, and the customer-return page polls `readOrderStatus`
+forever showing "處理中…".
+
+Set `MANTLE_LOCAL_DEV=1` in `.dev.vars` and the customer-return
+handler synthesizes a successful `CallbackEvent` off the cart stash
+and pushes it to the same queue the real webhook would target. The
+queue consumer dedupes by `eventId`, so an accidental double-fire
+(real webhook lands later somehow) is safe.
+
+**Production guard**: the shim is hard-gated on
+`env.MANTLE_LOCAL_DEV === "1"` inside
+[`src/payment/devCallbackShim.ts`](src/payment/devCallbackShim.ts).
+A missing env var, an empty value, or any string other than `"1"`
+short-circuits the helper. The call site in `src/index.ts` invokes
+the helper inside the same handler whether dev or prod — relying on
+the helper's own guard, not a duplicate `if` block at the call site,
+to keep the gate logic in one place.
+
+When to use it:
+- ECPay / PayUni / NewebPay / similar merchant-form providers during
+  local development.
+- Not needed for Stripe Checkout or hosted-checkout providers — those
+  use synchronous return verification (`verifyReturn`) that already
+  works on localhost.
+
+How to disable: remove `MANTLE_LOCAL_DEV` from your `.dev.vars` (or
+set it to anything other than `"1"`). The shim becomes a no-op.
+
 ## See also
 
 - [`SKILL.md`](SKILL.md) — Mantle's install-time interview + provider wiring
