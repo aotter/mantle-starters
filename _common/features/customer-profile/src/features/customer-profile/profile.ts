@@ -222,6 +222,30 @@ export function getDefaultAddress(
   return profile.addresses.find((a) => a.id === profile.defaultAddressId);
 }
 
+/**
+ * First-checkout auto-save (#240): when a signed-in customer
+ * completes their first checkout, persist the address they typed
+ * so the next visit is pre-filled. No-op when the profile already
+ * has at least one address — we never overwrite a saved default.
+ *
+ * Callers wire this into the POST /api/checkout/start handler:
+ * read the shipping fields from the request body, decide whether
+ * `saveAddress` is checked, then call this best-effort. The
+ * call site SHOULD `try/catch` the result so a transient KV
+ * failure never blocks the order — `false` returns means "didn't
+ * save, but checkout can proceed".
+ */
+export async function saveFirstAddressIfEmpty(
+  kv: KVNamespace,
+  userId: string,
+  input: AddAddressInput,
+): Promise<{ readonly saved: boolean }> {
+  const profile = await loadCustomerProfile(kv, userId);
+  if (profile.addresses.length > 0) return { saved: false };
+  await addAddress(kv, userId, input);
+  return { saved: true };
+}
+
 function isValidAddress(a: unknown): a is CustomerAddress {
   if (typeof a !== "object" || a === null) return false;
   const o = a as Record<string, unknown>;

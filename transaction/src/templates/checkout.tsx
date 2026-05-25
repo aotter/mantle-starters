@@ -1,6 +1,7 @@
 /** @jsxImportSource hono/jsx */
 import { raw } from "hono/html";
 import type { SiteConfig } from "@aotter/mantle/spec";
+import type { ShippingAddress } from "../handlers/orderCart.js";
 import { Layout, renderHtml } from "./layout.js";
 
 /**
@@ -64,12 +65,32 @@ const CHECKOUT_JS = `
     ev.preventDefault();
     submit.disabled = true;
     out.textContent = "";
-    const email = document.getElementById("email").value;
+    const fd = new FormData(form);
+    const email = String(fd.get("email") || "");
+    // Read every address field and only attach a shippingAddress
+    // to the POST body when ALL required fields are present —
+    // empty / partial address gets dropped server-side anyway,
+    // but the client-side check keeps the dev-tools network panel
+    // honest about intent.
+    const required = ["recipientName", "phone", "country", "postalCode", "city", "street"];
+    const addr = {};
+    let allPresent = true;
+    for (const k of required) {
+      const v = String(fd.get(k) || "").trim();
+      if (!v) { allPresent = false; break; }
+      addr[k] = v;
+    }
+    const district = String(fd.get("district") || "").trim();
+    if (district) addr.district = district;
+    const saveAddress = fd.get("saveAddress") === "on";
+    const body = { cartId, customerEmail: email };
+    if (allPresent) body.shippingAddress = addr;
+    if (saveAddress) body.saveAddress = true;
     try {
       const res = await fetch("/api/checkout/start", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ cartId, customerEmail: email }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
         const msg = window.__parseErrorMessage(await res.text());
@@ -103,16 +124,108 @@ const CHECKOUT_JS = `
 
 export interface CheckoutContext {
   readonly site: SiteConfig;
+  /** Pre-fill the email field. Adopters pass the customer's email
+   *  when a session is present so signed-in checkouts don't have
+   *  to re-type. (#240) */
+  readonly userEmail?: string;
+  /** Pre-fill the shipping address. Adopters pass the customer's
+   *  default address (via customer-profile feature's
+   *  `getDefaultAddress`) so signed-in checkouts are one-tap. */
+  readonly defaultAddress?: ShippingAddress;
+  /** When true, render a "save this address" checkbox (pre-
+   *  checked). Adopter sets this on first checkout — when
+   *  `customer-profile` is installed AND the profile has no
+   *  addresses yet. The POST handler reads `saveAddress` from the
+   *  body and best-effort-calls `saveFirstAddressIfEmpty`. */
+  readonly profileIsEmpty?: boolean;
+  /** ISO-3166-1 alpha-2 default for the country input when no
+   *  `defaultAddress` is provided. Defaults to "TW" since the
+   *  starter ships with a TW-focused address shape; international
+   *  adopters set this to their primary market. */
+  readonly defaultCountry?: string;
 }
 
 export function renderCheckout(ctx: CheckoutContext): string {
+  const a = ctx.defaultAddress;
+  const showSaveBox = ctx.profileIsEmpty ?? false;
+  const leadCopy = ctx.defaultAddress
+    ? "Pre-filled from your saved default. Edits here won't change your saved address."
+    : "We use this only for shipping + order updates.";
   const tree = (
     <Layout title="Checkout" site={ctx.site}>
       <h1>Checkout</h1>
       <div id="summary">Loading cart…</div>
       <form id="checkout-form" class="checkout">
+        <p class="checkout__lead">{leadCopy}</p>
         <label for="email">Email (for the order receipt)</label>
-        <input id="email" name="email" type="email" required />
+        <input
+          id="email"
+          name="email"
+          type="email"
+          required
+          value={ctx.userEmail ?? ""}
+        />
+        <label for="recipientName">Recipient name</label>
+        <input
+          id="recipientName"
+          name="recipientName"
+          type="text"
+          required
+          value={a?.recipientName ?? ""}
+        />
+        <label for="phone">Phone</label>
+        <input
+          id="phone"
+          name="phone"
+          type="tel"
+          required
+          value={a?.phone ?? ""}
+        />
+        <label for="country">Country</label>
+        <input
+          id="country"
+          name="country"
+          type="text"
+          required
+          value={a?.country ?? ctx.defaultCountry ?? "TW"}
+        />
+        <label for="postalCode">Postal code</label>
+        <input
+          id="postalCode"
+          name="postalCode"
+          type="text"
+          required
+          value={a?.postalCode ?? ""}
+        />
+        <label for="city">City</label>
+        <input
+          id="city"
+          name="city"
+          type="text"
+          required
+          value={a?.city ?? ""}
+        />
+        <label for="district">District (optional)</label>
+        <input
+          id="district"
+          name="district"
+          type="text"
+          value={a?.district ?? ""}
+        />
+        <label for="street">Street</label>
+        <input
+          id="street"
+          name="street"
+          type="text"
+          required
+          value={a?.street ?? ""}
+        />
+        {showSaveBox && (
+          <label class="checkout__save">
+            <input type="checkbox" name="saveAddress" checked />{" "}
+            Save this as my default address
+          </label>
+        )}
         <button id="submit-btn" class="primary" type="submit">
           Place Order →
         </button>

@@ -94,14 +94,92 @@ hard-coded English in v1; adopters who need full TW Chinese
 translation copy the rendered HTML into their template and
 substitute. A follow-up issue can plumb a label map through.
 
-## checkoutStart integration
+## checkoutStart integration (#240)
 
-`getDefaultAddress(profile)` returns the default address row (or
-`undefined`) so the checkout form can pre-fill. The order-commit
-path then snapshots the chosen address onto the order entry's
-`shippingAddress` field (already declared in `orders.yaml`).
-Wiring that is out of scope for this overlay PR — a separate PR
-against the transaction archetype source covers it.
+The transaction archetype already threads
+`CheckoutStartInput.shippingAddress` → `OrderCart.shippingAddress`
+→ `OrderRowData.shippingAddress`, and the checkout template pre-
+fills its fields from `defaultAddress` + `userEmail` context. Two
+adopter wire-up steps complete the loop:
+
+### 1. Pre-fill the form on GET /checkout
+
+```ts
+import { renderCheckout } from "./templates/checkout.js";
+import {
+  loadCustomerProfile,
+  getDefaultAddress,
+} from "./features/customer-profile/profile.js";
+
+app.get("/checkout", async (c) => {
+  const session = await auth.getSession(c.req.raw);
+  let userEmail: string | undefined;
+  let defaultAddress: ShippingAddress | undefined;
+  let profileIsEmpty = false;
+  if (session) {
+    userEmail = session.user.email;
+    const profile = await loadCustomerProfile((c.env as Env).KV, session.user.id);
+    defaultAddress = getDefaultAddress(profile);
+    profileIsEmpty = profile.addresses.length === 0;
+  }
+  const site = await (await cms.get()).siteConfig.load();
+  return c.html(renderCheckout({ site, userEmail, defaultAddress, profileIsEmpty }));
+});
+```
+
+### 2. Save the typed address on first POST /api/checkout/start
+
+The submit handler in `checkout.tsx` already sends
+`body.shippingAddress` + `body.saveAddress`. Add a pre-Trigger
+middleware that fires the save best-effort:
+
+```ts
+import { saveFirstAddressIfEmpty } from "./features/customer-profile/profile.js";
+
+app.use("/api/checkout/start", async (c, next) => {
+  const session = await auth.getSession(c.req.raw);
+  if (!session) return next();
+  // Clone the body so the downstream Trigger handler can still
+  // read it — request bodies are single-use streams.
+  const cloned = c.req.raw.clone();
+  const body = (await cloned.json().catch(() => ({}))) as {
+    shippingAddress?: ShippingAddress;
+    saveAddress?: boolean;
+  };
+  if (body.saveAddress && body.shippingAddress) {
+    try {
+      await saveFirstAddressIfEmpty(
+        (c.env as Env).KV,
+        session.user.id,
+        body.shippingAddress,
+      );
+    } catch (err) {
+      // Don't block checkout on a profile-save failure.
+      console.warn("[customer-profile] first-address save failed:", err);
+    }
+  }
+  await next();
+});
+```
+
+`saveFirstAddressIfEmpty` is a no-op when the profile already has
+addresses, so repeat checkouts never overwrite an existing default.
+
+> **Middleware ordering**: register this BEFORE `mountServerEndpoints`
+> in your `src/index.ts`. The middleware uses `c.req.raw.clone()` to
+> peek at the body without consuming it; any earlier middleware
+> that reads the original body would leave the downstream
+> Trigger handler with an exhausted stream.
+
+> **First-checkout race**: load → check empty → save is not atomic.
+> Two concurrent first-checkouts (rare — usually the same user on
+> two tabs) can both pass the empty check and end up with two
+> address rows; the second becomes the default. Acceptable at the
+> starter's sizing per the "best-effort" contract; if a real
+> contention case emerges, route through a `ProfileActor` Durable
+> Object keyed by `userId`.
+
+
 
 ## Race / limits posture
 

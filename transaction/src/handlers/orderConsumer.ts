@@ -27,6 +27,7 @@ import {
   deleteOrderCart,
   readOrderCart,
   type OrderCart,
+  type ShippingAddress,
 } from "./orderCart.js";
 
 export type PaymentCallbackMessage = CallbackEvent;
@@ -76,6 +77,13 @@ export interface OrderRowData {
    *  in / merge doesn't rewrite history. `undefined` only on rows
    *  written before #175 landed. (#175) */
   readonly userId?: string | null;
+  /** Customer-supplied shipping address from the checkout form
+   *  (#240). The schema slot was already free-shape JSON; this
+   *  types it. `null` for orders without a collected shipping
+   *  address (digital goods, manual back-office orders).
+   *  Re-uses the `ShippingAddress` shape from orderCart so the two
+   *  sides of the cart→order copy can't drift independently. */
+  readonly shippingAddress?: ShippingAddress | null;
   readonly paymentProvider?: string;
   readonly paymentIntentId?: string;
   readonly items?: ReadonlyArray<OrderLineItem>;
@@ -298,7 +306,16 @@ function buildOrderRowData(
     subtotalMinor: cart?.subtotalMinor ?? event.amount.minor,
     taxMinor: 0,
     customerEmail: cart?.customerEmail ?? event.customerEmail ?? "",
-    customerName: "",
+    // customerName defaults to the recipient on the shipping
+    // address when no other source supplies it — the order page,
+    // packing slip, and CS lookup all want a name on every row.
+    // Edge case worth noting: for B2B orders where the buyer's
+    // billing contact differs from the delivery recipient, this
+    // default will show the recipient. Adopters wiring a B2B
+    // checkout flow should populate customerName from the billing
+    // contact (e.g. `customer-profile` extension) before commit.
+    customerName: cart?.shippingAddress?.recipientName ?? "",
+    shippingAddress: cart?.shippingAddress ?? null,
     // userId snapshots the buyer's Better Auth user.id when the cart
     // was started by a signed-in customer. Write `null` explicitly
     // for guest orders so the row carries an unambiguous "no user

@@ -24,7 +24,7 @@ import { readCartState } from "./_cartState.js";
 import { defineHandler, isNotFoundError } from "./_context.js";
 import { loadProductCatalog, renderVariantLabel } from "./_productEnrichment.js";
 import { STOCK_ERROR_MESSAGE } from "./_stockCheck.js";
-import { stashOrderCart } from "./orderCart.js";
+import { stashOrderCart, type ShippingAddress } from "./orderCart.js";
 import { orderEntryId } from "./orderConsumer.js";
 import { verifyTurnstile } from "./turnstile.js";
 
@@ -38,6 +38,11 @@ export interface CheckoutStartInput {
   readonly cartId: string;
   readonly customerEmail: string;
   readonly turnstileToken?: string;
+  /** Customer-supplied shipping address from the checkout form
+   *  (#240). Threaded through to the cart stash so the callback
+   *  consumer can write it onto the order row. Optional —
+   *  digital-goods storefronts can omit. */
+  readonly shippingAddress?: ShippingAddress;
 }
 
 export interface CheckoutStartOutput {
@@ -160,6 +165,7 @@ export function buildCheckoutStart(env: CheckoutStartEnv): AnyHandler {
       // can't re-read the session — the cart stash is the only place
       // the user→order link survives between checkoutStart and commit.
       ...(ctx.user?.id && !ctx.staff ? { userId: ctx.user.id } : {}),
+      ...(input.shippingAddress ? { shippingAddress: input.shippingAddress } : {}),
     });
 
     // 6. Hand off to the payment provider
