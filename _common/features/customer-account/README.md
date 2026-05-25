@@ -16,6 +16,7 @@ archetype-agnostic — any starter wiring Better Auth via the
 | `src/features/customer-account/renderSignIn.ts` | feature source | `GET /account/sign-in` HTML renderer |
 | `src/features/customer-account/renderAccountHome.ts` | feature source | `GET /account` HTML renderer |
 | `src/features/customer-account/renderLinkedAccounts.ts` | feature source | `GET /account/settings/linked-accounts` HTML renderer |
+| `src/features/customer-account/accountSlot.ts` | feature source | `renderAccountSlot(opts)` — header-chrome session-slot helper (#218) |
 | `src/.mantle/generated.auth-methods.ts` | scaffolder | `buildFeatureAuthMethods(env, sender)` returns `[magic-link, email-otp]` |
 
 ## Wiring contract
@@ -71,6 +72,67 @@ then email-OTP. The starter splices this list onto the end of its own
 staff-side socials configured first stay first. Order matters for
 Better Auth's same-email auto-link rule — the first verified-email
 method wins the user row.
+
+## Header session-slot helper (#218)
+
+The feature also exports a layout-fragment helper for the storefront
+chrome — drop the result of `renderAccountSlot()` into your `<header>`
+template and the slot's inline script handles probing
+`/api/auth/get-session`, swapping markup based on the response, and
+wiring the sign-out POST.
+
+```ts
+import { renderAccountSlot } from "./features/customer-account/accountSlot.js";
+
+// In your chrome template:
+const headerHtml = `
+  <header>
+    <a class="brand" href="/">My Shop</a>
+    <nav>… site links …</nav>
+    ${renderAccountSlot({ signInLabel: "登入" })}
+  </header>
+`;
+```
+
+The helper emits a `<span data-account-slot>` for the swap target plus
+an inline `<script>` that bootstraps every slot on the page (header +
+mobile drawer = two slots, both auto-bound).
+
+Hooks for branding:
+
+- `data-account-slot-anon` — the anonymous "Sign in" anchor
+- `data-account-slot-trigger` — the signed-in dropdown trigger button
+- `data-account-slot-menu` — the dropdown's `<div role="menu">`
+- `data-account-slot-signout` — the sign-out `<form>` inside the menu
+
+Style by attribute selector (`[data-account-slot-trigger] { … }`) or
+add classnames at render time via `slot.querySelector(...)`.
+
+After a sign-in flow that does NOT go through the slot's own
+`<form>` (e.g. magic-link redirect lands back on `/`), call
+`window.refreshAccountSlot()` from your page's success handler to
+re-run the probe.
+
+### HttpOnly cookie trap — DO NOT sniff `document.cookie`
+
+The Better Auth session cookie is **HttpOnly**: JavaScript cannot read
+it via `document.cookie`. A common copy-paste failure is to gate the
+session probe behind:
+
+```js
+// !! DON'T !! — the regex always misses because the cookie is HttpOnly
+if (!/(?:^|; )(?:better-auth\.session_token|__Secure-better-auth\.session_token)=/.test(document.cookie || "")) {
+  return;
+}
+```
+
+That early-return always fires, so the chrome shows the anonymous
+markup even when the user is signed in server-side. The helper above
+always round-trips to `/api/auth/get-session` — that's the only
+reliable signal. If anonymous-traffic chatter against `/api/auth/*`
+becomes a real concern, the SDK-side fix is a non-HttpOnly
+session-present sentinel cookie (tracked separately as a future
+mantle change); local workarounds are not.
 
 ## Compose schemaVersion
 
