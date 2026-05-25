@@ -11,7 +11,7 @@ The scaffolder downloads a pinned tarball, merges `_common/` + `<archetype>/` + 
 
 ## If you're maintaining this monorepo
 
-- Contribution contract → [CONTRIBUTING.md](./CONTRIBUTING.md) (branch model: `main` only; PRs base on `main`).
+- Contribution contract → [CONTRIBUTING.md](./CONTRIBUTING.md) (branch model: `develop` is the integration branch; PRs base on `develop`).
 - Project doctrine → [parent CLAUDE.md](https://github.com/aotter/mantle/blob/main/CLAUDE.md). Agents write config; the runtime carries complexity.
 - Dispatch SoT → [`sources.json`](./sources.json). Adding an archetype or theme starts here.
 - Macro list → [parent ADR-0016](https://github.com/aotter/mantle/blob/main/docs/adr/0016-site-semantic-layer.md).
