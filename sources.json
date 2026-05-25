@@ -26,6 +26,14 @@
         "presence",
         "intake"
       ]
+    },
+    "customer-account": {
+      "path": "_common/features/customer-account",
+      "title": "Customer Account",
+      "summary": "Passwordless customer sign-in (magic-link + email-OTP) plus a /account dashboard, linked-accounts settings, and a server-side session helper.",
+      "applicableArchetypes": [
+        "transaction"
+      ]
     }
   },
   "themes": {
