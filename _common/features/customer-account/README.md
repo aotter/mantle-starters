@@ -57,6 +57,118 @@ app.post("/account/api/linked-accounts/unlink", (c) =>
   handleUnlinkAccount(c.req.raw, auth));
 ```
 
+## Wiring email delivery (#219)
+
+The feature ships magic-link and email-OTP auth methods, but does NOT
+ship an email sender. The starter chooses one — Resend / Postmark /
+SendGrid / SMTP all implement the SDK's narrow
+[`EmailSender`](https://github.com/aotter/mantle/blob/develop/packages/mantle-runtime/src/domain/port/EmailSender.ts)
+port:
+
+```ts
+interface EmailSender {
+  send(args: {
+    to: string;
+    subject: string;
+    text: string;
+    html?: string;
+    locale: string;     // BCP 47
+    category?: string;  // e.g. "auth.email-otp.sign-in"
+  }): Promise<void>;
+}
+```
+
+For local dev, fall back to the SDK's
+[`ConsoleEmailSender`](https://github.com/aotter/mantle/blob/develop/packages/adapters/cloudflare/src/auth/ConsoleEmailSender.ts):
+magic-links and OTP codes print to the worker log instead of going
+out over the network, so sign-in still completes without a provider
+account.
+
+### Recipe: Resend
+
+[Resend](https://resend.com/) is the Workers-friendly default — REST
+API, no Node SDK, no npm dep to pin. The whole adapter fits in ~50
+lines. Drop this into `src/auth/senders/resend.ts` in your starter:
+
+```ts
+import type { EmailSender, EmailSendArgs } from "@aotter/mantle-runtime";
+
+export interface ResendSenderConfig {
+  /** Resend API key (https://resend.com/api-keys). */
+  readonly apiKey: string;
+  /** RFC 5322 `From:` header. Must be a verified domain on Resend. */
+  readonly from: string;
+}
+
+export class ResendEmailSender implements EmailSender {
+  constructor(private readonly config: ResendSenderConfig) {}
+
+  async send(args: EmailSendArgs): Promise<void> {
+    const body: Record<string, unknown> = {
+      from: this.config.from,
+      to: [args.to],
+      subject: args.subject,
+      text: args.text,
+    };
+    if (args.html) body.html = args.html;
+    if (args.category) body.tags = [{ name: "category", value: args.category }];
+
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${this.config.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      // Truncate the body so we don't dump a huge HTML error page into
+      // the worker log; 512 bytes is enough to identify the failure.
+      const detail = (await res.text().catch(() => "")).slice(0, 512);
+      throw new Error(
+        `Resend send failed for ${args.to} (${res.status}): ${detail}`,
+      );
+    }
+  }
+}
+```
+
+Then wire it through `createAuth` with the dev-fallback:
+
+```ts
+import { ConsoleEmailSender } from "@aotter/mantle/cloudflare";
+import { ResendEmailSender } from "./auth/senders/resend.js";
+import { buildFeatureAuthMethods } from "./.mantle/generated.auth-methods.js";
+
+const customerEmailSender = env.RESEND_API_KEY && env.EMAIL_FROM
+  ? new ResendEmailSender({ apiKey: env.RESEND_API_KEY, from: env.EMAIL_FROM })
+  : new ConsoleEmailSender();
+
+const auth = createAuth({
+  /* ... */,
+  methods: [
+    /* archetype/staff methods first */
+    ...buildFeatureAuthMethods(env, customerEmailSender),
+  ],
+});
+```
+
+Add `RESEND_API_KEY` (secret) and `EMAIL_FROM` (plain) to your
+`wrangler.toml` / `.dev.vars.example` and you're done. Production
+shops can swap providers by reimplementing the same `EmailSender`
+interface — no SDK or feature changes required.
+
+### Why not bundle Resend as an SDK / feature dep?
+
+Provider choice belongs in starter space, not the SDK or this
+feature's `src/`. A pinned `resend` npm dep would (1) commit every
+adopter to that vendor, (2) compete with the SDK's port boundary
+(the SDK's job is the interface, not any one impl), and (3) make
+Postmark / SendGrid recipes second-class. The raw `fetch` snippet
+above is roughly the same length as the official Resend client for
+this use case but ships zero deps.
+
 ## What's NOT in scope here
 
 - **OAuth provider wiring (GitHub / Google / Apple)** — adopters add `kind: "social"` entries via the starter's own `methods[]` array. `buildFeatureAuthMethods` only ships the passwordless email pair so the feature is sender-only by default; socials are starter-owned config (clientId / clientSecret).
