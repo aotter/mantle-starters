@@ -69,18 +69,27 @@ export async function handleSetDefaultAddress(
 }
 
 async function readForm(request: Request): Promise<FormData> {
-  const ct = request.headers.get("content-type") ?? "";
-  if (ct.includes("multipart/form-data") || ct.includes("application/x-www-form-urlencoded")) {
-    return request.formData();
-  }
-  // Tolerate JSON body for adopters who wire the routes from an
-  // SPA — same shape, just different on-the-wire format.
-  const json = (await request.json().catch(() => ({}))) as Record<string, unknown>;
-  const fd = new FormData();
-  for (const [k, v] of Object.entries(json)) {
-    if (typeof v === "string") fd.set(k, v);
-  }
-  return fd;
+  // Form-POST only. The JSON-body fallback was tempting for SPA
+  // adopters but it would bypass any csrfGuard that gates on
+  // form-encoded bodies (a common pattern). Adopters wiring an
+  // SPA can serialise to URLSearchParams + send as
+  // application/x-www-form-urlencoded, which still rides the
+  // same CSRF guard.
+  return request.formData();
+}
+
+/** Per-field max length cap on POSTed strings — prevents accidental
+ *  / malicious KV bloat. KV's 25 MB value cap is far higher, but
+ *  there's no legitimate reason a street line should exceed this. */
+const MAX_FIELD_LENGTH = 255;
+
+function takeField(form: FormData, name: string): string | null {
+  const v = form.get(name);
+  if (typeof v !== "string") return null;
+  const trimmed = v.trim();
+  if (trimmed.length === 0) return null;
+  if (trimmed.length > MAX_FIELD_LENGTH) return trimmed.slice(0, MAX_FIELD_LENGTH);
+  return trimmed;
 }
 
 type ParsedAddress =
@@ -91,14 +100,10 @@ function parseAddressForm(form: FormData): ParsedAddress {
   const required = ["recipientName", "phone", "country", "postalCode", "city", "street"] as const;
   const out: Record<string, string> = {};
   for (const key of required) {
-    const v = form.get(key);
-    if (typeof v !== "string" || v.trim().length === 0) {
-      return { ok: false, err: `Missing field: ${key}` };
-    }
-    out[key] = v.trim();
+    const v = takeField(form, key);
+    if (v === null) return { ok: false, err: `Missing field: ${key}` };
+    out[key] = v;
   }
-  const label = form.get("label");
-  const district = form.get("district");
   return {
     ok: true,
     value: {
@@ -108,8 +113,8 @@ function parseAddressForm(form: FormData): ParsedAddress {
       postalCode: out.postalCode!,
       city: out.city!,
       street: out.street!,
-      label: typeof label === "string" && label.trim().length > 0 ? label.trim() : undefined,
-      district: typeof district === "string" && district.trim().length > 0 ? district.trim() : undefined,
+      label: takeField(form, "label") ?? undefined,
+      district: takeField(form, "district") ?? undefined,
     },
   };
 }

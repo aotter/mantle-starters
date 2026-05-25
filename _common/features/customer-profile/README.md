@@ -103,6 +103,20 @@ path then snapshots the chosen address onto the order entry's
 Wiring that is out of scope for this overlay PR — a separate PR
 against the transaction archetype source covers it.
 
+## Race / limits posture
+
+- **KV is eventually consistent** — `addAddress` / `removeAddress`
+  / `setDefaultAddress` each do a load-modify-store cycle without
+  CAS / etag. Two-tab concurrent adds can lose the second
+  address. Acceptable at the storefront's editing cadence; if real
+  contention emerges, swap the KV row for a `ProfileActor` Durable
+  Object keyed by `userId`.
+- **Field length cap 255 chars** — every string field
+  (`recipientName`, `phone`, `street`, etc.) is truncated server-
+  side to 255 chars before writing. Prevents accidental KV bloat;
+  adopters who need longer fields (multi-line street with company
+  name) raise the cap in `handleProfileMutation.ts`.
+
 ## What's NOT in scope
 
 - **Edit-in-place** of an existing address — v1 is add / remove

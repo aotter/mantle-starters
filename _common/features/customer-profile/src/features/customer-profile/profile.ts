@@ -74,11 +74,19 @@ export async function loadCustomerProfile(
   const addresses = Array.isArray(raw.addresses)
     ? raw.addresses.filter(isValidAddress)
     : [];
+  const defaultMatches = addresses.some((a) => a.id === raw.defaultAddressId);
+  if (raw.defaultAddressId && !defaultMatches) {
+    // Surface the mismatch so operators can tell "we silently
+    // recovered from a malformed row" apart from "first-time load,
+    // no default yet". The silent drop is still the correct
+    // behaviour (don't 500 the page).
+    console.warn(
+      `[customer-profile] dropping orphaned defaultAddressId=${raw.defaultAddressId} for user ${userId} — no matching address in addresses[]`,
+    );
+  }
   return {
     userId,
-    defaultAddressId: addresses.some((a) => a.id === raw.defaultAddressId)
-      ? raw.defaultAddressId
-      : undefined,
+    defaultAddressId: defaultMatches ? raw.defaultAddressId : undefined,
     optInMarketing: raw.optInMarketing ?? false,
     locale: typeof raw.locale === "string" ? raw.locale : undefined,
     addresses,
