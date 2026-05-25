@@ -104,6 +104,12 @@ export class ResendEmailSender implements EmailSender {
   constructor(private readonly config: ResendSenderConfig) {}
 
   async send(args: EmailSendArgs): Promise<void> {
+    // args.locale is intentionally not forwarded to Resend — the
+    // EmailSender port lets a sender branch on locale (template
+    // lookup etc.), but for a pure pass-through provider the
+    // upstream caller already built the localized `subject`/`text`/
+    // `html`. If you swap in templated subjects per locale, read
+    // args.locale here.
     const body: Record<string, unknown> = {
       from: this.config.from,
       to: [args.to],
@@ -111,7 +117,13 @@ export class ResendEmailSender implements EmailSender {
       text: args.text,
     };
     if (args.html) body.html = args.html;
-    if (args.category) body.tags = [{ name: "category", value: args.category }];
+    if (args.category) {
+      // Resend tag values are restricted to [A-Za-z0-9_-] — strip
+      // dots / colons / slashes that the SDK uses in category strings
+      // like "auth.email-otp.sign-in" so the API call doesn't 422.
+      const safeValue = args.category.replace(/[^A-Za-z0-9_-]/g, "_");
+      body.tags = [{ name: "category", value: safeValue }];
+    }
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -125,9 +137,13 @@ export class ResendEmailSender implements EmailSender {
     if (!res.ok) {
       // Truncate the body so we don't dump a huge HTML error page into
       // the worker log; 512 bytes is enough to identify the failure.
+      // The recipient's full address is intentionally omitted from the
+      // error to keep PII out of logs — log the domain part only so
+      // ops can still classify failures by destination.
       const detail = (await res.text().catch(() => "")).slice(0, 512);
+      const toDomain = args.to.split("@")[1] ?? "?";
       throw new Error(
-        `Resend send failed for ${args.to} (${res.status}): ${detail}`,
+        `Resend send failed for <…@${toDomain}> (${res.status}): ${detail}`,
       );
     }
   }
@@ -154,10 +170,32 @@ const auth = createAuth({
 });
 ```
 
+### Env wiring
+
 Add `RESEND_API_KEY` (secret) and `EMAIL_FROM` (plain) to your
-`wrangler.toml` / `.dev.vars.example` and you're done. Production
-shops can swap providers by reimplementing the same `EmailSender`
-interface — no SDK or feature changes required.
+Worker's env:
+
+```toml
+# wrangler.toml — non-secret defaults
+[vars]
+EMAIL_FROM = "Acme <auth@example.com>"
+```
+
+```sh
+# .dev.vars (gitignored — local secret + dev fallback)
+RESEND_API_KEY="re_xxxxxxxxxxxx"
+EMAIL_FROM="Acme <auth@example.com>"
+```
+
+Production secrets land via `wrangler secret put RESEND_API_KEY`. Add
+`RESEND_API_KEY=` (blank) to `.dev.vars.example` so contributors know
+to set it locally; never check the real key in. The dev fallback to
+`ConsoleEmailSender` kicks in when `RESEND_API_KEY` is absent — magic
+links print to the worker log, so contributors can still complete
+sign-in without provisioning a Resend account.
+
+Production shops can swap providers by reimplementing the same
+`EmailSender` interface — no SDK or feature changes required.
 
 ### Why not bundle Resend as an SDK / feature dep?
 
