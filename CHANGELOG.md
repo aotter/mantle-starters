@@ -6,6 +6,68 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The repository version reflects the `create-mantle` scaffolder tarball attached to each GitHub release. Individual starter packages pin `@aotter/mantle-*` versions independently inside their own `package.json`.
 
+## [v0.0.11-alpha.16] — 2026-05-25
+
+### Added
+
+- **Customer-account feature**: header session-slot helper
+  `renderAccountSlot(opts)` — drop a `<div data-account-slot>` plus
+  inline bootstrap into the storefront chrome and the slot probes
+  `/api/auth/get-session` to render either an anonymous "Sign in"
+  link or a signed-in dropdown (account home / linked accounts /
+  sign-out). Document-level event delegation, idempotent across
+  multiple slots, restores focus to the trigger on Escape. README
+  documents the HttpOnly cookie sniff trap (#218).
+- **Customer-account feature**: README recipe for Resend
+  `EmailSender` — ~50 LOC pure `fetch`, no pinned `resend` npm dep,
+  with `ConsoleEmailSender` dev fallback (#219).
+- **Transaction starter**: dev-only ECPay callback shim
+  (`enqueueDevCallback`) hard-gated on `MANTLE_LOCAL_DEV === "1"`.
+  Synthesizes a successful `CallbackEvent` from the cart stash so
+  local merchant-form checkout commits without a public webhook
+  URL (#220).
+- **Transaction starter**: customer-account order attribution.
+  `orders.userId` (optional column, snapshotted at commit time),
+  `OrderCart.userId`, `TxHandlerContext.user` / `staff` plumbing,
+  guest orders write `userId: null` explicitly. Skips snapshot
+  when `ctx.staff` is set so staff-assisted checkouts don't
+  mis-attribute (#175 subset).
+- **Transaction starter**: members-only checkout gate.
+  `CHECKOUT_POLICY=members-only` env var enforces a signed-in
+  customer session at `/api/checkout/start` (HTML → 302,
+  XHR → 401 JSON). Default `"open"` is a no-op (#210).
+- **Transaction starter**: `loadOrdersByUser(runtime, userId,
+  limit?)` — cursored pagination over orders with a 10k-row scan
+  cap and a console warn pointing at the right answer (userId-
+  indexed View) for high-volume shops (#175 / #210).
+- **Transaction starter**: carousel module with event delegation.
+  `renderCarousel({ id, slides })`, `renderSlides`, `renderDots`,
+  `CAROUSEL_JS`. One document-level click + ArrowLeft/Right
+  keyboard handler; `innerHTML` rewrites of the track / dots are
+  safe (fix for the NodeList-caching bug in toa-shop's prior
+  carousel) (#166 item 4).
+- **\_common/scripts**: parameterized `migrate-media.mjs` — three
+  resumable phases (plan / encode / upload) gluing
+  `@aotter/mantle-media-tools` to a config-driven workflow.
+  Atomic state writes, env-only bearer preferred, cross-platform
+  `basename`, row-context error reporting (#221).
+
+### Changed
+
+- **All archetypes**: dev guardrails. `.nvmrc` pinning Node 22,
+  `.npmrc` `engine-strict=true`, README install commands use
+  `pnpm install --frozen-lockfile` with a blockquote explaining
+  why CI parity matters (#166 item 3).
+- **Transaction starter**: `transaction/README.md` gains a
+  "Customer accounts + members-only checkout" section laying out
+  the data spine, the four adopter wire-up steps after scaffolding
+  with the feature, and the golden E2E flow.
+
+### Bumped
+
+- `@aotter/mantle*` workspace pin to `0.0.11-alpha.16` across all
+  starters (auto-fanout via aotter/mantle's release.yml).
+
 ## [v0.0.8-alpha] — 2026-05-13
 
 ### Added
