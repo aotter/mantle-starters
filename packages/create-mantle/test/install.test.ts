@@ -289,6 +289,14 @@ describe("installFromExtractedRoot", () => {
     expect(routes).toContain("export function buildFeatureSlugOverrides(");
     expect(routes).toContain("return [];");
     expect(routes).not.toContain("contact");
+
+    const authMethods = readFileSync(
+      join(destination, "src", ".mantle", "generated.auth-methods.ts"),
+      "utf8",
+    );
+    expect(authMethods).toContain("export function buildFeatureAuthMethods(");
+    expect(authMethods).toContain("return [];");
+    expect(authMethods).toContain("export interface FeatureAuthMethodsEnv {}");
   });
 
   it("generates feature glue from a feature's _compose/glue.json", () => {
@@ -2144,6 +2152,133 @@ describe("installFromExtractedRoot", () => {
     // Keys appear alphabetically: a, m, z.
     expect(raw.indexOf('"a"')).toBeLessThan(raw.indexOf('"m"'));
     expect(raw.indexOf('"m"')).toBeLessThan(raw.indexOf('"z"'));
+  });
+
+  it("aggregates auth_methods entries from features in resolver order", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "customer-account", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 2,
+        auth_methods: {
+          imports: [{ named: ["EmailSender"], from: "@aotter/mantle/runtime" }],
+          entries: [
+            "    { kind: \"magic-link\", sender, expiresInSeconds: 900 },",
+            "    { kind: \"email-otp\", sender, otpLength: 6 },",
+          ],
+        },
+      }),
+    );
+    const destination = join(tempRoot, "out-auth-methods");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      features: [{ name: "customer-account" }],
+      destination,
+      extractedRoot,
+      sources: {
+        archetypes: { publication: { path: "publication" } },
+        features: {
+          "customer-account": {
+            path: "registry/features/customer-account",
+            applicableArchetypes: ["publication"],
+          },
+        },
+        themes: {},
+        roadmap: [],
+      },
+    });
+
+    const authMethods = readFileSync(
+      join(destination, "src", ".mantle", "generated.auth-methods.ts"),
+      "utf8",
+    );
+    expect(authMethods).toContain(
+      'import type { AuthMethodConfig } from "@aotter/mantle/cloudflare";',
+    );
+    expect(authMethods).toContain(
+      'import type { EmailSender } from "@aotter/mantle/runtime";',
+    );
+    expect(authMethods).toContain(
+      "export function buildFeatureAuthMethods(",
+    );
+    expect(authMethods).toContain(
+      "env: FeatureAuthMethodsEnv,",
+    );
+    expect(authMethods).toContain("sender: EmailSender,");
+    expect(authMethods).toContain('{ kind: "magic-link", sender, expiresInSeconds: 900 },');
+    expect(authMethods).toContain('{ kind: "email-otp", sender, otpLength: 6 },');
+    // Order preserved in declared sequence.
+    expect(authMethods.indexOf("magic-link")).toBeLessThan(
+      authMethods.indexOf("email-otp"),
+    );
+  });
+
+  it("accepts schemaVersion 2 in _compose/glue.json", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "v2-feature", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 2,
+        auth_methods: { entries: [] },
+      }),
+    );
+    const destination = join(tempRoot, "out-v2");
+    mkdirSync(destination, { recursive: true });
+
+    expect(() =>
+      installFromExtractedRoot({
+        ...commonOpts(),
+        archetype: "publication",
+        features: [{ name: "v2-feature" }],
+        destination,
+        extractedRoot,
+        sources: {
+          archetypes: { publication: { path: "publication" } },
+          features: {
+            "v2-feature": {
+              path: "registry/features/v2-feature",
+              applicableArchetypes: ["publication"],
+            },
+          },
+          themes: {},
+          roadmap: [],
+        },
+      }),
+    ).not.toThrow();
+  });
+
+  it("still rejects schemaVersion 99 with scaffolder-upgrade-required error", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "future", "_compose", "glue.json"),
+      JSON.stringify({ schemaVersion: 99 }),
+    );
+    const destination = join(tempRoot, "out-future");
+    mkdirSync(destination, { recursive: true });
+
+    expect(() =>
+      installFromExtractedRoot({
+        ...commonOpts(),
+        archetype: "publication",
+        features: [{ name: "future" }],
+        destination,
+        extractedRoot,
+        sources: {
+          archetypes: { publication: { path: "publication" } },
+          features: {
+            future: {
+              path: "registry/features/future",
+              applicableArchetypes: ["publication"],
+            },
+          },
+          themes: {},
+          roadmap: [],
+        },
+      }),
+    ).toThrow(/Unsupported _compose\/glue\.json schemaVersion 99/);
   });
 });
 
