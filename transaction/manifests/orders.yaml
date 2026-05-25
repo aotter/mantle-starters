@@ -63,6 +63,13 @@ spec:
       customerName:
         type: string
         description: Optional — set by the staff or admin UI when known.
+      userId:
+        type: string
+        description: |
+          Better Auth `user.id` of the buyer when the buyer was signed in
+          at checkoutStart. Null for guest orders. Snapshotted at commit
+          time so a later sign-in / merge doesn't rewrite history. Used
+          by the `/account` order history to filter rows.
       shippingAddress:
         type: object
         description: Free-shape JSON. Populated when the provider returns address data.

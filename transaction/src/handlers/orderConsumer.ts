@@ -71,6 +71,11 @@ export interface OrderRowData {
   readonly taxMinor?: number;
   readonly customerEmail?: string;
   readonly customerName?: string;
+  /** Better Auth `user.id` if checkoutStart had a customer session,
+   *  null for guest orders. Snapshotted at commit so a later sign-
+   *  in / merge doesn't rewrite history. `undefined` only on rows
+   *  written before #175 landed. (#175) */
+  readonly userId?: string | null;
   readonly paymentProvider?: string;
   readonly paymentIntentId?: string;
   readonly items?: ReadonlyArray<OrderLineItem>;
@@ -294,6 +299,13 @@ function buildOrderRowData(
     taxMinor: 0,
     customerEmail: cart?.customerEmail ?? event.customerEmail ?? "",
     customerName: "",
+    // userId snapshots the buyer's Better Auth user.id when the cart
+    // was started by a signed-in customer. Write `null` explicitly
+    // for guest orders so the row carries an unambiguous "no user
+    // attribution" sentinel rather than just-an-omitted-key (which
+    // makes "guest" indistinguishable from "schema didn't have the
+    // column yet"). The orders-by-user query joins on this field.
+    userId: cart?.userId ?? null,
     paymentProvider: event.provider,
     paymentIntentId: event.paymentIntentId,
     items,

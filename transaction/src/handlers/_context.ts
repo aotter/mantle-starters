@@ -25,6 +25,16 @@ import type { AnyHandler, CmsRuntime } from "@aotter/mantle/runtime";
  */
 export interface TxHandlerContext {
   readonly runtime: CmsRuntime;
+  /** Resolved caller identity. Populated by the SDK's
+   *  `mountServerEndpoints` when the HTTP Trigger carries a Better
+   *  Auth cookie session (#299 + #175). Null for anonymous requests.
+   *  For routes the starter mounts itself (GET pages), the caller
+   *  must populate this from `auth.getSession(req)`. */
+  readonly user?: { readonly id: string } | null;
+  /** Staff-role identity, populated only when the caller has a role
+   *  in STAFF_ROLES. Null for non-staff (including signed-in
+   *  customers). */
+  readonly staff?: { readonly id: string; readonly role: string } | null;
 }
 
 /**
