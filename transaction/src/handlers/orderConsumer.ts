@@ -76,6 +76,19 @@ export interface OrderRowData {
    *  in / merge doesn't rewrite history. `undefined` only on rows
    *  written before #175 landed. (#175) */
   readonly userId?: string | null;
+  /** Customer-supplied shipping address from the checkout form
+   *  (#240). The schema slot was already free-shape JSON; this
+   *  types it. `null` for orders without a collected shipping
+   *  address (digital goods, manual back-office orders). */
+  readonly shippingAddress?: {
+    readonly recipientName: string;
+    readonly phone: string;
+    readonly country: string;
+    readonly postalCode: string;
+    readonly city: string;
+    readonly district?: string;
+    readonly street: string;
+  } | null;
   readonly paymentProvider?: string;
   readonly paymentIntentId?: string;
   readonly items?: ReadonlyArray<OrderLineItem>;
@@ -298,7 +311,11 @@ function buildOrderRowData(
     subtotalMinor: cart?.subtotalMinor ?? event.amount.minor,
     taxMinor: 0,
     customerEmail: cart?.customerEmail ?? event.customerEmail ?? "",
-    customerName: "",
+    // customerName defaults to the recipient on the shipping
+    // address when no other source supplies it — the order page,
+    // packing slip, and CS lookup all want a name on every row.
+    customerName: cart?.shippingAddress?.recipientName ?? "",
+    shippingAddress: cart?.shippingAddress ?? null,
     // userId snapshots the buyer's Better Auth user.id when the cart
     // was started by a signed-in customer. Write `null` explicitly
     // for guest orders so the row carries an unambiguous "no user

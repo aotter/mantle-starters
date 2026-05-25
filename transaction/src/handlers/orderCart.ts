@@ -40,6 +40,22 @@ export interface OrderCartLine {
   readonly variantLabel?: string;
 }
 
+/** Shape of the customer-supplied shipping address threaded
+ *  through checkoutStart → cart stash → order row. Free-shape
+ *  enough to accept any locale's address conventions (TW district,
+ *  US state, JP prefecture all ride `district`). The schema slot
+ *  `orders.shippingAddress` was already free-shape JSON; this is
+ *  the explicit type for the same shape. (#240) */
+export interface ShippingAddress {
+  readonly recipientName: string;
+  readonly phone: string;
+  readonly country: string;
+  readonly postalCode: string;
+  readonly city: string;
+  readonly district?: string;
+  readonly street: string;
+}
+
 export interface OrderCart {
   readonly orderId: string;
   readonly customerEmail: string;
@@ -53,6 +69,12 @@ export interface OrderCart {
    *  re-reading the session (the callback runs server-to-server, no
    *  cookie). Null for guest checkouts. (#175) */
   readonly userId?: string;
+  /** Customer-supplied shipping address from the checkout form.
+   *  Optional — adopters may run checkout without collecting an
+   *  address (digital goods) or may default it server-side. The
+   *  callback consumer copies it to `OrderRowData.shippingAddress`
+   *  for forensics + fulfilment workflows. (#240) */
+  readonly shippingAddress?: ShippingAddress;
 }
 
 export function orderCartKey(orderId: string): string {
