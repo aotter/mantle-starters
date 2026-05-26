@@ -16,6 +16,8 @@
   },
   "scripts": {
     "build": "pnpm -r --filter './packages/**' build",
+    "check:starter-locks": "node scripts/refresh-starter-locks.mjs --check",
+    "refresh:starter-locks": "node scripts/refresh-starter-locks.mjs",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test"
   },
