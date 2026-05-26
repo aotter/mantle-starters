@@ -2,7 +2,12 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, existsSync
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { installFromExtractedRoot, renderImports } from "../src/index.js";
+import {
+  canonicalizeMantleLocaleList,
+  installFromExtractedRoot,
+  InvalidMantleLocaleError,
+  renderImports,
+} from "../src/index.js";
 
 let tempRoot: string;
 
@@ -105,6 +110,42 @@ function commonOpts() {
 }
 
 describe("installFromExtractedRoot", () => {
+  it("canonicalizes Mantle locale inputs before placeholder substitution", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    const destination = join(tempRoot, "out-locales-canonical");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      locales: ["ZH_tw", "en", "zhTW"],
+      archetype: "publication",
+      destination,
+      extractedRoot,
+    });
+
+    const mantle = readFileSync(
+      join(destination, "mantle", "site.md"),
+      "utf8",
+    );
+    expect(mantle).toContain('locales: ["zh-TW","en"]');
+    expect(mantle).toContain("canonical_locale: zh-TW");
+  });
+
+  it("rejects script-subtag locales with region-tag guidance", () => {
+    let err: unknown;
+    try {
+      canonicalizeMantleLocaleList(["zh-Hant", "zh-Hans"], "--locales");
+    } catch (caught) {
+      err = caught;
+    }
+    expect(err).toBeInstanceOf(InvalidMantleLocaleError);
+    const message = (err as Error).message;
+    expect(message).toContain("valid BCP 47");
+    expect(message).toContain("unsupported in Mantle v0.1");
+    expect(message).toContain("zh-TW");
+    expect(message).toContain("zh-CN");
+  });
+
   it("merges _common/ then archetype dir, with archetype winning on conflict", () => {
     const extractedRoot = fixtureExtractedRoot();
     const destination = join(tempRoot, "out");
