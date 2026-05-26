@@ -17,6 +17,7 @@
   "scripts": {
     "build": "pnpm -r --filter './packages/**' build",
     "check:starter-locks": "node scripts/refresh-starter-locks.mjs --check",
+    "check:wrangler-dev": "node scripts/check-wrangler-dev-wrapper.mjs",
     "refresh:starter-locks": "node scripts/refresh-starter-locks.mjs",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test"

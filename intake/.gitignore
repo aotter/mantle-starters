@@ -2,6 +2,7 @@ node_modules/
 dist/
 *.tsbuildinfo
 .wrangler/
+.wrangler-home/
 .wrangler-test/
 .dev.vars
 .dev.vars.*

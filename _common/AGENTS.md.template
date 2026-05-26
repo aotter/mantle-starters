@@ -5,7 +5,7 @@ Public site: {{SITE_URL}}  (placeholder until provision)
 
 ## Commands
 
-- `pnpm dev`          local preview (wrangler dev on :8787)
+- `pnpm dev`          local preview (safe wrangler dev on 127.0.0.1:8787)
 - `pnpm validate`     manifest validation
 - `pnpm typecheck`    TypeScript check
 - `pnpm test`         vitest
