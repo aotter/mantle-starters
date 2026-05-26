@@ -161,6 +161,43 @@ describe("installFromExtractedRoot", () => {
     expect(pkg.devDependencies["@types/node"]).toBe("^25");
   });
 
+  it("does not copy local generated artifacts or private env files", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(join(extractedRoot, "publication", ".fixture.test.sql"), "{{BRAND}}\n");
+    writeFile(join(extractedRoot, "publication", ".fixture.test.kv.json"), "{}\n");
+    writeFile(join(extractedRoot, "publication", ".mantle-seed.sql"), "{{BRAND}}\n");
+    writeFile(join(extractedRoot, "publication", ".dev.vars"), "SECRET=1\n");
+    writeFile(join(extractedRoot, "publication", ".dev.vars.test"), "SECRET=1\n");
+    writeFile(join(extractedRoot, "publication", ".env.local"), "SECRET=1\n");
+    writeFile(join(extractedRoot, "publication", "debug.log"), "noisy\n");
+    writeFile(join(extractedRoot, "publication", ".wrangler-test", "state"), "state\n");
+    writeFile(join(extractedRoot, "publication", ".pnpm-store", "state"), "state\n");
+    writeFile(
+      join(extractedRoot, "publication", ".dev.vars.test.example"),
+      "EXAMPLE=1\n",
+    );
+    const destination = join(tempRoot, "out-generated-artifacts");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      destination,
+      extractedRoot,
+    });
+
+    expect(existsSync(join(destination, ".fixture.test.sql"))).toBe(false);
+    expect(existsSync(join(destination, ".fixture.test.kv.json"))).toBe(false);
+    expect(existsSync(join(destination, ".mantle-seed.sql"))).toBe(false);
+    expect(existsSync(join(destination, ".dev.vars"))).toBe(false);
+    expect(existsSync(join(destination, ".dev.vars.test"))).toBe(false);
+    expect(existsSync(join(destination, ".env.local"))).toBe(false);
+    expect(existsSync(join(destination, "debug.log"))).toBe(false);
+    expect(existsSync(join(destination, ".wrangler-test"))).toBe(false);
+    expect(existsSync(join(destination, ".pnpm-store"))).toBe(false);
+    expect(existsSync(join(destination, ".dev.vars.test.example"))).toBe(true);
+  });
+
   it("emits a feature manifest for resolved source recipes", () => {
     const extractedRoot = fixtureExtractedRoot();
     writeFile(

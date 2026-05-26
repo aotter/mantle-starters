@@ -90,6 +90,8 @@ const PLACEHOLDER_PATH_BLOCKLIST = new Set([
   "node_modules",
   ".git",
   ".wrangler",
+  ".wrangler-test",
+  ".pnpm-store",
   "dist",
   ".tsbuildinfo",
 ]);
@@ -762,7 +764,7 @@ function copyTreeRecording(
   owners: Map<string, CopyLayer>,
 ): void {
   for (const entry of readdirSync(layer.root, { withFileTypes: true })) {
-    if (PLACEHOLDER_PATH_BLOCKLIST.has(entry.name)) continue;
+    if (shouldSkipSourceEntry(entry.name)) continue;
     if (entry.name === "_compose") continue;
     if (isCommonRegistryDirectory(layer, entry.name)) continue;
     const srcPath = join(layer.root, entry.name);
@@ -788,7 +790,7 @@ function copyTreeChildren(
   owners: Map<string, CopyLayer>,
 ): void {
   for (const entry of readdirSync(src, { withFileTypes: true })) {
-    if (PLACEHOLDER_PATH_BLOCKLIST.has(entry.name)) continue;
+    if (shouldSkipSourceEntry(entry.name)) continue;
     if (entry.name === "_compose") continue;
     const srcPath = join(src, entry.name);
     const dstPath = join(dst, entry.name);
@@ -812,6 +814,17 @@ function copyTreeChildren(
       );
     }
   }
+}
+
+function shouldSkipSourceEntry(name: string): boolean {
+  if (PLACEHOLDER_PATH_BLOCKLIST.has(name)) return true;
+  if (name === ".dev.vars") return true;
+  if (name.startsWith(".dev.vars.") && !name.endsWith(".example")) return true;
+  if (name === ".env" || name === ".env.local") return true;
+  if (name.endsWith(".log")) return true;
+  if (/^\.fixture(?:\.[^.]+)?\.(?:sql|kv\.json)$/.test(name)) return true;
+  if (/^\.mantle-seed\.(?:sql|kv\.json)$/.test(name)) return true;
+  return false;
 }
 
 function writeFileForLayer(
