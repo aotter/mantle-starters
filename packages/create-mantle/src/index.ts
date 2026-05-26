@@ -112,6 +112,87 @@ const FILE_EXTENSIONS_FOR_SUBSTITUTION = new Set([
   ".css",
 ]);
 
+const LOCALE_LANG = /^[a-z]{2,3}$/i;
+const LOCALE_REGION = /^[a-z]{2}$/i;
+const LOCALE_COMPACT = /^[a-z]{4,5}$/i;
+const LOCALE_SCRIPT_SUBTAG = /^[a-z]{2,3}[-_][a-z]{4}(?:[-_][a-z]{2})?$/i;
+
+export class InvalidMantleLocaleError extends Error {
+  constructor(
+    public readonly invalidLocales: ReadonlyArray<string>,
+    source: string,
+  ) {
+    const hasScriptSubtag = invalidLocales.some((raw) =>
+      LOCALE_SCRIPT_SUBTAG.test(raw),
+    );
+    super(
+      `Invalid Mantle locale tag(s) in ${source}: ` +
+        invalidLocales.map((s) => `"${s || "<empty>"}"`).join(", ") +
+        `. Use Mantle v0.1 locale form like "en" or "zh-TW": a 2/3-letter language plus optional 2-letter region. ` +
+        (hasScriptSubtag
+          ? `Script subtags such as "zh-Hant", "zh-Hans", "sr-Latn", or "sr-Cyrl" are valid BCP 47 but unsupported in Mantle v0.1; use "zh-TW" for Traditional Chinese or "zh-CN" for Simplified Chinese. `
+          : "") +
+        `See mantle ADR-0010.`,
+    );
+    this.name = "InvalidMantleLocaleError";
+  }
+}
+
+export function canonicalizeMantleLocaleList(
+  locales: ReadonlyArray<string>,
+  source = "locales",
+): ReadonlyArray<string> {
+  const canonical: string[] = [];
+  const invalid: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of locales) {
+    const locale = raw.trim();
+    const value = canonicalizeMantleLocale(locale);
+    if (!value) {
+      invalid.push(raw);
+      continue;
+    }
+    if (!seen.has(value)) {
+      seen.add(value);
+      canonical.push(value);
+    }
+  }
+  if (canonical.length === 0) {
+    throw new InvalidMantleLocaleError(
+      invalid.length > 0 ? invalid : [...locales],
+      source,
+    );
+  }
+  if (invalid.length > 0) {
+    throw new InvalidMantleLocaleError(invalid, source);
+  }
+  return canonical;
+}
+
+function canonicalizeMantleLocale(raw: string): string | null {
+  if (!raw) return null;
+  const parts = raw.split(/[-_]/);
+  if (parts.length === 1) {
+    const compact = parts[0]!;
+    if (LOCALE_LANG.test(compact)) return compact.toLowerCase();
+    if (LOCALE_COMPACT.test(compact)) {
+      const lang = compact.slice(0, -2);
+      const region = compact.slice(-2);
+      if (LOCALE_LANG.test(lang) && LOCALE_REGION.test(region)) {
+        return `${lang.toLowerCase()}-${region.toUpperCase()}`;
+      }
+    }
+    return null;
+  }
+  if (parts.length === 2) {
+    const [lang, region] = parts;
+    if (lang && region && LOCALE_LANG.test(lang) && LOCALE_REGION.test(region)) {
+      return `${lang.toLowerCase()}-${region.toUpperCase()}`;
+    }
+  }
+  return null;
+}
+
 /**
  * Bootstrap a new mantle consumer project from the starters
  * monorepo. Fetches `sources.json` at the requested ref, downloads
@@ -120,13 +201,14 @@ const FILE_EXTENSIONS_FOR_SUBSTITUTION = new Set([
  * `{{PLACEHOLDER}}` macros, and returns a RunNotes shape.
  */
 export async function createMantle(opts: CreateOptions): Promise<RunNotes> {
+  const locales = canonicalizeMantleLocaleList(opts.locales);
   const ref = opts.starterRef ?? "main";
   const sources = await fetchSourcesJson(ref);
   const source = resolveArchetype(opts.archetype, sources);
 
   const extractedRoot = downloadAndExtractTarball(source, ref);
   try {
-    return installFromExtractedRoot({ ...opts, extractedRoot, sources });
+    return installFromExtractedRoot({ ...opts, locales, extractedRoot, sources });
   } finally {
     cleanupTempDir(extractedRoot);
   }
@@ -143,6 +225,7 @@ export function installFromExtractedRoot(
     sources?: SourcesJson;
   },
 ): RunNotes {
+  const locales = canonicalizeMantleLocaleList(opts.locales);
   const sources = opts.sources ?? STALE_FALLBACK_SOURCES;
   const source = resolveArchetype(opts.archetype, sources);
   const themeSource = resolveTheme(opts.theme ?? null, sources);
@@ -159,7 +242,7 @@ export function installFromExtractedRoot(
     features: resolvedFeatures,
     destination: opts.destination,
   });
-  const values = buildPlaceholderValues(opts);
+  const values = buildPlaceholderValues({ ...opts, locales });
   substitutePlaceholdersInTree(opts.destination, values, filesWritten);
   renameDotfilesAfterTemplate(opts.destination, filesWritten);
   resolveCatalogSpecifiers({
