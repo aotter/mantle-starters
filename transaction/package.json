@@ -5,7 +5,7 @@
   "description": "Transaction starter for mantle v0.1.0 — small-scale shop (~100 orders/day): products + cart + payment + orders. Provider-agnostic by design; Mantle wires the actual payment provider (Stripe / ECPay / PayUni / custom) during install. DurableObject inventory authority + Workers Queues for serialized callback processing.",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "node scripts/wrangler-dev.mjs",
     "fixture": "tsx test/fixture/apply-dev.ts",
     "test:integration": "node scripts/run-integration.mjs",
     "smoke": "tsx test/integration/smoke.ts",

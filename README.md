@@ -167,6 +167,11 @@ pnpm typecheck
 pnpm dev
 ```
 
+`pnpm dev` runs the starter's safe Wrangler wrapper: it binds to
+`127.0.0.1:8787`, keeps inspector port selection out of the way, and
+stores Wrangler HOME/XDG/log/state files under project-local ignored
+directories.
+
 The root CI runs the workspace checks across starters and the
 scaffolder, but each starter remains a standalone consumer project.
 Runtime code lives upstream in the `aotter/mantle` packages; this

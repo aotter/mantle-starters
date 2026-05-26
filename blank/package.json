@@ -5,7 +5,7 @@
   "description": "Headless CMS starter for mantle — API + MCP only, no public HTML rendering. Bring your own frontend.",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "node scripts/wrangler-dev.mjs",
     "validate": "mantle validate",
     "validate:deploy": "mantle validate --phase deploy",
     "mantle:prompt": "node scripts/mantle.mjs prompt",

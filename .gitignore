@@ -3,4 +3,5 @@ dist/
 .tsbuildinfo
 *.tgz
 .wrangler/
+.wrangler-home/
 .dev.vars
