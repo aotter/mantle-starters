@@ -65,7 +65,7 @@ jobs:
           token: ${{ secrets.RELEASE_FANOUT_TOKEN }}
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v6.0.5
+      - uses: pnpm/action-setup@v6.0.8
 
       - uses: actions/setup-node@v6
         with:
