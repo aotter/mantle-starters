@@ -40,6 +40,7 @@ export function createPostTemplate(deps: PostTemplateDeps) {
         description={site.description}
         current="posts"
         seo={seo}
+        markdownFeatures
       >
         <article>
           <header class="post-meta">

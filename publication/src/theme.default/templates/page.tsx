@@ -36,6 +36,7 @@ export function createPageTemplate(deps: PageTemplateDeps) {
         description={data.intro ?? site.description}
         current={current}
         seo={seo}
+        markdownFeatures
       >
         <article>
           <header class="post-meta">
