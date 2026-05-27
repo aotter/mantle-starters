@@ -30,6 +30,7 @@ export function createHomeTemplate(deps: HomeTemplateDeps) {
         title={`${home.title} — ${site.brand}`}
         description={home.intro ?? site.description}
         current="home"
+        markdownFeatures
       >
         <section class="hero">
           <div class="eyebrow">{t.eyebrow}</div>
