@@ -5,6 +5,7 @@ import { renderSeoTagsHtml, type SeoMeta } from "@aotter/mantle/runtime";
 import { html, raw } from "hono/html";
 import { HEADER_RUNTIME_JS, SITE_CSS, THEME_BOOTSTRAP_JS } from "../styles.js";
 import { TOKENS_CSS } from "../tokens.js";
+import { MARKDOWN_HEAD_HTML, MARKDOWN_RUNTIME_HTML } from "../markdownAssets.js";
 import {
   PageShell as BaselinePageShell,
   type PageShellComponent,
@@ -45,6 +46,12 @@ export interface LayoutProps {
   readonly current?: HeaderProps["current"];
   readonly seo?: SeoMeta;
   readonly children: unknown;
+  /** Load the GitHub-style markdown client assets (#245): hljs +
+   *  mermaid + code-tab/copy runtime + chrome stylesheets. Opt-in
+   *  per page so landing / contact / 404 (which render no CMS
+   *  markdown) don't pull the CDN libs. Templates that emit
+   *  `renderMarkdown` output (post / page / home) set this true. */
+  readonly markdownFeatures?: boolean;
 }
 
 export type LayoutComponent = (props: LayoutProps) => any;
@@ -79,7 +86,7 @@ export function createLayoutFactory(opts: LayoutFactoryOptions = {}): LayoutComp
   const extraShellProps = opts.pageShellProps ?? {};
 
   return function Layout(props: LayoutProps) {
-    const { site, locale, title, description, ogImage, current, seo, children } = props;
+    const { site, locale, title, description, ogImage, current, seo, children, markdownFeatures } = props;
     return (
       <html lang={locale || site.canonicalLocale || "en"}>
         <head>
@@ -91,6 +98,7 @@ export function createLayoutFactory(opts: LayoutFactoryOptions = {}): LayoutComp
           {!seo && ogImage ? <meta property="og:image" content={ogImage} /> : null}
           <link rel="icon" type="image/svg+xml" href={site.faviconUrl ?? "/favicon.svg"} />
           <style>{raw(SITE_CSS_RESOLVED)}</style>
+          {markdownFeatures ? html`${raw(MARKDOWN_HEAD_HTML)}` : null}
           {html`<script>${raw(THEME_BOOTSTRAP_JS)}</script>`}
         </head>
         <body>
@@ -103,6 +111,7 @@ export function createLayoutFactory(opts: LayoutFactoryOptions = {}): LayoutComp
             {children}
           </PageShellResolved>
           {html`<script>${raw(HEADER_JS_RESOLVED)}</script>`}
+          {markdownFeatures ? html`${raw(MARKDOWN_RUNTIME_HTML)}` : null}
         </body>
       </html>
     );
