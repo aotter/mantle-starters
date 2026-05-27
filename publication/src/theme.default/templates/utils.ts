@@ -106,15 +106,24 @@ const codeGroupExtension: TokenizerAndRendererExtension = {
     // survives (the block lexer would route it through `code` and we'd
     // lose the per-block label association).
     const blocks: Array<{ lang: string; label: string; text: string }> = [];
-    const fence = /```([^\n]*)\n([\s\S]*?)```/g;
+    // Line-anchored fences: opening ``` at line start, closing ``` on
+    // its own line. Tolerates inline backticks inside a panel body
+    // (prose with `inline code`). Limitation: a panel whose body has a
+    // LINE-START ``` (markdown-about-markdown / nested fenced code)
+    // terminates early — rare for install-snippet tabs (the primary
+    // use case); documented if it ever bites.
+    const fence = /^```([^\n]*)\n([\s\S]*?)\n```[ \t]*$/gm;
     let fm: RegExpExecArray | null;
     let idx = 0;
     while ((fm = fence.exec(inner)) !== null) {
       const { lang, label } = parseFenceInfo(fm[1]);
+      // `||` not `??`: an unlabeled, untyped fence has label=undefined
+      // AND lang="" (empty string — `??` would NOT fall through), so
+      // we fall back to a positional "Tab N" label.
       blocks.push({
         lang,
-        label: label ?? lang ?? `Tab ${idx + 1}`,
-        text: fm[2]!.replace(/\n$/, ""),
+        label: label || lang || `Tab ${idx + 1}`,
+        text: fm[2]!,
       });
       idx++;
     }
