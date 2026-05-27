@@ -5,7 +5,7 @@
   "description": "Presence starter for mantle v0.1.0 — landing page and secondary pages. Optional contact form behavior is installed through the contact feature overlay. No article list. Runs on wrangler dev with local D1 + KV.",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "node scripts/wrangler-dev.mjs",
     "fixture": "tsx test/fixture/apply-dev.ts",
     "validate": "mantle validate",
     "validate:deploy": "mantle validate --phase deploy",

@@ -5,7 +5,7 @@
   "description": "Reference publication starter for mantle v0.1.0 — owner-published content (articles / pages / docs-lite). Optional contact form behavior is installed through the contact feature overlay. Runs on wrangler dev with local D1 + KV.",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "node scripts/wrangler-dev.mjs",
     "fixture": "tsx test/fixture/apply-dev.ts",
     "test:integration": "node scripts/run-integration.mjs",
     "mcp-smoke": "tsx test/integration/mcp-smoke.ts",

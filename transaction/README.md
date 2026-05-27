@@ -196,7 +196,7 @@ pnpm fixture
 
 # Live dev (ref handlers throw "not implemented" until PR 2; checkout
 # end-to-end needs a payment provider wired up):
-pnpm dev
+pnpm dev           # safe wrangler dev — http://127.0.0.1:8787
 
 # Integration smoke (PR 1: view REST + HTTP Trigger dispatch +
 # MCP auth gates):
