@@ -23,7 +23,7 @@ Preferred path: open a private GitHub Security Advisory:
 
 https://github.com/aotter/mantle-starters/security/advisories/new
 
-Fallback contact: `phsu@aotter.net` (subject prefix `[mantle-starters security]`).
+Fallback contact: `security@aotter.net` (subject prefix `[mantle-starters security]`).
 
 Include:
 
