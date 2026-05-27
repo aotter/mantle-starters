@@ -2,7 +2,12 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, existsSync
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { installFromExtractedRoot, renderImports } from "../src/index.js";
+import {
+  canonicalizeMantleLocaleList,
+  installFromExtractedRoot,
+  InvalidMantleLocaleError,
+  renderImports,
+} from "../src/index.js";
 
 let tempRoot: string;
 
@@ -105,6 +110,42 @@ function commonOpts() {
 }
 
 describe("installFromExtractedRoot", () => {
+  it("canonicalizes Mantle locale inputs before placeholder substitution", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    const destination = join(tempRoot, "out-locales-canonical");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      locales: ["ZH_tw", "en", "zhTW"],
+      archetype: "publication",
+      destination,
+      extractedRoot,
+    });
+
+    const mantle = readFileSync(
+      join(destination, "mantle", "site.md"),
+      "utf8",
+    );
+    expect(mantle).toContain('locales: ["zh-TW","en"]');
+    expect(mantle).toContain("canonical_locale: zh-TW");
+  });
+
+  it("rejects script-subtag locales with region-tag guidance", () => {
+    let err: unknown;
+    try {
+      canonicalizeMantleLocaleList(["zh-Hant", "zh-Hans"], "--locales");
+    } catch (caught) {
+      err = caught;
+    }
+    expect(err).toBeInstanceOf(InvalidMantleLocaleError);
+    const message = (err as Error).message;
+    expect(message).toContain("valid BCP 47");
+    expect(message).toContain("unsupported in Mantle v0.1");
+    expect(message).toContain("zh-TW");
+    expect(message).toContain("zh-CN");
+  });
+
   it("merges _common/ then archetype dir, with archetype winning on conflict", () => {
     const extractedRoot = fixtureExtractedRoot();
     const destination = join(tempRoot, "out");
@@ -159,6 +200,43 @@ describe("installFromExtractedRoot", () => {
     );
     expect(pkg.dependencies.hono).toBe("^4.12.19");
     expect(pkg.devDependencies["@types/node"]).toBe("^25");
+  });
+
+  it("does not copy local generated artifacts or private env files", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(join(extractedRoot, "publication", ".fixture.test.sql"), "{{BRAND}}\n");
+    writeFile(join(extractedRoot, "publication", ".fixture.test.kv.json"), "{}\n");
+    writeFile(join(extractedRoot, "publication", ".mantle-seed.sql"), "{{BRAND}}\n");
+    writeFile(join(extractedRoot, "publication", ".dev.vars"), "SECRET=1\n");
+    writeFile(join(extractedRoot, "publication", ".dev.vars.test"), "SECRET=1\n");
+    writeFile(join(extractedRoot, "publication", ".env.local"), "SECRET=1\n");
+    writeFile(join(extractedRoot, "publication", "debug.log"), "noisy\n");
+    writeFile(join(extractedRoot, "publication", ".wrangler-test", "state"), "state\n");
+    writeFile(join(extractedRoot, "publication", ".pnpm-store", "state"), "state\n");
+    writeFile(
+      join(extractedRoot, "publication", ".dev.vars.test.example"),
+      "EXAMPLE=1\n",
+    );
+    const destination = join(tempRoot, "out-generated-artifacts");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      destination,
+      extractedRoot,
+    });
+
+    expect(existsSync(join(destination, ".fixture.test.sql"))).toBe(false);
+    expect(existsSync(join(destination, ".fixture.test.kv.json"))).toBe(false);
+    expect(existsSync(join(destination, ".mantle-seed.sql"))).toBe(false);
+    expect(existsSync(join(destination, ".dev.vars"))).toBe(false);
+    expect(existsSync(join(destination, ".dev.vars.test"))).toBe(false);
+    expect(existsSync(join(destination, ".env.local"))).toBe(false);
+    expect(existsSync(join(destination, "debug.log"))).toBe(false);
+    expect(existsSync(join(destination, ".wrangler-test"))).toBe(false);
+    expect(existsSync(join(destination, ".pnpm-store"))).toBe(false);
+    expect(existsSync(join(destination, ".dev.vars.test.example"))).toBe(true);
   });
 
   it("emits a feature manifest for resolved source recipes", () => {

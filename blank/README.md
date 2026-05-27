@@ -97,7 +97,7 @@ openssl rand -hex 32
 Then:
 
 ```bash
-pnpm dev      # wrangler dev — http://localhost:8787
+pnpm dev      # safe wrangler dev — http://127.0.0.1:8787
 ```
 
 Hit `GET http://localhost:8787/api/views/published-notes` to see the

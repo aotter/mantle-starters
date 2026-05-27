@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
-import { createMantle, type FeatureSelection } from "./index.js";
+import {
+  canonicalizeMantleLocaleList,
+  createMantle,
+  type FeatureSelection,
+} from "./index.js";
 
 interface ParsedArgs {
   readonly archetype: string;
@@ -88,10 +92,10 @@ function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
   const brand = required(flags, "brand");
   const description = required(flags, "description");
   const localesRaw = required(flags, "locales");
-  const locales = localesRaw.split(",").map((s) => s.trim()).filter(Boolean);
-  if (locales.length === 0) {
-    throw new Error("--locales must include at least one BCP 47 tag");
-  }
+  const locales = canonicalizeMantleLocaleList(
+    localesRaw.split(",").map((s) => s.trim()),
+    "--locales",
+  );
   const canonicalLocale = flags["canonical-locale"] ?? locales[0]!;
   const githubOwner = required(flags, "github-owner");
   const summary = required(flags, "summary");

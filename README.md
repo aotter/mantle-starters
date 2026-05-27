@@ -122,6 +122,31 @@ for the macro list.
    Runtime fetch picks it up on the next install — no
    `create-mantle` republish required unless merge logic changes.
 
+## Starter Lockfiles
+
+Every starter carries its own standalone `pnpm-lock.yaml` because
+`create-mantle` scaffolds a new consumer project outside this monorepo.
+Do not regenerate those lockfiles from inside the workspace; workspace
+catalog resolution can hide stale standalone locks.
+
+When changing starter dependencies, the root catalog, or any
+`@aotter/mantle*` version, run:
+
+```bash
+pnpm refresh:starter-locks
+```
+
+That script scaffolds each archetype into a temp directory, resolves the
+lockfile as a standalone project, then copies the generated lockfile back
+to the starter directory. CI runs the same flow in check mode:
+
+```bash
+pnpm check:starter-locks
+```
+
+If this check fails, do not hand-edit `pnpm-lock.yaml`; run the refresh
+script and commit the resulting lockfile changes.
+
 ## Adding a theme
 
 1. Create a new directory under `themes/<key>/` (e.g.
@@ -141,6 +166,11 @@ pnpm validate
 pnpm typecheck
 pnpm dev
 ```
+
+`pnpm dev` runs the starter's safe Wrangler wrapper: it binds to
+`127.0.0.1:8787`, keeps inspector port selection out of the way, and
+stores Wrangler HOME/XDG/log/state files under project-local ignored
+directories.
 
 The root CI runs the workspace checks across starters and the
 scaffolder, but each starter remains a standalone consumer project.
