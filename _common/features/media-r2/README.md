@@ -55,13 +55,27 @@ clear dashboard links for the parts it can't. In order:
      URL.
 5. **Prompts for the R2 S3 API token** — created at
    `Cloudflare dashboard → R2 → Manage R2 API Tokens` with
-   object-write scope on the MEDIA bucket. The script prints the URL.
-   The endpoint + access-key pair go through `wrangler secret put`
-   (the two secrets) or as `[vars]` lines (the two non-secret values
-   — the script prints them for you to paste).
-6. **Smoke test** (coming in a follow-up; v1 prints next steps) —
-   deploy worker, run create_media_upload → PUT → commit → fetch
-   publicUrl, assert 200.
+   object-write scope on the MEDIA bucket. The script prints the
+   URL. The Access Key ID prompt echoes normally; the Secret Access
+   Key prompt has terminal echo OFF so the secret doesn't sit in
+   scroll history. Secrets go through `wrangler secret put`; the
+   public values (`MEDIA_PUBLIC_URL_BASE`, `MEDIA_S3_ENDPOINT`) are
+   printed as `[vars]` lines for the operator to paste.
+
+### Planned (not in v1)
+
+- **End-of-flow smoke test**: deploy worker, run
+  `create_media_upload → PUT → commit → fetch publicUrl`, assert
+  200. v1 prints next-step instructions instead so the operator
+  verifies manually.
+- **Auto-edit of `wrangler.toml [vars]`**: v1 prints the lines for
+  the operator to paste (avoids a destructive merge against unsaved
+  local edits). A future pass can attempt a non-destructive patch
+  with a confirmation diff.
+- **Non-TTY (CI) flow**: the secret prompt falls back to plain
+  echo'd input when stdin isn't a TTY (pipe / CI). Piped invocations
+  should pre-set env vars and skip the interactive path — a
+  `--from-env` flag is on the roadmap.
 
 ## Variables this feature declares
 

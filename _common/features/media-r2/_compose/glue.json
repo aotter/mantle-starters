@@ -31,7 +31,7 @@
     }
   ],
   "provision": {
-    "from": "./scripts/install-steps.mjs",
+    "from": "./install-steps.mjs",
     "binding": "installSteps"
   }
 }

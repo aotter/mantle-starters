@@ -43,8 +43,27 @@ const STEP_HEAD = "──────────";
 const ERR_HEAD = "✗";
 const OK_HEAD = "✓";
 
-const BUCKET_NAME = process.env.MEDIA_BUCKET_NAME ?? "mantle-media";
-const PREVIEW_BUCKET_NAME = process.env.MEDIA_PREVIEW_BUCKET_NAME ?? "mantle-media-preview";
+// R2 / S3 bucket-name rules: lowercase alphanumeric + hyphens,
+// 3-63 chars, no leading / trailing hyphen. Validate up front so a
+// bad env override doesn't reach wrangler as a confusing failure
+// halfway through.
+const BUCKET_NAME_RE = /^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/;
+const BUCKET_NAME = validateBucketName(
+  process.env.MEDIA_BUCKET_NAME ?? "mantle-media",
+);
+const PREVIEW_BUCKET_NAME = validateBucketName(
+  process.env.MEDIA_PREVIEW_BUCKET_NAME ?? "mantle-media-preview",
+);
+
+function validateBucketName(name) {
+  if (!BUCKET_NAME_RE.test(name)) {
+    process.stderr.write(
+      `media-r2: bucket name "${name}" doesn't match R2 rules (3-63 chars, lowercase alphanumeric + hyphens, no leading/trailing hyphen).\n`,
+    );
+    process.exit(1);
+  }
+  return name;
+}
 
 async function main() {
   log(`${STEP_HEAD} media-r2 opt-in provisioning ${STEP_HEAD}`);
@@ -91,7 +110,14 @@ async function createBucket(name) {
   const existing = await runCapture("wrangler", ["r2", "bucket", "list"], {
     allowNonZero: true,
   });
-  if (existing.stdout.includes(name)) {
+  // Line-anchored EXACT match — naive `includes` falsely skips
+  // creating `mantle-media` when `mantle-media-preview` already
+  // exists (the latter contains the former as a substring).
+  const matcher = new RegExp(
+    `^\\s*${name.replace(/[-]/g, "\\-")}(?:\\s|$)`,
+    "m",
+  );
+  if (matcher.test(existing.stdout)) {
     log(`${OK_HEAD} bucket "${name}" exists — skipping create.`);
     return;
   }
@@ -171,7 +197,10 @@ async function promptCredentials() {
     fail("Endpoint must match https://<account-id>.r2.cloudflarestorage.com");
   }
   const accessKey = (await prompt("Access Key ID:")).trim();
-  const secretKey = (await prompt("Secret Access Key:")).trim();
+  // Secret is read with echo OFF (terminal raw mode) so it doesn't
+  // sit in scroll history; the value still flows to wrangler via
+  // stdin (never argv / disk).
+  const secretKey = (await promptSecret("Secret Access Key (input hidden):")).trim();
   if (!accessKey || !secretKey) fail("Both keys are required.");
   return { endpoint, accessKey, secretKey };
 }
@@ -224,6 +253,57 @@ function prompt(question) {
       rl.close();
       res(answer);
     });
+  });
+}
+
+/** Like prompt(), but suppresses echo. Works in any TTY with raw
+ *  mode (i.e. interactive shell). In a non-TTY pipe (test harness)
+ *  it falls back to plain prompt so input still flows. */
+function promptSecret(question) {
+  return new Promise((res) => {
+    if (!process.stdin.isTTY) {
+      // Non-interactive (CI / pipe) — fall back to plain prompt so
+      // input still flows. README documents that interactive use
+      // gets the no-echo path.
+      return res(prompt(question));
+    }
+    process.stdout.write(question + " ");
+    const stdin = process.stdin;
+    let buf = "";
+    const onData = (data) => {
+      const s = data.toString();
+      for (const ch of s) {
+        const code = ch.charCodeAt(0);
+        if (code === 10 || code === 13) {
+          // Enter — finish.
+          stdin.setRawMode(false);
+          stdin.pause();
+          stdin.removeListener("data", onData);
+          process.stdout.write("\n");
+          res(buf);
+          return;
+        }
+        if (code === 3) {
+          // Ctrl-C — abort cleanly, don't print the secret.
+          stdin.setRawMode(false);
+          stdin.pause();
+          process.stdout.write("\n");
+          process.exit(130);
+        }
+        if (code === 127 || code === 8) {
+          // Backspace / DEL — drop the last char.
+          if (buf.length > 0) buf = buf.slice(0, -1);
+        } else if (code >= 32) {
+          // Printable — accumulate (silently; no echo to terminal).
+          buf += ch;
+        }
+        // Other control chars (arrow keys, etc.) are swallowed.
+      }
+    };
+    stdin.setRawMode(true);
+    stdin.resume();
+    stdin.setEncoding("utf8");
+    stdin.on("data", onData);
   });
 }
 
