@@ -1061,6 +1061,11 @@ const MERGE_TABLE_KEY_RE = /^(vars|env\.[A-Za-z0-9_-]+\.vars)$/;
 const ARRAY_TABLE_ALLOWED: ReadonlySet<string> = new Set([
   "d1_databases",
   "kv_namespaces",
+  // r2_buckets unblocks the `media-r2` feature overlay (#252):
+  // selecting the feature merges in a `[[r2_buckets]] binding = "MEDIA"`
+  // stanza. Same binding-key dedup as d1 / kv — adding the same
+  // binding twice with conflicting config still errors.
+  "r2_buckets",
 ]);
 
 function mergeComposableWrangler(
@@ -1111,7 +1116,7 @@ function parseWranglerBlocks(text: string, source: string): WranglerBlock[] {
     if (block.kind === "table" && MERGE_TABLE_KEY_RE.test(block.key)) continue;
     if (block.kind === "array-table" && ARRAY_TABLE_ALLOWED.has(block.key)) continue;
     throw new Error(
-      `Wrangler composer cannot handle section [${block.kind === "array-table" ? `[${block.key}]` : block.key}] from ${source}. Supported sections: [vars], [env.<env>.vars], [[d1_databases]], [[kv_namespaces]]. Other sections (queues, services, durable objects, etc.) are not yet supported.`,
+      `Wrangler composer cannot handle section [${block.kind === "array-table" ? `[${block.key}]` : block.key}] from ${source}. Supported sections: [vars], [env.<env>.vars], [[d1_databases]], [[kv_namespaces]], [[r2_buckets]]. Other sections (queues, services, durable objects, etc.) are not yet supported.`,
     );
   }
   return blocks;
