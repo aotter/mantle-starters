@@ -1891,6 +1891,61 @@ describe("installFromExtractedRoot", () => {
     expect(merged).toContain('TURNSTILE_SITE_KEY = "1x00"');
   });
 
+  it("merges wrangler.toml [[r2_buckets]] from a feature with binding-key dedup (#250)", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "publication", "wrangler.toml"),
+      [
+        'name = "demo"',
+        "",
+        "[[d1_databases]]",
+        'binding = "DB"',
+        'database_id = "abc"',
+        "",
+      ].join("\n"),
+    );
+    // Feature ships an `[[r2_buckets]]` block — the composer should
+    // merge it in (parallel to how it already handles d1_databases /
+    // kv_namespaces). Pre-#250 this errored with "cannot handle
+    // section".
+    writeFile(
+      join(extractedRoot, "registry", "features", "media-r2", "wrangler.toml"),
+      [
+        "[[r2_buckets]]",
+        'binding = "MEDIA"',
+        'bucket_name = "mantle-media"',
+        "",
+      ].join("\n"),
+    );
+    const destination = join(tempRoot, "out-r2-merge");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      features: [{ name: "media-r2" }],
+      destination,
+      extractedRoot,
+      sources: {
+        archetypes: { publication: { path: "publication" } },
+        features: {
+          "media-r2": {
+            path: "registry/features/media-r2",
+            applicableArchetypes: ["publication"],
+          },
+        },
+        themes: {},
+        roadmap: [],
+      },
+    });
+
+    const merged = readFileSync(join(destination, "wrangler.toml"), "utf8");
+    expect(merged).toContain('binding = "DB"');
+    expect(merged).toContain("[[r2_buckets]]");
+    expect(merged).toContain('binding = "MEDIA"');
+    expect(merged).toContain('bucket_name = "mantle-media"');
+  });
+
   it("rejects wrangler.toml [vars] divergent value with both layers named", () => {
     const extractedRoot = fixtureExtractedRoot();
     writeFile(
