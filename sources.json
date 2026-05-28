@@ -56,6 +56,16 @@
       "registryDependencies": [
         "customer-account"
       ]
+    },
+    "media-r2": {
+      "path": "_common/features/media-r2",
+      "title": "Media hosting on R2 (opt-in)",
+      "summary": "Opt-in R2-backed media hosting. Wires the [[r2_buckets]] binding + four env vars + an interactive `media-r2:provision` script that drives bucket create, CORS, and secret put. First-run install stays R2-free; the script is only run when the operator is ready to open Cloudflare billing.",
+      "applicableArchetypes": [
+        "transaction",
+        "publication",
+        "intake"
+      ]
     }
   },
   "themes": {

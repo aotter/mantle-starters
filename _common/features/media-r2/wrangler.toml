@@ -1,0 +1,4 @@
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "mantle-media"
+preview_bucket_name = "mantle-media-preview"
