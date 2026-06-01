@@ -5,6 +5,7 @@ import { html, raw } from "hono/html";
 import overrides from "../../theme/index.js";
 import { HEADER_RUNTIME_JS, SITE_CSS, THEME_BOOTSTRAP_JS } from "../styles.js";
 import { TOKENS_CSS } from "../tokens.js";
+import { GENERATED_EXPERIENCE_CSS, GENERATED_EXPERIENCE_JS } from "../generatedExperience.js";
 import { PageShell as BaselinePageShell } from "./PageShell.js";
 import type { HeaderProps } from "./Header.js";
 
@@ -47,7 +48,7 @@ export interface LayoutProps {
 
 const PageShell = overrides.components?.PageShell ?? BaselinePageShell;
 const SITE_CSS_RESOLVED =
-  TOKENS_CSS + (overrides.tokens ?? "") + SITE_CSS + (overrides.extraCss ?? "");
+  TOKENS_CSS + (overrides.tokens ?? "") + SITE_CSS + GENERATED_EXPERIENCE_CSS + (overrides.extraCss ?? "");
 
 export function Layout(props: LayoutProps) {
   const { site, locale, title, description, ogImage, current, seo, children } = props;
@@ -68,7 +69,7 @@ export function Layout(props: LayoutProps) {
         <PageShell site={site} locale={locale} current={current}>
           {children}
         </PageShell>
-        {html`<script>${raw(HEADER_RUNTIME_JS)}</script>`}
+        {html`<script>${raw(HEADER_RUNTIME_JS + GENERATED_EXPERIENCE_JS)}</script>`}
       </body>
     </html>
   );
