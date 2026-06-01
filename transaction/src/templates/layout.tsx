@@ -1,6 +1,11 @@
 /** @jsxImportSource hono/jsx */
 import { raw } from "hono/html";
 import type { SiteConfig } from "@aotter/mantle/spec";
+import {
+  GeneratedExperience,
+  GENERATED_EXPERIENCE_CSS,
+  GENERATED_EXPERIENCE_JS,
+} from "./generatedExperience.js";
 
 /**
  * Minimal HTML doc envelope for the customer-facing storefront.
@@ -123,6 +128,7 @@ const INLINE_CSS = `
     text-align: center; padding: 2rem 1rem; color: var(--muted);
     font-size: 0.85rem; border-top: 1px solid var(--border); margin-top: 4rem;
   }
+  ${GENERATED_EXPERIENCE_CSS}
 `;
 
 // Bootstraps three things every page needs in client JS:
@@ -155,6 +161,7 @@ const BOOTSTRAP_JS = `
     } catch (_) { /* keep raw — non-JSON body, e.g. HTML 5xx */ }
     return rawText;
   };
+  ${GENERATED_EXPERIENCE_JS}
 `;
 
 export interface LayoutContext {
@@ -192,6 +199,7 @@ export function Layout(props: LayoutContext) {
           {site.brand}
           {site.description ? ` · ${site.description}` : ""}
         </footer>
+        <GeneratedExperience />
       </body>
     </html>
   );
