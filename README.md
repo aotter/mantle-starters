@@ -24,7 +24,7 @@ That repo mirrors `_common/`; sync strategy is TBD.
 Recommended path:
 
 1. Open the Mantle landing page.
-2. Pick an archetype and optional theme.
+2. Pick an archetype, optional theme, and optional feature overlays.
 3. Paste the generated prompt into Claude Code / Cursor / Codex.
 
 That route runs the [`mantle` install Skill](https://github.com/aotter/mantle/tree/develop/skills/install), which interviews the user for brand, locales, audience, and deployment intent before invoking the scaffolder.
@@ -38,7 +38,7 @@ command. If you're already past the interview or testing this repo and want to i
 scaffolder directly, the command shape is:
 
 ```bash
-npx https://github.com/aotter/mantle-starters/releases/download/v0.0.11-alpha.13/aotter-create-mantle.tgz <archetype> \
+npx https://github.com/aotter/mantle-starters/releases/download/v0.0.11-alpha.16/aotter-create-mantle.tgz <archetype> \
   --project-name "<my-site>" \
   --brand "<My Brand>" \
   --description "<one-line site description>" \
@@ -46,6 +46,7 @@ npx https://github.com/aotter/mantle-starters/releases/download/v0.0.11-alpha.13
   --github-owner "<your-github-login>" \
   --summary "<install-moment marker>"
   # optional: --theme <theme>     (l4-minimal-ink | l4-editorial-warm | l4-editorial-journal | l4-playful-pop)
+  # optional: --feature <feature> (repeat or comma-separate; e.g. contact, customer-account)
 ```
 
 Use a versioned release URL while Mantle is on alpha prereleases. GitHub's
@@ -55,11 +56,11 @@ there is no stable release yet.
 `<archetype>` is one of: `presence`, `publication`, `intake`,
 `transaction`, `blank`. The CLI fetches `sources.json` at runtime,
 downloads the matching starter tarball, merges `_common/` +
-`<archetype>/` + optional `themes/<theme>/`, fills `{{BRAND}}` /
-`{{LOCALES}}` / `{{DESCRIPTION}}` placeholders, runs `git init` +
-`pnpm install`, and prints RUN_NOTES JSON. After it returns, `cd
-<my-site>` and follow that directory's own README for the local-dev
-Quickstart.
+`<archetype>/` + selected feature overlays + optional `themes/<theme>/`,
+fills `{{BRAND}}` / `{{LOCALES}}` / `{{DESCRIPTION}}` placeholders,
+runs `git init` + `pnpm install`, and prints RUN_NOTES JSON. After it
+returns, `cd <my-site>` and follow that directory's own README for the
+local-dev Quickstart.
 
 For SDK/runtime internals, release policy, and agent skills, go back to
 [`aotter/mantle`](https://github.com/aotter/mantle). This repo is
@@ -83,7 +84,7 @@ mantle-starters/
 ├── membership/                ← roadmap placeholder
 ├── blank/                     ← headless API + MCP starter
 ├── themes/                    ← theme overlays (artist-designed; v0.0.9+)
-└── sources.json               ← archetype + theme dispatch (runtime-fetched)
+└── sources.json               ← archetype + feature + theme dispatch
 ```
 
 Each archetype has its own top-level directory — there is no shared base
@@ -93,11 +94,11 @@ readable, validatable, and forkable.
 ## Source map (`sources.json`)
 
 `sources.json` at the repo root is the authoritative dispatch from
-archetype / theme key → starter directory + theme overlays.
+archetype / feature / theme key → source directory.
 `create-mantle` fetches it at runtime
 (`raw.githubusercontent.com/aotter/mantle-starters/<ref>/sources.json`)
-on every install. Adding an archetype or theme = update this file; no
-SDK publish is needed unless merge logic changes.
+on every install. Adding an archetype, feature, or theme = update this
+file; no SDK publish is needed unless merge logic changes.
 
 ## Install merge order
 
@@ -106,7 +107,8 @@ For each install, `create-mantle` extracts files in this order
 
 1. `_common/<file>` → `<file>` (`.template` suffix stripped)
 2. `<archetype>/<file>` → `<file>`
-3. Each theme overlay listed in the request, in order
+3. Selected feature overlays, in dependency order
+4. Each theme overlay listed in the request, in order
 
 Then `{{PLACEHOLDER}}` macros are substituted across the result. See
 [`aotter/mantle` ADR-0016](https://github.com/aotter/mantle/blob/develop/docs/adr/0016-site-semantic-layer.md)

@@ -725,23 +725,39 @@ The base `scripts/provision.mjs` owns the user-facing CLI and shared context.
 
 ## CLI Shape
 
-Create-time install:
+Current alpha create-time install uses the release tarball-backed
+`create-mantle` binary:
 
 ```bash
-pnpm create mantle my-site --archetype publication --feature contact
+npx https://github.com/aotter/mantle-starters/releases/download/<tag>/aotter-create-mantle.tgz publication \
+  --project-name my-site \
+  --brand "My Site" \
+  --description "A publication site" \
+  --locales "en" \
+  --github-owner my-login \
+  --summary "Install My Site" \
+  --feature contact
 ```
 
 Multiple features:
 
 ```bash
-pnpm create mantle shop --archetype transaction --feature wishlist
+npx https://github.com/aotter/mantle-starters/releases/download/<tag>/aotter-create-mantle.tgz transaction \
+  --project-name shop \
+  --brand "Shop" \
+  --description "A transaction site" \
+  --locales "en" \
+  --github-owner my-login \
+  --summary "Install Shop" \
+  --feature members-only-purchase
 ```
 
-If `wishlist` depends on `customer-account`, the CLI should print the resolved
-additions:
+If `members-only-purchase` depends on `customer-account`, the scaffolder should
+record the resolved additions in `.mantle/features.json` and RUN_NOTES:
 
 ```text
-wishlist requires customer-account. Adding both.
+customer-account
+members-only-purchase
 ```
 
 Future commands can follow the same philosophy:

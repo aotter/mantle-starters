@@ -98,6 +98,36 @@ export const STALE_FALLBACK_SOURCES: SourcesJson = {
       summary: "Contact form with CAPTCHA guard and Slack notification stub.",
       applicableArchetypes: ["publication", "presence", "intake"],
     },
+    "customer-account": {
+      path: "_common/features/customer-account",
+      title: "Customer Account",
+      summary:
+        "Passwordless customer sign-in (magic-link + email-OTP) plus a /account dashboard, linked-accounts settings, and a server-side session helper.",
+      applicableArchetypes: ["transaction"],
+    },
+    "members-only-purchase": {
+      path: "_common/features/members-only-purchase",
+      title: "Members-only Purchase",
+      summary:
+        'Requires a signed-in customer session before checkout. Reads CHECKOUT_POLICY env ("open" | "members-only"); host wires the guard at the top of /api/checkout/start.',
+      applicableArchetypes: ["transaction"],
+      registryDependencies: ["customer-account"],
+    },
+    "customer-profile": {
+      path: "_common/features/customer-profile",
+      title: "Customer Profile (Addresses)",
+      summary:
+        "KV-backed profile + shipping-address book at /account/profile. Add / remove / set-default form-POST UI; no JS required. Depends on customer-account for the session helper.",
+      applicableArchetypes: ["transaction"],
+      registryDependencies: ["customer-account"],
+    },
+    "media-r2": {
+      path: "_common/features/media-r2",
+      title: "Media hosting on R2 (opt-in)",
+      summary:
+        "Opt-in R2-backed media hosting. Wires the [[r2_buckets]] binding + four env vars + an interactive `media-r2:provision` script that drives bucket create, CORS, and secret put. First-run install stays R2-free; the script is only run when the operator is ready to open Cloudflare billing.",
+      applicableArchetypes: ["transaction", "publication", "intake"],
+    },
   },
   themes: {
     "l4-minimal-ink": { path: "themes/l4-minimal-ink" },
@@ -106,7 +136,7 @@ export const STALE_FALLBACK_SOURCES: SourcesJson = {
     "l4-playful-pop": { path: "themes/l4-playful-pop" },
   },
   roadmap: ["reservation", "community", "membership"],
-  version: "0.0.11-alpha.14",
+  version: "0.0.11-alpha.16",
 };
 
 /**
