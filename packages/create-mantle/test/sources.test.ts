@@ -63,6 +63,28 @@ describe("resolveSource (back-compat, stale fallback)", () => {
     });
   });
 
+  it("keeps public feature keys in the stale fallback", () => {
+    expect(
+      resolveFeatures([{ name: "contact" }], "publication", STALE_FALLBACK_SOURCES)
+        .map((feature) => feature.name),
+    ).toEqual(["contact"]);
+    expect(
+      resolveFeatures(
+        [{ name: "members-only-purchase" }],
+        "transaction",
+        STALE_FALLBACK_SOURCES,
+      ).map((feature) => feature.name),
+    ).toEqual(["customer-account", "members-only-purchase"]);
+    expect(
+      resolveFeatures([{ name: "customer-profile" }], "transaction", STALE_FALLBACK_SOURCES)
+        .map((feature) => feature.name),
+    ).toEqual(["customer-account", "customer-profile"]);
+    expect(
+      resolveFeatures([{ name: "media-r2" }], "publication", STALE_FALLBACK_SOURCES)
+        .map((feature) => feature.name),
+    ).toEqual(["media-r2"]);
+  });
+
   it("every roadmap archetype is absent from SOURCES", () => {
     for (const k of ROADMAP_ARCHETYPES) {
       expect(SOURCES[k]).toBeUndefined();

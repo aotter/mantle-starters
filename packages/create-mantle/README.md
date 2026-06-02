@@ -6,7 +6,7 @@ package. The package name and `create-mantle` bin exist so `npx` can run
 the GitHub release tarball directly.
 
 ```bash
-npx https://github.com/aotter/mantle-starters/releases/download/v0.0.11-alpha.13/aotter-create-mantle.tgz \
+npx https://github.com/aotter/mantle-starters/releases/download/v0.0.11-alpha.16/aotter-create-mantle.tgz \
   <archetype> \
   --project-name <name> \
   --brand "<brand>" \
@@ -15,19 +15,31 @@ npx https://github.com/aotter/mantle-starters/releases/download/v0.0.11-alpha.13
   --github-owner <gh-login> \
   --summary "<Mantle's one-line install description>" \
   [--theme <theme-key>] \
+  [--feature <name[,name:variant]>] \
   [--ref <git-ref>]
 ```
 
 Use a versioned release URL for alpha builds. GitHub does not resolve
 prereleases through `/releases/latest/`.
 
-Recommended end-user path: open the Mantle landing page, pick an archetype and theme, then paste the generated prompt into Claude Code / Cursor / Codex. The Mantle install skill in [`aotter/mantle`](https://github.com/aotter/mantle/tree/develop/skills/install) invokes this package after it interviews the user for brand, locales, audience, and deployment intent.
+Recommended end-user path: open the Mantle landing page, pick an archetype,
+theme, and optional feature overlays, then paste the generated prompt into
+Claude Code / Cursor / Codex. The Mantle install skill in
+[`aotter/mantle`](https://github.com/aotter/mantle/tree/develop/skills/install)
+invokes this package after it interviews the user for brand, locales, audience,
+and deployment intent.
 
 ## What it does
 
-1. Fetches `sources.json` from `aotter/mantle-starters` at the requested ref (default `develop`) — resolves archetype -> starter path + (optional) theme overlay. Falls back to a bundled stale snapshot if GH is unreachable.
+1. Fetches `sources.json` from `aotter/mantle-starters` at the requested ref
+   (default `main`) — resolves archetype -> starter path + requested feature
+   overlays + optional theme overlay. Falls back to a bundled stale snapshot if
+   GH is unreachable.
 2. Downloads a tarball of `mantle-starters` at the same ref.
-3. Extracts and merges into the destination directory in this order: `_common/` → `<archetype>/` → each archetype overlay (in order) → (optional) `themes/<theme-key>/`. Later layers overwrite earlier files on conflict.
+3. Extracts and merges into the destination directory in this order: `_common/`
+   → `<archetype>/` → selected feature overlays in dependency order →
+   (optional) `themes/<theme-key>/`. Later layers overwrite earlier files only
+   for registered composable targets; other feature conflicts fail.
 4. Substitutes `{{PLACEHOLDER}}` macros per ADR-0016.
 5. Renames `<file>.template` → `<file>` (so `_common/AGENTS.md.template` lands as `AGENTS.md`).
 6. Fails fast if any `{{PLACEHOLDER}}` remains.
@@ -47,7 +59,8 @@ Recommended end-user path: open the Mantle landing page, pick an archetype and t
 | `--github-owner` | yes | — | Becomes `ADMIN_GITHUB_LOGIN`. |
 | `--summary` | yes | — | Mantle's one-line install summary; lands in `mantle/site.md` `revisions[0].summary`. |
 | `--theme` | no | none | Theme overlay key resolved against `sources.themes`. |
-| `--ref` | no | `develop` | Git ref for both `sources.json` and the tarball. `--starter-ref` retained as alias. |
+| `--feature` / `--features` | no | none | Source-first feature recipes. Repeat or comma-separate. Variants use `name:variant`. |
+| `--ref` | no | `main` | Git ref for both `sources.json` and the tarball. `--starter-ref` retained as alias. |
 
 ## RUN_NOTES JSON shape
 
@@ -55,7 +68,8 @@ Recommended end-user path: open the Mantle landing page, pick an archetype and t
 {
   "archetype": "presence",
   "theme": null,
-  "starter_source": "aotter/mantle-starters/publication",
+  "features": [],
+  "starter_source": "aotter/mantle-starters/presence",
   "theme_source": null,
   "overlays": [],
   "files_written": ["AGENTS.md", "mantle/site.md", "package.json", "..."],
@@ -69,6 +83,15 @@ With a theme applied:
 {
   "archetype": "publication",
   "theme": "l4-editorial-warm",
+  "features": [
+    {
+      "name": "contact",
+      "type": "registry:feature",
+      "variant": null,
+      "path": "_common/features/contact",
+      "registry_dependencies": []
+    }
+  ],
   "starter_source": "aotter/mantle-starters/publication",
   "theme_source": "aotter/mantle-starters/themes/l4-editorial-warm",
   ...
@@ -88,6 +111,30 @@ With a theme applied:
     "transaction": { "path": "transaction" },
     "blank":       { "path": "blank" }
   },
+  "features": {
+    "contact": {
+      "path": "_common/features/contact",
+      "applicableArchetypes": ["publication", "presence", "intake"]
+    },
+    "customer-account": {
+      "path": "_common/features/customer-account",
+      "applicableArchetypes": ["transaction"]
+    },
+    "members-only-purchase": {
+      "path": "_common/features/members-only-purchase",
+      "applicableArchetypes": ["transaction"],
+      "registryDependencies": ["customer-account"]
+    },
+    "customer-profile": {
+      "path": "_common/features/customer-profile",
+      "applicableArchetypes": ["transaction"],
+      "registryDependencies": ["customer-account"]
+    },
+    "media-r2": {
+      "path": "_common/features/media-r2",
+      "applicableArchetypes": ["transaction", "publication", "intake"]
+    }
+  },
   "themes": {
     "l4-minimal-ink":       { "path": "themes/l4-minimal-ink" },
     "l4-editorial-warm":    { "path": "themes/l4-editorial-warm" },
@@ -98,20 +145,24 @@ With a theme applied:
 }
 ```
 
-Adding an archetype or theme = update `sources.json` in `mantle-starters`. This package does not need a new version unless the merge logic itself changes.
+Adding an archetype, feature, or theme = update `sources.json` in
+`mantle-starters`. This package does not need a new version unless the merge
+logic itself changes.
 
 Fetch failures (network down, GH unreachable, schema invalid) fall back to a bundled snapshot in `src/sources.ts` (`STALE_FALLBACK_SOURCES`); a warning lands on stderr.
 
 ## Source layering
 
 ```
-_common/<file>          → <file>
-<archetype>/<file>      → <file>      (overwrites _common on conflict)
-overlays[i]/<file>      → <file>      (overwrites earlier on conflict; in order)
-themes/<theme>/<file>   → <file>      (last; theme wins on conflict)
+_common/<file>            → <file>
+<archetype>/<file>        → <file>      (overwrites _common on conflict)
+features[i]/<file>        → <file>      (feature order is dependency order)
+themes/<theme>/<file>     → <file>      (last; bounded to src/theme/**)
 ```
 
-`_common/` carries the AGENTS.md + mantle/site.md backbone; archetype dirs carry the runtime code, manifests, and scripts; theme overlays touch `src/theme/` only.
+`_common/` carries the AGENTS.md + mantle/site.md backbone; archetype dirs carry
+the runtime code, manifests, and scripts; feature overlays copy source and
+compose registered integration targets; theme overlays touch `src/theme/` only.
 
 ## Local dev
 
@@ -134,4 +185,5 @@ The starters' own `setup:site` script keeps working for in-project reconfigurati
 - [ADR-0016](https://github.com/aotter/mantle/blob/develop/docs/adr/0016-site-semantic-layer.md) — placeholder macro list + update workflow
 - [ADR-0013](https://github.com/aotter/mantle/blob/develop/docs/adr/0013-agent-provisioned-consumer-projects.md) — the broader agent-provisioned install flow
 - [Epic #116](https://github.com/aotter/mantle/issues/116) — v0.0.9 install UX pivot (Mantle scope narrow + 1:1 starter + theme overlay; this package is sub-issue #121)
+- [CLI and skill taxonomy](../../docs/cli-skill-taxonomy.md) — create-time scaffolder vs authoring CLI vs starter lifecycle scripts
 - [`aotter/mantle-starters`](https://github.com/aotter/mantle-starters) — public starters monorepo this package dispatches against

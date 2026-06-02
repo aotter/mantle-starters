@@ -7,13 +7,13 @@ This is the **starter monorepo**, not a consumer project. The `AGENTS.md` that e
 **Do not clone this repo.** Run the install Skill on the parent repo:
 [`skills/install/SKILL.md`](https://github.com/aotter/mantle/blob/main/skills/install/SKILL.md).
 
-The scaffolder downloads a pinned tarball, merges `_common/` + `<archetype>/` + optional theme overlays into the user's empty directory, fills `{{PLACEHOLDER}}` macros, and initializes a fresh user-owned git repo.
+The scaffolder downloads a pinned tarball, merges `_common/` + `<archetype>/` + selected feature overlays + optional theme overlays into the user's empty directory, fills `{{PLACEHOLDER}}` macros, and initializes a fresh user-owned git repo.
 
 ## If you're maintaining this monorepo
 
 - Contribution contract → [CONTRIBUTING.md](./CONTRIBUTING.md) (branch model: `develop` is the integration branch; PRs base on `develop`).
 - Project doctrine → [parent CLAUDE.md](https://github.com/aotter/mantle/blob/main/CLAUDE.md). Agents write config; the runtime carries complexity.
-- Dispatch SoT → [`sources.json`](./sources.json). Adding an archetype or theme starts here.
+- Dispatch SoT → [`sources.json`](./sources.json). Adding an archetype, feature, or theme starts here.
 - Macro list → [parent ADR-0016](https://github.com/aotter/mantle/blob/main/docs/adr/0016-site-semantic-layer.md).
 
 Premium / per-customer starters live in the private sibling [`aotter/mantle-starters-premium`](https://github.com/aotter/mantle-starters-premium). Sync strategy with this repo is tracked at TBD.
