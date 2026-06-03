@@ -4,6 +4,7 @@ import type { MediaAsset } from "@aotter/mantle/runtime";
 import type { SiteConfig } from "@aotter/mantle/spec";
 import { Layout, renderHtml } from "./layout.js";
 import { pictureFromAssetId } from "./_picture.js";
+import { CAROUSEL_JS, renderCarousel, type CarouselSlide } from "./_carousel.js";
 
 /**
  * GET /product/:slug — single product page with SPU/SKU variant picker.
@@ -146,10 +147,7 @@ export interface ProductDetailContext {
  */
 export function renderProductDetail(ctx: ProductDetailContext): string {
   const p = ctx.product;
-  const heroImage = p.defaultSku.images?.[0] ?? p.images?.[0];
-  const heroAssetId = heroImage?.assetId ?? p.coverAssetId;
-  const heroAlt = heroImage?.alt ?? p.coverAlt ?? p.title;
-  const heroHtml = pictureFromAssetId(heroAssetId, heroAlt, ctx.assets, "eager");
+  const gallerySlides = buildGallery(p, ctx.assets);
   const pdpData = {
     optionAxes: p.optionAxes.map((a) => ({ name: a.name, values: a.values })),
     variants: p.skus.map((s) => ({
@@ -165,7 +163,11 @@ export function renderProductDetail(ctx: ProductDetailContext): string {
       <p>
         <a href="/">← Back to shop</a>
       </p>
-      {heroHtml ? <figure class="product-hero">{raw(heroHtml)}</figure> : null}
+      {gallerySlides.length > 0 ? (
+        <div class="product-gallery">
+          {raw(renderCarousel({ id: "product-gallery", slides: gallerySlides, ariaLabel: `${p.title} images` }))}
+        </div>
+      ) : null}
       <h1>{p.title}</h1>
       {p.shortDescription ? <p class="lead">{p.shortDescription}</p> : null}
       <p class="price-tag" id="variant-price">
@@ -216,10 +218,35 @@ export function renderProductDetail(ctx: ProductDetailContext): string {
         <div id="add-result"></div>
       </div>
       <script>{raw(`window.__pdpData = ${pdpJson};`)}</script>
+      <script>{raw(CAROUSEL_JS)}</script>
       <script>{raw(ADD_TO_CART_JS)}</script>
     </Layout>
   );
   return renderHtml(tree);
+}
+
+function buildGallery(
+  product: ProductDetailContext["product"],
+  assets: ReadonlyMap<string, MediaAsset>,
+): ReadonlyArray<CarouselSlide> {
+  const refs = [
+    ...(product.defaultSku.images ?? []),
+    ...(product.images ?? []),
+    product.coverAssetId ? { assetId: product.coverAssetId, alt: product.coverAlt ?? product.title } : null,
+  ].filter((ref): ref is ProductImage => Boolean(ref?.assetId));
+  const seen = new Set<string>();
+  const slides: CarouselSlide[] = [];
+  refs
+    .filter((ref) => {
+      if (seen.has(ref.assetId)) return false;
+      seen.add(ref.assetId);
+      return true;
+    })
+    .forEach((ref, index) => {
+      const html = pictureFromAssetId(ref.assetId, ref.alt ?? product.title, assets, index === 0 ? "eager" : "lazy");
+      if (html) slides.push({ html, label: ref.alt ?? `${product.title} image ${index + 1}` });
+    });
+  return slides;
 }
 
 function formatPrice(minor: number, currency: string): string {

@@ -94,6 +94,77 @@ const INLINE_CSS = `
     max-height: 32rem;
     object-fit: cover;
   }
+  .product-gallery {
+    margin: 0 0 1.5rem 0;
+  }
+  .product-gallery .carousel {
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--card);
+  }
+  .product-gallery .carousel__track {
+    position: relative;
+    min-height: 18rem;
+  }
+  .product-gallery .carousel__slide[aria-hidden="true"] {
+    display: none;
+  }
+  .product-gallery picture,
+  .product-gallery img {
+    display: block;
+    width: 100%;
+  }
+  .product-gallery img {
+    aspect-ratio: 16 / 10;
+    max-height: 32rem;
+    object-fit: cover;
+  }
+  .product-gallery .carousel__controls {
+    position: absolute;
+    inset: auto 1rem 1rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    pointer-events: none;
+  }
+  .product-gallery .carousel__controls[hidden] {
+    display: none;
+  }
+  .product-gallery .carousel__btn,
+  .product-gallery .carousel__dot {
+    pointer-events: auto;
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    background: rgba(255, 255, 255, 0.82);
+    color: var(--fg);
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+  }
+  .product-gallery .carousel__btn {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 999px;
+    font-size: 1.4rem;
+    line-height: 1;
+  }
+  .product-gallery .carousel__dots {
+    display: inline-flex;
+    gap: 0.4rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.55);
+    padding: 0.4rem;
+    backdrop-filter: blur(16px);
+  }
+  .product-gallery .carousel__dot {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 999px;
+    padding: 0;
+  }
+  .product-gallery .carousel__dot[aria-current="true"] {
+    background: var(--accent);
+  }
   .price-tag { font-size: 1.5rem; color: var(--accent); font-weight: 600; }
   form.checkout { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 1.5rem; max-width: 480px; }
   form.checkout label { display: block; margin-top: 1rem; font-weight: 500; }

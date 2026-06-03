@@ -56,6 +56,24 @@ spec:
           (avif/webp/jpeg) and `commit_media_upload`. Renderers
           resolve via `runtime.media.resolve(coverAssetId)`. Helper
           CLI: `@aotter/mantle-media-tools`.
+      images:
+        type: array
+        description: |
+          Product detail carousel slides. The first image is treated as
+          the primary PDP visual; `coverAssetId` remains the list-card
+          fallback and may mirror the first slide.
+        items:
+          type: object
+          required: [assetId]
+          properties:
+            assetId:
+              type: string
+              x-mantle-ref: media_assets
+              x-mcp-hint: media-image
+              description: MediaAsset.id for a product gallery slide.
+            alt:
+              type: string
+              description: Accessible alt text for this slide.
       createdAt:
         type: number
         x-mantle-bind: now
