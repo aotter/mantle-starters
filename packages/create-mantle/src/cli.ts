@@ -6,6 +6,11 @@ import {
   createMantle,
   type FeatureSelection,
 } from "./index.js";
+import {
+  createOptionsFromLaunchSession,
+  loadLaunchSession,
+  writeLaunchState,
+} from "./launch.js";
 
 interface ParsedArgs {
   readonly archetype: string;
@@ -21,6 +26,13 @@ interface ParsedArgs {
   readonly starterRef?: string;
 }
 
+interface ParsedLaunchArgs {
+  readonly session: string;
+  readonly starterRef?: string;
+  readonly skipInstall: boolean;
+  readonly skipGitInit: boolean;
+}
+
 main().catch((err: unknown) => {
   const msg = err instanceof Error ? err.message : String(err);
   console.error(`create-mantle: ${msg}`);
@@ -28,7 +40,12 @@ main().catch((err: unknown) => {
 });
 
 async function main(): Promise<void> {
-  const args = parseArgs(process.argv.slice(2));
+  const argv = process.argv.slice(2);
+  if (argv[0] === "launch") {
+    await runLaunch(argv.slice(1));
+    return;
+  }
+  const args = parseArgs(argv);
   const destination = resolve(process.cwd(), args.projectName);
   mkdirSync(destination, { recursive: true });
   const notes = await createMantle({
@@ -45,6 +62,40 @@ async function main(): Promise<void> {
     starterRef: args.starterRef,
   });
   process.stdout.write(`${JSON.stringify(notes, null, 2)}\n`);
+}
+
+async function runLaunch(argv: ReadonlyArray<string>): Promise<void> {
+  const args = parseLaunchArgs(argv);
+  const session = await loadLaunchSession(args.session);
+  const opts = createOptionsFromLaunchSession({
+    session,
+    cwd: process.cwd(),
+    starterRef: args.starterRef,
+    skipInstall: args.skipInstall,
+    skipGitInit: args.skipGitInit,
+  });
+  mkdirSync(opts.destination, { recursive: true });
+  const notes = await createMantle(opts);
+  const stateFile = writeLaunchState({
+    destination: opts.destination,
+    session,
+    notes,
+    sessionRef: args.session,
+  });
+  process.stdout.write(
+    `${JSON.stringify(
+      {
+        ...notes,
+        launch: {
+          session_id: session.sessionId,
+          expires_at: session.expiresAt,
+          state_file: stateFile,
+        },
+      },
+      null,
+      2,
+    )}\n`,
+  );
 }
 
 function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
@@ -117,6 +168,52 @@ function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
     ...(theme !== undefined ? { theme } : {}),
     features,
     ...(ref !== undefined ? { starterRef: ref } : {}),
+  };
+}
+
+function parseLaunchArgs(argv: ReadonlyArray<string>): ParsedLaunchArgs {
+  const flags: Record<string, string> = {};
+  let skipInstall = false;
+  let skipGitInit = false;
+  const positional: string[] = [];
+  for (let i = 0; i < argv.length; i += 1) {
+    const token = argv[i];
+    if (!token) continue;
+    if (token === "--") continue;
+    if (token === "--skip-install") {
+      skipInstall = true;
+      continue;
+    }
+    if (token === "--skip-git-init") {
+      skipGitInit = true;
+      continue;
+    }
+    if (token.startsWith("--")) {
+      const eq = token.indexOf("=");
+      if (eq >= 0) {
+        flags[token.slice(2, eq)] = token.slice(eq + 1);
+      } else {
+        const next = argv[i + 1];
+        if (next === undefined || next.startsWith("--")) {
+          throw new Error(`Missing value for ${token}`);
+        }
+        flags[token.slice(2)] = next;
+        i += 1;
+      }
+    } else {
+      positional.push(token);
+    }
+  }
+  if (positional.length > 0) {
+    throw new Error(
+      `Unexpected launch argument "${positional[0]}". Use --session <url-or-file>.`,
+    );
+  }
+  return {
+    session: required(flags, "session"),
+    starterRef: flags["ref"] ?? flags["starter-ref"],
+    skipInstall,
+    skipGitInit,
   };
 }
 
