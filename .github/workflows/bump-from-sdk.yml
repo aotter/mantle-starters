@@ -6,10 +6,11 @@
 # validate + typecheck across all 5 starters, opens a PR against main
 # with auto-merge enabled. repository_dispatch runs on the default
 # branch (`develop`), so this PR also promotes the current develop
-# starter content into the release. The companion workflow
-# (`tag-and-dispatch-landing.yml`) fires when that release commit lands
-# on main, tags the release, and dispatches `mantle-landing`'s
-# bump-from-starters.yml.
+# starter content into the release. After the PR merges, this workflow
+# waits for `tag-and-dispatch-landing.yml` to create the tag from the
+# main push; if GitHub suppresses that follow-on workflow for an
+# Actions-originated merge, this workflow creates the tag and dispatches
+# `mantle-landing` directly as a fallback.
 #
 # Operator setup (one-time):
 #
@@ -182,7 +183,7 @@ jobs:
           echo "pr_url=$PR_URL" >> "$GITHUB_OUTPUT"
           echo "Opened PR: $PR_URL"
 
-      - name: Approve + enable auto-merge
+      - name: Approve release PR
         env:
           # GITHUB_TOKEN approves as github-actions[bot] — different
           # actor from the PAT that opened the PR, so GitHub doesn't
@@ -196,9 +197,76 @@ jobs:
         run: |
           set -euo pipefail
           gh pr review --approve "$PR_URL"
+
+      - name: Enable auto-merge
+        env:
+          # Use RELEASE_FANOUT_TOKEN for the merge action. Merges
+          # performed solely with GITHUB_TOKEN do not reliably trigger
+          # follow-on push workflows; alpha.16 skipped
+          # tag-and-dispatch-landing that way.
+          GH_TOKEN: ${{ secrets.RELEASE_FANOUT_TOKEN }}
+          PR_URL: ${{ steps.openpr.outputs.pr_url }}
+        run: |
+          set -euo pipefail
           # Rebase merge: keeps the PR's commit subject `release: bump
           # @aotter/mantle* to vX.Y.Z` as the head commit on
           # main, which `tag-and-dispatch-landing.yml` detects before
           # tagging starters and dispatching the landing bump.
           gh pr merge --auto --rebase "$PR_URL"
           echo "Auto-merge queued: $PR_URL"
+
+      - name: Wait for merge + complete fanout
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_FANOUT_TOKEN }}
+          PR_URL: ${{ steps.openpr.outputs.pr_url }}
+          VERSION: ${{ steps.input.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          for attempt in $(seq 1 90); do
+            MERGED_AT=$(gh pr view "$PR_URL" --json mergedAt --jq '.mergedAt // ""')
+            if [ -n "$MERGED_AT" ]; then
+              MERGE_SHA=$(gh pr view "$PR_URL" --json mergeCommit --jq '.mergeCommit.oid // ""')
+              if [ -z "$MERGE_SHA" ]; then
+                echo "::error::Release PR is merged but mergeCommit.oid is empty."
+                exit 1
+              fi
+              echo "Release PR merged at $MERGED_AT ($MERGE_SHA)"
+              break
+            fi
+            echo "Release PR not merged yet; waiting (attempt $attempt/90)."
+            sleep 10
+          done
+
+          if [ -z "${MERGE_SHA:-}" ]; then
+            echo "::error::Release PR did not merge before timeout."
+            exit 1
+          fi
+
+          # Give tag-and-dispatch-landing.yml a chance to handle the
+          # normal main-push path. If that workflow is suppressed by
+          # GitHub's Actions-token rules, no tag appears and this step
+          # completes the fanout itself.
+          for attempt in $(seq 1 12); do
+            git fetch origin "refs/tags/v$VERSION:refs/tags/v$VERSION" >/dev/null 2>&1 || true
+            if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+              echo "Tag v$VERSION already exists; downstream tag workflow handled the release."
+              exit 0
+            fi
+            echo "Tag v$VERSION not visible yet; waiting for downstream tag workflow (attempt $attempt/12)."
+            sleep 10
+          done
+
+          git fetch origin main --tags
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            echo "Tag v$VERSION already exists after final fetch; no fallback dispatch needed."
+            exit 0
+          fi
+
+          echo "Downstream tag workflow did not create v$VERSION; creating tag and dispatching landing."
+          git tag "v$VERSION" "$MERGE_SHA"
+          git push origin "v$VERSION"
+          gh api "repos/${{ github.repository_owner }}/mantle-landing/dispatches" \
+            -f event_type=starters-released \
+            -F "client_payload[starters_version]=$VERSION"
+          echo "Fallback dispatched mantle-landing bump-from-starters for v$VERSION"
