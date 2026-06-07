@@ -87,6 +87,10 @@ body
     join(root, "publication", "src", "mantleConfig.ts"),
     `export const config = { brand: "{{BRAND}}", origin: "{{SITE_URL}}" };\n`,
   );
+  writeFile(
+    join(root, "publication", "src", "Theme.ts"),
+    `export interface ThemeOverride { readonly tokens?: string; }\n`,
+  );
 
   // blank starter (minimal)
   writeFile(
@@ -1161,6 +1165,7 @@ describe("installFromExtractedRoot", () => {
     expect(
       existsSync(join(destination, "src", "theme", "tokens.ts")),
     ).toBe(true);
+    expect(existsSync(join(destination, "src", "Theme.ts"))).toBe(true);
     const themeIndex = readFileSync(
       join(destination, "src", "theme", "index.ts"),
       "utf8",
