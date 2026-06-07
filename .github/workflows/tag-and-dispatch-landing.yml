@@ -1,7 +1,7 @@
 # Release fanout — between Step 2 and Step 3 of aotter/mantle#191.
 #
-# Triggered when a `release: bump @aotter/mantle* to vX.Y.Z` commit
-# lands on main. Tags the head commit `vX.Y.Z` and dispatches
+# Triggered when a release commit lands on main. Tags the head commit
+# `vX.Y.Z` and dispatches
 # `mantle-landing`'s `bump-from-starters.yml` workflow so the landing
 # site rolls forward to the same version.
 #
@@ -16,9 +16,9 @@
 # so, and skips cleanly otherwise. End state: no more no-job failure
 # noise; the chain still fires correctly for release commits.
 #
-# Filter uses `contains(...)` not `startsWith(...)` so both rebase
-# release commits and merge commits whose body includes the release PR
-# title are detected.
+# The detector accepts both the auto-bump shape
+# `release: bump @aotter/mantle* to vX.Y.Z` and manual release cuts like
+# `release: X.Y.Z — ...`.
 #
 # Why split from bump-from-sdk.yml: that workflow opens a PR and
 # returns. The PR's auto-merge fires asynchronously, so the tag +
@@ -30,6 +30,12 @@ name: tag-and-dispatch-landing
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      starters_version:
+        description: 'Starters version to dispatch (without leading v)'
+        required: true
+        type: string
 
 permissions:
   contents: write   # for `git tag` + `git push`
@@ -44,17 +50,23 @@ jobs:
       - name: Detect release-bump commit
         id: detect
         env:
-          MSG: ${{ github.event.head_commit.message }}
+          MSG: ${{ github.event.head_commit.message || '' }}
+          INPUT_VERSION: ${{ inputs.starters_version || '' }}
         run: |
           set -euo pipefail
-          # Commit message shape: somewhere inside is `release: bump
-          # @aotter/mantle* to vX.Y.Z`. Grep extracts the version
-          # token from anywhere in the message, not just the first
-          # line, so a merge-commit body works the same as a rebase
-          # commit's first line.
-          VERSION=$(printf '%s\n' "$MSG" | grep -oE 'release: bump @aotter/mantle\* to v[0-9][^[:space:]]+' | head -n1 | grep -oE 'v[0-9][^[:space:]]+' | sed 's/^v//' || true)
+          if [ -n "$INPUT_VERSION" ]; then
+            VERSION="${INPUT_VERSION#v}"
+          else
+            # Commit message shapes:
+            #   release: bump @aotter/mantle* to vX.Y.Z
+            #   release: X.Y.Z — human release cut
+            # Extract from anywhere in the message so merge commits and
+            # rebase commits behave the same.
+            VERSION=$(printf '%s\n' "$MSG" | sed -nE 's/.*release: (bump @aotter\/mantle\* to v?|v?)([0-9][^[:space:]]*).*/\2/p' | head -n1 || true)
+            VERSION="${VERSION#v}"
+          fi
           if [ -z "$VERSION" ]; then
-            echo "No release-bump subject detected — nothing to tag."
+            echo "No release subject detected — nothing to tag."
             echo "should_release=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
