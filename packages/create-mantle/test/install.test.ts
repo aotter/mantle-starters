@@ -45,7 +45,7 @@ function fixtureExtractedRoot(): string {
 
   writeFile(
     join(root, "_common", "AGENTS.md.template"),
-    "# {{BRAND}} ({{ARCHETYPE}})\nPublic site: {{SITE_URL}}\nOwner: {{GITHUB_OWNER}}\n",
+    "# {{BRAND}} ({{ARCHETYPE}})\nPublic site: {{SITE_URL}}\nOwner: {{GITHUB_OWNER}}\nAdmin: {{ADMIN_GITHUB_LOGIN}}\n",
   );
   writeFile(
     join(root, "_common", "mantle", "site.md.template"),
@@ -86,6 +86,10 @@ body
   writeFile(
     join(root, "publication", "src", "mantleConfig.ts"),
     `export const config = { brand: "{{BRAND}}", origin: "{{SITE_URL}}" };\n`,
+  );
+  writeFile(
+    join(root, "publication", ".dev.vars.example"),
+    "ADMIN_GITHUB_LOGIN={{ADMIN_GITHUB_LOGIN}}\n",
   );
   writeFile(
     join(root, "publication", "src", "Theme.ts"),
@@ -133,6 +137,27 @@ describe("installFromExtractedRoot", () => {
     );
     expect(mantle).toContain('locales: ["zh-TW","en"]');
     expect(mantle).toContain("canonical_locale: zh-TW");
+  });
+
+  it("substitutes a separate admin GitHub login when the repo owner is an org", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    const destination = join(tempRoot, "out-admin-login");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      githubOwner: "aotter",
+      adminGithubLogin: "phsu",
+      archetype: "publication",
+      destination,
+      extractedRoot,
+    });
+
+    const agents = readFileSync(join(destination, "AGENTS.md"), "utf8");
+    const devVars = readFileSync(join(destination, ".dev.vars.example"), "utf8");
+    expect(agents).toContain("Owner: aotter");
+    expect(agents).toContain("Admin: phsu");
+    expect(devVars).toContain("ADMIN_GITHUB_LOGIN=phsu");
   });
 
   it("rejects script-subtag locales with region-tag guidance", () => {

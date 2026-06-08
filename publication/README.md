@@ -166,7 +166,7 @@ browser redirect flow. One-time setup:
    ```
    GITHUB_CLIENT_ID=<the_client_id>
    GITHUB_CLIENT_SECRET=<the_client_secret>
-   ADMIN_GITHUB_LOGIN=<your_github_login>
+   ADMIN_GITHUB_LOGIN={{ADMIN_GITHUB_LOGIN}}
    ```
 3. **Restart `pnpm dev`** so wrangler picks up the new vars.
 4. Visit <http://localhost:8787/admin> and sign in with the GitHub

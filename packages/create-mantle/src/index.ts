@@ -54,6 +54,7 @@ export interface CreateOptions {
   readonly description: string;
   readonly locales: ReadonlyArray<string>;
   readonly githubOwner: string;
+  readonly adminGithubLogin?: string | null;
   readonly summary: string;
   /** Optional theme overlay key (resolves against `sources.themes`). */
   readonly theme?: string | null;
@@ -104,6 +105,7 @@ const FILE_EXTENSIONS_FOR_SUBSTITUTION = new Set([
   ".mjs",
   ".cjs",
   ".json",
+  ".example",
   ".yaml",
   ".yml",
   ".toml",
@@ -308,6 +310,7 @@ function buildPlaceholderValues(opts: CreateOptions): PlaceholderValues {
     CANONICAL_LOCALE: opts.locales[0] ?? "en",
     SITE_URL: "https://example.com",
     GITHUB_OWNER: opts.githubOwner,
+    ADMIN_GITHUB_LOGIN: opts.adminGithubLogin ?? opts.githubOwner,
     INSTALL_TIMESTAMP: new Date().toISOString(),
     INSTALL_SUMMARY: opts.summary,
   };
