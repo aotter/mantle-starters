@@ -17,7 +17,7 @@ source-owned `SmtpEmailSender` adapter that implements Mantle's narrow
 | Var | Secret | Default | Notes |
 |---|---:|---|---|
 | `SMTP_HOST` | no | none | SMTP server host, for example `smtp.example.com` |
-| `SMTP_PORT` | no | `465` in helper | Prefer 465 implicit TLS on Workers; 587 STARTTLS is provider/runtime-sensitive |
+| `SMTP_PORT` | no | `465` in helper | **Only 465 (implicit TLS) is accepted by `buildSmtpEmailSenderFromEnv`.** `worker-mailer` does STARTTLS opportunistically, so 587 silently falls back to cleartext if the server omits STARTTLS from EHLO. Construct `SmtpEmailSender` directly if you accept that risk. |
 | `SMTP_USER` | no | none | SMTP auth username, usually the mailbox |
 | `SMTP_PASS` | yes | none | `wrangler secret put SMTP_PASS` |
 | `EMAIL_FROM` | no | none | RFC 5322 From header, for example `Acme <auth@example.com>` |
@@ -25,6 +25,11 @@ source-owned `SmtpEmailSender` adapter that implements Mantle's narrow
 Workers cannot connect to outbound port 25. This adapter rejects port
 25 at config-build time and defaults to 465 implicit TLS when
 `SMTP_PORT` is absent.
+
+`EMAIL_FROM` accepts either a bare address (`auth@example.com`) or the
+RFC 5322 `"Display" <addr>` form (`Acme <auth@example.com>`). The
+helper parses the form so the SMTP envelope (`MAIL FROM`) gets only
+the bare address while the `From:` header keeps the display name.
 
 ## Wiring
 
