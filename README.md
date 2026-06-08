@@ -38,7 +38,7 @@ command. If you're already past the interview or testing this repo and want to i
 scaffolder directly, the command shape is:
 
 ```bash
-npx https://github.com/aotter/mantle-starters/releases/download/v0.0.11-alpha.16/aotter-create-mantle.tgz <archetype> \
+npx https://github.com/aotter/mantle-starters/releases/download/v0.0.11-alpha.17/aotter-create-mantle.tgz <archetype> \
   --project-name "<my-site>" \
   --brand "<My Brand>" \
   --description "<one-line site description>" \

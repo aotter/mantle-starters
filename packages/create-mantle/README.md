@@ -6,7 +6,7 @@ package. The package name and `create-mantle` bin exist so `npx` can run
 the GitHub release tarball directly.
 
 ```bash
-npx https://github.com/aotter/mantle-starters/releases/download/v0.0.11-alpha.16/aotter-create-mantle.tgz \
+npx https://github.com/aotter/mantle-starters/releases/download/v0.0.11-alpha.17/aotter-create-mantle.tgz \
   <archetype> \
   --project-name <name> \
   --brand "<brand>" \
