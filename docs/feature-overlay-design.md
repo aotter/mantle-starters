@@ -723,6 +723,29 @@ Ordering:
 The generated `scripts/.mantle-provision.mjs` imports selected feature steps.
 The base `scripts/provision.mjs` owns the user-facing CLI and shared context.
 
+### Dependencies (schemaVersion 3)
+
+A feature that ships a runtime npm dependency declares it in
+`_compose/glue.json` so the scaffolder can merge it into the generated
+project's `package.json`:
+
+```json
+{
+  "schemaVersion": 3,
+  "dependencies": { "worker-mailer": "catalog:" }
+}
+```
+
+The scaffolder merges every selected feature's `dependencies` map into the
+destination `package.json`'s `dependencies` field alphabetically. `"catalog:"`
+values are written as-is and then resolved through the same pnpm-catalog pass
+that handles the archetype's own catalog refs — so the version source of
+truth stays in `pnpm-workspace.yaml`, and dependabot updates one place.
+
+Conflicting version specs error at install time, matching the wrangler.toml
+composer's conflict-on-divergent-config rule. Two features that need the same
+package at the same version are fine and merge silently.
+
 ## CLI Shape
 
 Current alpha create-time install uses the release tarball-backed
@@ -980,6 +1003,17 @@ Determinism rules:
 fragments replace the current built-in contribution registry. Version 1 is the
 initial contract for manifest refs, handler refs, route overrides, env
 declarations, Wrangler fragments, i18n fragments, and provision references.
+
+Subsequent additive versions:
+
+- `schemaVersion: 2` adds the `auth_methods` compose target.
+- `schemaVersion: 3` adds the `dependencies` compose target (feature-owned
+  runtime npm deps merged into the destination `package.json`).
+
+Each version is a strict superset of the prior one; features SHOULD declare
+the lowest version they actually use so a scaffolder that only understands
+v1 still installs a feature that happens to add v3 fields the scaffolder
+won't read.
 
 The user's project stores `.mantle/features.json` and future
 `.mantle/scaffold.lock.json`; it does not store migrate-able `_compose/`

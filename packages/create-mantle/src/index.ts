@@ -245,6 +245,11 @@ export function installFromExtractedRoot(
   const values = buildPlaceholderValues({ ...opts, locales });
   substitutePlaceholdersInTree(opts.destination, values, filesWritten);
   renameDotfilesAfterTemplate(opts.destination, filesWritten);
+  mergeFeatureDependenciesIntoPackageJson({
+    extractedRoot: opts.extractedRoot,
+    destination: opts.destination,
+    features: resolvedFeatures,
+  });
   resolveCatalogSpecifiers({
     extractedRoot: opts.extractedRoot,
     destination: opts.destination,
@@ -406,11 +411,21 @@ interface FeatureGlueSpec {
    *  `src/.mantle/generated.auth-methods.ts` exporting
    *  `buildFeatureAuthMethods(env, sender)`. */
   readonly auth_methods?: FeatureAuthMethodsSpec;
+  /** schemaVersion >= 3. Features that ship runtime npm dependencies
+   *  (e.g. `email-sender-smtp` → `worker-mailer`) declare them here as
+   *  a `{ name: version-or-"catalog:" }` map. The scaffolder merges
+   *  them into the consumer's `package.json` `dependencies` block
+   *  alphabetically; conflicting version specs from multiple features
+   *  error at install time (matching the wrangler.toml binding-conflict
+   *  rule). `"catalog:"` resolves through the same pnpm-catalog
+   *  expansion pass that handles `_common/` package.json entries. */
+  readonly dependencies?: Readonly<Record<string, string>>;
 }
 
 // schemaVersion 1: manifests / handlers / routes / env / provision.
 // schemaVersion 2: adds the `auth_methods` compose target.
-const SUPPORTED_GLUE_SCHEMA_VERSIONS: ReadonlySet<number> = new Set([1, 2]);
+// schemaVersion 3: adds the `dependencies` compose target.
+const SUPPORTED_GLUE_SCHEMA_VERSIONS: ReadonlySet<number> = new Set([1, 2, 3]);
 
 function loadFeatureGlueSpec(
   extractedRoot: string,
@@ -488,6 +503,56 @@ function writeGeneratedFeatureGlue(args: {
     writeFileSync(join(args.destination, relPath), content);
   }
   return files.map(([relPath]) => relPath);
+}
+
+// Catalog resolution runs immediately after this, so `"catalog:"` values
+// from feature glue resolve through the same pass as the archetype's own
+// catalog refs. Divergent specs between features (or between a feature
+// and the base layer) error here, mirroring the wrangler.toml composer's
+// conflict-on-divergent-config rule.
+function mergeFeatureDependenciesIntoPackageJson(args: {
+  extractedRoot: string;
+  destination: string;
+  features: readonly ResolvedFeature[];
+}): void {
+  const featureDeps = new Map<string, { spec: string; source: string }>();
+  for (const feature of args.features) {
+    const spec = loadFeatureGlueSpec(args.extractedRoot, feature);
+    if (!spec) continue;
+    for (const [name, version] of Object.entries(spec.dependencies ?? {})) {
+      const existing = featureDeps.get(name);
+      if (existing && existing.spec !== version) {
+        throw new Error(
+          `Feature "${feature.name}" requires dependency "${name}" = "${version}", but feature "${existing.source}" already requires "${existing.spec}". Resolve the conflict in the contributing features' glue.json before re-installing.`,
+        );
+      }
+      if (!existing) featureDeps.set(name, { spec: version, source: feature.name });
+    }
+  }
+  if (featureDeps.size === 0) return;
+
+  const packageJsonPath = join(args.destination, "package.json");
+  if (!existsSync(packageJsonPath)) return;
+  const pkg = JSON.parse(readFileSync(packageJsonPath, "utf8")) as Record<
+    string,
+    unknown
+  >;
+  const existing = (pkg.dependencies && typeof pkg.dependencies === "object" && !Array.isArray(pkg.dependencies))
+    ? { ...(pkg.dependencies as Record<string, string>) }
+    : {};
+  for (const [name, { spec, source }] of featureDeps) {
+    if (existing[name] && existing[name] !== spec) {
+      throw new Error(
+        `Feature "${source}" requires dependency "${name}" = "${spec}", but package.json already declares "${existing[name]}". Resolve before re-installing.`,
+      );
+    }
+    existing[name] = spec;
+  }
+  // Sort alphabetically for stable diffs across reruns.
+  const sorted: Record<string, string> = {};
+  for (const name of Object.keys(existing).sort()) sorted[name] = existing[name]!;
+  pkg.dependencies = sorted;
+  writeFileSync(packageJsonPath, JSON.stringify(pkg, null, 2) + "\n");
 }
 
 const PROVISION_FROM_RE = /^[A-Za-z0-9_./@\-]+$/;
