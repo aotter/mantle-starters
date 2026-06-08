@@ -2383,6 +2383,108 @@ describe("installFromExtractedRoot", () => {
     ).not.toThrow();
   });
 
+  it("merges glue.json dependencies into package.json sorted, with catalog: resolution (#258)", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "pnpm-workspace.yaml"),
+      [
+        "packages:",
+        '  - "publication"',
+        '  - "blank"',
+        "",
+        "catalog:",
+        "  hono: ^4.12.19",
+        "  worker-mailer: ^1.2.1",
+        "  '@types/node': ^25",
+        "",
+      ].join("\n"),
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "email-sender-smtp", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 3,
+        dependencies: { "worker-mailer": "catalog:" },
+      }),
+    );
+    const destination = join(tempRoot, "out-feature-deps");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      features: [{ name: "email-sender-smtp" }],
+      destination,
+      extractedRoot,
+      sources: {
+        archetypes: { publication: { path: "publication" } },
+        features: {
+          "email-sender-smtp": {
+            path: "registry/features/email-sender-smtp",
+            applicableArchetypes: ["publication"],
+          },
+        },
+        themes: {},
+        roadmap: [],
+      },
+    });
+
+    const pkg = JSON.parse(
+      readFileSync(join(destination, "package.json"), "utf8"),
+    ) as { dependencies: Record<string, string> };
+    // catalog: ref from feature glue resolved through the same pass that
+    // resolves the archetype's own catalog: refs.
+    expect(pkg.dependencies["worker-mailer"]).toBe("^1.2.1");
+    expect(pkg.dependencies["hono"]).toBe("^4.12.19");
+    // Alphabetical: hono before worker-mailer.
+    const keys = Object.keys(pkg.dependencies);
+    expect(keys.indexOf("hono")).toBeLessThan(keys.indexOf("worker-mailer"));
+  });
+
+  it("rejects divergent dependency versions across features (#258)", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "alpha", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 3,
+        dependencies: { "worker-mailer": "^1.2.1" },
+      }),
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "beta", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 3,
+        dependencies: { "worker-mailer": "^2.0.0" },
+      }),
+    );
+    const destination = join(tempRoot, "out-deps-conflict");
+    mkdirSync(destination, { recursive: true });
+
+    expect(() =>
+      installFromExtractedRoot({
+        ...commonOpts(),
+        archetype: "publication",
+        features: [{ name: "alpha" }, { name: "beta" }],
+        destination,
+        extractedRoot,
+        sources: {
+          archetypes: { publication: { path: "publication" } },
+          features: {
+            alpha: {
+              path: "registry/features/alpha",
+              applicableArchetypes: ["publication"],
+            },
+            beta: {
+              path: "registry/features/beta",
+              applicableArchetypes: ["publication"],
+            },
+          },
+          themes: {},
+          roadmap: [],
+        },
+      }),
+    ).toThrow(/worker-mailer/);
+  });
+
   it("still rejects schemaVersion 99 with scaffolder-upgrade-required error", () => {
     const extractedRoot = fixtureExtractedRoot();
     writeFile(

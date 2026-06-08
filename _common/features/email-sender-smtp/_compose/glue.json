@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 3,
+  "dependencies": {
+    "worker-mailer": "catalog:"
+  },
+  "env": [
+    {
+      "name": "SMTP_HOST",
+      "type": "string",
+      "optional": true,
+      "description": "SMTP server host."
+    },
+    {
+      "name": "SMTP_PORT",
+      "type": "string",
+      "optional": true,
+      "devDefault": "465",
+      "description": "SMTP server port. Defaults to 465 implicit TLS."
+    },
+    {
+      "name": "SMTP_USER",
+      "type": "string",
+      "optional": true,
+      "description": "SMTP auth username."
+    },
+    {
+      "name": "SMTP_PASS",
+      "type": "string",
+      "optional": true,
+      "secret": true,
+      "description": "SMTP auth password."
+    },
+    {
+      "name": "EMAIL_FROM",
+      "type": "string",
+      "optional": true,
+      "description": "RFC 5322 From header for transactional mail."
+    }
+  ]
+}

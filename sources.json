@@ -66,6 +66,17 @@
         "publication",
         "intake"
       ]
+    },
+    "email-sender-smtp": {
+      "path": "_common/features/email-sender-smtp",
+      "title": "SMTP email sender (self-hosted)",
+      "summary": "Source-owned SmtpEmailSender adapter for Workers via worker-mailer. Implements Mantle's narrow EmailSender port over SMTP (465 implicit TLS by default; port 25 rejected). Pairs with customer-account so passwordless sign-in mail goes through a real SMTP server instead of the console sink.",
+      "applicableArchetypes": [
+        "transaction"
+      ],
+      "registryDependencies": [
+        "customer-account"
+      ]
     }
   },
   "themes": {
