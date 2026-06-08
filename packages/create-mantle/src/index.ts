@@ -519,7 +519,23 @@ function mergeFeatureDependenciesIntoPackageJson(args: {
   for (const feature of args.features) {
     const spec = loadFeatureGlueSpec(args.extractedRoot, feature);
     if (!spec) continue;
-    for (const [name, version] of Object.entries(spec.dependencies ?? {})) {
+    if (spec.dependencies === undefined) continue;
+    if (spec.schemaVersion < 3) {
+      throw new Error(
+        `Feature "${feature.name}" declares schemaVersion ${spec.schemaVersion} but uses the v3-only "dependencies" target. Bump the feature's schemaVersion to 3 (or remove the dependencies block).`,
+      );
+    }
+    if (typeof spec.dependencies !== "object" || Array.isArray(spec.dependencies)) {
+      throw new Error(
+        `Feature "${feature.name}" glue.json "dependencies" must be a { name: version } object.`,
+      );
+    }
+    for (const [name, version] of Object.entries(spec.dependencies)) {
+      if (typeof version !== "string" || version.trim() === "") {
+        throw new Error(
+          `Feature "${feature.name}" glue.json dependency "${name}" must be a non-empty version string (got ${JSON.stringify(version)}).`,
+        );
+      }
       const existing = featureDeps.get(name);
       if (existing && existing.spec !== version) {
         throw new Error(
@@ -532,14 +548,29 @@ function mergeFeatureDependenciesIntoPackageJson(args: {
   if (featureDeps.size === 0) return;
 
   const packageJsonPath = join(args.destination, "package.json");
-  if (!existsSync(packageJsonPath)) return;
+  if (!existsSync(packageJsonPath)) {
+    throw new Error(
+      `Feature dependencies were declared but the destination has no package.json at ${packageJsonPath}. Refusing to silently drop runtime deps.`,
+    );
+  }
   const pkg = JSON.parse(readFileSync(packageJsonPath, "utf8")) as Record<
     string,
     unknown
   >;
-  const existing = (pkg.dependencies && typeof pkg.dependencies === "object" && !Array.isArray(pkg.dependencies))
-    ? { ...(pkg.dependencies as Record<string, string>) }
-    : {};
+  let existing: Record<string, string>;
+  if (pkg.dependencies === undefined) {
+    existing = {};
+  } else if (
+    pkg.dependencies !== null &&
+    typeof pkg.dependencies === "object" &&
+    !Array.isArray(pkg.dependencies)
+  ) {
+    existing = { ...(pkg.dependencies as Record<string, string>) };
+  } else {
+    throw new Error(
+      `Destination package.json "dependencies" field is not a JSON object — refusing to overwrite.`,
+    );
+  }
   for (const [name, { spec, source }] of featureDeps) {
     if (existing[name] && existing[name] !== spec) {
       throw new Error(

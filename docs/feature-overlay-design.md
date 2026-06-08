@@ -1010,10 +1010,12 @@ Subsequent additive versions:
 - `schemaVersion: 3` adds the `dependencies` compose target (feature-owned
   runtime npm deps merged into the destination `package.json`).
 
-Each version is a strict superset of the prior one; features SHOULD declare
-the lowest version they actually use so a scaffolder that only understands
-v1 still installs a feature that happens to add v3 fields the scaffolder
-won't read.
+Each version is a strict superset of the prior one. The scaffolder
+**hard-rejects** any `schemaVersion` not in its supported set — there is no
+graceful downgrade, because silently ignoring a `dependencies` block (or any
+future field) would scaffold a broken project. Features should declare the
+lowest version whose fields they actually use, so that older scaffolders
+accept them when they legitimately can.
 
 The user's project stores `.mantle/features.json` and future
 `.mantle/scaffold.lock.json`; it does not store migrate-able `_compose/`

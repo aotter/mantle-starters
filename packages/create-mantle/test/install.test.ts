@@ -2440,6 +2440,121 @@ describe("installFromExtractedRoot", () => {
     expect(keys.indexOf("hono")).toBeLessThan(keys.indexOf("worker-mailer"));
   });
 
+  it("dedupes same-version dependency contributions silently (#258)", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "alpha", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 3,
+        dependencies: { "worker-mailer": "^1.2.1" },
+      }),
+    );
+    writeFile(
+      join(extractedRoot, "registry", "features", "beta", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 3,
+        dependencies: { "worker-mailer": "^1.2.1" },
+      }),
+    );
+    const destination = join(tempRoot, "out-deps-dedup");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      features: [{ name: "alpha" }, { name: "beta" }],
+      destination,
+      extractedRoot,
+      sources: {
+        archetypes: { publication: { path: "publication" } },
+        features: {
+          alpha: {
+            path: "registry/features/alpha",
+            applicableArchetypes: ["publication"],
+          },
+          beta: {
+            path: "registry/features/beta",
+            applicableArchetypes: ["publication"],
+          },
+        },
+        themes: {},
+        roadmap: [],
+      },
+    });
+    const pkg = JSON.parse(
+      readFileSync(join(destination, "package.json"), "utf8"),
+    ) as { dependencies: Record<string, string> };
+    expect(pkg.dependencies["worker-mailer"]).toBe("^1.2.1");
+  });
+
+  it("rejects schemaVersion < 3 features that smuggle a dependencies block (#258)", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "smuggler", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 2,
+        dependencies: { "worker-mailer": "^1.2.1" },
+      }),
+    );
+    const destination = join(tempRoot, "out-deps-version-gate");
+    mkdirSync(destination, { recursive: true });
+
+    expect(() =>
+      installFromExtractedRoot({
+        ...commonOpts(),
+        archetype: "publication",
+        features: [{ name: "smuggler" }],
+        destination,
+        extractedRoot,
+        sources: {
+          archetypes: { publication: { path: "publication" } },
+          features: {
+            smuggler: {
+              path: "registry/features/smuggler",
+              applicableArchetypes: ["publication"],
+            },
+          },
+          themes: {},
+          roadmap: [],
+        },
+      }),
+    ).toThrow(/v3-only "dependencies" target/);
+  });
+
+  it("rejects malformed dependencies (non-object / non-string version) in glue.json (#258)", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "registry", "features", "bad", "_compose", "glue.json"),
+      JSON.stringify({
+        schemaVersion: 3,
+        dependencies: { "worker-mailer": 1.2 as unknown as string },
+      }),
+    );
+    const destination = join(tempRoot, "out-deps-malformed");
+    mkdirSync(destination, { recursive: true });
+
+    expect(() =>
+      installFromExtractedRoot({
+        ...commonOpts(),
+        archetype: "publication",
+        features: [{ name: "bad" }],
+        destination,
+        extractedRoot,
+        sources: {
+          archetypes: { publication: { path: "publication" } },
+          features: {
+            bad: {
+              path: "registry/features/bad",
+              applicableArchetypes: ["publication"],
+            },
+          },
+          themes: {},
+          roadmap: [],
+        },
+      }),
+    ).toThrow(/non-empty version string/);
+  });
+
   it("rejects divergent dependency versions across features (#258)", () => {
     const extractedRoot = fixtureExtractedRoot();
     writeFile(
