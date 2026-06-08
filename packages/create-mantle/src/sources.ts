@@ -136,7 +136,7 @@ export const STALE_FALLBACK_SOURCES: SourcesJson = {
     "l4-playful-pop": { path: "themes/l4-playful-pop" },
   },
   roadmap: ["reservation", "community", "membership"],
-  version: "0.0.11-alpha.16",
+  version: "0.0.11-alpha.17",
 };
 
 /**
