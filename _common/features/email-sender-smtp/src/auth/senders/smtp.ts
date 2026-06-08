@@ -14,11 +14,23 @@ export interface SmtpEmailSenderConfig {
   readonly port: number;
   readonly username: string;
   readonly password: string;
-  readonly from: string;
+  readonly from: SmtpAddress;
   readonly authType?: "plain" | "login" | "cram-md5";
   readonly secure?: boolean;
   readonly startTls?: boolean;
 }
+
+export interface SmtpAddress {
+  readonly email: string;
+  readonly name?: string;
+}
+
+// `buildSmtpEmailSenderFromEnv` only allows port 465 (implicit TLS) because
+// `worker-mailer` does STARTTLS opportunistically — on port 587 it will
+// continue in cleartext if the server fails to advertise STARTTLS in EHLO.
+// Adopters who accept that risk can instantiate `SmtpEmailSender` directly
+// with `{ port: 587, startTls: true }`; the env helper stays narrow.
+const ALLOWED_ENV_SMTP_PORT = 465;
 
 export function buildSmtpEmailSenderFromEnv(
   env: SmtpEmailSenderEnv,
@@ -44,12 +56,19 @@ export function buildSmtpEmailSenderFromEnv(
     );
   }
 
+  const port = parseSmtpPort(smtpPort ?? String(ALLOWED_ENV_SMTP_PORT));
+  if (port !== ALLOWED_ENV_SMTP_PORT) {
+    throw new Error(
+      `SMTP_PORT=${port} not supported by env helper. Only ${ALLOWED_ENV_SMTP_PORT} (implicit TLS) is allowed because worker-mailer STARTTLS is opportunistic. Construct SmtpEmailSender directly if you accept that risk.`,
+    );
+  }
+
   return new SmtpEmailSender({
     host: required.SMTP_HOST!,
-    port: parseSmtpPort(smtpPort ?? "465"),
+    port,
     username: required.SMTP_USER!,
     password: required.SMTP_PASS!,
-    from: required.EMAIL_FROM!,
+    from: parseFromAddress(required.EMAIL_FROM!),
   });
 }
 
@@ -58,27 +77,54 @@ export class SmtpEmailSender implements EmailSender {
 
   async send(args: EmailSendArgs): Promise<void> {
     const port = parseSmtpPort(this.config.port);
-    await WorkerMailer.send(
-      {
-        host: this.config.host,
-        port,
-        secure: this.config.secure ?? port === 465,
-        startTls: this.config.startTls ?? port !== 465,
-        authType: this.config.authType ?? "plain",
-        credentials: {
-          username: this.config.username,
-          password: this.config.password,
-        },
+    const mailer = await WorkerMailer.connect({
+      host: this.config.host,
+      port,
+      secure: this.config.secure ?? port === 465,
+      startTls: this.config.startTls ?? port !== 465,
+      authType: this.config.authType ?? "plain",
+      credentials: {
+        username: this.config.username,
+        password: this.config.password,
       },
-      {
+    });
+    try {
+      await mailer.send({
         from: this.config.from,
         to: args.to,
         subject: args.subject,
         text: args.text,
         ...(args.html !== undefined ? { html: args.html } : {}),
-      },
+      });
+    } finally {
+      await mailer.close();
+    }
+  }
+}
+
+// RFC 5322 display-name parser, deliberately narrow:
+//   `auth@example.com`            -> { email }
+//   `Acme <auth@example.com>`     -> { name: "Acme", email }
+//   `"A, Co" <auth@example.com>`  -> { name: "A, Co", email }
+// Anything else throws — better a startup error than silently invalid
+// `MAIL FROM` envelopes that some relays accept and others reject.
+function parseFromAddress(raw: string): SmtpAddress {
+  const angle = raw.match(/^\s*(?:"([^"]*)"|([^<]*?))\s*<([^>]+)>\s*$/);
+  if (angle) {
+    const name = (angle[1] ?? angle[2] ?? "").trim();
+    const email = angle[3]!.trim();
+    if (!email.includes("@")) {
+      throw new Error(`EMAIL_FROM "${raw}" missing @ in address.`);
+    }
+    return name ? { email, name } : { email };
+  }
+  const bare = raw.trim();
+  if (!bare.includes("@") || /[<>]/.test(bare)) {
+    throw new Error(
+      `EMAIL_FROM "${raw}" is not a bare address or "Display <addr>" form.`,
     );
   }
+  return { email: bare };
 }
 
 function parseSmtpPort(raw: string | number): number {
