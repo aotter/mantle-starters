@@ -369,7 +369,11 @@ describe("fetchSourcesJson", () => {
 
     await fetchSourcesJson("feat/my branch");
     expect(fetchSpy).toHaveBeenCalledWith(
-      `https://raw.githubusercontent.com/${STARTERS_REPO}/feat%2Fmy%20branch/sources.json`,
+      expect.stringMatching(
+        new RegExp(
+          `^https://raw\\.githubusercontent\\.com/${STARTERS_REPO}/feat%2Fmy%20branch/sources\\.json\\?t=\\d+$`,
+        ),
+      ),
     );
   });
 });
