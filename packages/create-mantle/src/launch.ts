@@ -148,6 +148,7 @@ export function createOptionsFromLaunchSession(
     description: args.session.description,
     locales: args.session.locales,
     githubOwner: args.session.githubOwner,
+    adminGithubLogin: args.session.adminGithubLogin ?? args.session.githubOwner,
     summary: args.session.summary,
     theme: args.session.theme,
     features: args.session.features,

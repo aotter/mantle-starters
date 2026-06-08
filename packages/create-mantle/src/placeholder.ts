@@ -11,6 +11,7 @@ export interface PlaceholderValues {
   readonly CANONICAL_LOCALE: string;
   readonly SITE_URL: string;
   readonly GITHUB_OWNER: string;
+  readonly ADMIN_GITHUB_LOGIN: string;
   readonly INSTALL_TIMESTAMP: string;
   readonly INSTALL_SUMMARY: string;
 }
@@ -23,6 +24,7 @@ const MACRO_NAMES = [
   "CANONICAL_LOCALE",
   "SITE_URL",
   "GITHUB_OWNER",
+  "ADMIN_GITHUB_LOGIN",
   "INSTALL_TIMESTAMP",
   "INSTALL_SUMMARY",
 ] as const;

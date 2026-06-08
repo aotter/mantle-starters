@@ -12,7 +12,8 @@ npx https://github.com/aotter/mantle-starters/releases/download/v0.0.11-alpha.16
   --brand "<brand>" \
   --description "<one-line>" \
   --locales "zh-TW,en" \
-  --github-owner <gh-login> \
+  --github-owner <gh-login-or-org> \
+  --admin-github-login <gh-login> \
   --summary "<Mantle's one-line install description>" \
   [--theme <theme-key>] \
   [--feature <name[,name:variant]>] \
@@ -56,7 +57,8 @@ and deployment intent.
 | `--description` | yes | — | One-line public description. |
 | `--locales` | yes | — | Comma-separated BCP 47 list. First is canonical. |
 | `--canonical-locale` | no | first `--locales` | Override canonical locale explicitly. |
-| `--github-owner` | yes | — | Becomes `ADMIN_GITHUB_LOGIN`. |
+| `--github-owner` | yes | — | GitHub account or organization that will own the repo. |
+| `--admin-github-login` | no | `--github-owner` | First site admin's GitHub login. Set this when the repo owner is an organization. |
 | `--summary` | yes | — | Mantle's one-line install summary; lands in `mantle/site.md` `revisions[0].summary`. |
 | `--theme` | no | none | Theme overlay key resolved against `sources.themes`. |
 | `--feature` / `--features` | no | none | Source-first feature recipes. Repeat or comma-separate. Variants use `name:variant`. |

@@ -20,6 +20,7 @@ interface ParsedArgs {
   readonly locales: ReadonlyArray<string>;
   readonly canonicalLocale: string;
   readonly githubOwner: string;
+  readonly adminGithubLogin: string;
   readonly summary: string;
   readonly theme?: string | null;
   readonly features: ReadonlyArray<FeatureSelection>;
@@ -56,6 +57,7 @@ async function main(): Promise<void> {
     description: args.description,
     locales: args.locales,
     githubOwner: args.githubOwner,
+    adminGithubLogin: args.adminGithubLogin,
     summary: args.summary,
     theme: args.theme ?? null,
     features: args.features,
@@ -136,7 +138,7 @@ function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
   const archetype = positional[0];
   if (!archetype) {
     throw new Error(
-      "Usage: create-mantle <archetype> --project-name <name> --brand <...> --description <...> --locales <a,b> --github-owner <login> --summary <one-line> [--theme <key>] [--feature <name[,name:variant]>] [--ref <git-ref>]",
+      "Usage: create-mantle <archetype> --project-name <name> --brand <...> --description <...> --locales <a,b> --github-owner <login-or-org> --summary <one-line> [--admin-github-login <login>] [--theme <key>] [--feature <name[,name:variant]>] [--ref <git-ref>]",
     );
   }
   const projectName = required(flags, "project-name");
@@ -149,6 +151,7 @@ function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
   );
   const canonicalLocale = flags["canonical-locale"] ?? locales[0]!;
   const githubOwner = required(flags, "github-owner");
+  const adminGithubLogin = flags["admin-github-login"] ?? githubOwner;
   const summary = required(flags, "summary");
   // `--ref` and `--starter-ref` are aliases; `--ref` is the canonical
   // public flag (per Epic #116). `--starter-ref` retained for
@@ -164,6 +167,7 @@ function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
     locales,
     canonicalLocale,
     githubOwner,
+    adminGithubLogin,
     summary,
     ...(theme !== undefined ? { theme } : {}),
     features,

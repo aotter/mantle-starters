@@ -43,4 +43,4 @@ PUBLIC_ORIGIN=http://localhost:8787
 # callback URL alongside the localhost one.
 GITHUB_CLIENT_ID=<your_github_oauth_app_client_id>
 GITHUB_CLIENT_SECRET=<your_github_oauth_app_client_secret>
-ADMIN_GITHUB_LOGIN=<your_github_login>
+ADMIN_GITHUB_LOGIN={{ADMIN_GITHUB_LOGIN}}

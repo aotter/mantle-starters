@@ -9,6 +9,7 @@ const values = {
   CANONICAL_LOCALE: "zh-TW",
   SITE_URL: "https://example.com",
   GITHUB_OWNER: "phsu",
+  ADMIN_GITHUB_LOGIN: "phsu",
   INSTALL_TIMESTAMP: "2026-05-12T14:03:00Z",
   INSTALL_SUMMARY: "bootstrapped presence site for Lab Cafe in zh-TW/en",
 };
