@@ -6,6 +6,24 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The repository version reflects the `create-mantle` scaffolder tarball attached to each GitHub release. Individual starter packages pin `@aotter/mantle-*` versions independently inside their own `package.json`.
 
+## [v0.0.11-alpha.17] — 2026-06-09
+
+### Added
+
+- **Publication starter**: include the theme override contract file so generated
+  publication projects can resolve landing-selected themes without a missing
+  `src/Theme.ts`.
+
+### Changed
+
+- **create-mantle**: support a separate `--admin-github-login` answer from
+  `--github-owner`, so landing provisioning can install into an org while making
+  the signed-in GitHub user the Mantle admin.
+- **create-mantle**: substitute placeholders in `.dev.vars.example` files, which
+  keeps generated starter env examples aligned with the landing-provided answers.
+- **All archetypes**: starter package versions move to `0.0.11-alpha.17` while
+  keeping `@aotter/mantle*` SDK/runtime pins on `0.0.11-alpha.16`.
+
 ## [v0.0.11-alpha.16] — 2026-05-25
 
 ### Added
