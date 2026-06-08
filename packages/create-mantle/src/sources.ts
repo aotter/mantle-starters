@@ -145,7 +145,9 @@ export const STALE_FALLBACK_SOURCES: SourcesJson = {
  * failure, after writing a warning to stderr — installs proceed.
  */
 export async function fetchSourcesJson(ref: string): Promise<SourcesJson> {
-  const url = `https://raw.githubusercontent.com/${STARTERS_REPO}/${encodeURIComponent(ref)}/sources.json`;
+  const url =
+    `https://raw.githubusercontent.com/${STARTERS_REPO}/${encodeURIComponent(ref)}/sources.json` +
+    `?t=${Date.now()}`;
   try {
     const res = await fetch(url);
     if (!res.ok) {
