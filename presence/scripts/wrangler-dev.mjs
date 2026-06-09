@@ -18,7 +18,7 @@ for (const dir of [home, cache, config, data, state, logs]) {
 const args = [
   "dev",
   "--ip",
-  process.env.WRANGLER_DEV_IP ?? "127.0.0.1",
+  process.env.WRANGLER_DEV_IP ?? "localhost",
   "--port",
   process.env.WRANGLER_DEV_PORT ?? "8787",
   "--inspector-port",

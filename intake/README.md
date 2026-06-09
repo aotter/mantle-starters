@@ -85,7 +85,7 @@ Seed demo content and start the dev server:
 ```bash
 pnpm validate
 pnpm fixture     # one-time: seeds dev D1/KV with demo posts + pages
-pnpm dev         # safe wrangler dev — http://127.0.0.1:8787
+pnpm dev         # safe wrangler dev — http://localhost:8787
 ```
 
 Open <http://localhost:8787>. The root URL 302-redirects to your

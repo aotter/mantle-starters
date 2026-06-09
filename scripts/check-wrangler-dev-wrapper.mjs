@@ -79,7 +79,7 @@ for (const wrapper of wrappers) {
     }
 
     const captured = JSON.parse(readFileSync(capture, "utf8"));
-    assertArg(captured.argv, "--ip", "127.0.0.1", wrapper);
+    assertArg(captured.argv, "--ip", "localhost", wrapper);
     assertArg(captured.argv, "--port", "8787", wrapper);
     assertArg(captured.argv, "--inspector-port", "0", wrapper);
     assertArg(captured.argv, "--persist-to", ".wrangler", wrapper);
