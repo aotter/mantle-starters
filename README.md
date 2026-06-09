@@ -170,9 +170,11 @@ pnpm dev
 ```
 
 `pnpm dev` runs the starter's safe Wrangler wrapper: it binds to
-`127.0.0.1:8787`, keeps inspector port selection out of the way, and
+`localhost:8787`, keeps inspector port selection out of the way, and
 stores Wrangler HOME/XDG/log/state files under project-local ignored
 directories.
+Use `localhost`, not `127.0.0.1`, in browser URLs and OAuth app settings so
+cookies, callbacks, and local onboarding state all share the same origin.
 
 The root CI runs the workspace checks across starters and the
 scaffolder, but each starter remains a standalone consumer project.

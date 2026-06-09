@@ -215,12 +215,7 @@ async function readLaunchSessionRef(ref: string): Promise<string> {
 }
 
 function isLocalHttpUrl(url: URL): boolean {
-  return (
-    url.hostname === "localhost" ||
-    url.hostname === "127.0.0.1" ||
-    url.hostname === "::1" ||
-    url.hostname === "[::1]"
-  );
+  return url.hostname === "localhost";
 }
 
 function normalizeLaunchLocales(root: JsonRecord): {
