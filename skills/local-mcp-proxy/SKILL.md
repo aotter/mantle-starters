@@ -143,17 +143,57 @@ Minimal proof, before telling the user it works:
    `WWW-Authenticate: Bearer … resource_metadata=…` header proves the MCP
    surface and OAuth metadata are wired.
 2. **Client-side capability check**: after the OAuth sign-in, list tools from
-   the client (`/mcp` in Claude Code; tool picker in Desktop/Cowork). Expect
-   the generic catalog (`list_entries`, `get_entry`, `query_view_*`,
-   `create_draft_*` per collection) plus any starter-declared MCP procedures.
-3. Call one **read** tool (e.g. a `query_view_*`) end-to-end. Don't smoke-test
-   with a write.
+   the client (`/mcp` in Claude Code; tool picker in Desktop/Cowork). What to
+   expect differs per surface (as of `@aotter/mantle` alpha.16):
+   - `/mcp/staff` → generic catalog (`list_entries`, `get_entry`, …) +
+     `create_draft_*` / `update_draft_*` per collection + MCP-bound
+     procedures. **No `query_view_*` tools** — staff-side view tools are an
+     open gap, tracked in
+     [aotter/mantle#332](https://github.com/aotter/mantle/issues/332).
+   - `/mcp` → `query_view_*` per View + public MCP-bound procedures.
+3. Call one **read** tool end-to-end (`query_view_*` on `/mcp`;
+   `list_entries` on `/mcp/staff`). Don't smoke-test with a write.
 
 If `tools/list` works but a staff tool returns `AUTH_DENIED`, the signed-in
 user has no staff role — re-check the `bootstrapOwner` match in `.dev.vars`
 (the promotion only fires for the *first* user ever created; a wrong-email
 first sign-in permanently misses it — wipe the local D1 state under
 `.wrangler/` and sign in again).
+
+## Optional: zero-auth local mode (consumer-side pattern)
+
+For tight agent dev loops the browser OAuth round per client/session can be
+the dominant friction. A consumer project can opt into a **local-only auth
+bypass**: route `/mcp/staff` around the OAuthProvider and call the same
+`createMcpApiHandler` result with synthetic props, in the worker's top-level
+fetch:
+
+```ts
+// src/index.ts — consumer project, NOT the SDK
+const mcpBypass =
+  env.DEV_MCP_AUTH_BYPASS === "1" &&
+  (env.PUBLIC_ORIGIN ?? "http://localhost:8787").startsWith("http://localhost");
+
+if (mcpBypass && new URL(req.url).pathname.startsWith("/mcp/staff")) {
+  return staffMcpHandler.fetch(req, env, {
+    waitUntil: ctx.waitUntil.bind(ctx),
+    passThroughOnException: ctx.passThroughOnException.bind(ctx),
+    props: { userId: "local-dev-owner", role: "owner" },
+  } as unknown as ExecutionContext);
+}
+return oauthProvider.fetch(req, env, ctx);
+```
+
+With this on, `/mcp/staff` never 401s, so every client in the matrix above
+connects with **no OAuth step at all** — the `.mcp.json` / `mcp-remote`
+configs stay identical. Hard rules:
+
+- Gate on an explicit `.dev.vars` flag **AND** an `http://localhost` origin
+  check. The double guard means a leaked env var alone cannot open this in
+  production (deployed origins are `https://`).
+- Emit a loud boot warning when active.
+- This is a consumer-side pattern for now; if it proves common, propose a
+  first-class `createMcpApiHandler({ devBypass })` option on the parent repo.
 
 ## Hygiene
 
