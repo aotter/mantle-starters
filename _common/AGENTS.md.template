@@ -30,6 +30,12 @@ Public site: {{SITE_URL}}  (placeholder until provision)
   `<SITE_URL>/mcp/staff`. Do not write directly to D1 / KV.
 - To rebuild site logic, change archetype, or rework prose: invoke the
   Mantle install skill again (URL in `mantle/site.md` frontmatter).
+- `pnpm dev` uses Miniflare and is not a production resource-limit
+  simulator. For bulk D1 imports or large updates, chunk/batch the
+  work and smoke-test against Wrangler remote bindings / remote dev
+  when available, or against a deployed Worker; production enforces
+  per-invocation internal subrequest limits that local dev may not
+  expose.
 
 ### Media uploads
 

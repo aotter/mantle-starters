@@ -10,8 +10,21 @@ const config = resolve(home, "config");
 const data = resolve(home, "data");
 const state = resolve(home, "state");
 const logs = resolve(home, "logs");
+const windowsProfile = resolve(home, "profile");
+const windowsRoaming = resolve(home, "appdata", "roaming");
+const windowsLocal = resolve(home, "appdata", "local");
 
-for (const dir of [home, cache, config, data, state, logs]) {
+for (const dir of [
+  home,
+  cache,
+  config,
+  data,
+  state,
+  logs,
+  windowsProfile,
+  windowsRoaming,
+  windowsLocal,
+]) {
   mkdirSync(dir, { recursive: true });
 }
 
@@ -38,6 +51,10 @@ const child = spawn("wrangler", args, {
     XDG_CONFIG_HOME: config,
     XDG_DATA_HOME: data,
     XDG_STATE_HOME: state,
+    WRANGLER_HOME: home,
+    USERPROFILE: windowsProfile,
+    APPDATA: windowsRoaming,
+    LOCALAPPDATA: windowsLocal,
     WRANGLER_LOG_PATH:
       process.env.WRANGLER_LOG_PATH ?? resolve(logs, "wrangler.log"),
     WRANGLER_WRITE_LOGS: process.env.WRANGLER_WRITE_LOGS ?? "false",
