@@ -33,6 +33,12 @@
  *   lock:<workId>             { state: "pending" | "completed", at: ms }
  *   sku:<skuCode>             { available: number, reserved: number }
  *   reservation:<orderId>     { items: [{skuCode, qty}], expiresAt }
+ *   committed:<orderId>       { at: ms, late: boolean }  — commit tombstone
+ *
+ * The commit tombstone is what makes `commit()` idempotent now that
+ * it can also mutate stock when the reservation is gone (the
+ * late-commit path — see `commit()`). Without it, a replayed
+ * callback with a fresh eventId would double-deduct.
  *
  * Method calls arrive via JSON-RPC over `stub.fetch(...)`. Single-
  * threaded per instance → no internal locks needed inside method
@@ -81,9 +87,68 @@ interface ReservationEntry {
   readonly expiresAt: number;
 }
 
+/** Persisted marker that `commit(orderId)` already ran. See the
+ *  docblock storage-keys table for why commit needs one. */
+interface CommitTombstone {
+  readonly at: number;
+  readonly late: boolean;
+}
+
+export interface CommitItem {
+  readonly skuCode: string;
+  readonly qty: number;
+}
+
+export interface CommitResult {
+  /**
+   * - "committed":         live reservation consumed (normal path).
+   * - "late-committed":    the reservation was already released (by
+   *                        the expiry alarm or a failed-callback), so
+   *                        stock was deducted directly from
+   *                        `available` using the caller-supplied
+   *                        fallbackItems. `available` may go negative
+   *                        — negative = oversold, which correctly
+   *                        blocks further reserves and is visible in
+   *                        staff snapshots.
+   * - "already-committed": tombstone hit — a prior call committed
+   *                        this orderId; nothing changed.
+   * - "no-reservation":    nothing known for this orderId and no
+   *                        fallbackItems supplied (all-untracked
+   *                        cart, or the KV stash already expired).
+   */
+  readonly outcome:
+    | "committed"
+    | "late-committed"
+    | "already-committed"
+    | "no-reservation";
+  readonly committed: ReadonlyArray<CommitItem>;
+  /** True when this commit (or, for "already-committed", the original
+   *  one) took the late path. Callers stamp it on the order row so
+   *  staff can trace negative stock back to its order. */
+  readonly late: boolean;
+}
+
 const PENDING_LOCK_TTL_MS = 10 * 60 * 1000; // 10 min
-const RESERVATION_TTL_MS = 10 * 60 * 1000; // 10 min
+/**
+ * How long a checkout reservation holds stock before the expiry
+ * alarm releases it back to `available`.
+ *
+ * 30 min, not 10: ECPay's hosted credit-card page stays payable well
+ * past 10 minutes (3-D Secure, OTP delays, customer hesitation), and
+ * ECPay sends NO callback when a customer simply abandons the page —
+ * the expiry alarm is the only abandonment recovery. A payment that
+ * lands AFTER expiry still deducts stock via the late-commit path in
+ * `commit()`; this TTL only tunes how often that (negative-stock
+ * capable) path fires vs. how long abandoned carts pin stock.
+ */
+const RESERVATION_TTL_MS = 30 * 60 * 1000; // 30 min
 const COMPLETED_LOCK_RETENTION_MS = 24 * 60 * 60 * 1000; // 24h
+/**
+ * Commit tombstones live as long as the KV order-cart stash (7 days).
+ * Past that, `commitOrder` can no longer supply fallbackItems, so a
+ * tombstone has nothing left to dedup against.
+ */
+const COMMIT_TOMBSTONE_RETENTION_MS = 7 * 24 * 60 * 60 * 1000; // 7d
 
 export class InventoryActor implements DurableObject {
   constructor(
@@ -117,7 +182,8 @@ export class InventoryActor implements DurableObject {
    * Sweeper — invoked from a queue tick. Walks `lock:*` keys; resets
    * stale `pending` (older than TTL) by deleting the lock so a queue
    * redelivery can re-acquire and the idempotent work side effects
-   * run again. Also garbage-collects `completed` locks past retention.
+   * run again. Also garbage-collects `completed` locks and
+   * `committed:*` tombstones past their retentions.
    */
   async sweepStaleLocks(): Promise<{ resetCount: number; gcCount: number }> {
     const now = Date.now();
@@ -134,6 +200,15 @@ export class InventoryActor implements DurableObject {
         value.state === "completed" &&
         now - value.at > COMPLETED_LOCK_RETENTION_MS
       ) {
+        await this.state.storage.delete(key);
+        gcCount += 1;
+      }
+    }
+    const tombstones = await this.state.storage.list<CommitTombstone>({
+      prefix: "committed:",
+    });
+    for (const [key, value] of tombstones) {
+      if (now - value.at > COMMIT_TOMBSTONE_RETENTION_MS) {
         await this.state.storage.delete(key);
         gcCount += 1;
       }
@@ -168,24 +243,24 @@ export class InventoryActor implements DurableObject {
     }
 
     // Second pass: decrement available / increment reserved + persist
-    // reservation record. Single DO instance → no race; this whole
-    // method body is atomic.
+    // the reservation record in ONE storage transaction, so a
+    // mid-method crash can't leave SKU counts decremented without the
+    // reservation record that would later release them. (Single DO
+    // instance → no interleaving between the read pass and this.)
     const now = Date.now();
     const expiresAt = now + RESERVATION_TTL_MS;
-    const updates = new Map<string, SkuInventory>();
-    for (const item of req.items) {
-      const inv = skus.get(`sku:${item.skuCode}`)!;
-      updates.set(`sku:${item.skuCode}`, {
-        available: inv.available - item.qty,
-        reserved: inv.reserved + item.qty,
+    await this.state.storage.transaction(async (txn) => {
+      for (const item of req.items) {
+        const inv = skus.get(`sku:${item.skuCode}`)!;
+        await txn.put<SkuInventory>(`sku:${item.skuCode}`, {
+          available: inv.available - item.qty,
+          reserved: inv.reserved + item.qty,
+        });
+      }
+      await txn.put<ReservationEntry>(`reservation:${req.orderId}`, {
+        items: req.items,
+        expiresAt,
       });
-    }
-    for (const [key, value] of updates) {
-      await this.state.storage.put(key, value);
-    }
-    await this.state.storage.put<ReservationEntry>(`reservation:${req.orderId}`, {
-      items: req.items,
-      expiresAt,
     });
 
     // Set alarm if no earlier one is scheduled. Auto-release covers
@@ -199,54 +274,112 @@ export class InventoryActor implements DurableObject {
     return { ok: true, orderId: req.orderId, expiresAt };
   }
 
+  /**
+   * Consume the reservation for a paid order — or, when the
+   * reservation already expired, deduct the stock late.
+   *
+   * Why a late path exists: the expiry alarm releases abandoned
+   * reservations after RESERVATION_TTL_MS, but the provider's
+   * "succeeded" callback can land after that (slow 3DS, customer
+   * dwell on the hosted page). The payment is real either way — the
+   * stock MUST come out. Deducting `available` directly (allowing
+   * negative) is the honest representation: negative blocks further
+   * reserves and shows up in staff snapshots as oversold.
+   *
+   * Idempotency: the tombstone (written in the same transaction as
+   * the stock mutation) makes replays — sweeper-then-retry, duplicate
+   * provider events with fresh eventIds — observe "already-committed"
+   * instead of double-deducting.
+   */
   async commit(
     orderId: string,
-  ): Promise<{ committed: ReadonlyArray<{ skuCode: string; qty: number }> }> {
-    const reservation = await this.state.storage.get<ReservationEntry>(
-      `reservation:${orderId}`,
-    );
-    if (!reservation) {
-      // Idempotent: already committed (or never reserved — untracked
-      // SKUs). Return empty so the caller's INSERT OR IGNORE on the
-      // order row remains the source-of-truth dedup signal.
-      return { committed: [] };
-    }
-    const updates = new Map<string, SkuInventory>();
-    for (const item of reservation.items) {
-      const inv = await this.state.storage.get<SkuInventory>(
-        `sku:${item.skuCode}`,
+    fallbackItems?: ReadonlyArray<CommitItem>,
+  ): Promise<CommitResult> {
+    const tombstoneKey = `committed:${orderId}`;
+    return this.state.storage.transaction(async (txn): Promise<CommitResult> => {
+      const tombstone = await txn.get<CommitTombstone>(tombstoneKey);
+      if (tombstone) {
+        return {
+          outcome: "already-committed",
+          committed: [],
+          late: tombstone.late,
+        };
+      }
+      const now = Date.now();
+      const reservation = await txn.get<ReservationEntry>(
+        `reservation:${orderId}`,
       );
-      const reserved = inv?.reserved ?? 0;
-      const available = inv?.available ?? 0;
-      updates.set(`sku:${item.skuCode}`, {
-        available,
-        reserved: Math.max(0, reserved - item.qty),
-      });
-    }
-    for (const [key, value] of updates) {
-      await this.state.storage.put(key, value);
-    }
-    await this.state.storage.delete(`reservation:${orderId}`);
-    return { committed: reservation.items.map((i) => ({ ...i })) };
+      if (reservation) {
+        // Normal path: stock already left `available` at reserve
+        // time; consume the reserved count + the reservation record.
+        for (const item of reservation.items) {
+          const inv = await txn.get<SkuInventory>(`sku:${item.skuCode}`);
+          await txn.put<SkuInventory>(`sku:${item.skuCode}`, {
+            available: inv?.available ?? 0,
+            reserved: Math.max(0, (inv?.reserved ?? 0) - item.qty),
+          });
+        }
+        await txn.delete(`reservation:${orderId}`);
+        await txn.put<CommitTombstone>(tombstoneKey, { at: now, late: false });
+        return {
+          outcome: "committed",
+          committed: reservation.items.map((i) => ({ ...i })),
+          late: false,
+        };
+      }
+      if (fallbackItems && fallbackItems.length > 0) {
+        // Late path: the reservation is gone (expiry alarm or a
+        // failed-callback release), so `available` was already
+        // restored — deduct it again now that the money landed.
+        for (const item of fallbackItems) {
+          const inv = await txn.get<SkuInventory>(`sku:${item.skuCode}`);
+          await txn.put<SkuInventory>(`sku:${item.skuCode}`, {
+            available: (inv?.available ?? 0) - item.qty, // may go negative
+            reserved: inv?.reserved ?? 0,
+          });
+        }
+        await txn.put<CommitTombstone>(tombstoneKey, { at: now, late: true });
+        return {
+          outcome: "late-committed",
+          committed: fallbackItems.map((i) => ({ ...i })),
+          late: true,
+        };
+      }
+      // Nothing known and nothing to deduct: all-untracked cart, or
+      // the caller had no stash left to reconstruct items from. The
+      // caller decides whether that's benign (untracked) or worth a
+      // loud warning (stash expired on a tracked order).
+      return { outcome: "no-reservation", committed: [], late: false };
+    });
   }
 
   async release(orderId: string): Promise<void> {
-    const reservation = await this.state.storage.get<ReservationEntry>(
-      `reservation:${orderId}`,
-    );
-    if (!reservation) return; // already released (idempotent)
-    for (const item of reservation.items) {
-      const inv = await this.state.storage.get<SkuInventory>(
-        `sku:${item.skuCode}`,
+    await this.state.storage.transaction(async (txn) => {
+      const reservation = await txn.get<ReservationEntry>(
+        `reservation:${orderId}`,
       );
-      const reserved = inv?.reserved ?? 0;
-      const available = inv?.available ?? 0;
-      await this.state.storage.put<SkuInventory>(`sku:${item.skuCode}`, {
-        available: available + item.qty,
-        reserved: Math.max(0, reserved - item.qty),
-      });
-    }
-    await this.state.storage.delete(`reservation:${orderId}`);
+      if (!reservation) return; // already released (idempotent)
+      // Invariant: a committed order is never released back to stock.
+      // Unreachable through the current call graph (commit deletes the
+      // reservation in the same transaction as its tombstone), but
+      // forks of this starter have reordered these paths before —
+      // enforcing it here keeps the invariant local to the authority.
+      const tombstone = await txn.get<CommitTombstone>(
+        `committed:${orderId}`,
+      );
+      if (tombstone) {
+        await txn.delete(`reservation:${orderId}`);
+        return;
+      }
+      for (const item of reservation.items) {
+        const inv = await txn.get<SkuInventory>(`sku:${item.skuCode}`);
+        await txn.put<SkuInventory>(`sku:${item.skuCode}`, {
+          available: (inv?.available ?? 0) + item.qty,
+          reserved: Math.max(0, (inv?.reserved ?? 0) - item.qty),
+        });
+      }
+      await txn.delete(`reservation:${orderId}`);
+    });
   }
 
   async snapshot(
@@ -297,8 +430,13 @@ export class InventoryActor implements DurableObject {
         return this.sweepStaleLocks();
       case "reserve":
         return this.reserve(args as ReserveRequest);
-      case "commit":
-        return this.commit((args as { orderId: string }).orderId);
+      case "commit": {
+        const a = args as {
+          orderId: string;
+          fallbackItems?: CommitItem[];
+        };
+        return this.commit(a.orderId, a.fallbackItems);
+      }
       case "release":
         await this.release((args as { orderId: string }).orderId);
         return null;
@@ -347,9 +485,10 @@ export interface InventoryActorClient {
   markCompleted(workId: string): Promise<void>;
   sweepStaleLocks(): Promise<{ resetCount: number; gcCount: number }>;
   reserve(req: ReserveRequest): Promise<ReserveResult | ReserveFailure>;
-  commit(orderId: string): Promise<{
-    committed: ReadonlyArray<{ skuCode: string; qty: number }>;
-  }>;
+  commit(
+    orderId: string,
+    fallbackItems?: ReadonlyArray<CommitItem>,
+  ): Promise<CommitResult>;
   release(orderId: string): Promise<void>;
   snapshot(skuCode: string): Promise<{ available: number; reserved: number }>;
   restock(skuCode: string, addQty: number): Promise<void>;
@@ -388,7 +527,8 @@ export function inventoryActorClient(stub: DurableObjectStub): InventoryActorCli
     markCompleted: (workId) => call("markCompleted", { workId }),
     sweepStaleLocks: () => call("sweepStaleLocks"),
     reserve: (req) => call<ReserveResult | ReserveFailure>("reserve", req),
-    commit: (orderId) => call("commit", { orderId }),
+    commit: (orderId, fallbackItems) =>
+      call<CommitResult>("commit", { orderId, fallbackItems }),
     release: (orderId) => call("release", { orderId }),
     snapshot: (skuCode) => call("snapshot", { skuCode }),
     restock: (skuCode, addQty) => call("restock", { skuCode, addQty }),

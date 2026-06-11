@@ -13,9 +13,11 @@
  * "delayed", iDEAL bank transfer all routinely settle in 3-5 days.
  * 7 days covers the long tail; orders that settle past then fall to
  * the event-only fallback in `commitOrder.buildOrderRowData` (no
- * item granularity, but payment + total + email survive). The 10-min
- * reservation alarm on the InventoryActor handles abandoned-cart
- * inventory release independently of this stash.
+ * item granularity, but payment + total + email survive). The
+ * reservation expiry alarm on the InventoryActor (RESERVATION_TTL_MS)
+ * handles abandoned-cart inventory release independently of this
+ * stash; payments that land after that expiry deduct stock via the
+ * late-commit path, which reads the tracked lines from this stash.
  *
  * Caller contract: the cart stash is treated as a hint, not as
  * source-of-truth. commitOrder MUST tolerate `null` from
@@ -38,6 +40,12 @@ export interface OrderCartLine {
    *  without re-joining the SKU's optionValues against the SPU's
    *  optionAxes. Omitted for single-default-SKU products. */
   readonly variantLabel?: string;
+  /** Snapshot of the SKU's inventory mode at checkout time. The
+   *  callback consumer uses it to reconstruct which lines were
+   *  reserved when it needs the late-commit fallback (reservation
+   *  expired before payment). Optional: stashes written before this
+   *  field existed fall back to a product-skus lookup. */
+  readonly inventoryMode?: "tracked" | "untracked";
 }
 
 /** Shape of the customer-supplied shipping address threaded

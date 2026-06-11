@@ -21,6 +21,7 @@ import { buildCheckoutReturn } from "./handlers/checkoutReturn.js";
 import { enforceCheckoutPolicy } from "./handlers/checkoutPolicy.js";
 import { enqueueDevCallback } from "./payment/devCallbackShim.js";
 import { restockSkuCore } from "./handlers/restockSku.js";
+import { getInventoryActor } from "./durableObjects/InventoryActor.js";
 import { renderProductList } from "./templates/productList.js";
 import { renderProductDetail } from "./templates/productDetail.js";
 import { renderPage } from "./templates/page.js";
@@ -324,6 +325,20 @@ function buildWorker(env: Env): WorkerFetch {
         const msg = err instanceof Error ? err.message : String(err);
         return c.json({ error: msg }, 400);
       }
+    });
+
+    // Simulates the reservation-expiry alarm for one order — exactly
+    // the release() call alarm() makes, so the smoke can exercise the
+    // late-commit path (payment landing after expiry) without waiting
+    // out RESERVATION_TTL_MS. Same FAKE_PAYMENT_PROVIDER gate as the
+    // restock bypass above.
+    app.post("/__test/release-reservation", async (c) => {
+      const body = (await c.req.json()) as { orderId?: string };
+      if (!body.orderId) {
+        return c.json({ error: "missing orderId" }, 400);
+      }
+      await getInventoryActor(env).release(body.orderId);
+      return c.json({ ok: true });
     });
   }
 
