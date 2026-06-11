@@ -210,10 +210,16 @@ pnpm dev
 
 `pnpm dev` runs the starter's safe Wrangler wrapper: it binds to
 `localhost:8787`, keeps inspector port selection out of the way, and
-stores Wrangler HOME/XDG/log/state files under project-local ignored
-directories.
+stores Wrangler HOME/XDG/Windows profile/log/state files under
+project-local ignored directories.
 Use `localhost`, not `127.0.0.1`, in browser URLs and OAuth app settings so
 cookies, callbacks, and local onboarding state all share the same origin.
+
+Miniflare-backed `wrangler dev` is not a production resource-limit
+simulator. Bulk D1 flows must still be chunked/batched and smoke-tested
+against Wrangler remote bindings / remote dev when available, or against
+a deployed Worker before release; Cloudflare enforces per-invocation
+subrequest limits for internal services such as D1 in production.
 
 The root CI runs the workspace checks across starters and the
 scaffolder, but each starter remains a standalone consumer project.
