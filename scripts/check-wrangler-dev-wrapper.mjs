@@ -10,7 +10,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { delimiter, join, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 const wrappers = [
@@ -50,6 +50,10 @@ for (const wrapper of wrappers) {
         "    XDG_CONFIG_HOME: process.env.XDG_CONFIG_HOME,",
         "    XDG_DATA_HOME: process.env.XDG_DATA_HOME,",
         "    XDG_STATE_HOME: process.env.XDG_STATE_HOME,",
+        "    WRANGLER_HOME: process.env.WRANGLER_HOME,",
+        "    USERPROFILE: process.env.USERPROFILE,",
+        "    APPDATA: process.env.APPDATA,",
+        "    LOCALAPPDATA: process.env.LOCALAPPDATA,",
         "    WRANGLER_LOG_PATH: process.env.WRANGLER_LOG_PATH,",
         "    WRANGLER_WRITE_LOGS: process.env.WRANGLER_WRITE_LOGS,",
         "  },",
@@ -58,6 +62,10 @@ for (const wrapper of wrappers) {
       ].join("\n"),
     );
     chmodSync(fakeWrangler, 0o755);
+    writeFileSync(
+      join(bin, "wrangler.cmd"),
+      `@echo off\r\n"${process.execPath}" "%~dp0wrangler" %*\r\n`,
+    );
 
     const result = spawnSync(
       process.execPath,
@@ -66,7 +74,7 @@ for (const wrapper of wrappers) {
         cwd: temp,
         env: {
           ...process.env,
-          PATH: `${bin}:${process.env.PATH ?? ""}`,
+          PATH: `${bin}${delimiter}${process.env.PATH ?? ""}`,
           WRANGLER_DEV_CAPTURE: capture,
         },
         encoding: "utf8",
@@ -96,6 +104,10 @@ for (const wrapper of wrappers) {
       "XDG_CONFIG_HOME",
       "XDG_DATA_HOME",
       "XDG_STATE_HOME",
+      "WRANGLER_HOME",
+      "USERPROFILE",
+      "APPDATA",
+      "LOCALAPPDATA",
       "WRANGLER_LOG_PATH",
     ]) {
       if (!captured.env[key]?.startsWith(expectedHome)) {

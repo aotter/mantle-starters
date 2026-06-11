@@ -9,6 +9,11 @@ the macro substitution pass.
 Mantle workflow helper — runs from the consumer project root. See the
 file header for verbs.
 
+Besides `prompt`, it wraps `mantle emit-openapi` and `mantle emit-types`
+so starter package scripts can write UTF-8 files through Node instead
+of shell redirection. This avoids Windows CMD / PowerShell redirect
+encoding surprises in generated `openapi.json` and `mantle-types.d.ts`.
+
 ## `provision.mjs` + `.mantle-shared-provision.mjs`
 
 Shared post-deploy provision helper used by every archetype.
