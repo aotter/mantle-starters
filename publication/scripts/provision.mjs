@@ -1,23 +1,21 @@
 #!/usr/bin/env node
 /**
- * Single-shot provision orchestrator for mantle-starter-publication.
+ * Post-Cloudflare-first-deploy provision helper for Mantle Publication.
  *
- * Two subcommands:
+ * Happy path:
+ *   1. The user's agent scaffolds and pushes this repo.
+ *   2. The user imports the repo in Cloudflare Workers Builds and runs
+ *      the first deploy from the dashboard/GitHub integration.
+ *   3. The user reports the Worker URL back to the agent.
+ *   4. The user creates a GitHub OAuth App with that URL.
+ *   5. The agent runs this script to write non-secret config and set
+ *      Worker secrets via Wrangler.
  *
- *   pnpm run provision:plan -- --project-name X
- *     Reads CF account state, computes the worker URL, and prints the
- *     resources that will be created plus the GitHub OAuth App
- *     instructions. No side effects.
- *
- *   GITHUB_CLIENT_SECRET=... pnpm run provision:up -- \
- *       --project-name X --github-username Y --client-id Z \
- *       [--client-secret W]
- *     Creates D1 + render KV + Turnstile widget via CF API, writes
- *     wrangler.toml + site defaults, deploys, sets worker
- *     secrets, and prints the final handoff. It never seeds production
- *     content. CLOUDFLARE_API_TOKEN must be exported.
+ * This script intentionally does NOT use CLOUDFLARE_API_TOKEN and does
+ * NOT create D1/KV/Turnstile resources. Cloudflare's first Git deploy
+ * owns D1/KV auto-provisioning; Turnstile is a later optional setup.
  */
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 
@@ -25,148 +23,108 @@ const COMMAND = process.argv[2];
 const SUB_ARGV = process.argv.slice(3);
 
 if (COMMAND === "plan") {
-  await plan(parseArgs(SUB_ARGV));
+  plan(parseArgs(SUB_ARGV));
 } else if (COMMAND === "up") {
-  await up(parseArgs(SUB_ARGV));
+  up(parseArgs(SUB_ARGV));
 } else {
   throw new Error("usage: provision plan|up [args]");
 }
 
-async function plan(args) {
-  const projectName = requireArg(args, "project-name");
-  const names = resourceNames(projectName);
-  const token = requireToken();
-  const ctx = await fetchContext(token, projectName);
-  printPlan(ctx, names);
+function plan(args) {
+  const projectName = args["project-name"] ?? readWorkerName();
+  console.log(`
+==============================================
+Mantle post-deploy provisioning plan
+==============================================
+
+Cloudflare first:
+  1. Push this repo to GitHub.
+  2. In Cloudflare dashboard, create a Worker from GitHub and select this repo.
+  3. Keep the Worker name as: ${projectName}
+  4. Run the first deploy.
+  5. Copy the deployed Worker URL and come back to your coding agent.
+
+GitHub OAuth App next:
+  1. Open https://github.com/settings/developers → New OAuth App
+  2. Fill in:
+       Application name:           ${projectName}
+       Homepage URL:               <worker-url>
+       Authorization callback URL: <worker-url>/api/auth/callback/github
+       Enable Device Flow:         leave UNCHECKED
+  3. Register application.
+  4. Copy Client ID. Generate Client Secret. Copy Client Secret once.
+
+Agent handoff:
+  read -rsp "GitHub Client Secret: " GITHUB_CLIENT_SECRET && export GITHUB_CLIENT_SECRET && printf "\\n"
+
+  pnpm run provision:up -- \\
+    --worker-url <worker-url> \\
+    --github-username <your-github-login> \\
+    --client-id <client-id>
+
+Before provision:up, make sure Wrangler is authorized for the same
+Cloudflare account:
+  pnpm exec wrangler login
+
+Turnstile is optional after launch. If you create a Turnstile widget
+later, rerun provision:up with --turnstile-site-key and
+TURNSTILE_SECRET_KEY exported.
+`);
 }
 
-async function up(args) {
-  const projectName = requireArg(args, "project-name");
-  const names = resourceNames(projectName);
+function up(args) {
+  const workerUrl = normalizeWorkerUrl(requireArg(args, "worker-url"));
   const githubUsername = requireArg(args, "github-username");
   const clientId = requireArg(args, "client-id");
   const clientSecret = requireSecretArg(args, "client-secret", "GITHUB_CLIENT_SECRET");
-  if (args["seed-file"]) {
-    throw new Error(
-      [
-        "provision:up no longer applies seed files.",
-        "Provision first, ask the site owner what initial content they want, then create content through MCP/admin authoring.",
-        "seed:initial and fixture data are for tests and OSS contributor local dev only.",
-      ].join(" "),
-    );
-  }
-  const token = requireToken();
+  const turnstileSiteKey = args["turnstile-site-key"];
+  const turnstileSecret = args["turnstile-secret"] ?? process.env.TURNSTILE_SECRET_KEY;
 
-  const ctx = await fetchContext(token, projectName);
-  console.log(`Provisioning ${projectName} → ${ctx.workerUrl}`);
+  console.log(`Configuring Mantle publication for ${workerUrl}`);
 
-  console.log("\n[1/5] Creating Cloudflare resources...");
-  const d1 = await createD1(token, ctx.accountId, names.d1);
-  const renderKv = await createKv(token, ctx.accountId, names.renderKv);
-  const widget = await createWidget(token, ctx.accountId, names.turnstile, ctx.hostname);
-  console.log(`  D1:        ${d1.uuid}`);
-  console.log(`  Render KV: ${renderKv.id}`);
-  console.log(`  Turnstile: ${widget.sitekey}`);
-
-  console.log("\n[2/5] Writing wrangler.toml + site defaults...");
+  console.log("\n[1/4] Writing non-secret Worker config...");
   updateWranglerToml({
-    d1Id: d1.uuid,
-    renderKvId: renderKv.id,
-    turnstileSiteKey: widget.sitekey,
-    publicOrigin: ctx.workerUrl,
+    publicOrigin: workerUrl,
+    githubClientId: clientId,
+    adminGithubLogin: githubUsername,
+    turnstileSiteKey,
   });
-  updateOrigin(ctx.workerUrl);
+  updateOrigin(workerUrl);
 
-  console.log("\n[3/5] Deploying worker...");
-  execFileSync("pnpm", ["run", "deploy"], { stdio: "inherit" });
-
-  console.log("\n[4/5] Setting worker secrets...");
-  pipeSecret("ADMIN_GITHUB_LOGIN", githubUsername);
-  pipeSecret("GITHUB_CLIENT_ID", clientId);
+  console.log("\n[2/4] Setting Worker secrets with Wrangler...");
+  const existingSecrets = listSecrets();
   pipeSecret("GITHUB_CLIENT_SECRET", clientSecret);
-  pipeSecret("BETTER_AUTH_SECRET", randomBytes(32).toString("base64url"));
-  pipeSecret("TURNSTILE_SECRET_KEY", widget.secret);
-
-  console.log("\n[5/6] Initial content intentionally skipped.");
-  console.log("  Ask the site owner what to publish first, then use MCP/admin authoring.");
-
-  console.log("\n[6/6] Updating mantle/site.md + AGENTS.md...");
-  updateSiteSemanticLayer(ctx.workerUrl);
-
-  printHandoff(ctx, names);
-}
-
-function resourceNames(projectName) {
-  return {
-    projectName,
-    worker: projectName,
-    d1: `${projectName}-db`,
-    renderKv: `${projectName}-render`,
-    turnstile: projectName,
-  };
-}
-
-async function fetchContext(token, projectName) {
-  const accounts = await cf(token, "/accounts");
-  if (accounts.length !== 1) {
-    throw new Error(`expected 1 account, got ${accounts.length}; refine token scope`);
+  if (existingSecrets.has("BETTER_AUTH_SECRET")) {
+    console.log("  BETTER_AUTH_SECRET already exists; leaving it unchanged.");
+  } else {
+    pipeSecret("BETTER_AUTH_SECRET", randomBytes(32).toString("base64url"));
   }
-  const account = accounts[0];
-  const sub = await cf(token, `/accounts/${account.id}/workers/subdomain`);
-  const subdomain = sub.subdomain;
-  if (!subdomain) {
-    throw new Error("workers.dev subdomain not set on this account; visit dash.cloudflare.com → Workers to claim one");
+  if (turnstileSecret) {
+    pipeSecret("TURNSTILE_SECRET_KEY", turnstileSecret);
+  } else {
+    console.log("  TURNSTILE_SECRET_KEY skipped (contact/Turnstile can be wired later).");
   }
-  const hostname = `${projectName}.${subdomain}.workers.dev`;
-  return {
-    accountId: account.id,
-    accountName: account.name,
-    subdomain,
-    hostname,
-    workerUrl: `https://${hostname}`,
-  };
+
+  console.log("\n[3/4] Updating mantle/site.md + AGENTS.md...");
+  updateSiteSemanticLayer(workerUrl);
+
+  console.log("\n[4/4] Done.");
+  printHandoff(workerUrl);
 }
 
-async function createD1(token, accountId, name) {
-  return cf(token, `/accounts/${accountId}/d1/database`, { method: "POST", body: { name } });
-}
-
-async function createKv(token, accountId, title) {
-  return cf(token, `/accounts/${accountId}/storage/kv/namespaces`, {
-    method: "POST",
-    body: { title },
-  });
-}
-
-async function createWidget(token, accountId, name, domain) {
-  return cf(token, `/accounts/${accountId}/challenges/widgets`, {
-    method: "POST",
-    body: { name, domains: [domain], mode: "managed" },
-  });
-}
-
-async function cf(token, path, opts = {}) {
-  const res = await fetch(`https://api.cloudflare.com/client/v4${path}`, {
-    method: opts.method ?? "GET",
-    headers: {
-      authorization: `Bearer ${token}`,
-      ...(opts.body ? { "content-type": "application/json" } : {}),
-    },
-    body: opts.body ? JSON.stringify(opts.body) : undefined,
-  });
-  const data = await res.json();
-  if (!data.success) {
-    throw new Error(`CF API ${opts.method ?? "GET"} ${path} failed: ${JSON.stringify(data.errors)}`);
-  }
-  return data.result;
-}
-
-function updateWranglerToml({ d1Id, renderKvId, turnstileSiteKey, publicOrigin }) {
+function updateWranglerToml({
+  publicOrigin,
+  githubClientId,
+  adminGithubLogin,
+  turnstileSiteKey,
+}) {
   let toml = readFileSync("wrangler.toml", "utf8");
-  toml = replaceInBlock(toml, "d1_databases", 'binding = "DB"', "database_id", d1Id);
-  toml = replaceInBlock(toml, "kv_namespaces", 'binding = "KV"', "id", renderKvId);
-  toml = upsertVar(toml, "TURNSTILE_SITE_KEY", turnstileSiteKey);
   toml = upsertVar(toml, "PUBLIC_ORIGIN", publicOrigin);
+  toml = upsertVar(toml, "GITHUB_CLIENT_ID", githubClientId);
+  toml = upsertVar(toml, "ADMIN_GITHUB_LOGIN", adminGithubLogin);
+  if (turnstileSiteKey) {
+    toml = upsertVar(toml, "TURNSTILE_SITE_KEY", turnstileSiteKey);
+  }
   writeFileSync("wrangler.toml", toml);
 }
 
@@ -198,10 +156,7 @@ function updateSiteSemanticLayer(workerUrl) {
   const isoNow = new Date().toISOString();
   if (existsSync("mantle/site.md")) {
     const before = readFileSync("mantle/site.md", "utf8");
-    let after = before.replace(
-      /^site_url: .*$/m,
-      `site_url: ${workerUrl}`,
-    );
+    let after = before.replace(/^site_url: .*$/m, `site_url: ${workerUrl}`);
     after = appendRevision(after, isoNow, "provision", `deployed to ${workerUrl}`);
     if (after === before) {
       console.log("  mantle/site.md unchanged (no frontmatter site_url to update)");
@@ -212,10 +167,7 @@ function updateSiteSemanticLayer(workerUrl) {
   }
   if (existsSync("AGENTS.md")) {
     const before = readFileSync("AGENTS.md", "utf8");
-    const after = before.replace(
-      /^Public site: .*$/m,
-      `Public site: ${workerUrl}`,
-    );
+    const after = before.replace(/^Public site: .*$/m, `Public site: ${workerUrl}`);
     if (after === before) {
       console.log("  AGENTS.md unchanged (no Public site line to update)");
     } else {
@@ -239,99 +191,71 @@ function appendRevision(text, isoNow, by, summary) {
   return `${text.slice(0, closeIdx)}\n${block}${text.slice(closeIdx)}`;
 }
 
-function replaceInBlock(text, table, bindingLine, key, value) {
-  const header = `[[${table}]]`;
-  const start = text.indexOf(`${header}\n${bindingLine}`);
-  if (start === -1) throw new Error(`Could not find ${header} with ${bindingLine}`);
-  const next = text.indexOf("\n[[", start + header.length);
-  const end = next === -1 ? text.length : next;
-  const block = text.slice(start, end);
-  const rewritten = block.replace(
-    new RegExp(`^${key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} = ".*"$`, "m"),
-    `${key} = ${JSON.stringify(value)}`,
-  );
-  if (rewritten === block) throw new Error(`Could not update ${key} in ${bindingLine}`);
-  return `${text.slice(0, start)}${rewritten}${text.slice(end)}`;
-}
-
 function pipeSecret(name, value) {
+  console.log(`  ${name}`);
   execFileSync("pnpm", ["exec", "wrangler", "secret", "put", name], {
     input: value,
     stdio: ["pipe", "inherit", "inherit"],
   });
 }
 
-function printPlan(ctx, names) {
-  const callback = `${ctx.workerUrl}/admin/auth/github/callback`;
+function listSecrets() {
+  try {
+    const raw = execFileSync("pnpm", ["exec", "wrangler", "secret", "list"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "inherit"],
+    });
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return new Set(parsed.map((entry) => entry?.name).filter(Boolean));
+      }
+    } catch {
+      // Wrangler's text output still includes secret names. Fall through.
+    }
+    return new Set(raw.split(/\s+/).filter(Boolean));
+  } catch {
+    console.log("  Could not list existing secrets; proceeding with first-run secret setup.");
+    return new Set();
+  }
+}
+
+function printHandoff(workerUrl) {
   console.log(`
 ==============================================
-Provisioning plan for ${names.projectName}
+Provisioning config written
 ==============================================
 
-Cloudflare account: ${ctx.accountName} (${ctx.accountId})
-Worker URL:         ${ctx.workerUrl}
+Public URL:  ${workerUrl}
+Staff MCP:   ${workerUrl}/mcp/staff
+User MCP:    ${workerUrl}/mcp
+Sign in:     ${workerUrl}/admin
 
-Will create:
-  Worker            ${names.worker}
-  D1 database       ${names.d1}
-  Render KV         ${names.renderKv}
-  Turnstile widget  ${names.turnstile}
+Next:
+  1. Commit the non-secret changes in wrangler.toml, src/mantleConfig.ts,
+     mantle/site.md, and AGENTS.md.
+  2. Push to GitHub so Cloudflare Workers Builds redeploys from source.
+  3. Open /admin and sign in with the GitHub account configured above.
 
-Important: these KV names are created through the Cloudflare API,
-not through "wrangler kv namespace create". Do not prefix them again.
-
-Before running provision:up, create a GitHub OAuth App:
-
-  1. Open https://github.com/settings/developers → New OAuth App
-  2. Fill in:
-       Application name:           ${names.projectName}
-       Homepage URL:               ${ctx.workerUrl}
-       Authorization callback URL: ${callback}
-       Enable Device Flow:         leave UNCHECKED
-  3. Register application
-  4. Copy Client ID. Generate Client Secret. Copy Client Secret.
-
-Then run the safer env-var form so the GitHub Client Secret is not
-embedded in shell history or visible command logs:
-
-  read -rsp "GitHub Client Secret: " GITHUB_CLIENT_SECRET && export GITHUB_CLIENT_SECRET && printf "\\n"
-
-  pnpm run provision:up -- \\
-    --project-name ${names.projectName} \\
-    --github-username <your-github-login> \\
-    --client-id <client-id>
-
-Fallback for automation-only environments: pass --client-secret explicitly.
+Turnstile/contact remains optional until you wire a real widget.
 `);
 }
 
-function printHandoff(ctx, names) {
-  console.log(`
-==============================================
-Provision complete
-==============================================
-
-Public URL:  ${ctx.workerUrl}
-Staff MCP:   ${ctx.workerUrl}/mcp/staff
-User MCP:    ${ctx.workerUrl}/mcp
-Sign in:     ${ctx.workerUrl}/admin/sign-in
-
-Cloudflare resources are scoped to ${names.projectName}; manage at
-https://dash.cloudflare.com/${ctx.accountId}.
-
-I wrote these URLs into mantle/site.md (frontmatter site_url + a
-revisions entry). Next time you want me back, paste the contents of
-mantle/site.md into the conversation — I read it whole on return.
-
-Reminder: revoke the CLOUDFLARE_API_TOKEN you used for provisioning at
-https://dash.cloudflare.com/profile/api-tokens.
-`);
+function readWorkerName() {
+  const text = readFileSync("wrangler.toml", "utf8");
+  const match = text.match(/^name = "([^"]+)"$/m);
+  return match?.[1] ?? "<worker-name>";
 }
 
-function requireToken() {
-  const t = process.env.CLOUDFLARE_API_TOKEN;
-  if (!t) throw new Error("CLOUDFLARE_API_TOKEN is not set");
-  return t;
+function normalizeWorkerUrl(raw) {
+  const url = new URL(raw);
+  if (url.protocol !== "https:" && url.hostname !== "localhost") {
+    throw new Error("--worker-url must be https unless it is localhost");
+  }
+  url.hash = "";
+  url.search = "";
+  url.pathname = "";
+  return url.toString().replace(/\/$/, "");
 }
 
 function parseArgs(argv) {

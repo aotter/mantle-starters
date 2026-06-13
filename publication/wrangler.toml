@@ -14,19 +14,21 @@ TURNSTILE_SITE_KEY = "1x00000000000000000000AA"
 [[d1_databases]]
 binding = "DB"
 database_name = "mantle-publication-local"
-database_id = "00000000-0000-0000-0000-000000000000"
+# Omit database_id in production scaffolds so Cloudflare's first Git
+# deploy can auto-provision the D1 database. The post-deploy agent
+# handoff may later write the concrete id back into this file.
 
 [[kv_namespaces]]
 binding = "KV"
-id = "kv-mantle-publication-local"
+# Omit id in production scaffolds so Cloudflare can auto-provision the
+# render KV namespace during the first Git deploy.
 
 # OAuth grant store for @cloudflare/workers-oauth-provider — client
 # registrations + grants + tokens for the MCP surfaces (/mcp + /mcp/staff).
-# Provision with `wrangler kv namespace create OAUTH_KV` and replace
-# the id below before deploy.
+# Omit id in production scaffolds for the same first-deploy
+# auto-provisioning path.
 [[kv_namespaces]]
 binding = "OAUTH_KV"
-id = "kv-mantle-publication-oauth-local"
 
 # Bundle YAML manifests as inline text strings — TS imports them via
 # `?raw` query param, esbuild resolves to a string export at build time.
