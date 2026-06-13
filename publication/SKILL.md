@@ -50,7 +50,7 @@ Each probe is a multiple-choice picker the user picks from. Ask one, react to th
 
 > "There's a contact form scaffolded — readers can reach you directly. Want it?"
 
-- **Yes, keep it** — provision will wire up Turnstile + Slack notify
+- **Yes, keep it** — first deploy still works; wire Turnstile after launch from Cloudflare dashboard + agent handoff
 - **Skip — presence + social links is enough** — we'll remove the form during scaffold
 - **Add later** — leave the scaffold, route through extend Skill post-deploy
 

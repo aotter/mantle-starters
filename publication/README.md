@@ -97,8 +97,8 @@ in a blank starter or a later starter family.
 
 ## Quickstart
 
-To browse the **public site** locally (rendered publication routes, contact form,
-MCP transport auth), one secret is required and nothing else needs to be touched:
+To browse the **public site** locally (rendered publication routes and contact form),
+no auth setup is required:
 
 ```bash
 pnpm install --frozen-lockfile
@@ -109,19 +109,21 @@ cp .dev.vars.example .dev.vars
 > silently regenerate `pnpm-lock.yaml` against newer deps and the
 > drift only surfaces when CI rejects it.
 
-Edit `.dev.vars` and fill in `BETTER_AUTH_SECRET=` — without it the worker
-returns `auth_not_configured` on every request. Generate a value:
+Public routes work without `BETTER_AUTH_SECRET`. `/admin`, `/api/auth/*`,
+and `/mcp/staff` return `setup_incomplete` until auth is configured. When
+you're ready to test admin sign-in, generate a value:
 
 ```bash
 openssl rand -hex 32
 # copy the output, paste it after `BETTER_AUTH_SECRET=` in .dev.vars
 ```
 
-That's the only field you have to set for the public site. The `GITHUB_CLIENT_ID`
-/ `GITHUB_CLIENT_SECRET` / `ADMIN_GITHUB_LOGIN` placeholders left in `.dev.vars`
-are only consumed when you click `/admin` — public routes ignore them. (See
-[§ Signing in at /admin](#signing-in-at-admin) when you're ready.) `TURNSTILE_SECRET_KEY=dev-stub`
-is fine for local development.
+Set `BETTER_AUTH_SECRET=` in `.dev.vars` only when testing `/admin`. The
+`GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` / `ADMIN_GITHUB_LOGIN`
+placeholders are also only consumed by the admin/auth surfaces — public
+routes ignore them. (See [§ Signing in at /admin](#signing-in-at-admin)
+when you're ready.) `TURNSTILE_SECRET_KEY=dev-stub` is fine for local
+development.
 
 Seed demo content and start the dev server:
 
@@ -309,8 +311,9 @@ End-to-end verification on a real Cloudflare account, ~20 min. Run this whenever
 Prerequisites:
 
 - A Cloudflare account with billing profile (D1 + KV are free-tier; signup is the bar)
-- A GitHub OAuth App configured with the Worker URL as both Homepage URL and `<worker_url>/api/auth/callback/github` as Authorization Callback URL. The first deploy gives you `<worker_url>` so this is a two-pass setup; copy the Worker URL after step 4 below, register the OAuth App, then come back and set `wrangler secret put GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET / ADMIN_GITHUB_LOGIN`.
-- Node 20+, pnpm 9+, an empty target directory.
+- A GitHub repo containing the scaffolded Mantle site.
+- A GitHub OAuth App created after the first Cloudflare deploy. The Worker URL is only known after Cloudflare imports and deploys the repo, so this is a two-pass setup.
+- Node 22+, pnpm 9+, an empty target directory.
 
 ### Steps
 
@@ -332,31 +335,37 @@ Prerequisites:
    All four must succeed for template release work. Do not treat this
    fixture content as user content.
 
-3. **Provision Cloudflare resources** via the [provision Skill](../../skills/provision/SKILL.md). Creates D1 + render KV and writes their IDs into `wrangler.toml`. Verify `wrangler dev --remote` boots without binding errors.
+3. **Push to GitHub.** The agent creates the user's private repo and pushes
+   the scaffolded site. Do not ask the user for a Cloudflare API token.
 
-4. **First deploy.**
+4. **First deploy from Cloudflare dashboard.** The user opens Cloudflare,
+   creates a Worker from GitHub, selects the repo, keeps the Worker name
+   equal to the project name, and runs the first deploy. The top-level
+   D1/KV bindings intentionally omit resource IDs so Cloudflare can
+   auto-provision them during this deploy.
 
-   ```bash
-   pnpm deploy        # chains `validate:deploy && typecheck && wrangler deploy`
-   # capture <worker_url> from the deploy output
-   ```
+5. **Register GitHub OAuth App** at <https://github.com/settings/developers>
+   using `<worker_url>` and `<worker_url>/api/auth/callback/github`.
 
-   The `deploy` script runs `pnpm validate:deploy` (strict phase — re-enables
-   `MANTLE_LETTER_NOT_WRITTEN` and any future pre-deploy-only checks) and
-   `pnpm typecheck` before invoking wrangler. If you want to invoke wrangler
-   directly (skipping the gate) use `pnpm exec wrangler deploy`, but the
-   gate is the supported path.
-
-5. **Register GitHub OAuth App** at <https://github.com/settings/developers> using `<worker_url>` and `<worker_url>/api/auth/callback/github`. Then:
+6. **Agent post-deploy handoff.** Authorize Wrangler for the same
+   Cloudflare account, then run:
 
    ```bash
-   pnpm wrangler secret put GITHUB_CLIENT_ID
-   pnpm wrangler secret put GITHUB_CLIENT_SECRET
-   pnpm wrangler secret put ADMIN_GITHUB_LOGIN     # your GH login
-   pnpm wrangler secret put TURNSTILE_SECRET_KEY   # real Turnstile secret
+   pnpm exec wrangler login
+   read -rsp "GitHub Client Secret: " GITHUB_CLIENT_SECRET && export GITHUB_CLIENT_SECRET && printf "\n"
+   pnpm run provision:up -- \
+     --worker-url <worker_url> \
+     --github-username <your-github-login> \
+     --client-id <client-id>
    ```
 
-6. **Owner bootstrap + content interview.** Sign in as the owner, then
+   The script writes non-secret runtime config (`PUBLIC_ORIGIN`,
+   `GITHUB_CLIENT_ID`, `ADMIN_GITHUB_LOGIN`), sets `GITHUB_CLIENT_SECRET`
+   and `BETTER_AUTH_SECRET` with Wrangler, updates the site semantic layer,
+   and prints the final handoff. Commit and push the non-secret file
+   changes so Cloudflare Workers Builds redeploys from source.
+
+7. **Owner bootstrap + content interview.** Sign in as the owner, then
    connect an MCP-capable agent to the Staff MCP URL. The agent should
    ask the owner what initial content they want and whether it should
    write a first pass.
