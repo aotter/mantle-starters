@@ -87,9 +87,28 @@ mantle-starters/
 └── sources.json               ← archetype + feature + theme dispatch
 ```
 
-Each archetype has its own top-level directory — there is no shared base
-+ archetype overlay. The 1:1 split keeps each starter independently
-readable, validatable, and forkable.
+Each archetype has its own top-level directory, but `_common/` is the
+shared backbone. The pattern is intentionally shadcn-like: common
+primitives and workflow scripts live once, while each archetype keeps
+its domain-specific composition readable and forkable.
+
+## Provisioning Backbone
+
+Every active archetype receives the shared `_common/scripts/provision.mjs`
+runner during scaffolding and exposes:
+
+```bash
+pnpm run provision:plan
+pnpm run provision:up
+```
+
+The shared flow keeps the user's first Cloudflare deploy dashboard-led:
+the agent pushes the repo, the user creates a Worker from GitHub, and
+Cloudflare auto-provisions id-less D1/KV/R2 bindings. After the first
+deploy, the coding agent runs `pnpm exec wrangler login` and
+`provision:up` to write non-secret config and Worker secrets. Do not
+fork this flow per archetype unless the archetype needs an explicit
+feature provision step under `scripts/.mantle-provision.mjs`.
 
 ## Source map (`sources.json`)
 

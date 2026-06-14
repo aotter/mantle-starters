@@ -164,25 +164,10 @@ cp .dev.vars.example .dev.vars
 > first time this happens you lose an evening; the workflow rule
 > avoids that.
 
-Edit `.dev.vars` and fill in `BETTER_AUTH_SECRET=` — without it the worker
-returns `auth_not_configured` on every request. Generate a value:
-
-```bash
-openssl rand -hex 32
-# copy the output, paste it after `BETTER_AUTH_SECRET=` in .dev.vars
-```
-
-**`transaction` is stricter than the other starters about auth at boot.**
-Unlike `publication` / `presence` / `intake`, the `transaction` worker
-requires `BETTER_AUTH_SECRET` **plus** at least one registered auth method
-to boot even for public read routes — `getApp` builds Better Auth at boot
-and Better Auth refuses an empty methods list. The fastest way through is
-to register a local-dev GitHub OAuth App at
-<https://github.com/settings/developers> (Homepage `http://localhost:8787`,
-Callback `http://localhost:8787/api/auth/callback/github`) and paste the
-three values (`GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` /
-`ADMIN_GITHUB_LOGIN`) into `.dev.vars`. `TURNSTILE_SECRET_KEY=dev-stub` is
-fine for local development.
+Public shopping routes work without auth. Fill `BETTER_AUTH_SECRET`,
+`GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, and `ADMIN_GITHUB_LOGIN`
+only when you want to exercise `/admin`, `/api/auth/*`, or Staff MCP
+locally. `TURNSTILE_SECRET_KEY=dev-stub` is fine for local development.
 
 Seed the demo catalog and start the dev server:
 
@@ -209,6 +194,21 @@ to add some." placeholder — true but unhelpful for first-look impressions.
 The fixture seeds three demo products (two untracked, one tracked with
 zero stock) so the grid + product detail + cart flows all have something
 to exercise.
+
+Production installs use the shared provision flow:
+
+```bash
+pnpm run provision:plan
+pnpm exec wrangler login
+pnpm run provision:up -- --worker-url <worker_url> --github-username <github-login> --client-id <client-id>
+```
+
+Set `GITHUB_CLIENT_SECRET` in the environment before `provision:up`.
+The script writes non-secret config and Worker secrets; it does not ask
+for a Cloudflare API token. `transaction` also declares Queues and a
+Durable Object migration; `provision:plan` prints those follow-up notes
+because Cloudflare automatic provisioning currently covers id-less
+D1/KV/R2 bindings, not Queues.
 
 `pnpm validate` defaults to the **preview** phase — grammar + cross-Schema only,
 exits 0 on a fresh scaffold even when the Mantle welcome letter is still

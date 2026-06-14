@@ -246,6 +246,7 @@ export function installFromExtractedRoot(
   });
   const values = buildPlaceholderValues({ ...opts, locales });
   substitutePlaceholdersInTree(opts.destination, values, filesWritten);
+  applyProjectNameToWrangler(opts.destination, opts.projectName);
   renameDotfilesAfterTemplate(opts.destination, filesWritten);
   mergeFeatureDependenciesIntoPackageJson({
     extractedRoot: opts.extractedRoot,
@@ -314,6 +315,38 @@ function buildPlaceholderValues(opts: CreateOptions): PlaceholderValues {
     INSTALL_TIMESTAMP: new Date().toISOString(),
     INSTALL_SUMMARY: opts.summary,
   };
+}
+
+function applyProjectNameToWrangler(destination: string, projectName: string): void {
+  const path = join(destination, "wrangler.toml");
+  if (!existsSync(path)) return;
+  const text = readFileSync(path, "utf8");
+  const envStart = text.search(/\n\[env\./);
+  const head = envStart === -1 ? text : text.slice(0, envStart);
+  const tail = envStart === -1 ? "" : text.slice(envStart);
+  let nextHead = head.replace(/^name = ".*"$/m, `name = ${JSON.stringify(projectName)}`);
+  nextHead = nextHead.replace(
+    /^database_name = ".*"$/m,
+    `database_name = ${JSON.stringify(`${projectName}-db`)}`,
+  );
+  nextHead = nextHead.replace(
+    /^queue = "([^"]+)"$/gm,
+    (_line, queueName: string) =>
+      `queue = ${JSON.stringify(projectScopedResourceName(projectName, queueName))}`,
+  );
+  nextHead = nextHead.replace(
+    /^dead_letter_queue = "([^"]+)"$/gm,
+    (_line, queueName: string) =>
+      `dead_letter_queue = ${JSON.stringify(projectScopedResourceName(projectName, queueName))}`,
+  );
+  const next = `${nextHead}${tail}`;
+  if (next !== text) writeFileSync(path, next);
+}
+
+function projectScopedResourceName(projectName: string, resourceName: string): string {
+  return resourceName.startsWith(`${projectName}-`)
+    ? resourceName
+    : `${projectName}-${resourceName}`;
 }
 
 function writeFeaturesManifest(args: {
@@ -1042,6 +1075,7 @@ const LOCALE_JSON_RE = /^src\/i18n\/[^/]+\.json$/;
 
 const COMPOSER_RULES: ReadonlyArray<ComposerRule> = [
   { match: (p) => p === ".dev.vars.example", compose: appendComposable },
+  { match: (p) => p === "scripts/provision.mjs", compose: requireIdenticalComposable },
   { match: (p) => LOCALE_JSON_RE.test(p), compose: mergeComposableLocale },
   { match: (p) => p === "wrangler.toml", compose: mergeComposableWrangler },
 ];
@@ -1062,6 +1096,21 @@ function appendComposable(srcPath: string, dstPath: string, layer: CopyLayer): v
     ? `${separator}${incoming}\n`
     : `${existing}\n\n${separator}${incoming}\n`;
   writeFileSync(dstPath, composed);
+}
+
+function requireIdenticalComposable(
+  srcPath: string,
+  dstPath: string,
+  layer: CopyLayer,
+): void {
+  const existing = readFileSync(dstPath, "utf8");
+  const incoming = readFileSync(srcPath, "utf8");
+  if (existing === incoming) return;
+  throw new Error(
+    `Composable file collision at "scripts/provision.mjs": incoming ${layer.id} ` +
+      `differs from the shared wrapper. Keep archetype provision logic in ` +
+      `scripts/.mantle-provision.mjs feature steps instead of overriding the base runner.`,
+  );
 }
 
 function mergeComposableLocale(

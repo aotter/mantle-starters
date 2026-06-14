@@ -1,4 +1,4 @@
-name = "mantle-publication"
+name = "mantle-intake"
 main = "src/index.ts"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
@@ -13,20 +13,21 @@ TURNSTILE_SITE_KEY = "1x00000000000000000000AA"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "mantle-publication-local"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_name = "mantle-intake-local"
+# Omit database_id in production scaffolds so Cloudflare's first Git
+# deploy can auto-provision the D1 database.
 
 [[kv_namespaces]]
 binding = "KV"
-id = "kv-mantle-publication-local"
+# Omit id in production scaffolds so Cloudflare can auto-provision the
+# render KV namespace during the first Git deploy.
 
 # OAuth grant store for @cloudflare/workers-oauth-provider — client
 # registrations + grants + tokens for the MCP surfaces (/mcp + /mcp/staff).
-# Provision with `wrangler kv namespace create OAUTH_KV` and replace
-# the id below before deploy.
+# Omit id in production scaffolds for the same first-deploy
+# auto-provisioning path.
 [[kv_namespaces]]
 binding = "OAUTH_KV"
-id = "kv-mantle-publication-oauth-local"
 
 # Bundle YAML manifests as inline text strings — TS imports them via
 # `?raw` query param, esbuild resolves to a string export at build time.
@@ -71,16 +72,16 @@ MEDIA_S3_SECRET_ACCESS_KEY = "test-secret-access-key"
 
 [[env.test.d1_databases]]
 binding = "DB"
-database_name = "mantle-publication-test"
+database_name = "mantle-intake-test"
 database_id = "00000000-0000-0000-0000-000000000000"
 
 [[env.test.kv_namespaces]]
 binding = "KV"
-id = "kv-mantle-publication-test"
+id = "kv-mantle-intake-test"
 
 [[env.test.kv_namespaces]]
 binding = "OAUTH_KV"
-id = "kv-mantle-publication-oauth-test"
+id = "kv-mantle-intake-oauth-test"
 
 # Public media bucket. Reads bypass the Worker; in production the
 # bucket should have public access enabled, with `MEDIA_PUBLIC_URL_BASE`
@@ -93,7 +94,7 @@ id = "kv-mantle-publication-oauth-test"
 # ports".
 [[env.test.r2_buckets]]
 binding = "MEDIA"
-bucket_name = "mantle-publication-media-test"
+bucket_name = "mantle-intake-media-test"
 
 [[env.test.rules]]
 type = "Text"
