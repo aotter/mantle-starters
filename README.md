@@ -110,6 +110,26 @@ deploy, the coding agent runs `pnpm exec wrangler login` and
 fork this flow per archetype unless the archetype needs an explicit
 feature provision step under `scripts/.mantle-provision.mjs`.
 
+## Claude Plugin Marketplace
+
+This repository is also a Claude Code plugin marketplace:
+
+```text
+/plugin marketplace add aotter/mantle-starters
+```
+
+The first plugin is `mantle-companion-upload`, an operator-side helper
+for uploading chat/local image files into a deployed Mantle site without
+pushing large base64 payloads through MCP tool arguments. It wraps the
+existing Mantle media upload session flow:
+
+```text
+create_media_upload -> signed upload URLs -> commit_media_upload
+```
+
+See [`plugins/mantle-companion-upload`](plugins/mantle-companion-upload)
+for install and pairing details.
+
 ## Source map (`sources.json`)
 
 `sources.json` at the repo root is the authoritative dispatch from

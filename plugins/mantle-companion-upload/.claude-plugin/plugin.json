@@ -1,0 +1,15 @@
+{
+  "name": "mantle-companion-upload",
+  "version": "0.1.0",
+  "description": "Claude Code companion for uploading images/files into a Mantle site via MCP upload sessions and signed URLs.",
+  "author": {
+    "name": "Aotter",
+    "url": "https://mantle.tools"
+  },
+  "homepage": "https://github.com/aotter/mantle-starters/tree/develop/plugins/mantle-companion-upload",
+  "repository": "https://github.com/aotter/mantle-starters",
+  "license": "MIT",
+  "skills": "./skills",
+  "commands": "./commands",
+  "mcpServers": "./.mcp.json"
+}

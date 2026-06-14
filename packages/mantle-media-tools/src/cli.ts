@@ -5,8 +5,8 @@ import { encodeTrio } from "./encode.js";
 import { MediaUploadError, uploadVariants } from "./upload-client.js";
 
 /**
- * Single-purpose CLI: `mantle-media-tools upload --file ... --purpose ...
- *                       --endpoint <worker origin> --bearer <mcp token>`.
+ * Single-purpose CLI: `MANTLE_STAFF_BEARER=... mantle-media-tools upload
+ *                       --file ... --purpose ... --endpoint <worker origin>`.
  *
  * Reads a source image, encodes the avif/webp/jpeg trio via sharp,
  * drives the multi-variant upload lifecycle through the worker's
@@ -35,6 +35,14 @@ async function main(argv: readonly string[]): Promise<number> {
     printUsage(process.stderr);
     return 2;
   }
+  const bearer = opts.bearer ?? process.env.MANTLE_STAFF_BEARER ?? process.env.MCP_BEARER;
+  if (!bearer) {
+    process.stderr.write(
+      "mantle-media-tools: missing bearer. Set MANTLE_STAFF_BEARER or pass --bearer <token>.\n",
+    );
+    printUsage(process.stderr);
+    return 2;
+  }
 
   let source: Buffer;
   try {
@@ -50,7 +58,7 @@ async function main(argv: readonly string[]): Promise<number> {
     const result = await uploadVariants({
       client: {
         baseUrl: opts.endpoint,
-        bearer: opts.bearer,
+        bearer,
         ...(opts.mcpPath !== undefined ? { mcpPath: opts.mcpPath } : {}),
       },
       purpose: opts.purpose,
@@ -81,7 +89,7 @@ interface UploadArgs {
   readonly file: string;
   readonly purpose: string;
   readonly endpoint: string;
-  readonly bearer: string;
+  readonly bearer?: string;
   readonly mcpPath?: string;
   readonly filename?: string;
   readonly alt?: string;
@@ -108,7 +116,7 @@ function parseUploadArgs(argv: readonly string[]): UploadArgs | null {
   const purpose = flags.get("purpose");
   const endpoint = flags.get("endpoint");
   const bearer = flags.get("bearer");
-  if (!file || !purpose || !endpoint || !bearer) return null;
+  if (!file || !purpose || !endpoint) return null;
   const maxEdgeRaw = flags.get("max-edge");
   return {
     file,
@@ -131,7 +139,7 @@ function printUsage(out: NodeJS.WritableStream): void {
       "    --file <path>           Source image (jpeg/png/etc — any sharp input)",
       "    --purpose <slug>        Declared in siteDefaults.media.purposes",
       "    --endpoint <origin>     Mantle Worker origin, e.g. https://my-blog.example",
-      "    --bearer <token>        OAuth token for /mcp/staff (admin grant)",
+      "    [--bearer <token>]      OAuth token for /mcp/staff (admin grant)",
       "    [--mcp-path <path>]     Override default `/mcp/staff` MCP route",
       "    [--filename <name>]     Override basename(file) on the wire",
       "    [--alt <text>] [--caption <text>]",
@@ -142,7 +150,10 @@ function printUsage(out: NodeJS.WritableStream): void {
       "transport. Prints the committed MediaAsset JSON to stdout. Errors",
       "surface structured diagnostics on stderr.",
       "",
-      "Auth note: the admin REST endpoint (/admin/api/media/uploads) is",
+      "Auth note: prefer env MANTLE_STAFF_BEARER over --bearer so tokens",
+      "don't land in shell history or process listings.",
+      "",
+      "The admin REST endpoint (/admin/api/media/uploads) is",
       "cookie-only by design and not used here. The CLI talks to /mcp/staff,",
       "which is the bearer-friendly OAuth-gated path. Grab a bearer from the",
       "worker's OAuth flow after admin sign-in.",

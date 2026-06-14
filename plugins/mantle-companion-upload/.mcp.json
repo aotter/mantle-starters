@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "upload": {
+      "command": "node",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/server/mantle-companion-upload.mjs"
+      ],
+      "env": {
+        "MANTLE_MEDIA_TOOLS_TARBALL_URL": "https://github.com/aotter/mantle-starters/releases/download/v0.0.11-alpha.20/aotter-mantle-media-tools.tgz"
+      }
+    }
+  }
+}

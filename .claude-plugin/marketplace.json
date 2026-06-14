@@ -1,0 +1,28 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "mantle-starters",
+  "description": "Starter-aligned Claude Code plugins for Mantle operator workflows.",
+  "owner": {
+    "name": "Aotter",
+    "url": "https://mantle.tools"
+  },
+  "metadata": {
+    "description": "Starter-aligned Claude Code plugins for Mantle operator workflows.",
+    "version": "0.1.0",
+    "homepage": "https://github.com/aotter/mantle-starters",
+    "repository": "https://github.com/aotter/mantle-starters"
+  },
+  "plugins": [
+    {
+      "name": "mantle-companion-upload",
+      "description": "Upload local/chat image files into a Mantle site through upload sessions and signed URLs, without sending large base64 payloads through MCP tool arguments.",
+      "author": {
+        "name": "Aotter",
+        "url": "https://mantle.tools"
+      },
+      "category": "development",
+      "source": "./plugins/mantle-companion-upload",
+      "homepage": "https://github.com/aotter/mantle-starters/tree/develop/plugins/mantle-companion-upload"
+    }
+  ]
+}
