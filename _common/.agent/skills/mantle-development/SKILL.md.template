@@ -1,0 +1,99 @@
+---
+name: mantle-development
+description: Work on this generated Mantle site after scaffold. Use for feature work, bug fixes, manifest changes, content model changes, theme/layout edits, and local validation.
+---
+
+# Mantle Development
+
+This is a generated Mantle site, not the starter monorepo. Keep changes
+inside the site's existing shape unless the user asks for an upstream
+starter change.
+
+## First read
+
+1. `mantle/site.md` for the site's intent, voice, launch history, and
+   handoff notes. Read the whole file before editing.
+2. `.mantle/launch-state.json` when present. It records the landing
+   answers that scaffolded this repo: archetype, repo intent, GitHub
+   owner/admin, locales, theme, and selected features. It contains no
+   provider authority or secrets.
+3. `.mantle/features.json` for selected starter features and registry
+   dependencies.
+4. `AGENTS.md` and `CLAUDE.md` for repo-specific operating rules.
+
+## The 4 atoms
+
+Mantle feature shape is expressed through exactly four declarative
+atoms:
+
+| Atom | Purpose | Rule of thumb |
+|---|---|---|
+| `Schema` | Stored entity/table shape | Never expose directly to public callers. |
+| `View` | Read surface/query | Public reads go through Views. |
+| `Procedure` | Typed operation | Internal until a Trigger binds it. |
+| `Trigger` | Binding/event surface | HTTP/lifecycle/other invocation belongs here. |
+
+Do not invent domain-level manifest kinds such as `Form`,
+`Membership`, `Workflow`, or `Feature`. Compose those from the four
+atoms plus TypeScript where needed.
+
+Local versioned references, available after `pnpm install`:
+
+- `node_modules/@aotter/mantle/docs/design-atoms.md`
+- `node_modules/@aotter/mantle/docs/adr/0001-four-atom-manifest-model.md`
+- `node_modules/@aotter/mantle/skills/extend/SKILL.md`
+
+If `node_modules/` is missing, run `pnpm install --frozen-lockfile`
+before falling back to remote documentation.
+
+## Development loop
+
+Use the package manager and Node version declared in this repo.
+
+```bash
+pnpm install --frozen-lockfile
+pnpm validate
+pnpm typecheck
+pnpm test
+```
+
+If the repo has `pnpm check`, prefer it for the fast local gate. Run
+starter-specific integration tests when the area you touched has one.
+
+For local preview, use localhost:
+
+```bash
+pnpm dev
+```
+
+Do not use `127.0.0.1` in generated docs, OAuth callback examples, or
+agent instructions.
+
+## Editing rules
+
+- Prefer manifest YAML for content model changes. Use TypeScript only
+  for handlers, rendering, adapter wiring, or behavior the atoms cannot
+  express.
+- After changing manifests, run `pnpm validate` and surface diagnostic
+  `code` plus `suggestion` if validation fails.
+- Keep feature-specific code under the feature's existing directory
+  unless the host starter already has a shared seam for it.
+- Do not write directly to D1 or KV for content authoring. After deploy,
+  use the Staff MCP endpoint at `<SITE_URL>/mcp/staff`.
+- Do not commit provider secrets. Local `.dev.vars` is local only;
+  production secrets are set through Wrangler or the provider dashboard.
+
+## When the user asks for a new capability
+
+Translate the request into atoms before coding:
+
+1. What data exists? Add or update a `Schema`.
+2. What should be read publicly or by agents? Add or update a `View`.
+3. What operation mutates state? Add or update a `Procedure`.
+4. What invokes the operation? Add or update a `Trigger`.
+5. What custom code is unavoidable? Add a handler or renderer with a
+   narrow interface.
+
+If this is a reusable starter capability rather than a one-site
+customization, stop and propose an upstream feature overlay in
+`mantle-starters` instead of burying it in the generated repo.

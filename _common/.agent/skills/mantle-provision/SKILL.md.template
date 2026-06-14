@@ -1,0 +1,94 @@
+---
+name: mantle-provision
+description: Finish first production deployment for this generated Mantle site. Use after scaffold when the user is ready to push to GitHub, connect Cloudflare, configure OAuth, run Wrangler, and smoke test.
+---
+
+# Mantle Provision
+
+Provisioning is owned by the user's coding agent and provider accounts.
+Mantle landing may have captured launch intent, but it does not create
+Cloudflare resources or store provider secrets for this site.
+
+## First read
+
+1. `.mantle/launch-state.json` when present for GitHub owner/admin,
+   repo name, archetype, locales, theme, and feature choices.
+2. `.mantle/features.json` for selected overlays and feature provision
+   requirements.
+3. `wrangler.toml`, `.dev.vars.example`, `scripts/provision.mjs`, and
+   `scripts/.mantle-provision.mjs`.
+4. `mantle/site.md` for the public site intent and final handoff notes.
+5. `node_modules/@aotter/mantle/skills/provision/SKILL.md` for the
+   versioned parent provision contract. If `node_modules/` is missing,
+   run `pnpm install --frozen-lockfile` first.
+
+## Baseline flow
+
+1. Ensure dependencies and local checks pass:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm validate
+pnpm typecheck
+pnpm test
+```
+
+2. Create a private GitHub repo in the user-selected owner, commit the
+   scaffold, and push. Use the user's GitHub auth context.
+
+3. Ask the user to open Cloudflare Dashboard, create a Worker, and
+   connect the GitHub repo for the first deploy. This avoids asking the
+   user for a broad Cloudflare API token up front.
+
+4. After the first deploy, ask the user for the deployed worker URL and
+   run:
+
+```bash
+pnpm exec wrangler login
+pnpm run provision:plan -- --worker-url <worker-url> --github-username <admin-login>
+```
+
+If the plan prints extra required values, ask for only those values.
+
+5. The user creates the per-site GitHub OAuth App in their own GitHub
+   account or org. Use:
+
+- Homepage URL: `<worker-url>`
+- Authorization callback URL: `<worker-url>/api/auth/callback/github`
+
+Then run provision with the client id. Pass the client secret through
+stdin/env, never as a visible command argument.
+
+```bash
+read -rsp "GitHub OAuth client secret: " GITHUB_CLIENT_SECRET && export GITHUB_CLIENT_SECRET && printf "\n"
+pnpm run provision:up -- --worker-url <worker-url> --github-username <admin-login> --client-id <client-id>
+```
+
+6. Smoke test the deployed site:
+
+- public home route;
+- `/admin/sign-in`;
+- GitHub admin sign-in;
+- `/mcp/staff` with an agent client when available;
+- a starter-specific core workflow.
+
+7. Commit generated provision outputs such as `wrangler.toml`,
+   `mantle/site.md`, and `AGENTS.md`.
+
+## Boundaries
+
+- Do not ask for or persist a long-lived Cloudflare API token unless the
+  starter's selected feature explicitly requires one and the user agrees.
+- Do not commit `GITHUB_CLIENT_SECRET`, `BETTER_AUTH_SECRET`,
+  Turnstile secrets, SMTP secrets, or Cloudflare tokens.
+- Do not use `127.0.0.1` in OAuth callback instructions. Use
+  `localhost` locally and the real worker URL in production.
+- Re-running `provision:up` may rotate `BETTER_AUTH_SECRET` depending
+  on the starter script. Warn the user that sessions can be invalidated.
+
+## Feature overlays
+
+Before provision, run the Mantle feature overlay skill if
+`.mantle/features.json` lists any features. Some overlays add follow-up
+steps that are intentionally not part of first deploy, such as R2 public
+access or custom-domain setup.

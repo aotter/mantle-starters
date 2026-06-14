@@ -48,6 +48,14 @@ function fixtureExtractedRoot(): string {
     "# {{BRAND}} ({{ARCHETYPE}})\nPublic site: {{SITE_URL}}\nOwner: {{GITHUB_OWNER}}\nAdmin: {{ADMIN_GITHUB_LOGIN}}\n",
   );
   writeFile(
+    join(root, "_common", ".agent", "skills", "mantle-development", "SKILL.md.template"),
+    "# {{BRAND}} development skill\n",
+  );
+  writeFile(
+    join(root, "_common", ".claude", "skills", "mantle-development", "SKILL.md.template"),
+    "Read .agent/skills/mantle-development/SKILL.md for {{ARCHETYPE}}.\n",
+  );
+  writeFile(
     join(root, "_common", "mantle", "site.md.template"),
     `---
 archetype: {{ARCHETYPE}}
@@ -192,6 +200,12 @@ describe("installFromExtractedRoot", () => {
     );
     expect(notes.overlays).toEqual([]);
     expect(existsSync(join(destination, "AGENTS.md"))).toBe(true);
+    expect(
+      existsSync(join(destination, ".agent", "skills", "mantle-development", "SKILL.md")),
+    ).toBe(true);
+    expect(
+      existsSync(join(destination, ".claude", "skills", "mantle-development", "SKILL.md")),
+    ).toBe(true);
     expect(existsSync(join(destination, "mantle", "site.md"))).toBe(true);
     expect(existsSync(join(destination, "src", "mantleConfig.ts"))).toBe(true);
 
@@ -210,6 +224,12 @@ describe("installFromExtractedRoot", () => {
 
     const cfg = readFileSync(join(destination, "src", "mantleConfig.ts"), "utf8");
     expect(cfg).toContain('brand: "Lab Cafe"');
+
+    const devSkill = readFileSync(
+      join(destination, ".agent", "skills", "mantle-development", "SKILL.md"),
+      "utf8",
+    );
+    expect(devSkill).toContain("# Lab Cafe development skill");
   });
 
   it("allows archetypes to repeat the shared provision wrapper verbatim", () => {
@@ -1202,6 +1222,14 @@ describe("installFromExtractedRoot", () => {
 
     expect(existsSync(join(destination, "AGENTS.md.template"))).toBe(false);
     expect(existsSync(join(destination, "AGENTS.md"))).toBe(true);
+    expect(
+      existsSync(
+        join(destination, ".agent", "skills", "mantle-development", "SKILL.md.template"),
+      ),
+    ).toBe(false);
+    expect(
+      existsSync(join(destination, ".agent", "skills", "mantle-development", "SKILL.md")),
+    ).toBe(true);
     expect(
       existsSync(join(destination, "mantle", "site.md.template")),
     ).toBe(false);

@@ -10,6 +10,16 @@ For the install / interview contract that scaffolded this site, see
 [`SKILL.md`](SKILL.md) (Mantle install voice) and
 [`AGENTS.md`](AGENTS.md) (per-site cached interview answers).
 
+Repo-local Mantle skills are also checked into this scaffold. Use them
+before touching code:
+
+- `.claude/skills/mantle-development/SKILL.md` for day-to-day changes,
+  the 4-atom model, and validation.
+- `.claude/skills/mantle-feature-overlays/SKILL.md` before changing
+  feature overlay output.
+- `.claude/skills/mantle-provision/SKILL.md` for first production
+  deploy and post-deploy setup.
+
 ## The two daily-driver rules
 
 **1. `pnpm install --frozen-lockfile` for every install.**
