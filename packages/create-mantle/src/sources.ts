@@ -128,6 +128,14 @@ export const STALE_FALLBACK_SOURCES: SourcesJson = {
         "Opt-in R2-backed media hosting. Wires the [[r2_buckets]] binding + four env vars + an interactive `media-r2:provision` script that drives bucket create, CORS, and secret put. First-run install stays R2-free; the script is only run when the operator is ready to open Cloudflare billing.",
       applicableArchetypes: ["transaction", "publication", "intake"],
     },
+    "email-sender-smtp": {
+      path: "_common/features/email-sender-smtp",
+      title: "SMTP email sender (self-hosted)",
+      summary:
+        "Source-owned SmtpEmailSender adapter for Workers via worker-mailer. Implements Mantle's narrow EmailSender port over SMTP. Pairs with customer-account so passwordless sign-in mail goes through a real SMTP server instead of the console sink.",
+      applicableArchetypes: ["transaction"],
+      registryDependencies: ["customer-account"],
+    },
   },
   themes: {
     "l4-minimal-ink": { path: "themes/l4-minimal-ink" },
@@ -136,7 +144,7 @@ export const STALE_FALLBACK_SOURCES: SourcesJson = {
     "l4-playful-pop": { path: "themes/l4-playful-pop" },
   },
   roadmap: ["reservation", "community", "membership"],
-  version: "0.0.11-alpha.17",
+  version: "0.0.11-alpha.18",
 };
 
 /**

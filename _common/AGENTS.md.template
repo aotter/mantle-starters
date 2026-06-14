@@ -13,9 +13,19 @@ Public site: {{SITE_URL}}  (placeholder until provision)
 
 ## For agents working on this site
 
+- Start with the repo-local Mantle skills. They capture the launch
+  choices and the current starter contract:
+  - [`.agent/skills/mantle-development/SKILL.md`](.agent/skills/mantle-development/SKILL.md)
+  - [`.agent/skills/mantle-feature-overlays/SKILL.md`](.agent/skills/mantle-feature-overlays/SKILL.md)
+  - [`.agent/skills/mantle-provision/SKILL.md`](.agent/skills/mantle-provision/SKILL.md)
 - Site intent, voice, install-time decisions, and Mantle's worklog:
   [`mantle/site.md`](mantle/site.md). Read whole, edit sections, write
   whole; never partial mutation.
+- Launch-time owner, repo, locale, archetype, theme, and feature choices:
+  [`.mantle/launch-state.json`](.mantle/launch-state.json) when present.
+- Starter feature inventory:
+  [`.mantle/features.json`](.mantle/features.json). Read this before
+  changing auth, routes, storage bindings, manifests, or provision steps.
 - Daily content authoring: use the Editor MCP at
   `<SITE_URL>/mcp/staff`. Do not write directly to D1 / KV.
 - To rebuild site logic, change archetype, or rework prose: invoke the

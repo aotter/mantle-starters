@@ -1,0 +1,16 @@
+---
+name: mantle-provision
+description: Finish first production deployment for this generated Mantle site.
+---
+
+# Mantle Provision
+
+Use the shared repo-local skill at:
+
+`.agent/skills/mantle-provision/SKILL.md`
+
+Read it fully before pushing the repo, connecting Cloudflare,
+configuring GitHub OAuth, running Wrangler provision commands, or smoke
+testing production. Use
+`node_modules/@aotter/mantle/skills/provision/SKILL.md` as the
+versioned parent contract after dependencies are installed.
