@@ -33,6 +33,20 @@ node scripts/media-r2-provision.mjs
 | `.dev.vars.example` entries | composed in | Documents `MEDIA_PUBLIC_URL_BASE` / `MEDIA_S3_ENDPOINT` (plain) + `MEDIA_S3_ACCESS_KEY_ID` / `MEDIA_S3_SECRET_ACCESS_KEY` (secrets) |
 | `scripts/.mantle-provision.mjs` | scaffolder | Includes an install step that prints "run media-r2:provision when ready" |
 
+## Operator companion plugin
+
+For one-off operator uploads from Claude Code, install the Mantle
+Companion Upload plugin from this repo's Claude marketplace:
+
+```text
+/plugin marketplace add aotter/mantle-starters
+/plugin install mantle-companion-upload@mantle-starters
+```
+
+The plugin accepts a local/chat attachment file path and calls the same
+upload session lifecycle as the CLI. It does not put large base64 image
+payloads into MCP tool arguments.
+
 ## What the provision script does
 
 The script drives the parts wrangler CAN automate; pauses with

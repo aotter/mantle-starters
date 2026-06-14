@@ -7,12 +7,11 @@ Takes a source image, produces avif/webp/jpeg variants via [sharp](https://sharp
 **Distributed via `mantle-starters` GitHub releases, not npm.** Run via the release tarball URL:
 
 ```sh
-npx https://github.com/aotter/mantle-starters/releases/download/v0.0.11-alpha.14/aotter-mantle-media-tools.tgz \
+npx https://github.com/aotter/mantle-starters/releases/download/v0.0.11-alpha.20/aotter-mantle-media-tools.tgz \
   upload \
   --file ./hero.jpg \
   --purpose post-cover \
-  --endpoint https://my-blog.example \
-  --bearer "$MCP_BEARER"
+  --endpoint https://my-blog.example
 ```
 
 ## Why agent-side?
@@ -37,7 +36,7 @@ mantle-media-tools upload \
   --file <path>           Source image (jpeg/png/etc — any sharp input)
   --purpose <slug>        Declared in siteDefaults.media.purposes
   --endpoint <origin>     Mantle Worker origin, e.g. https://my-blog.example
-  --bearer <token>        OAuth token for /mcp/staff (admin grant)
+  [--bearer <token>]      OAuth token for /mcp/staff (admin grant)
   [--mcp-path <path>]     Override default `/mcp/staff` MCP route
   [--filename <name>]     Override basename(file) on the wire
   [--alt <text>] [--caption <text>]
@@ -45,6 +44,17 @@ mantle-media-tools upload \
 ```
 
 Encodes the trio, uploads each variant directly to R2 (Worker bypassed for the PUT), commits the bundle via `/mcp/staff`, prints the committed `MediaAsset` JSON on stdout. Errors emit structured diagnostics on stderr (parseable by agent consumers).
+
+Prefer `MANTLE_STAFF_BEARER` over `--bearer` so the token does not
+land in shell history or process listings:
+
+```sh
+export MANTLE_STAFF_BEARER=...
+mantle-media-tools upload \
+  --file ./cover.jpg \
+  --purpose post-cover \
+  --endpoint https://my-site.example
+```
 
 ## Library
 
