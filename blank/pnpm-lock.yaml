@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@aotter/mantle':
-        specifier: 0.0.11-alpha.16
-        version: 0.0.11-alpha.16(@cloudflare/workers-oauth-provider@0.7.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260613.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(hono@4.12.21)(zod@4.4.3)
+        specifier: 0.0.11-alpha.18
+        version: 0.0.11-alpha.18(@cloudflare/workers-oauth-provider@0.7.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260613.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(hono@4.12.21)(zod@4.4.3)
       '@cloudflare/workers-oauth-provider':
         specifier: ^0.7.0
         version: 0.7.0
@@ -28,8 +28,8 @@ importers:
         version: 4.4.3
     devDependencies:
       '@aotter/mantle-spec':
-        specifier: 0.0.11-alpha.16
-        version: 0.0.11-alpha.16(zod@4.4.3)
+        specifier: 0.0.11-alpha.18
+        version: 0.0.11-alpha.18(zod@4.4.3)
       '@cloudflare/workers-types':
         specifier: ^4.20260527.1
         version: 4.20260613.1
@@ -45,34 +45,34 @@ importers:
 
 packages:
 
-  '@aotter/mantle-admin-ui@0.0.11-alpha.16':
-    resolution: {integrity: sha512-IkRRMVE9fjjXqzUxiduwIXEL3w1B2OSE+8dlaAMfjL6142BV7aabxra91/zddPHsXtGU58blC45pPsyp4OkaUQ==}
+  '@aotter/mantle-admin-ui@0.0.11-alpha.18':
+    resolution: {integrity: sha512-BW80U0Qjyxth0mxZ20g6gUNqnFF3OFO0lTrqm3dgtSmrNtV5/ruE+yg6MhkpHeNJcJtkjbK21ZmF1iaPqgD78w==}
 
-  '@aotter/mantle-cloudflare@0.0.11-alpha.16':
-    resolution: {integrity: sha512-OIy9sOA1RQXIuOFJ8wnqooJfO0OHpO9OSjGx4sSiJa6lsx1Q0RLF4zWUfl95+emhU9sax8yd332m0aSdCEc3Cg==}
+  '@aotter/mantle-cloudflare@0.0.11-alpha.18':
+    resolution: {integrity: sha512-AOMFSSPdwXUtbtipdx8EmRycvJcED33Ur1DbnZvqnpzbAirHbgjSpayJs9+q/Qng01JujMYM/FdfU6SukgMT6Q==}
     peerDependencies:
-      '@cloudflare/workers-oauth-provider': ^0.6.0
+      '@cloudflare/workers-oauth-provider': ^0.7.0
       aws4fetch: ^1.0.20
       better-auth: ^1.6.0
       hono: ^4.12.0
       zod: ^4.0.0
 
-  '@aotter/mantle-runtime@0.0.11-alpha.16':
-    resolution: {integrity: sha512-a54D1s0Tg+dBZSXpvd8xx074uJuQKNCBk5JFzezJaWEwpjWXTMXn7Z4wkk/fwN1d+rhoTYemJsL8TA5bX0QL3A==}
+  '@aotter/mantle-runtime@0.0.11-alpha.18':
+    resolution: {integrity: sha512-dO7wT6KlP2iuCKX3eiJoPNMtjDVRot7zzOohPcGOL2J1GWac6FxpVmoVA28TAqaBKP284eSbJrpBBfZHl9cuTw==}
     peerDependencies:
       zod: ^4.0.0
 
-  '@aotter/mantle-spec@0.0.11-alpha.16':
-    resolution: {integrity: sha512-OmwziLyIj1xizZoWfMsaFg86CUg4KO3fo8jH62sG6k/YDTN4jhWD1u9s7WqNPHU8w/9aM6bqHZrYS9QODb92nQ==}
+  '@aotter/mantle-spec@0.0.11-alpha.18':
+    resolution: {integrity: sha512-9g/dWJ5nfn+1EwH46BzwnSbA2m+v3tclGD1LhHwGzFVmipTvvmJ3d1UB9TFMBfnXqwrSS+L1nJ4Tu/mLEpnFrA==}
     hasBin: true
     peerDependencies:
       zod: ^4.0.0
 
-  '@aotter/mantle@0.0.11-alpha.16':
-    resolution: {integrity: sha512-QhBLZWi8P7b1cosAacstbxQBuflNI1hXX2DC9F+8ovQUVVS2ROrDO4DnORsuNOL7re+2j/S40GgN5TQgMj0Nxg==}
+  '@aotter/mantle@0.0.11-alpha.18':
+    resolution: {integrity: sha512-dZh75LocpefGlmvW7DHGa3SXIYSP6s6XLOfmov73GovVZt0uVfysufNQVHK1a0B3iSaQTLWUJRcd92nVLpyKSg==}
     engines: {node: '>=22'}
     peerDependencies:
-      '@cloudflare/workers-oauth-provider': ^0.6.0
+      '@cloudflare/workers-oauth-provider': ^0.7.0
       aws4fetch: ^1.0.20
       better-auth: ^1.6.0
       hono: ^4.12.0
@@ -889,11 +889,11 @@ packages:
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
-  '@tanstack/query-core@5.100.10':
-    resolution: {integrity: sha512-8UR0yJR+GiQ40m3lPhUr0xbfAupe6GSQiksSBSa9SM2NjezFyxXCIA69/lz8cSoNKZLrw1/PktIyQBJcVeMi3w==}
+  '@tanstack/query-core@5.101.0':
+    resolution: {integrity: sha512-cQetA74EB+seWySv1TTKr828TnP0u39m6LykwDXIo84SNortpDkp30TMEjkqtYCNP9c40uT/iwl6MLiufEt0Ow==}
 
-  '@tanstack/react-query@5.100.10':
-    resolution: {integrity: sha512-FLaZf2RCrA/Zgp4aiu5tG3TyasTRO7aZ99skxQpr3Hg/zXOhu6yq5FZCYQ/tRaJtM9ylnoK8tFK7PolXQadv6Q==}
+  '@tanstack/react-query@5.101.0':
+    resolution: {integrity: sha512-rLlJXSpkqfizLWgkR5+eLeIk0MvTx/meEIR7LRjxic+qxiQP8zVjq7BqQkiCMNLQBlLfuOLqqr6KO5GtrDlmSg==}
     peerDependencies:
       react: ^18 || ^19
 
@@ -1198,14 +1198,14 @@ packages:
 
 snapshots:
 
-  '@aotter/mantle-admin-ui@0.0.11-alpha.16':
+  '@aotter/mantle-admin-ui@0.0.11-alpha.18':
     dependencies:
       '@radix-ui/react-collapsible': 1.1.12(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@radix-ui/react-dialog': 1.1.15(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@radix-ui/react-dropdown-menu': 2.1.16(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@radix-ui/react-separator': 1.1.8(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@radix-ui/react-slot': 1.2.4(react@19.2.6)
-      '@tanstack/react-query': 5.100.10(react@19.2.6)
+      '@tanstack/react-query': 5.101.0(react@19.2.6)
       class-variance-authority: 0.7.1
       clsx: 2.1.1
       lucide-react: 1.16.0(react@19.2.6)
@@ -1216,11 +1216,11 @@ snapshots:
       - '@types/react'
       - '@types/react-dom'
 
-  '@aotter/mantle-cloudflare@0.0.11-alpha.16(@cloudflare/workers-oauth-provider@0.7.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260613.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(hono@4.12.21)(zod@4.4.3)':
+  '@aotter/mantle-cloudflare@0.0.11-alpha.18(@cloudflare/workers-oauth-provider@0.7.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260613.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(hono@4.12.21)(zod@4.4.3)':
     dependencies:
-      '@aotter/mantle-admin-ui': 0.0.11-alpha.16
-      '@aotter/mantle-runtime': 0.0.11-alpha.16(zod@4.4.3)
-      '@aotter/mantle-spec': 0.0.11-alpha.16(zod@4.4.3)
+      '@aotter/mantle-admin-ui': 0.0.11-alpha.18
+      '@aotter/mantle-runtime': 0.0.11-alpha.18(zod@4.4.3)
+      '@aotter/mantle-spec': 0.0.11-alpha.18(zod@4.4.3)
       '@cloudflare/workers-oauth-provider': 0.7.0
       aws4fetch: 1.0.20
       better-auth: 1.6.11(@cloudflare/workers-types@4.20260613.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -1230,22 +1230,22 @@ snapshots:
       - '@types/react'
       - '@types/react-dom'
 
-  '@aotter/mantle-runtime@0.0.11-alpha.16(zod@4.4.3)':
+  '@aotter/mantle-runtime@0.0.11-alpha.18(zod@4.4.3)':
     dependencies:
-      '@aotter/mantle-spec': 0.0.11-alpha.16(zod@4.4.3)
+      '@aotter/mantle-spec': 0.0.11-alpha.18(zod@4.4.3)
       zod: 4.4.3
 
-  '@aotter/mantle-spec@0.0.11-alpha.16(zod@4.4.3)':
+  '@aotter/mantle-spec@0.0.11-alpha.18(zod@4.4.3)':
     dependencies:
       yaml: 2.9.0
       zod: 4.4.3
 
-  '@aotter/mantle@0.0.11-alpha.16(@cloudflare/workers-oauth-provider@0.7.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260613.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(hono@4.12.21)(zod@4.4.3)':
+  '@aotter/mantle@0.0.11-alpha.18(@cloudflare/workers-oauth-provider@0.7.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260613.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(hono@4.12.21)(zod@4.4.3)':
     dependencies:
-      '@aotter/mantle-admin-ui': 0.0.11-alpha.16
-      '@aotter/mantle-cloudflare': 0.0.11-alpha.16(@cloudflare/workers-oauth-provider@0.7.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260613.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(hono@4.12.21)(zod@4.4.3)
-      '@aotter/mantle-runtime': 0.0.11-alpha.16(zod@4.4.3)
-      '@aotter/mantle-spec': 0.0.11-alpha.16(zod@4.4.3)
+      '@aotter/mantle-admin-ui': 0.0.11-alpha.18
+      '@aotter/mantle-cloudflare': 0.0.11-alpha.18(@cloudflare/workers-oauth-provider@0.7.0)(aws4fetch@1.0.20)(better-auth@1.6.11(@cloudflare/workers-types@4.20260613.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(hono@4.12.21)(zod@4.4.3)
+      '@aotter/mantle-runtime': 0.0.11-alpha.18(zod@4.4.3)
+      '@aotter/mantle-spec': 0.0.11-alpha.18(zod@4.4.3)
       '@cloudflare/workers-oauth-provider': 0.7.0
       aws4fetch: 1.0.20
       better-auth: 1.6.11(@cloudflare/workers-types@4.20260613.1)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -1798,11 +1798,11 @@ snapshots:
 
   '@standard-schema/spec@1.1.0': {}
 
-  '@tanstack/query-core@5.100.10': {}
+  '@tanstack/query-core@5.101.0': {}
 
-  '@tanstack/react-query@5.100.10(react@19.2.6)':
+  '@tanstack/react-query@5.101.0(react@19.2.6)':
     dependencies:
-      '@tanstack/query-core': 5.100.10
+      '@tanstack/query-core': 5.101.0
       react: 19.2.6
 
   '@types/node@25.9.0':
