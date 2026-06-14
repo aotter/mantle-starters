@@ -1,6 +1,6 @@
 {
   "name": "mantle-starter-intake",
-  "version": "0.0.11-alpha.19",
+  "version": "0.0.11-alpha.20",
   "private": true,
   "description": "Intake starter for mantle v0.1.0 — publication shape (landing + articles + contact) plus a structured `leads` Schema with leads-recent View and CAPTCHA + Slack-notify lifecycle. Runs on wrangler dev with local D1 + KV.",
   "type": "module",
@@ -26,7 +26,7 @@
     "theme:reset": "node scripts/theme-reset.mjs"
   },
   "dependencies": {
-    "@aotter/mantle": "0.0.11-alpha.19",
+    "@aotter/mantle": "0.0.11-alpha.20",
     "@cloudflare/workers-oauth-provider": "catalog:",
     "aws4fetch": "catalog:",
     "better-auth": "catalog:",
@@ -36,7 +36,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@aotter/mantle-spec": "0.0.11-alpha.19",
+    "@aotter/mantle-spec": "0.0.11-alpha.20",
     "@cloudflare/workers-types": "catalog:",
     "@types/node": "catalog:",
     "tsx": "catalog:",
