@@ -1,0 +1,13 @@
+---
+name: mantle-feature-overlays
+description: Understand and modify feature overlays selected for this generated Mantle site.
+---
+
+# Mantle Feature Overlays
+
+Use the shared repo-local skill at:
+
+`.agent/skills/mantle-feature-overlays/SKILL.md`
+
+Read it fully before changing overlay-provided manifests, auth, routes,
+env vars, provision steps, or generated glue.
