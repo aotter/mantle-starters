@@ -58,17 +58,10 @@ cp .dev.vars.example .dev.vars
 > silently regenerate `pnpm-lock.yaml` against newer deps and the
 > drift only surfaces when CI rejects it.
 
-Edit `.dev.vars` and fill in `BETTER_AUTH_SECRET=` — without it the worker
-returns `auth_not_configured` on every request. Generate a value:
-
-```bash
-openssl rand -hex 32
-# copy the output, paste it after `BETTER_AUTH_SECRET=` in .dev.vars
-```
-
-That's the only field you have to set for the public site. The remaining
-`GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` / `ADMIN_GITHUB_LOGIN` placeholders
-are only consumed by `/admin` sign-in; public routes ignore them.
+Public routes work without auth. Fill `BETTER_AUTH_SECRET`,
+`GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, and `ADMIN_GITHUB_LOGIN`
+only when you want to exercise `/admin`, `/api/auth/*`, or Staff MCP
+locally.
 `TURNSTILE_SECRET_KEY=dev-stub` is fine for local development.
 
 Seed demo home + about pages and start the dev server:
@@ -77,6 +70,18 @@ Seed demo home + about pages and start the dev server:
 pnpm fixture       # one-time: seeds dev D1/KV with demo home + about pages
 pnpm dev           # safe wrangler dev — http://localhost:8787
 ```
+
+Production installs use the shared provision flow:
+
+```bash
+pnpm run provision:plan
+pnpm exec wrangler login
+pnpm run provision:up -- --worker-url <worker_url> --github-username <github-login> --client-id <client-id>
+```
+
+Set `GITHUB_CLIENT_SECRET` in the environment before `provision:up`.
+The script writes non-secret config and Worker secrets; it does not ask
+for a Cloudflare API token.
 
 Open <http://localhost:8787>. The root URL 302-redirects to your
 canonical locale and the home page renders (`<!doctype html>` HTML,

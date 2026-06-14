@@ -14,7 +14,9 @@ export interface Env {
   /** OAuth grant store for `@cloudflare/workers-oauth-provider` —
    *  client registrations + grants + tokens. Required by the
    *  top-level OAuthProvider that wraps the Worker; both /mcp/staff
-   *  and /mcp return 503 without it. `wrangler kv namespace create OAUTH_KV`. */
+   *  and /mcp use this namespace for OAuth state. The top-level
+   *  wrangler.toml binding intentionally omits an id so Cloudflare can
+   *  auto-provision it during the first deploy. */
   readonly OAUTH_KV: KVNamespace;
   readonly ASSETS?: Fetcher;
   readonly GITHUB_CLIENT_ID?: string;
