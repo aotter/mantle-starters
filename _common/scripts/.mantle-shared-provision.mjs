@@ -248,6 +248,7 @@ function listSecrets() {
 }
 
 function printHandoff(workerUrl) {
+  const operatorSetupUrl = `https://mantle.tools/connect?site=${encodeURIComponent(workerUrl)}`;
   console.log(`
 ==============================================
 Provisioning config written
@@ -256,6 +257,8 @@ Provisioning config written
 Public URL:  ${workerUrl}
 Staff MCP:   ${workerUrl}/mcp/staff
 User MCP:    ${workerUrl}/mcp
+Operator setup:
+             ${operatorSetupUrl}
 Sign in:     ${workerUrl}/admin
 
 Next:
