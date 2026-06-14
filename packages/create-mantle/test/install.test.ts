@@ -212,6 +212,48 @@ describe("installFromExtractedRoot", () => {
     expect(cfg).toContain('brand: "Lab Cafe"');
   });
 
+  it("allows archetypes to repeat the shared provision wrapper verbatim", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    const wrapper = "import './.mantle-shared-provision.mjs';\n";
+    writeFile(join(extractedRoot, "_common", "scripts", "provision.mjs"), wrapper);
+    writeFile(join(extractedRoot, "publication", "scripts", "provision.mjs"), wrapper);
+    const destination = join(tempRoot, "out-provision-wrapper");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      archetype: "publication",
+      destination,
+      extractedRoot,
+    });
+
+    expect(readFileSync(join(destination, "scripts", "provision.mjs"), "utf8"))
+      .toBe(wrapper);
+  });
+
+  it("rejects archetype-specific provision runner forks", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "_common", "scripts", "provision.mjs"),
+      "import './.mantle-shared-provision.mjs';\n",
+    );
+    writeFile(
+      join(extractedRoot, "publication", "scripts", "provision.mjs"),
+      "console.log('forked');\n",
+    );
+    const destination = join(tempRoot, "out-provision-wrapper-fork");
+    mkdirSync(destination, { recursive: true });
+
+    expect(() =>
+      installFromExtractedRoot({
+        ...commonOpts(),
+        archetype: "publication",
+        destination,
+        extractedRoot,
+      }),
+    ).toThrow(/differs from the shared wrapper/);
+  });
+
   it("resolves pnpm catalog specifiers in the scaffolded package.json", () => {
     const extractedRoot = fixtureExtractedRoot();
     const destination = join(tempRoot, "out-catalog");
@@ -229,6 +271,53 @@ describe("installFromExtractedRoot", () => {
     );
     expect(pkg.dependencies.hono).toBe("^4.12.19");
     expect(pkg.devDependencies["@types/node"]).toBe("^25");
+  });
+
+  it("scopes top-level wrangler resource names to the project name", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    writeFile(
+      join(extractedRoot, "publication", "wrangler.toml"),
+      [
+        'name = "mantle-publication"',
+        'main = "src/index.ts"',
+        "",
+        "[[d1_databases]]",
+        'binding = "DB"',
+        'database_name = "mantle-publication-local"',
+        "",
+        "[[queues.producers]]",
+        'queue = "order-work-queue"',
+        'binding = "ORDER_WORK_QUEUE"',
+        "",
+        "[[queues.consumers]]",
+        'queue = "order-work-queue"',
+        'dead_letter_queue = "order-work-dlq"',
+        "",
+        "[env.test]",
+        "",
+        "[[env.test.d1_databases]]",
+        'binding = "DB"',
+        'database_name = "mantle-publication-test"',
+        "",
+      ].join("\n"),
+    );
+    const destination = join(tempRoot, "out-wrangler-project-name");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      projectName: "demo-shop",
+      archetype: "publication",
+      destination,
+      extractedRoot,
+    });
+
+    const wrangler = readFileSync(join(destination, "wrangler.toml"), "utf8");
+    expect(wrangler).toContain('name = "demo-shop"');
+    expect(wrangler).toContain('database_name = "demo-shop-db"');
+    expect(wrangler).toContain('queue = "demo-shop-order-work-queue"');
+    expect(wrangler).toContain('dead_letter_queue = "demo-shop-order-work-dlq"');
+    expect(wrangler).toContain('database_name = "mantle-publication-test"');
   });
 
   it("does not copy local generated artifacts or private env files", () => {

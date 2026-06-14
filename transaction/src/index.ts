@@ -51,13 +51,16 @@ export { InventoryActor } from "./durableObjects/InventoryActor.js";
  * in `src/handlers/orderConsumer.ts`.
  */
 type WorkerFetch = (req: Request, env: Env, ctx: ExecutionContext) => Promise<Response>;
-let workerFetchCache: WorkerFetch | null = null;
+let workerFetchCache: { readonly key: string; readonly fetch: WorkerFetch } | null = null;
 
 const AUTH_NOT_CONFIGURED = {
-  error: "auth_not_configured",
+  error: "setup_incomplete",
   message:
-    "BETTER_AUTH_SECRET is required. Run `wrangler secret put BETTER_AUTH_SECRET` and redeploy.",
+    "Admin auth is not configured yet. Finish the post-deploy provisioning step to set BETTER_AUTH_SECRET and GitHub OAuth credentials.",
 } as const;
+
+const SETUP_PLACEHOLDER_SECRET =
+  "mantle-setup-incomplete-placeholder-secret-32-bytes-min";
 
 function buildAuthFromEnv(env: Env): Auth {
   const baseURL = env.PUBLIC_ORIGIN ?? "http://localhost:8787";
@@ -73,7 +76,7 @@ function buildAuthFromEnv(env: Env): Auth {
   return createAuth({
     database: env.DB,
     baseURL,
-    secret: env.BETTER_AUTH_SECRET,
+    secret: env.BETTER_AUTH_SECRET || SETUP_PLACEHOLDER_SECRET,
     methods,
     bootstrapOwner: env.ADMIN_GITHUB_LOGIN
       ? { match: "github-login", value: env.ADMIN_GITHUB_LOGIN }
@@ -82,7 +85,8 @@ function buildAuthFromEnv(env: Env): Auth {
 }
 
 function buildWorker(env: Env): WorkerFetch {
-  if (workerFetchCache) return workerFetchCache;
+  const cacheKey = authCacheKey(env);
+  if (workerFetchCache?.key === cacheKey) return workerFetchCache.fetch;
   const auth = buildAuthFromEnv(env);
   const cms: CmsRuntimeRef = createCmsRef(buildCmsConfig(env, auth));
   const app = new Hono();
@@ -346,19 +350,61 @@ function buildWorker(env: Env): WorkerFetch {
     scopesSupported: ["mcp"],
   });
 
-  workerFetchCache = (req, e, ctx) =>
+  const fetch: WorkerFetch = (req, e, ctx) =>
     (oauthProvider.fetch as (r: unknown, e: unknown, c: unknown) => Promise<Response>)(
       req,
       e,
       ctx,
     );
-  return workerFetchCache;
+  workerFetchCache = { key: cacheKey, fetch };
+  return fetch;
+}
+
+function authCacheKey(env: Env): string {
+  return [
+    env.PUBLIC_ORIGIN ?? "",
+    env.BETTER_AUTH_SECRET ?? "",
+    env.GITHUB_CLIENT_ID ?? "",
+    env.GITHUB_CLIENT_SECRET ?? "",
+    env.ADMIN_GITHUB_LOGIN ?? "",
+  ].join("\0");
+}
+
+function authSetupComplete(env: Env): boolean {
+  return Boolean(
+    env.BETTER_AUTH_SECRET &&
+      env.GITHUB_CLIENT_ID &&
+      env.GITHUB_CLIENT_SECRET &&
+      env.ADMIN_GITHUB_LOGIN,
+  );
+}
+
+function blocksWhenAuthIsIncomplete(pathname: string): boolean {
+  return (
+    pathname === "/admin" ||
+    pathname.startsWith("/admin/") ||
+    pathname === "/authorize" ||
+    pathname === "/token" ||
+    pathname === "/register" ||
+    pathname.startsWith("/.well-known/oauth") ||
+    pathname.startsWith("/api/auth") ||
+    pathname === "/mcp/staff" ||
+    pathname.startsWith("/mcp/staff/")
+  );
+}
+
+function setupIncompleteResponse(): Response {
+  return Response.json(AUTH_NOT_CONFIGURED, {
+    status: 503,
+    headers: { "cache-control": "no-store" },
+  });
 }
 
 export default {
   async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    if (!env.BETTER_AUTH_SECRET) {
-      return Response.json(AUTH_NOT_CONFIGURED, { status: 503 });
+    const url = new URL(req.url);
+    if (!authSetupComplete(env) && blocksWhenAuthIsIncomplete(url.pathname)) {
+      return setupIncompleteResponse();
     }
     const worker = buildWorker(env);
     return worker(req, env, ctx);
@@ -369,13 +415,6 @@ export default {
     env: Env,
     ctx: ExecutionContext,
   ): Promise<void> {
-    if (!env.BETTER_AUTH_SECRET) {
-      console.warn(
-        `[transaction queue] env not ready (no BETTER_AUTH_SECRET); acking batch '${batch.queue}'`,
-      );
-      batch.ackAll();
-      return;
-    }
     const dispatch = buildQueueDispatcher(env);
     return dispatch(batch, env, ctx);
   },
@@ -391,12 +430,6 @@ export default {
     env: Env,
     ctx: ExecutionContext,
   ): Promise<void> {
-    if (!env.BETTER_AUTH_SECRET) {
-      console.warn(
-        `[transaction scheduled] env not ready (no BETTER_AUTH_SECRET); skipping tick`,
-      );
-      return;
-    }
     ctx.waitUntil(
       sendOrderWork(env.ORDER_WORK_QUEUE, {
         type: "inventory.reconcile.tick",

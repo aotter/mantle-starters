@@ -9,6 +9,25 @@ the macro substitution pass.
 Mantle workflow helper — runs from the consumer project root. See the
 file header for verbs.
 
+## `provision.mjs` + `.mantle-shared-provision.mjs`
+
+Shared post-deploy provision helper used by every archetype.
+`provision.mjs` is a tiny wrapper; `.mantle-shared-provision.mjs` owns
+the real logic. This keeps raw starter directories runnable in this
+repo while generated projects still receive the same shared runner from
+`_common/`.
+
+The helper keeps the first Cloudflare deploy dashboard-led, then lets
+the coding agent run `pnpm run provision:up` after `wrangler login` to
+write non-secret config and Worker secrets.
+
+The helper intentionally does not ask for `CLOUDFLARE_API_TOKEN`.
+Top-level D1/KV/R2 bindings should omit resource ids so Cloudflare can
+auto-provision them during the first deploy. Starter-specific resources
+outside that automatic provisioning set, such as Queues, are reported
+as explicit follow-up notes instead of being hidden in per-starter
+copies of the script.
+
 ## `migrate-media.mjs` — bulk-upload local seed assets to R2
 
 Migrates a starter's local seed image directory to the deployed

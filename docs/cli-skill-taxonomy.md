@@ -68,14 +68,15 @@ Owner: each generated consumer project
 
 Responsibilities:
 
-- `pnpm provision:plan` (print the Cloudflare dashboard first-deploy + GitHub OAuth App handoff);
-- `pnpm provision:up` (after first deploy, write non-secret config and set Worker secrets via Wrangler);
+- `pnpm run provision:plan` (print the Cloudflare dashboard first-deploy + GitHub OAuth App handoff);
+- `pnpm run provision:up` (after first deploy, write non-secret config and set Worker secrets via Wrangler);
 - `pnpm deploy`;
 - starter-specific seed, smoke, and setup helpers.
 
 Feature overlays may contribute generated provision steps through
-`scripts/.mantle-provision.mjs`, but the base `scripts/provision.mjs` owns the
-user-facing lifecycle and shared context. The default happy path should not
+`scripts/.mantle-provision.mjs`, but the shared `_common/scripts/provision.mjs`
+owns the user-facing lifecycle and shared context for every archetype. The
+default happy path should not
 ask for a Cloudflare API token; users authorize Cloudflare/GitHub in their own
 browser, and the coding agent uses Wrangler after that handoff.
 
