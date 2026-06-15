@@ -45,6 +45,9 @@ Mantle alpha.
    uploads:
    - `aotter-create-mantle.tgz`
    - `aotter-mantle-media-tools.tgz`
+7. Confirm `bump-from-sdk.yml` synced the released `main` commit back to
+   `develop`. The workflow opens and auto-merges a backport PR when
+   needed, so `develop` should not remain one release behind.
 
 ## Pre-Merge Gate For Starter Feature PRs
 
@@ -85,7 +88,8 @@ npm_config_yes=true npx https://github.com/aotter/mantle-starters/releases/downl
 
 Stop and explain the situation if any of these appear:
 
-- `main` has release-only changes that are not backported to `develop`.
+- `main` has release-only changes that are not backported to `develop`
+  after the automatic sync step has had time to finish.
 - A tarball URL points to a version that has not been tagged yet and no
   matching SDK release is planned.
 - `packages/create-mantle/package.json` or
