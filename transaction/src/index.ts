@@ -63,6 +63,7 @@ const SETUP_PLACEHOLDER_SECRET =
   "mantle-setup-incomplete-placeholder-secret-32-bytes-min";
 
 function buildAuthFromEnv(env: Env): Auth {
+  if (!authProviderConfigured(env)) return createSetupIncompleteAuth();
   const baseURL = env.PUBLIC_ORIGIN ?? "http://localhost:8787";
   const methods: AuthMethodConfig[] = [];
   if (env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET) {
@@ -82,6 +83,27 @@ function buildAuthFromEnv(env: Env): Auth {
       ? { match: "github-login", value: env.ADMIN_GITHUB_LOGIN }
       : undefined,
   });
+}
+
+function authProviderConfigured(env: Env): boolean {
+  return Boolean(env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET);
+}
+
+function createSetupIncompleteAuth(): Auth {
+  return {
+    handler: async () => setupIncompleteResponse(),
+    getSession: async () => null,
+    getUserRole: async () => null,
+    methods: [],
+    listLinkedAccounts: async () => [],
+    unlinkAccount: async () => false,
+    listUsers: async () => [],
+    setUserRole: async () => false,
+    inviteUser: async () => {
+      throw new Error(AUTH_NOT_CONFIGURED.message);
+    },
+    revokeInvite: async () => false,
+  };
 }
 
 function buildWorker(env: Env): WorkerFetch {

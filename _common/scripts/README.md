@@ -22,9 +22,11 @@ the real logic. This keeps raw starter directories runnable in this
 repo while generated projects still receive the same shared runner from
 `_common/`.
 
-The helper keeps the first Cloudflare deploy dashboard-led, then lets
-the coding agent run `pnpm run provision:up` after `wrangler login` to
-write non-secret config and Worker secrets.
+The helper keeps the first Cloudflare deploy dashboard-led, prints the
+Workers & Pages import link, and tells the user exactly which
+`WORKER_URL` / OAuth values to report back. Then the coding agent runs
+`pnpm run provision:up` after `wrangler login` to write non-secret
+config and Worker secrets.
 
 The helper intentionally does not ask for `CLOUDFLARE_API_TOKEN`.
 Top-level D1/KV/R2 bindings should omit resource ids so Cloudflare can
