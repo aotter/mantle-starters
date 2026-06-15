@@ -22,6 +22,30 @@ Cloudflare resources or store provider secrets for this site.
    versioned parent provision contract. If `node_modules/` is missing,
    run `pnpm install --frozen-lockfile` first.
 
+## Presenting browser steps to the user
+
+Steps below hand the user into a browser. Assume a non-coder who trusts
+the agent, and present those steps one at a time, in plain language —
+not as a terse engineer checklist:
+
+- One browser task per message: Cloudflare deploy first, wait for the
+  live URL, *then* the GitHub OAuth App.
+- Label what they see `STEP 1 of 2` / `STEP 2 of 2`; don't leak internal
+  step numbers with gaps.
+- Spell out click paths as sentences with the exact on-screen labels —
+  no `A → B → C` arrows.
+- Say what they'll see and what to copy ("a link ending in
+  `.workers.dev`"), and ask for it in plain words — never `KEY=value`
+  syntax or literal `<...>` placeholders.
+- Have them keep the Client Secret on the clipboard for the hidden
+  prompt; never ask them to paste it in chat.
+- Offer "paste a screenshot if a screen doesn't match" as an escape
+  hatch.
+
+See the parent skill's **Presenting browser steps (non-coder handoff)**
+section in `node_modules/@aotter/mantle/skills/provision/SKILL.md` for
+the full contract.
+
 ## Baseline flow
 
 1. Ensure dependencies and local checks pass:
@@ -65,22 +89,21 @@ pnpm run provision:plan -- --worker-url <worker-url> --github-username <admin-lo
 
 If the plan prints extra required values, ask for only those values.
 
-5. Make the user handoff explicit. Ask them to report:
-
-- `WORKER_URL`, for example
-  `https://<worker-name>.<account-subdomain>.workers.dev`;
-- `WORKER_NAME`, only if Cloudflare forced a different Worker name;
-- whether the first deploy succeeded.
+5. Get the live URL from the user (present this as `STEP 1 of 2`). Once
+   the deploy goes green, ask them in plain words to paste the live link
+   — it ends in `.workers.dev` — to mention the Worker name only if
+   Cloudflare changed it, and to confirm the deploy succeeded.
 
 6. The user creates the per-site GitHub OAuth App in their own GitHub
-   account or org. Open or print
+   account or org (present this as `STEP 2 of 2`). Open or print
    `https://github.com/settings/developers`, then use:
 
 - Homepage URL: `<worker-url>`
 - Authorization callback URL: `<worker-url>/api/auth/callback/github`
 
-Ask them to report `GITHUB_CLIENT_ID`, then pass the client secret through
-stdin/env, never as a visible command argument.
+Ask them to paste the Client ID, and to keep the Client Secret on their
+clipboard for the hidden prompt below — pass the secret through
+stdin/env, never as a visible command argument or a chat message.
 
 ```bash
 read -rsp "GitHub OAuth client secret: " GITHUB_CLIENT_SECRET && export GITHUB_CLIENT_SECRET && printf "\n"
