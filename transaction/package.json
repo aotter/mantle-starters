@@ -12,6 +12,7 @@
     "validate": "mantle validate",
     "validate:deploy": "mantle validate --phase deploy",
     "mantle:prompt": "node scripts/mantle.mjs prompt",
+    "mantle:update": "node scripts/update.mjs",
     "introspect": "mantle introspect",
     "emit-openapi": "node scripts/mantle.mjs emit-openapi --output openapi.json",
     "emit-types": "node scripts/mantle.mjs emit-types --namespace TransactionCms --output mantle-types.d.ts",

@@ -83,6 +83,7 @@ async function runLaunch(argv: ReadonlyArray<string>): Promise<void> {
     session,
     notes,
     sessionRef: args.session,
+    starterRef: opts.starterRef,
   });
   process.stdout.write(
     `${JSON.stringify(

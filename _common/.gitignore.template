@@ -8,3 +8,4 @@ dist
 .DS_Store
 mantle-types.d.ts
 openapi.json
+.mantle/update-report*.json

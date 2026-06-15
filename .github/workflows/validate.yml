@@ -203,5 +203,7 @@ jobs:
             console.log('sources.json: all referenced paths exist.');
           "
 
-      - name: Assert safe Wrangler dev wrappers
-        run: node scripts/check-wrangler-dev-wrapper.mjs
+      - name: Assert starter safety checks
+        run: |
+          node scripts/check-wrangler-dev-wrapper.mjs
+          node scripts/check-repo-local-skills.mjs

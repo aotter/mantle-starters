@@ -1,5 +1,5 @@
 ---
-name: mantle-feature-overlays
+name: mantle:feature-overlays
 description: Understand and modify Mantle starter feature overlays selected for this generated site. Use before changing overlay-provided auth, routes, manifests, env vars, provision steps, or generated glue.
 ---
 

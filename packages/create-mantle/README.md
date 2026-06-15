@@ -43,8 +43,8 @@ and deployment intent.
    for registered composable targets; other feature conflicts fail.
 4. Substitutes `{{PLACEHOLDER}}` macros per ADR-0016.
 5. Renames `<file>.template` → `<file>` (so `_common/AGENTS.md.template`
-   lands as `AGENTS.md`, and repo-local skill templates land under `.agent/`
-   + `.claude/`).
+   lands as `AGENTS.md`, and repo-local `mantle:*` skill templates land under
+   `.agent/` + `.claude/`).
 6. Fails fast if any `{{PLACEHOLDER}}` remains.
 7. Runs `git init` (no remote) and `pnpm install`.
 8. Prints a JSON `RUN_NOTES` shape on stdout — the Mantle install skill reads this to know what to do next.
@@ -78,6 +78,7 @@ and deployment intent.
   "overlays": [],
   "files_written": [
     ".agent/skills/mantle-development/SKILL.md",
+    ".agent/skills/mantle-update/SKILL.md",
     "AGENTS.md",
     "mantle/site.md",
     "package.json",
@@ -171,7 +172,7 @@ themes/<theme>/<file>     → <file>      (last; bounded to src/theme/**)
 ```
 
 `_common/` carries the AGENTS.md + mantle/site.md backbone, plus repo-local
-agent skills under `.agent/` and `.claude/`; archetype dirs carry the runtime
+`mantle:*` agent skills under `.agent/` and `.claude/`; archetype dirs carry the runtime
 code, manifests, and scripts; feature overlays copy source and compose
 registered integration targets; theme overlays touch `src/theme/` only.
 
