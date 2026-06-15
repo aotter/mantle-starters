@@ -18,6 +18,7 @@ Public site: {{SITE_URL}}  (placeholder until provision)
   - [`.agent/skills/mantle-development/SKILL.md`](.agent/skills/mantle-development/SKILL.md)
   - [`.agent/skills/mantle-feature-overlays/SKILL.md`](.agent/skills/mantle-feature-overlays/SKILL.md)
   - [`.agent/skills/mantle-provision/SKILL.md`](.agent/skills/mantle-provision/SKILL.md)
+  - [`.agent/skills/mantle-update/SKILL.md`](.agent/skills/mantle-update/SKILL.md)
 - Site intent, voice, install-time decisions, and Mantle's worklog:
   [`mantle/site.md`](mantle/site.md). Read whole, edit sections, write
   whole; never partial mutation.
@@ -30,6 +31,8 @@ Public site: {{SITE_URL}}  (placeholder until provision)
   `<SITE_URL>/mcp/staff`. Do not write directly to D1 / KV.
 - To rebuild site logic, change archetype, or rework prose: invoke the
   Mantle install skill again (URL in `mantle/site.md` frontmatter).
+- To check upstream starter improvements without overwriting user code:
+  run the `mantle:update` skill and `pnpm run mantle:update`.
 - `pnpm dev` uses Miniflare and is not a production resource-limit
   simulator. For bulk D1 imports or large updates, chunk/batch the
   work and smoke-test against Wrangler remote bindings / remote dev

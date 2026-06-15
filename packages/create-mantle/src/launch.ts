@@ -163,6 +163,7 @@ export function writeLaunchState(args: {
   readonly session: NormalizedLaunchSession;
   readonly notes: RunNotes;
   readonly sessionRef?: string;
+  readonly starterRef?: string;
   readonly now?: Date;
 }): string {
   const relPath = ".mantle/launch-state.json";
@@ -177,8 +178,13 @@ export function writeLaunchState(args: {
     project_name: args.session.projectName,
     archetype: args.session.archetype,
     brand: args.session.brand,
+    description: args.session.description,
+    summary: args.session.summary,
     locales: args.session.locales,
     canonical_locale: args.session.canonicalLocale,
+    theme: args.session.theme,
+    features: args.session.features,
+    starter_ref: args.starterRef ?? args.session.starterRef ?? null,
     github: {
       owner: args.session.githubOwner,
       admin_login: args.session.adminGithubLogin,

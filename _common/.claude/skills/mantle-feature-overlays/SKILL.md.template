@@ -1,5 +1,5 @@
 ---
-name: mantle-feature-overlays
+name: mantle:feature-overlays
 description: Understand and modify feature overlays selected for this generated Mantle site.
 ---
 

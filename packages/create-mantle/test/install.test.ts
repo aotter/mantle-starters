@@ -49,11 +49,19 @@ function fixtureExtractedRoot(): string {
   );
   writeFile(
     join(root, "_common", ".agent", "skills", "mantle-development", "SKILL.md.template"),
-    "# {{BRAND}} development skill\n",
+    "---\nname: mantle:development\n---\n# {{BRAND}} development skill\n",
+  );
+  writeFile(
+    join(root, "_common", ".agent", "skills", "mantle-update", "SKILL.md.template"),
+    "---\nname: mantle:update\n---\n# {{BRAND}} update skill\n",
   );
   writeFile(
     join(root, "_common", ".claude", "skills", "mantle-development", "SKILL.md.template"),
     "Read .agent/skills/mantle-development/SKILL.md for {{ARCHETYPE}}.\n",
+  );
+  writeFile(
+    join(root, "_common", ".claude", "skills", "mantle-update", "SKILL.md.template"),
+    "---\nname: mantle:update\n---\nRead .agent/skills/mantle-update/SKILL.md for {{ARCHETYPE}}.\n",
   );
   writeFile(
     join(root, "_common", "mantle", "site.md.template"),
@@ -204,7 +212,13 @@ describe("installFromExtractedRoot", () => {
       existsSync(join(destination, ".agent", "skills", "mantle-development", "SKILL.md")),
     ).toBe(true);
     expect(
+      existsSync(join(destination, ".agent", "skills", "mantle-update", "SKILL.md")),
+    ).toBe(true);
+    expect(
       existsSync(join(destination, ".claude", "skills", "mantle-development", "SKILL.md")),
+    ).toBe(true);
+    expect(
+      existsSync(join(destination, ".claude", "skills", "mantle-update", "SKILL.md")),
     ).toBe(true);
     expect(existsSync(join(destination, "mantle", "site.md"))).toBe(true);
     expect(existsSync(join(destination, "src", "mantleConfig.ts"))).toBe(true);
@@ -229,7 +243,14 @@ describe("installFromExtractedRoot", () => {
       join(destination, ".agent", "skills", "mantle-development", "SKILL.md"),
       "utf8",
     );
+    const updateSkill = readFileSync(
+      join(destination, ".agent", "skills", "mantle-update", "SKILL.md"),
+      "utf8",
+    );
     expect(devSkill).toContain("# Lab Cafe development skill");
+    expect(devSkill).toContain("name: mantle:development");
+    expect(updateSkill).toContain("# Lab Cafe update skill");
+    expect(updateSkill).toContain("name: mantle:update");
   });
 
   it("allows archetypes to repeat the shared provision wrapper verbatim", () => {
@@ -1228,7 +1249,15 @@ describe("installFromExtractedRoot", () => {
       ),
     ).toBe(false);
     expect(
+      existsSync(
+        join(destination, ".agent", "skills", "mantle-update", "SKILL.md.template"),
+      ),
+    ).toBe(false);
+    expect(
       existsSync(join(destination, ".agent", "skills", "mantle-development", "SKILL.md")),
+    ).toBe(true);
+    expect(
+      existsSync(join(destination, ".agent", "skills", "mantle-update", "SKILL.md")),
     ).toBe(true);
     expect(
       existsSync(join(destination, "mantle", "site.md.template")),

@@ -44,6 +44,9 @@ describe("launch session", () => {
         github: { admin_login: "phsu" },
         theme: "l4-editorial-journal",
         features: ["contact", { name: "email-sender-smtp", variant: "resend" }],
+        description: "Morning Lab site.",
+        summary: "Launch Morning Lab.",
+        starter_ref: "v0.0.11-alpha.22",
         repo: { name: "morning-lab", visibility: "private" },
       },
       { now: NOW },
@@ -53,7 +56,7 @@ describe("launch session", () => {
     expect(session.githubOwner).toBe("phsu");
     expect(session.adminGithubLogin).toBe("phsu");
     expect(session.description).toBe("Morning Lab site.");
-    expect(session.summary).toBe("Launch from Mantle landing session.");
+    expect(session.summary).toBe("Launch Morning Lab.");
     expect(session.repo).toEqual({
       owner: "phsu",
       name: "morning-lab",
@@ -76,7 +79,7 @@ describe("launch session", () => {
       description: "Morning Lab site.",
       locales: ["zh-TW", "en"],
       githubOwner: "phsu",
-      summary: "Launch from Mantle landing session.",
+      summary: "Launch Morning Lab.",
       theme: "l4-editorial-journal",
       starterRef: "develop",
       skipInstall: true,
@@ -182,6 +185,10 @@ describe("launch session", () => {
         project_name: "state-site",
         locales: ["en"],
         github_owner: "phsu",
+        description: "State Site for launch state tests.",
+        summary: "Keep launch context.",
+        theme: "l4-editorial-journal",
+        features: ["contact"],
       },
       { now: NOW },
     );
@@ -203,6 +210,7 @@ describe("launch session", () => {
       session,
       notes,
       sessionRef: "https://mantle.tools/launch/sessions/launch_state?token=secret",
+      starterRef: "v0.0.11-alpha.22",
       now: NOW,
     });
 
@@ -214,6 +222,11 @@ describe("launch session", () => {
       session_id: "launch_state",
       claimed_at: NOW.toISOString(),
       launch_source: "remote",
+      description: "State Site for launch state tests.",
+      summary: "Keep launch context.",
+      theme: "l4-editorial-journal",
+      features: [{ name: "contact" }],
+      starter_ref: "v0.0.11-alpha.22",
       github: { owner: "phsu" },
       next_step: "edit content after launch",
     });
