@@ -49,6 +49,12 @@ async function plan(args) {
 Mantle post-deploy provisioning plan
 ==============================================
 
+NOTE FOR THE CODING AGENT: this plan is your checklist, not a script to
+read aloud. Re-present the browser steps to the user one task at a time,
+in plain language — see "Presenting browser steps" in the provision
+skill. Don't hand a non-coder KEY=value lines, A -> B -> C breadcrumbs,
+or <placeholder> brackets.
+
 Cloudflare first:
   1. Confirm this repo has been pushed:
        ${repoTarget}
@@ -64,10 +70,9 @@ Cloudflare first:
   4. Select Save and Deploy, then wait for the first deploy to finish.
   5. Copy the active deployed Worker URL.
 
-  Report back to your coding agent:
-       WORKER_URL=https://<worker-name>.<account-subdomain>.workers.dev
-       WORKER_NAME=${projectName}
-     If Cloudflare forced a different Worker name, report that name too.
+  When it's live you'll have a link ending in .workers.dev — that's your
+  deployed Worker URL. Paste that link back. If Cloudflare changed the
+  Worker name from "${projectName}", mention the new name too.
 ${resourceNotes}
 
 GitHub OAuth App next:
@@ -80,11 +85,9 @@ GitHub OAuth App next:
   3. Register application.
   4. Copy Client ID. Generate Client Secret. Copy Client Secret once.
 
-  Report back to your coding agent:
-       GITHUB_CLIENT_ID=<client-id>
-       GITHUB_CLIENT_SECRET=<client-secret>
-     Prefer pasting the secret only when the agent prompts for a
-     hidden env/stdin value.
+  Paste the Client ID back. Keep the Client Secret on your clipboard —
+  the agent will ask for it through a hidden prompt, so it never shows
+  up in the chat.
 
 Agent commands after you report those values:
   read -rsp "GitHub Client Secret: " GITHUB_CLIENT_SECRET && export GITHUB_CLIENT_SECRET && printf "\\n"
