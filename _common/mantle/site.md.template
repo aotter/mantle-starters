@@ -17,14 +17,14 @@ revisions:
 ---
 
 ## site
-> purpose: 一段話講這站是什麼、為什麼存在。用 user 自己的語言寫。
+> purpose: One paragraph on what this site is and why it exists. Write it in the user's own language.
 
 <!-- Mantle: write here from interview. reflect, don't ennoble. one paragraph. -->
 
 ## voice
-> purpose: 站點怎麼說話。從 interview 抽出 register。
+> purpose: How the site speaks — the register distilled from the interview.
 
-<!-- Mantle: a few lines. specific markers, not generic words. e.g. "短句、避免感嘆號" beats "friendly tone". -->
+<!-- Mantle: a few lines. specific markers, not generic words. e.g. "short sentences, no exclamation marks" beats "friendly tone". -->
 
 ## welcome
 > purpose: /admin first-visit letter. Three voice cards persist here (card1 / card4 / card5); cards 2 (mcp install command) and 3 (editor first prompt) are mechanical and rendered by admin UI from frontmatter + the editor first_prompt at display time — they do not live in this file.
