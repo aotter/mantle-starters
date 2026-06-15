@@ -22,6 +22,8 @@ import { randomBytes } from "node:crypto";
 
 const COMMAND = process.argv[2];
 const SUB_ARGV = process.argv.slice(3);
+const CLOUDFLARE_WORKERS_PAGES_URL =
+  "https://dash.cloudflare.com/?to=%2F%3Aaccount%2Fworkers-and-pages";
 
 await main();
 
@@ -37,6 +39,9 @@ async function main() {
 
 async function plan(args) {
   const projectName = args["project-name"] ?? readWorkerName();
+  const launchState = readLaunchState();
+  const repoTarget = readRepoTarget(launchState, projectName);
+  const adminGithubLogin = readAdminGithubLogin(launchState) ?? "<your-github-login>";
   const resourceNotes = readStarterSpecificPlanNotes();
   const featureSteps = await loadFeatureSteps();
   console.log(`
@@ -45,15 +50,28 @@ Mantle post-deploy provisioning plan
 ==============================================
 
 Cloudflare first:
-  1. Push this repo to GitHub.
-  2. In Cloudflare dashboard, create a Worker from GitHub and select this repo.
-  3. Keep the Worker name as: ${projectName}
-  4. Run the first deploy.
-  5. Copy the deployed Worker URL and come back to your coding agent.
+  1. Confirm this repo has been pushed:
+       ${repoTarget}
+  2. Open Cloudflare Workers & Pages:
+       ${CLOUDFLARE_WORKERS_PAGES_URL}
+     If your coding agent can control a browser, ask it to open this
+     page for you.
+  3. In Cloudflare, choose:
+       Workers & Pages → Create application → Import a repository
+       Git account: the account that can see ${repoTarget}
+       Repository:  ${repoTarget}
+       Worker name: ${projectName}
+  4. Select Save and Deploy, then wait for the first deploy to finish.
+  5. Copy the active deployed Worker URL.
+
+  Report back to your coding agent:
+       WORKER_URL=https://<worker-name>.<account-subdomain>.workers.dev
+       WORKER_NAME=${projectName}
+     If Cloudflare forced a different Worker name, report that name too.
 ${resourceNotes}
 
 GitHub OAuth App next:
-  1. Open https://github.com/settings/developers → New OAuth App
+  1. Open https://github.com/settings/developers → OAuth Apps → New OAuth App
   2. Fill in:
        Application name:           ${projectName}
        Homepage URL:               <worker-url>
@@ -62,12 +80,18 @@ GitHub OAuth App next:
   3. Register application.
   4. Copy Client ID. Generate Client Secret. Copy Client Secret once.
 
-Agent handoff:
+  Report back to your coding agent:
+       GITHUB_CLIENT_ID=<client-id>
+       GITHUB_CLIENT_SECRET=<client-secret>
+     Prefer pasting the secret only when the agent prompts for a
+     hidden env/stdin value.
+
+Agent commands after you report those values:
   read -rsp "GitHub Client Secret: " GITHUB_CLIENT_SECRET && export GITHUB_CLIENT_SECRET && printf "\\n"
 
   pnpm run provision:up -- \\
     --worker-url <worker-url> \\
-    --github-username <your-github-login> \\
+    --github-username ${adminGithubLogin} \\
     --client-id <client-id>
 
 If you first deployed to a custom domain and the worker name cannot be
@@ -77,6 +101,10 @@ inferred from a *.workers.dev URL, add:
 Before provision:up, make sure Wrangler is authorized for the same
 Cloudflare account:
   pnpm exec wrangler login
+
+Until provision:up finishes, /admin and /api/auth/* should return
+setup_incomplete. Public routes should still boot and must not throw
+auth configuration exceptions.
 
 Turnstile is optional after launch. If you create a Turnstile widget
 later, rerun provision:up with --turnstile-site-key and
@@ -336,6 +364,65 @@ function readWorkerName() {
   const text = readFileSync("wrangler.toml", "utf8");
   const match = text.match(/^name = "([^"]+)"$/m);
   return match?.[1] ?? "<worker-name>";
+}
+
+function readLaunchState() {
+  if (!existsSync(".mantle/launch-state.json")) return null;
+  try {
+    return JSON.parse(readFileSync(".mantle/launch-state.json", "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function readRepoTarget(launchState, projectName) {
+  const remote = readGitHubRemoteTarget();
+  if (remote) return remote;
+  const github = recordField(launchState, "github");
+  const repo = recordField(launchState, "repo");
+  const owner = stringField(repo, "owner") ?? stringField(github, "owner");
+  const name =
+    stringField(repo, "name") ??
+    stringField(launchState, "project_name") ??
+    projectName;
+  return owner ? `${owner}/${name}` : `<github-owner>/${name}`;
+}
+
+function readAdminGithubLogin(launchState) {
+  const github = recordField(launchState, "github");
+  return stringField(github, "admin_login") ?? stringField(github, "owner");
+}
+
+function readGitHubRemoteTarget() {
+  try {
+    const raw = execFileSync("git", ["remote", "get-url", "origin"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+    return parseGitHubRemote(raw);
+  } catch {
+    return null;
+  }
+}
+
+function parseGitHubRemote(raw) {
+  const https = raw.match(/^https:\/\/github\.com\/([^/]+)\/(.+?)(?:\.git)?$/);
+  if (https) return `${https[1]}/${https[2]}`;
+  const ssh = raw.match(/^git@github\.com:([^/]+)\/(.+?)(?:\.git)?$/);
+  if (ssh) return `${ssh[1]}/${ssh[2]}`;
+  return null;
+}
+
+function recordField(value, key) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const field = value[key];
+  return field && typeof field === "object" && !Array.isArray(field) ? field : null;
+}
+
+function stringField(value, key) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const field = value[key];
+  return typeof field === "string" && field.trim() ? field.trim() : null;
 }
 
 function readStarterSpecificPlanNotes() {

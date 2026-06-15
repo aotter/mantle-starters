@@ -36,9 +36,24 @@ pnpm test
 2. Create a private GitHub repo in the user-selected owner, commit the
    scaffold, and push. Use the user's GitHub auth context.
 
-3. Ask the user to open Cloudflare Dashboard, create a Worker, and
-   connect the GitHub repo for the first deploy. This avoids asking the
-   user for a broad Cloudflare API token up front.
+3. Hand the user directly to Cloudflare's Git import path. Print this
+   link, and if your agent environment can control a browser, open it:
+
+```text
+https://dash.cloudflare.com/?to=%2F%3Aaccount%2Fworkers-and-pages
+```
+
+Tell the user to choose:
+
+- Workers & Pages → Create application → Import a repository;
+- Git account that can see the pushed repo;
+- repository `<github-owner>/<repo-name>`;
+- Worker name exactly matching `wrangler.toml` `name`;
+- Save and Deploy.
+
+This avoids asking the user for a broad Cloudflare API token up front.
+Until `provision:up` finishes, `/admin` and `/api/auth/*` should return
+`setup_incomplete`; public routes should still boot.
 
 4. After the first deploy, ask the user for the deployed worker URL and
    run:
@@ -50,13 +65,21 @@ pnpm run provision:plan -- --worker-url <worker-url> --github-username <admin-lo
 
 If the plan prints extra required values, ask for only those values.
 
-5. The user creates the per-site GitHub OAuth App in their own GitHub
-   account or org. Use:
+5. Make the user handoff explicit. Ask them to report:
+
+- `WORKER_URL`, for example
+  `https://<worker-name>.<account-subdomain>.workers.dev`;
+- `WORKER_NAME`, only if Cloudflare forced a different Worker name;
+- whether the first deploy succeeded.
+
+6. The user creates the per-site GitHub OAuth App in their own GitHub
+   account or org. Open or print
+   `https://github.com/settings/developers`, then use:
 
 - Homepage URL: `<worker-url>`
 - Authorization callback URL: `<worker-url>/api/auth/callback/github`
 
-Then run provision with the client id. Pass the client secret through
+Ask them to report `GITHUB_CLIENT_ID`, then pass the client secret through
 stdin/env, never as a visible command argument.
 
 ```bash
@@ -64,7 +87,7 @@ read -rsp "GitHub OAuth client secret: " GITHUB_CLIENT_SECRET && export GITHUB_C
 pnpm run provision:up -- --worker-url <worker-url> --github-username <admin-login> --client-id <client-id>
 ```
 
-6. Smoke test the deployed site:
+7. Smoke test the deployed site:
 
 - public home route;
 - `/admin/sign-in`;
@@ -72,7 +95,7 @@ pnpm run provision:up -- --worker-url <worker-url> --github-username <admin-logi
 - `/mcp/staff` with an agent client when available;
 - a starter-specific core workflow.
 
-7. Commit generated provision outputs such as `wrangler.toml`,
+8. Commit generated provision outputs such as `wrangler.toml`,
    `mantle/site.md`, and `AGENTS.md`.
 
 ## Boundaries
