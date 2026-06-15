@@ -19,6 +19,8 @@ before touching code:
   feature overlay output.
 - `.claude/skills/mantle-provision/SKILL.md` for first production
   deploy and post-deploy setup.
+- `.claude/skills/mantle-update/SKILL.md` for upstream starter update
+  checks and repair.
 
 ## The two daily-driver rules
 

@@ -72,6 +72,7 @@ only the starter source and scaffolder implementation.
 mantle-starters/
 ├── _common/                   ← shared backbone, merged into every install
 │   ├── AGENTS.md.template     ← cross-tool agent entry
+│   ├── .agent/skills/         ← repo-local mantle:* skills
 │   ├── mantle/
 │   │   └── site.md.template   ← Mantle's semantic layer
 │   └── .gitignore.template

@@ -1,5 +1,5 @@
 ---
-name: mantle-provision
+name: mantle:provision
 description: Finish first production deployment for this generated Mantle site. Use after scaffold when the user is ready to push to GitHub, connect Cloudflare, configure OAuth, run Wrangler, and smoke test.
 ---
 
