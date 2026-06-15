@@ -338,11 +338,15 @@ Prerequisites:
 3. **Push to GitHub.** The agent creates the user's private repo and pushes
    the scaffolded site. Do not ask the user for a Cloudflare API token.
 
-4. **First deploy from Cloudflare dashboard.** The user opens Cloudflare,
-   creates a Worker from GitHub, selects the repo, keeps the Worker name
-   equal to the project name, and runs the first deploy. The top-level
-   D1/KV bindings intentionally omit resource IDs so Cloudflare can
-   auto-provision them during this deploy.
+4. **First deploy from Cloudflare dashboard.** The agent opens or prints
+   <https://dash.cloudflare.com/?to=%2F%3Aaccount%2Fworkers-and-pages>.
+   The user chooses Workers & Pages → Create application → Import a
+   repository, selects the pushed repo, keeps the Worker name equal to
+   the project name, and runs the first deploy. The top-level D1/KV
+   bindings intentionally omit resource IDs so Cloudflare can
+   auto-provision them during this deploy. The user reports
+   `WORKER_URL` and, only if Cloudflare forced a different name,
+   `WORKER_NAME` back to the agent.
 
 5. **Register GitHub OAuth App** at <https://github.com/settings/developers>
    using `<worker_url>` and `<worker_url>/api/auth/callback/github`.
