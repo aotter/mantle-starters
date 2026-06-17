@@ -28,7 +28,7 @@ catalog:
   # Runtime — every starter ships these.
   '@cloudflare/workers-oauth-provider': ^0.7.0
   aws4fetch: ^1.0.20
-  better-auth: ^1.6.11
+  better-auth: ^1.6.14
   hono: ^4.12.21
   marked: ^18.0.4
   worker-mailer: ^1.2.1
