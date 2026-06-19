@@ -74,8 +74,6 @@ mantle-starters/
 ├── _common/                   ← shared backbone, merged into every install
 │   ├── AGENTS.md.template     ← cross-tool agent entry
 │   ├── .agent/skills/         ← repo-local mantle:* skills
-│   ├── mantle/
-│   │   └── site.md.template   ← Mantle's semantic layer
 │   └── .gitignore.template
 ├── presence/                  ← landing-page / brand-presence starter
 ├── publication/               ← owner-published-content starter

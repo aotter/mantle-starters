@@ -17,8 +17,8 @@ local checks, and writes a report for the agent to review.
 
 ## First read
 
-1. `mantle/site.md` for site intent and prior revisions.
-2. `.mantle/launch-state.json` for original landing answers.
+1. `.mantle/launch-state.json` for original landing answers.
+2. `AGENTS.md` for site intent and handoff notes.
 3. `.mantle/features.json` for archetype, theme, selected features,
    and current starter version.
 4. `.agent/skills/mantle-development/SKILL.md` for the 4-atom model

@@ -34,7 +34,7 @@ adapts to the specific provider's API.
 5. Updates `../index.ts` to import + instantiate the new class.
 6. Declares the provider's secrets in `wrangler.toml` so provision
    can pipe them in via `wrangler secret put`.
-7. Records the provider choice in `mantle/site.md` so a future
+7. Records the provider choice in `AGENTS.md` so a future
    session knows what's wired.
 
 ## Adding a new provider yourself

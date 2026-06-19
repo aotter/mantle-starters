@@ -11,15 +11,14 @@ starter change.
 
 ## First read
 
-1. `mantle/site.md` for the site's intent, voice, launch history, and
-   handoff notes. Read the whole file before editing.
-2. `.mantle/launch-state.json` when present. It records the landing
+1. `.mantle/launch-state.json` when present. It records the landing
    answers that scaffolded this repo: archetype, repo intent, GitHub
    owner/admin, locales, theme, and selected features. It contains no
    provider authority or secrets.
+2. `AGENTS.md` for the site's current handoff notes and operating rules.
 3. `.mantle/features.json` for selected starter features and registry
    dependencies.
-4. `AGENTS.md` and `CLAUDE.md` for repo-specific operating rules.
+4. `CLAUDE.md` for Claude-specific orientation.
 
 ## The 4 atoms
 

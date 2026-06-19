@@ -143,8 +143,8 @@ async function up(args) {
     console.log("  TURNSTILE_SECRET_KEY skipped (contact/Turnstile can be wired later).");
   }
 
-  console.log("\n[3/4] Updating mantle/site.md + AGENTS.md...");
-  updateSiteSemanticLayer(workerUrl);
+  console.log("\n[3/4] Updating AGENTS.md...");
+  updateAgentHandoff(workerUrl);
 
   await runFeatureProvisionSteps({ args, workerUrl });
 
@@ -207,23 +207,11 @@ function updateOrigin(workerUrl) {
 }
 
 /**
- * Rewrites the site_url placeholder and appends a `revisions:` entry to
- * mantle/site.md and AGENTS.md per ADR-0016. Skipped if the files do
- * not exist (legacy installs predating the site-semantic-layer).
+ * Rewrites the public site placeholder in AGENTS.md. The older
+ * mantle/site.md letter surface is intentionally not part of the
+ * first-run provision path.
  */
-function updateSiteSemanticLayer(workerUrl) {
-  const isoNow = new Date().toISOString();
-  if (existsSync("mantle/site.md")) {
-    const before = readFileSync("mantle/site.md", "utf8");
-    let after = before.replace(/^site_url: .*$/m, `site_url: ${workerUrl}`);
-    after = appendRevision(after, isoNow, "provision", `deployed to ${workerUrl}`);
-    if (after === before) {
-      console.log("  mantle/site.md unchanged (no frontmatter site_url to update)");
-    } else {
-      writeFileSync("mantle/site.md", after);
-      console.log("  mantle/site.md: site_url + revisions entry updated");
-    }
-  }
+function updateAgentHandoff(workerUrl) {
   if (existsSync("AGENTS.md")) {
     const before = readFileSync("AGENTS.md", "utf8");
     const after = before.replace(/^Public site: .*$/m, `Public site: ${workerUrl}`);
@@ -234,20 +222,6 @@ function updateSiteSemanticLayer(workerUrl) {
       console.log("  AGENTS.md: Public site URL updated");
     }
   }
-}
-
-/**
- * Adds `- at: <iso>` / `by:` / `summary:` items at the end of the
- * `revisions:` YAML list in frontmatter. The list must already exist
- * (the install template seeds it with the install entry).
- */
-function appendRevision(text, isoNow, by, summary) {
-  if (!text.startsWith("---\n")) return text;
-  const closeIdx = text.indexOf("\n---", 4);
-  if (closeIdx === -1) return text;
-  if (text.slice(0, closeIdx).indexOf("\nrevisions:") === -1) return text;
-  const block = `  - at: ${isoNow}\n    by: ${by}\n    summary: ${JSON.stringify(summary)}`;
-  return `${text.slice(0, closeIdx)}\n${block}${text.slice(closeIdx)}`;
 }
 
 function pipeSecret(name, value) {
@@ -295,7 +269,7 @@ Sign in:     ${workerUrl}/admin
 
 Next:
   1. Commit the non-secret changes in wrangler.toml, src/mantleConfig.ts,
-     mantle/site.md, and AGENTS.md.
+     and AGENTS.md.
   2. Push to GitHub so Cloudflare Workers Builds redeploys from source.
   3. Open /admin and sign in with the GitHub account configured above.
 
