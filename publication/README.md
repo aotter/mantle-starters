@@ -25,9 +25,10 @@
 > # then follow the Quickstart below in that directory
 > ```
 >
-> Or paste the two-URL prompt from the Mantle landing page into
-> Claude Code / Cursor / Codex — same scaffolder, agent-driven. See the
-> [top-level README](../README.md) for the template model.
+> Or use the Mantle landing page: answer the launch questions, sign in
+> with GitHub, then paste the generated launch command into Claude Code /
+> Cursor / Codex. It runs the same scaffolder through a short-lived
+> launch session.
 
 Reference `publication` starter for mantle v0.1.0 — the
 owner-published-content family in the starter taxonomy (#58). Covers
@@ -316,7 +317,10 @@ Prerequisites:
 
 ### Steps
 
-1. **Bootstrap from prompt.** Paste [`docs/prompts/publication.en.md`](../../docs/prompts/publication.en.md) (or `publication.zh-TW.md`) into Claude Code / Cursor / Codex with placeholders filled in. The agent reads the install Skill, copies the starter, runs `setup:site`, and reports back a clean `pnpm validate` + `pnpm typecheck`.
+1. **Bootstrap from landing or direct scaffolder.** Use the Mantle
+   landing page launch command, or run `create-mantle` directly with the
+   confirmed project flags. The agent reports back a clean
+   `pnpm validate` + `pnpm typecheck`.
 
 2. **Contributor local smoke.** Before any Cloudflare provisioning,
    walk the top [Quickstart](#quickstart) (`pnpm install` →

@@ -17,23 +17,21 @@ revisions:
 ---
 
 ## site
-> purpose: One paragraph on what this site is and why it exists. Write it in the user's own language.
+> purpose: What this site is and why it exists. Keep this short until the owner edits it after deploy.
 
-<!-- Install agent: write here from interview. reflect, don't ennoble. one paragraph. -->
+{{DESCRIPTION}}
 
 ## voice
-> purpose: How the site speaks — the register distilled from the interview.
+> purpose: Durable writing and design cues for future content work.
 
-<!-- Install agent: a few lines. specific markers, not generic words. e.g. "short sentences, no exclamation marks" beats "friendly tone". -->
+Not decided yet.
 
 ## editor
-> purpose: handoff cues for the daily content agent. `first_prompt:` is filled by the install agent (mechanical: archetype hint's `Editor first-prompt template` + brand sub).
+> purpose: Notes for the coding/content agent after production provision.
 
-first_prompt: |
-  <!-- install agent: copy the archetype hint's `Editor first-prompt template` here, substituting {{BRAND}}. Plain text, no markdown wrapping. -->
-
+Use Staff MCP after owner sign-in. Draft content for review before publishing.
 
 ## history
 > purpose: Mantle's worklog. Each return appends one paragraph.
 
-<!-- Install agent: first install line. one paragraph: what was decided, what the user said, what's open. -->
+Initial deterministic scaffold for {{BRAND}}. Production provision, owner sign-in, and first content are still open.

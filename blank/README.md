@@ -23,9 +23,9 @@
 > # then follow the Getting-started block below in that directory
 > ```
 >
-> Or paste the two-URL prompt from the Mantle landing page into
-> your agent. See the [top-level README](../README.md) for the template
-> model.
+> Or use the Mantle landing page: answer the launch questions, sign in
+> with GitHub, then paste the generated launch command into your agent.
+> It runs the same scaffolder through a short-lived launch session.
 
 **Headless CMS starter.** Ships zero UI. Use this when you have your own
 frontend (Next.js, Astro, SvelteKit, native iOS/Android, partner

@@ -49,47 +49,27 @@ async function plan(args) {
 Mantle post-deploy provisioning plan
 ==============================================
 
-NOTE FOR THE CODING AGENT: this plan is your checklist, not a script to
-read aloud. Re-present the browser steps to the user one task at a time,
-in plain language — see "Presenting browser steps" in the provision
-skill. Don't hand a non-coder KEY=value lines, A -> B -> C breadcrumbs,
-or <placeholder> brackets.
+Deterministic state:
+  Repo:        ${repoTarget}
+  Worker name: ${projectName}
+  Admin login: ${adminGithubLogin}
 
-Cloudflare first:
-  1. Confirm this repo has been pushed:
-       ${repoTarget}
-  2. Open Cloudflare Workers & Pages:
-       ${CLOUDFLARE_WORKERS_PAGES_URL}
-     If your coding agent can control a browser, ask it to open this
-     page for you.
-  3. In Cloudflare, choose:
-       Workers & Pages → Create application → Import a repository
-       Git account: the account that can see ${repoTarget}
-       Repository:  ${repoTarget}
-       Worker name: ${projectName}
-  4. Select Save and Deploy, then wait for the first deploy to finish.
-  5. Copy the active deployed Worker URL.
-
-  When it's live you'll have a link ending in .workers.dev — that's your
-  deployed Worker URL. Paste that link back. If Cloudflare changed the
-  Worker name from "${projectName}", mention the new name too.
+Browser handoff 1 - Cloudflare first deploy:
+  Open: ${CLOUDFLARE_WORKERS_PAGES_URL}
+  Create a Worker from the GitHub repo above.
+  Keep the Worker name as "${projectName}" when Cloudflare asks.
+  Wait for deploy to finish, then copy the live *.workers.dev URL.
 ${resourceNotes}
 
-GitHub OAuth App next:
-  1. Open https://github.com/settings/developers → OAuth Apps → New OAuth App
-  2. Fill in:
-       Application name:           ${projectName}
-       Homepage URL:               <worker-url>
-       Authorization callback URL: <worker-url>/api/auth/callback/github
-       Enable Device Flow:         leave UNCHECKED
-  3. Register application.
-  4. Copy Client ID. Generate Client Secret. Copy Client Secret once.
+Browser handoff 2 - GitHub OAuth App:
+  Open: https://github.com/settings/developers
+  Create an OAuth App after the Worker URL is known.
+  Homepage URL:               <worker-url>
+  Authorization callback URL: <worker-url>/api/auth/callback/github
+  Device Flow:                unchecked
+  Copy the Client ID. Keep the Client Secret off chat.
 
-  Paste the Client ID back. Keep the Client Secret on your clipboard —
-  the agent will ask for it through a hidden prompt, so it never shows
-  up in the chat.
-
-Agent commands after you report those values:
+Agent commands after the Worker URL and Client ID are known:
   read -rsp "GitHub Client Secret: " GITHUB_CLIENT_SECRET && export GITHUB_CLIENT_SECRET && printf "\\n"
 
   pnpm run provision:up -- \\

@@ -74,7 +74,10 @@ Tell the user upfront: **v0.1.0 refunds are manual** via the provider's dashboar
 - **Ready-state wording:** open-for-business. (zh-TW illustrative: "可以開始收單了", "上架了"; pick the natural verb that says "we're open to take orders".)
 - **Avoid:** anything that implies more sophistication than the system delivers ("scalable platform", "enterprise commerce"). Be honest about scale.
 
-## Editor first-prompt template
+## Post-deploy first content task
+
+Use this only after production provision and owner sign-in. It is not an
+install-time prompt and should not block scaffold or deploy.
 
 ```text
 打開後台。先列出 products collection（應該是空的）。然後幫我把第一個商品的草稿補上：name, price, 一段話的商品描述。先 draft，等我看過再 publish — publish 之後客人就看得到了。
