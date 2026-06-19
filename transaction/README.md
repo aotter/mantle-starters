@@ -210,17 +210,16 @@ Durable Object migration; `provision:plan` prints those follow-up notes
 because Cloudflare automatic provisioning currently covers id-less
 D1/KV/R2 bindings, not Queues.
 
-`pnpm validate` defaults to the **preview** phase — grammar + cross-Schema only,
-exits 0 on a fresh scaffold even when the Mantle welcome letter is still
-unfilled. Before deploying, run the strict gate:
+`pnpm validate` defaults to the **preview** phase — grammar + cross-Schema only.
+Before deploying, run the production check:
 
 ```bash
 pnpm validate:deploy   # = `mantle validate --phase deploy`
 ```
 
-It re-enables `MANTLE_LETTER_NOT_WRITTEN` and any future pre-deploy-only
-checks. `pnpm deploy` chains it in front of `wrangler deploy` automatically,
-so the manual form is only needed for an ahead-of-time check.
+It runs any pre-deploy-only checks. `pnpm deploy` chains it in front of
+`wrangler deploy` automatically, so the manual form is only needed for an
+ahead-of-time check.
 
 Real-user installs go through the Mantle install Skill — see the
 [Mantle install brief](https://raw.githubusercontent.com/aotter/mantle/main/skills/install/SKILL.md)

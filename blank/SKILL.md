@@ -8,7 +8,7 @@ overlays: []
 
 # `blank` archetype
 
-Follow the [Mantle install brief](https://raw.githubusercontent.com/aotter/mantle/main/skills/install/SKILL.md). This file only adds the archetype-specific register hints; Mantle voice rules apply only to the closing welcome letter, not to interview / refuse / adjustment phases.
+Follow the [Mantle install brief](https://raw.githubusercontent.com/aotter/mantle/main/skills/install/SKILL.md). This file only adds archetype-specific register and product-shape hints.
 
 ## What this is
 
@@ -17,17 +17,17 @@ Headless CMS backend — API + MCP only, no public HTML. The user is bringing th
 ## Interview probes to emphasize
 
 - Confirm "bring your own frontend" explicitly. If the user expects public HTML, route them to `publication` instead.
-- Which frontend? (Inform card3 — the first-prompt example should reference their stack.)
+- Which frontend? (Inform the editor first-prompt example so it references their stack.)
 - What is the first Schema they want? (Defer the design; just capture the noun. They will design it through `extend`.)
 - Will the frontend talk to `/mcp/staff` (write) or `/mcp` (read) — or both?
 
 ## Site defaults
 
 - **Mood default:** from interview; no archetype-level default. The user is technical-leaning if they chose `blank`.
-- **card1 verb register:** technical-active. (zh-TW illustrative: "後端準備好了", "API 上線了"; EN illustrative: "the backend is up", "API is live". Match the user's own register.)
+- **Ready-state wording:** technical-active. (zh-TW illustrative: "後端準備好了", "API 上線了"; EN illustrative: "the backend is up", "API is live". Match the user's own register.)
 - **Avoid:** marketing voice; "your beautiful new site" language — they explicitly opted out of UI.
 
-## Editor first-prompt template (becomes card3 body)
+## Editor first-prompt template
 
 ```text
 打開後台，先列出目前的 collections（example 應該還在）。再讓我看一下 /api/views/published-notes 在空 collection 下回什麼。然後 propose 一個第一個真正要用的 Schema 草稿 — 我會直接改 manifests YAML，不要 apply。
