@@ -1,6 +1,6 @@
 {
   "name": "@aotter/mantle-media-tools",
-  "version": "0.0.11-alpha.27",
+  "version": "0.0.11-alpha.28",
   "description": "Agent-side helper for mantle multi-variant media uploads (aotter/mantle#272). Takes a source image, produces avif/webp/jpeg variants via sharp, drives the create_media_upload + commit_media_upload lifecycle against a deployed mantle worker. Private — distributed via mantle-starters' GitHub release tarball, not npm.",
   "license": "MIT",
   "private": true,
