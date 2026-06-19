@@ -23,9 +23,9 @@
 > # then follow the Getting-started block below in that directory
 > ```
 >
-> Or paste the two-URL prompt from the Mantle landing page into
-> your agent. See the [top-level README](../README.md) for the template
-> model.
+> Or use the Mantle landing page: answer the launch questions, sign in
+> with GitHub, then paste the generated launch command into your agent.
+> It runs the same scaffolder through a short-lived launch session.
 
 `intake` archetype starter for mantle v0.1.0 — public site that
 **takes structured input** from visitors (lead capture, signups,

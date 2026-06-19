@@ -17,7 +17,7 @@ Headless CMS backend — API + MCP only, no public HTML. The user is bringing th
 ## Interview probes to emphasize
 
 - Confirm "bring your own frontend" explicitly. If the user expects public HTML, route them to `publication` instead.
-- Which frontend? (Inform the editor first-prompt example so it references their stack.)
+- Which frontend? (Inform the post-deploy first content task so it references their stack.)
 - What is the first Schema they want? (Defer the design; just capture the noun. They will design it through `extend`.)
 - Will the frontend talk to `/mcp/staff` (write) or `/mcp` (read) — or both?
 
@@ -27,7 +27,10 @@ Headless CMS backend — API + MCP only, no public HTML. The user is bringing th
 - **Ready-state wording:** technical-active. (zh-TW illustrative: "後端準備好了", "API 上線了"; EN illustrative: "the backend is up", "API is live". Match the user's own register.)
 - **Avoid:** marketing voice; "your beautiful new site" language — they explicitly opted out of UI.
 
-## Editor first-prompt template
+## Post-deploy first content task
+
+Use this only after production provision and owner sign-in. It is not an
+install-time prompt and should not block scaffold or deploy.
 
 ```text
 打開後台，先列出目前的 collections（example 應該還在）。再讓我看一下 /api/views/published-notes 在空 collection 下回什麼。然後 propose 一個第一個真正要用的 Schema 草稿 — 我會直接改 manifests YAML，不要 apply。

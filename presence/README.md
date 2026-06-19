@@ -23,9 +23,9 @@
 > # then follow the Getting-started block below in that directory
 > ```
 >
-> Or paste the two-URL prompt from the Mantle landing page into
-> your agent. See the [top-level README](../README.md) for the template
-> model.
+> Or use the Mantle landing page: answer the launch questions, sign in
+> with GitHub, then paste the generated launch command into your agent.
+> It runs the same scaffolder through a short-lived launch session.
 
 `presence` archetype starter for mantle v0.1.0 — a small public site
 that exists to **be there**: landing page and secondary pages (About,

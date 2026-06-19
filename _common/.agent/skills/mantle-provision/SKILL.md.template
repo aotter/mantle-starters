@@ -9,7 +9,7 @@ Provisioning is owned by the user's coding agent and provider accounts.
 Mantle landing may have captured launch intent, but it does not create
 Cloudflare resources or store provider secrets for this site.
 
-## First read
+## First Read
 
 1. `.mantle/launch-state.json` when present for GitHub owner/admin,
    repo name, archetype, locales, theme, and feature choices.
@@ -17,38 +17,13 @@ Cloudflare resources or store provider secrets for this site.
    requirements.
 3. `wrangler.toml`, `.dev.vars.example`, `scripts/provision.mjs`, and
    `scripts/.mantle-provision.mjs`.
-4. `mantle/site.md` for the public site intent and final handoff notes.
+4. `mantle/site.md` for public intent and final handoff notes.
 5. `node_modules/@aotter/mantle/skills/provision/SKILL.md` for the
-   versioned parent provision contract. If `node_modules/` is missing,
-   run `pnpm install --frozen-lockfile` first.
+   versioned parent provision contract after dependencies are installed.
 
-## Presenting browser steps to the user
+## Flow
 
-Steps below hand the user into a browser. Assume a non-coder who trusts
-the agent, and present those steps one at a time, in plain language —
-not as a terse engineer checklist:
-
-- One browser task per message: Cloudflare deploy first, wait for the
-  live URL, *then* the GitHub OAuth App.
-- Label what they see `STEP 1 of 2` / `STEP 2 of 2`; don't leak internal
-  step numbers with gaps.
-- Spell out click paths as sentences with the exact on-screen labels —
-  no `A → B → C` arrows.
-- Say what they'll see and what to copy ("a link ending in
-  `.workers.dev`"), and ask for it in plain words — never `KEY=value`
-  syntax or literal `<...>` placeholders.
-- Have them keep the Client Secret on the clipboard for the hidden
-  prompt; never ask them to paste it in chat.
-- Offer "paste a screenshot if a screen doesn't match" as an escape
-  hatch.
-
-See the parent skill's **Presenting browser steps (non-coder handoff)**
-section in `node_modules/@aotter/mantle/skills/provision/SKILL.md` for
-the full contract.
-
-## Baseline flow
-
-1. Ensure dependencies and local checks pass:
+1. Validate locally:
 
 ```bash
 pnpm install --frozen-lockfile
@@ -64,57 +39,48 @@ fi
 2. Create a private GitHub repo in the user-selected owner, commit the
    scaffold, and push. Use the user's GitHub auth context.
 
-3. Hand the user directly to Cloudflare's Git import path. Print this
-   link, and if your agent environment can control a browser, open it:
+3. Send the user to Cloudflare for the first GitHub-backed deploy:
 
 ```text
 https://dash.cloudflare.com/?to=%2F%3Aaccount%2Fworkers-and-pages
 ```
 
-Tell the user to choose:
+Ask them to create a Worker from the pushed GitHub repo, keep the Worker
+name equal to `wrangler.toml` `name`, wait for deploy, and send back the
+live `*.workers.dev` URL.
 
-- Workers & Pages → Create application → Import a repository;
-- Git account that can see the pushed repo;
-- repository `<github-owner>/<repo-name>`;
-- Worker name exactly matching `wrangler.toml` `name`;
-- Save and Deploy.
-
-This avoids asking the user for a broad Cloudflare API token up front.
-Until `provision:up` finishes, `/admin` and `/api/auth/*` should return
-`setup_incomplete`; public routes should still boot.
-
-4. After the first deploy, ask the user for the deployed worker URL and
-   run:
+4. Print the deterministic plan:
 
 ```bash
-pnpm exec wrangler login
-pnpm run provision:plan -- --worker-url <worker-url> --github-username <admin-login>
+pnpm run provision:plan
 ```
 
-If the plan prints extra required values, ask for only those values.
-
-5. Get the live URL from the user (present this as `STEP 1 of 2`). Once
-   the deploy goes green, ask them in plain words to paste the live link
-   — it ends in `.workers.dev` — to mention the Worker name only if
-   Cloudflare changed it, and to confirm the deploy succeeded.
-
-6. The user creates the per-site GitHub OAuth App in their own GitHub
-   account or org (present this as `STEP 2 of 2`). Open or print
-   `https://github.com/settings/developers`, then use:
+5. Ask the user to create the per-site GitHub OAuth App after the Worker
+   URL is known:
 
 - Homepage URL: `<worker-url>`
 - Authorization callback URL: `<worker-url>/api/auth/callback/github`
+- Device Flow: unchecked
 
-Ask them to paste the Client ID, and to keep the Client Secret on their
-clipboard for the hidden prompt below — pass the secret through
-stdin/env, never as a visible command argument or a chat message.
+Ask for the Client ID in chat. Keep the Client Secret out of chat and
+pass it through the hidden shell prompt below.
+
+6. Authorize Wrangler and apply provision:
 
 ```bash
+pnpm exec wrangler login
 read -rsp "GitHub OAuth client secret: " GITHUB_CLIENT_SECRET && export GITHUB_CLIENT_SECRET && printf "\n"
 pnpm run provision:up -- --worker-url <worker-url> --github-username <admin-login> --client-id <client-id>
+unset GITHUB_CLIENT_SECRET
 ```
 
-7. Smoke test the deployed site:
+7. Commit and push generated non-secret outputs:
+
+```bash
+git status --short -- wrangler.toml src/mantleConfig.ts mantle/site.md AGENTS.md
+```
+
+8. Smoke test:
 
 - public home route;
 - `/admin/sign-in`;
@@ -122,23 +88,20 @@ pnpm run provision:up -- --worker-url <worker-url> --github-username <admin-logi
 - `/mcp/staff` with an agent client when available;
 - a starter-specific core workflow.
 
-8. Commit generated provision outputs such as `wrangler.toml`,
-   `mantle/site.md`, and `AGENTS.md`.
-
 ## Boundaries
 
-- Do not ask for or persist a long-lived Cloudflare API token unless the
-  starter's selected feature explicitly requires one and the user agrees.
+- Do not ask for or persist a long-lived Cloudflare API token in the base
+  first-run path.
 - Do not commit `GITHUB_CLIENT_SECRET`, `BETTER_AUTH_SECRET`,
   Turnstile secrets, SMTP secrets, or Cloudflare tokens.
 - Do not use `127.0.0.1` in OAuth callback instructions. Use
-  `localhost` locally and the real worker URL in production.
-- Re-running `provision:up` may rotate `BETTER_AUTH_SECRET` depending
-  on the starter script. Warn the user that sessions can be invalidated.
+  `localhost` locally and the real Worker URL in production.
+- Re-running `provision:up` must preserve an existing
+  `BETTER_AUTH_SECRET`; rotating it invalidates sessions.
 
-## Feature overlays
+## Feature Overlays
 
-Before provision, run the Mantle feature overlay skill if
-`.mantle/features.json` lists any features. Some overlays add follow-up
-steps that are intentionally not part of first deploy, such as R2 public
-access or custom-domain setup.
+If `.mantle/features.json` lists features, run
+`.agent/skills/mantle-feature-overlays/SKILL.md` before provision. Some
+overlays add follow-up steps that are intentionally not part of first
+deploy, such as R2 public access or custom-domain setup.

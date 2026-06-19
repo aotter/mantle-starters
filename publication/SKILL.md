@@ -68,9 +68,10 @@ Each probe is a multiple-choice picker the user picks from. Ask one, react to th
 - **Ready-state wording:** active. Pick a verb in the user's language that says "this site is open to publish" / "the writing surface is live" — translate the register, don't transliterate.
 - **Avoid:** SEO-marketing voice. The user almost never opened with "I want to rank for X."
 
-## Editor first-prompt template
+## Post-deploy first content task
 
-Template is in EN as a placeholder. The install Skill's step that fills `## editor first_prompt:` renders it in the user's language with `{{BRAND}}` substituted.
+Use this only after production provision and owner sign-in. It is not an
+install-time prompt and should not block scaffold or deploy.
 
 ```text
 Open the admin and list the posts collection (should be empty). Draft a "Hello, {{BRAND}}" post: one paragraph introducing the site, one paragraph on why it exists. Match the voice in mantle/site.md. Leave as draft so I can review before publishing.
