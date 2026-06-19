@@ -8,7 +8,7 @@ overlays: []
 
 # `membership` archetype — ROADMAP
 
-Follow [the install SKILL](../SKILL.md). Refuse uses your normal agent register — Mantle's voice is reserved for the welcome letter and doesn't apply here. The phrasing below is illustrative.
+Follow [the install SKILL](../SKILL.md). Refuse uses your normal agent register. The phrasing below is illustrative.
 
 ## What this would be
 

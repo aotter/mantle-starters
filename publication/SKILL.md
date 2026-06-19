@@ -8,7 +8,7 @@ overlays: []
 
 # `publication` archetype
 
-Follow the [Mantle install brief](https://raw.githubusercontent.com/aotter/mantle/main/skills/install/SKILL.md). This file only adds the archetype-specific register hints; Mantle voice rules apply only to the closing welcome letter, not to interview / refuse / adjustment phases.
+Follow the [Mantle install brief](https://raw.githubusercontent.com/aotter/mantle/main/skills/install/SKILL.md). This file only adds archetype-specific register and product-shape hints.
 
 ## What this is
 
@@ -65,10 +65,10 @@ Each probe is a multiple-choice picker the user picks from. Ask one, react to th
 ## Site defaults
 
 - **Mood default:** editorial / playful. Heavier than `presence` but still grounded.
-- **card1 verb register:** active. Pick a verb in the user's language that says "this site is open to publish" / "the writing surface is live" — translate the register, don't transliterate.
+- **Ready-state wording:** active. Pick a verb in the user's language that says "this site is open to publish" / "the writing surface is live" — translate the register, don't transliterate.
 - **Avoid:** SEO-marketing voice. The user almost never opened with "I want to rank for X."
 
-## Editor first-prompt template (becomes card3 body)
+## Editor first-prompt template
 
 Template is in EN as a placeholder. The install Skill's step that fills `## editor first_prompt:` renders it in the user's language with `{{BRAND}}` substituted.
 

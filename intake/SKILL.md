@@ -8,7 +8,7 @@ overlays: []
 
 # `intake` archetype
 
-Follow the [Mantle install brief](https://raw.githubusercontent.com/aotter/mantle/main/skills/install/SKILL.md). This file only adds the archetype-specific register hints; Mantle voice rules apply only to the closing welcome letter, not to interview / refuse / adjustment phases.
+Follow the [Mantle install brief](https://raw.githubusercontent.com/aotter/mantle/main/skills/install/SKILL.md). This file only adds archetype-specific register and product-shape hints.
 
 ## What this is
 
@@ -24,10 +24,10 @@ A public site that **takes structured input** from visitors — leads, signups, 
 ## Site defaults
 
 - **Mood default:** clear / functional. Light on flourish — users come to ask for something.
-- **card1 verb register:** open-for-business. (zh-TW illustrative: "開始收件", "可以開始接洽"; pick the natural verb that says "ready to receive submissions".)
+- **Ready-state wording:** open-for-business. (zh-TW illustrative: "開始收件", "可以開始接洽"; pick the natural verb that says "ready to receive submissions".)
 - **Avoid:** anything that hides what happens to the lead after submission. Form transparency is part of trust.
 
-## Editor first-prompt template (becomes card3 body)
+## Editor first-prompt template
 
 ```text
 打開後台，看一下 leads collection — 應該是空的。然後幫我把 "{{BRAND}}" 首頁的開場改一下：一句話講這個 form 是收什麼的、幾天內會回覆。語氣參考 mantle/site.md。draft，等我看過。
