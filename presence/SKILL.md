@@ -8,7 +8,7 @@ overlays: []
 
 # `presence` archetype
 
-Follow the [Mantle install brief](https://raw.githubusercontent.com/aotter/mantle/main/skills/install/SKILL.md). This file only adds the archetype-specific register hints; Mantle voice rules apply only to the closing welcome letter, not to interview / refuse / adjustment phases.
+Follow the [Mantle install brief](https://raw.githubusercontent.com/aotter/mantle/main/skills/install/SKILL.md). This file only adds archetype-specific register and product-shape hints.
 
 ## What this is
 
@@ -24,10 +24,10 @@ A small public site that exists to **be there** — a brand page, an event page,
 ## Site defaults
 
 - **Mood default:** minimal / editorial. Lean spare.
-- **card1 verb register:** quiet. (zh-TW illustrative: "上線" beats "開站"; "建好" beats "完成". In the user's language, pick the natural verb at the same restrained register; don't translate.)
+- **Ready-state wording:** quiet. (zh-TW illustrative: "上線" beats "開站"; "建好" beats "完成". In the user's language, pick the natural verb at the same restrained register; don't translate.)
 - **Avoid:** marketing voice, growth-language, "join the journey" framing.
 
-## Editor first-prompt template (becomes card3 body)
+## Editor first-prompt template
 
 ```text
 打開後台，列出目前的 collections。再幫我把首頁 "{{BRAND}}" 的內容草稿補上：一句話的開場 + 三個你看到 mantle/site.md 裡的關鍵點。先不要發佈，等我看過。

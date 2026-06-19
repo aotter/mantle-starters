@@ -144,17 +144,16 @@ seed file.
 #### `pnpm validate` (preview) vs `pnpm validate:deploy`
 
 `pnpm validate` defaults to the **preview** phase — grammar + cross-Schema
-checks only. It exits 0 on a fresh scaffold even when the Mantle welcome
-letter is still a placeholder, so `pnpm dev` is unblocked during local
-iteration. Before deploying, run the strict gate:
+checks only, so `pnpm dev` is unblocked during local iteration. Before
+deploying, run the production check:
 
 ```bash
 pnpm validate:deploy   # = `mantle validate --phase deploy`
 ```
 
-It re-enables `MANTLE_LETTER_NOT_WRITTEN` and any future pre-deploy-only
-checks. `pnpm deploy` chains it in front of `wrangler deploy`, so the manual
-form is only needed for an ahead-of-time check.
+It runs any pre-deploy-only checks. `pnpm deploy` chains it in front of
+`wrangler deploy`, so the manual form is only needed for an ahead-of-time
+check.
 
 ### Signing in at /admin
 
@@ -317,7 +316,7 @@ Prerequisites:
 
 ### Steps
 
-1. **Bootstrap from prompt.** Paste [`docs/prompts/publication.en.md`](../../docs/prompts/publication.en.md) (or `publication.zh-TW.md`) into Claude Code / Cursor / Codex with placeholders filled in. The agent reads the install Skill, copies the starter, runs `setup:site`, and reports back a clean `pnpm validate` + `pnpm typecheck`. (The strict `pnpm validate:deploy` gate runs later, in step 4 — it expects the Mantle welcome letter to be written first, which happens during the install Skill flow.)
+1. **Bootstrap from prompt.** Paste [`docs/prompts/publication.en.md`](../../docs/prompts/publication.en.md) (or `publication.zh-TW.md`) into Claude Code / Cursor / Codex with placeholders filled in. The agent reads the install Skill, copies the starter, runs `setup:site`, and reports back a clean `pnpm validate` + `pnpm typecheck`.
 
 2. **Contributor local smoke.** Before any Cloudflare provisioning,
    walk the top [Quickstart](#quickstart) (`pnpm install` →

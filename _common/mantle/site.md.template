@@ -19,24 +19,12 @@ revisions:
 ## site
 > purpose: One paragraph on what this site is and why it exists. Write it in the user's own language.
 
-<!-- Mantle: write here from interview. reflect, don't ennoble. one paragraph. -->
+<!-- Install agent: write here from interview. reflect, don't ennoble. one paragraph. -->
 
 ## voice
 > purpose: How the site speaks — the register distilled from the interview.
 
-<!-- Mantle: a few lines. specific markers, not generic words. e.g. "short sentences, no exclamation marks" beats "friendly tone". -->
-
-## welcome
-> purpose: /admin first-visit letter. Three voice cards persist here (card1 / card4 / card5); cards 2 (mcp install command) and 3 (editor first prompt) are mechanical and rendered by admin UI from frontmatter + the editor first_prompt at display time — they do not live in this file.
-
-### card1
-<!-- Mantle: open with self-introduction (I'm Mantle; I was watching while you built this) then one specific reflect (something user said) paired with the design choice it implied. Signature — Mantle + {{INSTALL_TIMESTAMP}} -->
-
-### card4
-<!-- Mantle: brief frame (editor handles content; Mantle handles site-shape). Memory URL <SITE_URL>/.well-known/mantle/. One specific future from frontmatter.futures (or interview observation if futures is empty). "Anyone you trust can paste this URL too." -->
-
-### card5
-<!-- Mantle: admin sidebar pointer + where this note can be re-read (Settings → About this site) + closing line ("I'll be quiet now. Your editor takes it from here." equivalent in user's language) + final signature. -->
+<!-- Install agent: a few lines. specific markers, not generic words. e.g. "short sentences, no exclamation marks" beats "friendly tone". -->
 
 ## editor
 > purpose: handoff cues for the daily content agent. `first_prompt:` is filled by the install agent (mechanical: archetype hint's `Editor first-prompt template` + brand sub).
@@ -48,4 +36,4 @@ first_prompt: |
 ## history
 > purpose: Mantle's worklog. Each return appends one paragraph.
 
-<!-- Mantle: first install line. one paragraph: what was decided, what the user said, what's open. -->
+<!-- Install agent: first install line. one paragraph: what was decided, what the user said, what's open. -->

@@ -9,7 +9,7 @@ scale_limit: 100  # orders/day; advisory — Mantle informs user
 
 # `transaction` archetype
 
-Follow [the install SKILL](../SKILL.md). Use your normal Claude Code agent register throughout install — Mantle's voice is for the welcome letter only, not for interview / refuse / adjustment / provider-wiring.
+Follow [the install SKILL](../SKILL.md). Use your normal coding-agent register throughout install, provision, and provider wiring.
 
 ## What this is
 
@@ -71,10 +71,10 @@ Tell the user upfront: **v0.1.0 refunds are manual** via the provider's dashboar
 ## Site defaults
 
 - **Mood default:** clear / functional / trust-forward. Customers giving you money are paying for confidence.
-- **card1 verb register:** open-for-business. (zh-TW illustrative: "可以開始收單了", "上架了"; pick the natural verb that says "we're open to take orders".)
+- **Ready-state wording:** open-for-business. (zh-TW illustrative: "可以開始收單了", "上架了"; pick the natural verb that says "we're open to take orders".)
 - **Avoid:** anything that implies more sophistication than the system delivers ("scalable platform", "enterprise commerce"). Be honest about scale.
 
-## Editor first-prompt template (becomes card3 body)
+## Editor first-prompt template
 
 ```text
 打開後台。先列出 products collection（應該是空的）。然後幫我把第一個商品的草稿補上：name, price, 一段話的商品描述。先 draft，等我看過再 publish — publish 之後客人就看得到了。

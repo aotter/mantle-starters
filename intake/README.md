@@ -99,18 +99,17 @@ canonical locale (`<!doctype html>` HTML, not a JSON error). Without
 The intake's structured-lead form lives at `/api/leads` (anonymous
 POST); the public storefront chrome mirrors publication's.
 
-`pnpm validate` defaults to the **preview** phase (grammar + cross-Schema only) and
-exits 0 on a fresh scaffold even when the Mantle welcome letter is still a placeholder
-— that's intentional, so `pnpm dev` is unblocked during local iteration. Before
-deploying, run the strict gate:
+`pnpm validate` defaults to the **preview** phase (grammar + cross-Schema only),
+so `pnpm dev` is unblocked during local iteration. Before deploying, run the
+production check:
 
 ```bash
 pnpm validate:deploy   # = `mantle validate --phase deploy`
 ```
 
-It re-enables `MANTLE_LETTER_NOT_WRITTEN` and any future pre-deploy-only checks.
-`pnpm deploy` already chains it in front of `wrangler deploy`, so manual invocation
-is only needed when you want the gate without deploying.
+It runs any pre-deploy-only checks. `pnpm deploy` already chains it in front of
+`wrangler deploy`, so manual invocation is only needed when you want the check
+without deploying.
 
 Real-user installs go through the install Skill — see the
 [Mantle install brief](https://github.com/aotter/mantle/blob/main/skills/install/SKILL.md)

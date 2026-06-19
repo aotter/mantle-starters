@@ -288,7 +288,7 @@ export function installFromExtractedRoot(
     overlays: source.overlays ?? [],
     files_written: allFiles,
     next_step:
-      "Mantle: replace HTML comments in mantle/site.md with prose from interview; then commit + invoke provision skill.",
+      "Run local validation, create the private GitHub repo, then follow the repo-local mantle:provision skill for Cloudflare first deploy.",
   };
 }
 
