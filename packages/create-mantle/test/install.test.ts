@@ -176,6 +176,37 @@ describe("installFromExtractedRoot", () => {
     expect(devVars).toContain("ADMIN_GITHUB_LOGIN=phsu");
   });
 
+  it("writes direct scaffold state for provision planning", () => {
+    const extractedRoot = fixtureExtractedRoot();
+    const destination = join(tempRoot, "out-direct-launch-state");
+    mkdirSync(destination, { recursive: true });
+
+    installFromExtractedRoot({
+      ...commonOpts(),
+      projectName: "mantle-e2e",
+      githubOwner: "aotter",
+      adminGithubLogin: "phsu",
+      archetype: "publication",
+      destination,
+      extractedRoot,
+    });
+
+    const state = JSON.parse(
+      readFileSync(join(destination, ".mantle", "launch-state.json"), "utf8"),
+    );
+    expect(state.launch_source).toBe("direct");
+    expect(state.project_name).toBe("mantle-e2e");
+    expect(state.github).toEqual({
+      owner: "aotter",
+      admin_login: "phsu",
+    });
+    expect(state.repo).toMatchObject({
+      owner: "aotter",
+      name: "mantle-e2e",
+      visibility: "private",
+    });
+  });
+
   it("rejects script-subtag locales with region-tag guidance", () => {
     let err: unknown;
     try {
