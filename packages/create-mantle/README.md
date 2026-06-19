@@ -23,12 +23,12 @@ npx https://github.com/aotter/mantle-starters/releases/download/v0.0.11-alpha.17
 Use a versioned release URL for alpha builds. GitHub does not resolve
 prereleases through `/releases/latest/`.
 
-Recommended end-user path: open the Mantle landing page, pick an archetype,
-theme, and optional feature overlays, then paste the generated prompt into
+Recommended end-user path: open the Mantle landing page, answer the launch
+questions, sign in with GitHub, then paste the generated launch command into
 Claude Code / Cursor / Codex. The Mantle install skill in
 [`aotter/mantle`](https://github.com/aotter/mantle/tree/develop/skills/install)
-invokes this package after it interviews the user for brand, locales, audience,
-and deployment intent.
+invokes this package with `launch --session <url>` so the landing session
+authorizes scaffold values before the agent continues to provision.
 
 ## What it does
 
@@ -47,7 +47,7 @@ and deployment intent.
    `.agent/` + `.claude/`).
 6. Fails fast if any `{{PLACEHOLDER}}` remains.
 7. Runs `git init` (no remote) and `pnpm install`.
-8. Prints a JSON `RUN_NOTES` shape on stdout — the Mantle install skill reads this to know what to do next.
+8. Prints a JSON `RUN_NOTES` shape on stdout — the Mantle install skill reads this to validate locally and continue to provision.
 
 ## CLI flags
 

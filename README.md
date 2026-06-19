@@ -7,13 +7,13 @@ Public monorepo of mantle starter templates.
 
 This repo is consumed by the `create-mantle` scaffolder tarball attached
 to each GitHub release. End users usually should not clone this repo
-directly: they start from
-the Mantle landing page, paste the
-generated prompt into Claude Code / Cursor / Codex, and the install Skill
-in [`aotter/mantle`](https://github.com/aotter/mantle) invokes
-the release tarball. The scaffolder downloads a tagged tarball of this
-repo, merges `_common/` + `<archetype>/` + optional theme overlays into
-the user's empty directory, then initializes their own Git repo.
+directly: they start from the Mantle landing page, answer the launch
+questions, sign in with GitHub, and paste the generated launch command
+into Claude Code / Cursor / Codex. The command runs
+`create-mantle launch --session <url>` against the release tarball. The
+scaffolder downloads a tagged tarball of this repo, merges `_common/` +
+`<archetype>/` + optional theme overlays into the user's empty directory,
+then initializes their own Git repo.
 
 Premium / per-customer starters live in the private sibling
 [`aotter/mantle-starters-premium`](https://github.com/aotter/mantle-starters-premium).
@@ -24,17 +24,18 @@ That repo mirrors `_common/`; sync strategy is TBD.
 Recommended path:
 
 1. Open the Mantle landing page.
-2. Pick an archetype, optional theme, and optional feature overlays.
-3. Paste the generated prompt into Claude Code / Cursor / Codex.
+2. Answer the launch questions and sign in with GitHub.
+3. Paste the generated launch command into Claude Code / Cursor / Codex.
 
-That route runs the [`mantle` install Skill](https://github.com/aotter/mantle/tree/develop/skills/install), which interviews the user for brand, locales, audience, and deployment intent before invoking the scaffolder.
+That route runs the [`mantle` install Skill](https://github.com/aotter/mantle/tree/develop/skills/install),
+which treats the short-lived landing session as the scaffold authority,
+runs the scaffolder first, then continues to production provision.
 
 ### Direct scaffolder call
 
-The agent-driven flow (paste the landing prompt into Claude Code /
-Cursor / Codex) is the recommended path because the install Skill
-interviews the user for brand / locales / audience before running the
-command. If you're already past the interview or testing this repo and want to invoke the
+The landing launch-session flow is the recommended path because it keeps
+the scaffold values deterministic and lets the agent run before asking
+for more prose. If you're testing this repo and want to invoke the
 scaffolder directly, the command shape is:
 
 ```bash
