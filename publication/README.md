@@ -152,7 +152,7 @@ deploying, run the production check:
 pnpm validate:deploy   # = `mantle validate --phase deploy`
 ```
 
-It runs any pre-deploy-only checks. `pnpm deploy` chains it in front of
+It runs any pre-deploy-only checks. `pnpm run deploy` chains it in front of
 `wrangler deploy`, so the manual form is only needed for an ahead-of-time
 check.
 

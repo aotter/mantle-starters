@@ -60,7 +60,13 @@ https://dash.cloudflare.com/?to=%2F%3Aaccount%2Fworkers-and-pages
 ```
 
 Ask them to create a Worker from the pushed GitHub repo, keep the Worker
-name equal to `wrangler.toml` `name`, wait for deploy, and send back:
+name equal to `wrangler.toml` `name`, set:
+
+- Build command: `pnpm run validate:deploy && pnpm run typecheck`
+- Deploy command: `npx wrangler deploy`
+- Root directory: `/`
+
+Then wait for deploy and send back:
 
 - Worker URL, for example `https://<worker>.<account>.workers.dev`;
 - Worker name, only if Cloudflare forced a name different from the repo.
@@ -101,7 +107,7 @@ git push
 ```
 
 Wait for Cloudflare Workers Builds to redeploy from the pushed commit. If
-the dashboard build is unavailable, run `pnpm deploy` from this repo as a
+the dashboard build is unavailable, run `pnpm run deploy` from this repo as a
 fallback and tell the user why.
 
 8. Smoke test:

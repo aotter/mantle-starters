@@ -229,7 +229,7 @@ function printNextSteps(publicUrl) {
   log("");
   log(`${STEP_HEAD} Next steps ${STEP_HEAD}`);
   log("1. Paste the MEDIA_PUBLIC_URL_BASE + MEDIA_S3_ENDPOINT lines above into your wrangler.toml [vars] section.");
-  log("2. Deploy: `pnpm deploy` (or `wrangler deploy`).");
+  log("2. Deploy: `pnpm run deploy` (or `wrangler deploy`).");
   log("3. Verify: upload a test asset via /admin and check it loads at " + publicUrl + "/<purpose>/...");
   log("   (or run the upcoming verification subcommand once landed)");
   log("");

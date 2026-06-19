@@ -70,7 +70,7 @@ Responsibilities:
 
 - `pnpm run provision:plan` (print the Cloudflare dashboard first-deploy + GitHub OAuth App handoff);
 - `pnpm run provision:up` (after first deploy, write non-secret config and set Worker secrets via Wrangler);
-- `pnpm deploy`;
+- `pnpm run deploy`;
 - starter-specific seed, smoke, and setup helpers.
 
 Feature overlays may contribute generated provision steps through
