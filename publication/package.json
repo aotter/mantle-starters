@@ -1,6 +1,6 @@
 {
   "name": "mantle-starter-publication",
-  "version": "0.0.11-alpha.31",
+  "version": "0.0.11-alpha.32",
   "private": true,
   "description": "Reference publication starter for mantle v0.1.0 — owner-published content (articles / pages / docs-lite). Optional contact form behavior is installed through the contact feature overlay. Runs on wrangler dev with local D1 + KV.",
   "type": "module",
@@ -24,7 +24,7 @@
     "provision:up": "node scripts/provision.mjs up"
   },
   "dependencies": {
-    "@aotter/mantle": "0.0.11-alpha.31",
+    "@aotter/mantle": "0.0.11-alpha.32",
     "@cloudflare/workers-oauth-provider": "catalog:",
     "aws4fetch": "catalog:",
     "better-auth": "catalog:",
@@ -34,7 +34,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@aotter/mantle-spec": "0.0.11-alpha.31",
+    "@aotter/mantle-spec": "0.0.11-alpha.32",
     "@cloudflare/workers-types": "catalog:",
     "@types/node": "catalog:",
     "tsx": "catalog:",
