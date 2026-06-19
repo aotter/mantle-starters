@@ -61,7 +61,7 @@ authorizes scaffold values before the agent continues to provision.
 | `--canonical-locale` | no | first `--locales` | Override canonical locale explicitly. |
 | `--github-owner` | yes | — | GitHub account or organization that will own the repo. |
 | `--admin-github-login` | no | `--github-owner` | First site admin's GitHub login. Set this when the repo owner is an organization. |
-| `--summary` | yes | — | Mantle's one-line install summary; lands in `mantle/site.md` `revisions[0].summary`. |
+| `--summary` | yes | — | Mantle's one-line install summary; lands in `.mantle/launch-state.json`. |
 | `--theme` | no | none | Theme overlay key resolved against `sources.themes`. |
 | `--feature` / `--features` | no | none | Source-first feature recipes. Repeat or comma-separate. Variants use `name:variant`. |
 | `--ref` | no | `main` | Git ref for both `sources.json` and the tarball. `--starter-ref` retained as alias. |
@@ -80,7 +80,6 @@ authorizes scaffold values before the agent continues to provision.
     ".agent/skills/mantle-development/SKILL.md",
     ".agent/skills/mantle-update/SKILL.md",
     "AGENTS.md",
-    "mantle/site.md",
     "package.json",
     "..."
   ],
@@ -171,7 +170,7 @@ features[i]/<file>        → <file>      (feature order is dependency order)
 themes/<theme>/<file>     → <file>      (last; bounded to src/theme/**)
 ```
 
-`_common/` carries the AGENTS.md + mantle/site.md backbone, plus repo-local
+`_common/` carries the AGENTS.md backbone, plus repo-local
 `mantle:*` agent skills under `.agent/` and `.claude/`; archetype dirs carry the runtime
 code, manifests, and scripts; feature overlays copy source and compose
 registered integration targets; theme overlays touch `src/theme/` only.

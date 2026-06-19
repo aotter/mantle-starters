@@ -22,7 +22,7 @@ Bring up these three points, in your own phrasing:
 
 1. **The blocker is end-user auth, not the schemas.** v0.1's auth model is "one bootstrap owner + their staff agents." Letting outside members sign in and write content is the v0.2 milestone — Better Auth wiring at the runtime level, plus row-level visibility grammar.
 2. **One holding path, name it.** `publication` with the owner authoring on the visitors' behalf — comment-style reactions are not available, but member-style posts can be quoted, attributed, and curated by the owner. Right when the user wants the *feel* of a community without member-side write access yet.
-3. **What you'll capture now.** Write into `mantle/site.md` `futures:` — what kind of community (forum / fan / interest), expected member count, whether moderation is solo or distributed.
+3. **What you'll capture now.** Note the future in `AGENTS.md` — what kind of community (forum / fan / interest), expected member count, whether moderation is solo or distributed.
 
 ## Example phrasing (illustrative; render natively)
 

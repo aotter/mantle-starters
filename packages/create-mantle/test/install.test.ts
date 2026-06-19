@@ -25,7 +25,7 @@ function writeFile(path: string, content: string): void {
 
 function fixtureExtractedRoot(): string {
   const root = join(tempRoot, "extracted");
-  mkdirSync(join(root, "_common", "mantle"), { recursive: true });
+  mkdirSync(join(root, "_common"), { recursive: true });
   mkdirSync(join(root, "publication", "src"), { recursive: true });
   mkdirSync(join(root, "blank", "src"), { recursive: true });
 
@@ -62,23 +62,6 @@ function fixtureExtractedRoot(): string {
   writeFile(
     join(root, "_common", ".claude", "skills", "mantle-update", "SKILL.md.template"),
     "---\nname: mantle:update\n---\nRead .agent/skills/mantle-update/SKILL.md for {{ARCHETYPE}}.\n",
-  );
-  writeFile(
-    join(root, "_common", "mantle", "site.md.template"),
-    `---
-archetype: {{ARCHETYPE}}
-brand: {{BRAND}}
-locales: {{LOCALES}}
-canonical_locale: {{CANONICAL_LOCALE}}
-site_url: {{SITE_URL}}
-revisions:
-  - at: {{INSTALL_TIMESTAMP}}
-    by: install
-    summary: {{INSTALL_SUMMARY}}
----
-
-body
-`,
   );
   writeFile(
     join(root, "_common", ".gitignore.template"),
@@ -147,12 +130,11 @@ describe("installFromExtractedRoot", () => {
       extractedRoot,
     });
 
-    const mantle = readFileSync(
-      join(destination, "mantle", "site.md"),
-      "utf8",
+    const state = JSON.parse(
+      readFileSync(join(destination, ".mantle", "launch-state.json"), "utf8"),
     );
-    expect(mantle).toContain('locales: ["zh-TW","en"]');
-    expect(mantle).toContain("canonical_locale: zh-TW");
+    expect(state.locales).toEqual(["zh-TW", "en"]);
+    expect(state.canonical_locale).toBe("zh-TW");
   });
 
   it("substitutes a separate admin GitHub login when the repo owner is an org", () => {
@@ -251,7 +233,7 @@ describe("installFromExtractedRoot", () => {
     expect(
       existsSync(join(destination, ".claude", "skills", "mantle-update", "SKILL.md")),
     ).toBe(true);
-    expect(existsSync(join(destination, "mantle", "site.md"))).toBe(true);
+    expect(existsSync(join(destination, "mantle", "site.md"))).toBe(false);
     expect(existsSync(join(destination, "src", "mantleConfig.ts"))).toBe(true);
 
     const agents = readFileSync(join(destination, "AGENTS.md"), "utf8");
@@ -259,13 +241,12 @@ describe("installFromExtractedRoot", () => {
     expect(agents).toContain("Public site: https://example.com");
     expect(agents).toContain("Owner: phsu");
 
-    const mantle = readFileSync(
-      join(destination, "mantle", "site.md"),
-      "utf8",
+    const state = JSON.parse(
+      readFileSync(join(destination, ".mantle", "launch-state.json"), "utf8"),
     );
-    expect(mantle).toContain('locales: ["zh-TW","en"]');
-    expect(mantle).toContain("canonical_locale: zh-TW");
-    expect(mantle).toMatch(/at: \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/);
+    expect(state.locales).toEqual(["zh-TW", "en"]);
+    expect(state.canonical_locale).toBe("zh-TW");
+    expect(state.claimed_at).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/);
 
     const cfg = readFileSync(join(destination, "src", "mantleConfig.ts"), "utf8");
     expect(cfg).toContain('brand: "Lab Cafe"');
@@ -1253,7 +1234,7 @@ describe("installFromExtractedRoot", () => {
     });
 
     expect(existsSync(join(destination, "AGENTS.md"))).toBe(true);
-    expect(existsSync(join(destination, "mantle", "site.md"))).toBe(true);
+    expect(existsSync(join(destination, "mantle", "site.md"))).toBe(false);
     expect(existsSync(join(destination, "package.json"))).toBe(true);
     expect(
       existsSync(join(destination, "src", "mantleConfig.ts")),
@@ -1293,7 +1274,7 @@ describe("installFromExtractedRoot", () => {
     expect(
       existsSync(join(destination, "mantle", "site.md.template")),
     ).toBe(false);
-    expect(existsSync(join(destination, "mantle", "site.md"))).toBe(true);
+    expect(existsSync(join(destination, "mantle", "site.md"))).toBe(false);
     expect(existsSync(join(destination, ".gitignore.template"))).toBe(false);
     expect(existsSync(join(destination, ".gitignore"))).toBe(true);
   });

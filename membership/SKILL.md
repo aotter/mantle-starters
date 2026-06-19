@@ -22,7 +22,7 @@ Bring up these three points, in your own phrasing:
 
 1. **Two blockers, not one.** v0.1 is missing end-user auth AND row-level visibility grammar. Either alone is non-trivial; together they're the v0.2 milestone. Pretending half is fine — public posts now, paid later — produces a site whose access model the user can't actually rely on.
 2. **One holding path, name it.** `publication` with everything public, plus a clearly-labeled "member-only is coming" note where paid content would go. Right when the user is building audience first and monetizing later (most paths).
-3. **What you'll capture now.** Write into `mantle/site.md` `futures:` — tier shape, expected member count, whether Stripe is already set up, what the first paid post would have been.
+3. **What you'll capture now.** Note the future in `AGENTS.md` — tier shape, expected member count, whether Stripe is already set up, what the first paid post would have been.
 
 ## Example phrasing (illustrative; render natively)
 
@@ -34,4 +34,4 @@ EN:
 
 ## Site defaults if user picks the holding path
 
-Switch to the [`publication` archetype](publication.md). In `mantle/site.md` `futures:`, capture the eventual tier shape so a future Mantle session can wire it cleanly when v0.2 ships.
+Switch to the [`publication` archetype](publication.md). In `AGENTS.md`, capture the eventual tier shape so a future Mantle session can wire it cleanly when v0.2 ships.
