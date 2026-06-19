@@ -39,9 +39,15 @@ async function main() {
 
 async function plan(args) {
   const projectName = args["project-name"] ?? readWorkerName();
+  const workerUrl = args["worker-url"]
+    ? normalizeWorkerUrl(args["worker-url"])
+    : null;
   const launchState = readLaunchState();
   const repoTarget = readRepoTarget(launchState, projectName);
   const adminGithubLogin = readAdminGithubLogin(launchState) ?? "<your-github-login>";
+  const callbackUrl = workerUrl
+    ? `${workerUrl}/api/auth/callback/github`
+    : "<worker-url>/api/auth/callback/github";
   const resourceNotes = readStarterSpecificPlanNotes();
   const featureSteps = await loadFeatureSteps();
   console.log(`
@@ -58,32 +64,38 @@ Browser handoff 1 - Cloudflare first deploy:
   Open: ${CLOUDFLARE_WORKERS_PAGES_URL}
   Create a Worker from the GitHub repo above.
   Keep the Worker name as "${projectName}" when Cloudflare asks.
-  Wait for deploy to finish, then copy the live *.workers.dev URL.
+  Wait for deploy to finish.
+
+  Ask the user to report back:
+    - Worker URL, for example https://${projectName}.<account>.workers.dev
+    - Worker name only if Cloudflare forced a name different from "${projectName}"
 ${resourceNotes}
 
 Browser handoff 2 - GitHub OAuth App:
-  Open: https://github.com/settings/developers
+  Open: https://github.com/settings/applications/new
   Create an OAuth App after the Worker URL is known.
-  Homepage URL:               <worker-url>
-  Authorization callback URL: <worker-url>/api/auth/callback/github
+  Application name:           ${projectName}
+  Homepage URL:               ${workerUrl ?? "<worker-url>"}
+  Authorization callback URL: ${callbackUrl}
   Device Flow:                unchecked
-  Copy the Client ID. Keep the Client Secret off chat.
+
+  Ask the user to send the Client ID in chat. Do not ask them to paste
+  the Client Secret in chat; collect it with the hidden terminal prompt
+  below.
 
 Agent commands after the Worker URL and Client ID are known:
+  pnpm exec wrangler login
+
   read -rsp "GitHub Client Secret: " GITHUB_CLIENT_SECRET && export GITHUB_CLIENT_SECRET && printf "\\n"
 
   pnpm run provision:up -- \\
-    --worker-url <worker-url> \\
+    --worker-url ${workerUrl ?? "<worker-url>"} \\
     --github-username ${adminGithubLogin} \\
     --client-id <client-id>
 
 If you first deployed to a custom domain and the worker name cannot be
 inferred from a *.workers.dev URL, add:
   --worker-name <cloudflare-worker-name>
-
-Before provision:up, make sure Wrangler is authorized for the same
-Cloudflare account:
-  pnpm exec wrangler login
 
 Until provision:up finishes, /admin and /api/auth/* should return
 setup_incomplete. Public routes should still boot and must not throw
