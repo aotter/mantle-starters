@@ -159,22 +159,31 @@ function updateWranglerToml({
 function updateWorkerName(workerName) {
   const path = "wrangler.toml";
   const text = readFileSync(path, "utf8");
-  const next = text.replace(/^name = ".*"$/m, `name = ${JSON.stringify(workerName)}`);
-  if (next === text) {
+  const nameLine = /^name = ".*"$/m;
+  if (!nameLine.test(text)) {
     throw new Error('name = "..." line not found in wrangler.toml');
   }
+  const next = text.replace(nameLine, `name = ${JSON.stringify(workerName)}`);
   writeFileSync(path, next);
 }
 
 function upsertVar(toml, key, value) {
-  const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const line = `${key} = ${JSON.stringify(value)}`;
-  const next = toml.replace(new RegExp(`^${escaped} = ".*"$`, "m"), line);
-  if (next !== toml) return next;
   const varsHeader = "[vars]\n";
   const idx = toml.indexOf(varsHeader);
   if (idx === -1) throw new Error("[vars] block not found in wrangler.toml");
-  return `${toml.slice(0, idx + varsHeader.length)}${line}\n${toml.slice(idx + varsHeader.length)}`;
+  const sectionStart = idx + varsHeader.length;
+  const nextHeader = toml.slice(sectionStart).search(/\n\[/);
+  const sectionEnd = nextHeader === -1 ? toml.length : sectionStart + nextHeader;
+  const before = toml.slice(0, sectionStart);
+  const section = toml.slice(sectionStart, sectionEnd);
+  const after = toml.slice(sectionEnd);
+  const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const varLine = new RegExp(`^${escaped} = ".*"$`, "m");
+  const nextSection = varLine.test(section)
+    ? section.replace(varLine, line)
+    : `${line}\n${section}`;
+  return `${before}${nextSection}${after}`;
 }
 
 function updateOrigin(workerUrl) {
