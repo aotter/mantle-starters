@@ -265,13 +265,25 @@ export function installFromExtractedRoot(
     theme: opts.theme ?? null,
     features: resolvedFeatures,
   });
+  const scaffoldStateFiles = writeScaffoldState({
+    destination: opts.destination,
+    opts: { ...opts, locales },
+    sources,
+    notesNextStep:
+      "Run local validation, create the private GitHub repo, then follow the repo-local mantle:provision skill for Cloudflare first deploy.",
+  });
   const generatedGlueFiles = writeGeneratedFeatureGlue({
     destination: opts.destination,
     archetype: opts.archetype,
     features: resolvedFeatures,
     extractedRoot: opts.extractedRoot,
   });
-  const allFiles = [...filesWritten, ...generatedFiles, ...generatedGlueFiles].sort();
+  const allFiles = [
+    ...filesWritten,
+    ...generatedFiles,
+    ...scaffoldStateFiles,
+    ...generatedGlueFiles,
+  ].sort();
   validateNoLeftovers(opts.destination, allFiles);
   if (!opts.skipGitInit) {
     gitInit(opts.destination);
@@ -388,6 +400,49 @@ function writeFeaturesManifest(args: {
     resolvedAt: new Date().toISOString(),
   };
   writeFileSync(path, JSON.stringify(manifest, null, 2) + "\n");
+  return [relPath];
+}
+
+function writeScaffoldState(args: {
+  destination: string;
+  opts: CreateOptions;
+  sources: SourcesJson;
+  notesNextStep: string;
+}): readonly string[] {
+  const dir = join(args.destination, ".mantle");
+  mkdirSync(dir, { recursive: true });
+  const relPath = ".mantle/launch-state.json";
+  const path = join(args.destination, relPath);
+  const adminGithubLogin = args.opts.adminGithubLogin ?? args.opts.githubOwner;
+  const state = {
+    schema_version: 1,
+    session_id: null,
+    claimed_at: new Date().toISOString(),
+    expires_at: null,
+    launch_source: "direct",
+    project_name: args.opts.projectName,
+    archetype: args.opts.archetype,
+    brand: args.opts.brand,
+    description: args.opts.description,
+    summary: args.opts.summary,
+    locales: args.opts.locales,
+    canonical_locale: args.opts.locales[0] ?? "en",
+    theme: args.opts.theme ?? null,
+    features: args.opts.features ?? [],
+    starter_ref: args.opts.starterRef ?? args.sources.version ?? null,
+    github: {
+      owner: args.opts.githubOwner,
+      admin_login: adminGithubLogin,
+    },
+    repo: {
+      owner: args.opts.githubOwner,
+      name: args.opts.projectName,
+      visibility: "private",
+      defaultBranch: "main",
+    },
+    next_step: args.notesNextStep,
+  };
+  writeFileSync(path, JSON.stringify(state, null, 2) + "\n");
   return [relPath];
 }
 
