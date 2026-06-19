@@ -9,7 +9,7 @@ Public site: {{SITE_URL}}  (placeholder until provision)
 - `pnpm validate`     manifest validation
 - `pnpm typecheck`    TypeScript check
 - `pnpm test`         vitest
-- `pnpm deploy`       deploy Worker (after provision)
+- `pnpm run deploy`   deploy Worker (after provision)
 
 ## For agents working on this site
 

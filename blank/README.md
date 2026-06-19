@@ -122,7 +122,7 @@ for a Cloudflare API token.
 3. If you need server-side Procedures (form handlers, webhooks, etc.),
    add a `Procedure` atom, bind it with a `Trigger.source.kind: http`,
    and register the handler in `src/handlers/index.ts`.
-4. Validate with `pnpm validate` (runs the spec CLI in preview phase — grammar + cross-Schema only). Before deploying, run `pnpm validate:deploy` (= `mantle validate --phase deploy`) for production-only checks. `pnpm deploy` chains it in front of `wrangler deploy` automatically.
+4. Validate with `pnpm validate` (runs the spec CLI in preview phase — grammar + cross-Schema only). Before deploying, run `pnpm validate:deploy` (= `mantle validate --phase deploy`) for production-only checks. `pnpm run deploy` chains it in front of `wrangler deploy` automatically.
 
 ## What you get from the npm packages
 

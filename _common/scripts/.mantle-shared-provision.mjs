@@ -64,6 +64,10 @@ Browser handoff 1 - Cloudflare first deploy:
   Open: ${CLOUDFLARE_WORKERS_PAGES_URL}
   Create a Worker from the GitHub repo above.
   Keep the Worker name as "${projectName}" when Cloudflare asks.
+  Use these Cloudflare fields:
+    - Build command:  pnpm run validate:deploy && pnpm run typecheck
+    - Deploy command: npx wrangler deploy
+    - Root directory: /
   Wait for deploy to finish.
 
   Ask the user to report back:
