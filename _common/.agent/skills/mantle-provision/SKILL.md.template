@@ -23,7 +23,7 @@ should report back.
    requirements.
 3. `wrangler.toml`, `.dev.vars.example`, `scripts/provision.mjs`, and
    `scripts/.mantle-provision.mjs`.
-4. `mantle/site.md` for public intent and final handoff notes.
+4. `AGENTS.md` for public intent and final handoff notes.
 5. `node_modules/@aotter/mantle/skills/provision/SKILL.md` for the
    versioned parent provision contract after dependencies are installed.
 
@@ -94,8 +94,8 @@ unset GITHUB_CLIENT_SECRET
 7. Commit and push generated non-secret outputs:
 
 ```bash
-git status --short -- wrangler.toml src/mantleConfig.ts mantle/site.md AGENTS.md
-git add wrangler.toml src/mantleConfig.ts mantle/site.md AGENTS.md
+git status --short -- wrangler.toml src/mantleConfig.ts AGENTS.md
+git add wrangler.toml src/mantleConfig.ts AGENTS.md
 git commit -m "mantle: wire production provision"
 git push
 ```

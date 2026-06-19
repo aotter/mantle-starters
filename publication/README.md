@@ -368,7 +368,7 @@ Prerequisites:
 
    The script writes non-secret runtime config (`PUBLIC_ORIGIN`,
    `GITHUB_CLIENT_ID`, `ADMIN_GITHUB_LOGIN`), sets `GITHUB_CLIENT_SECRET`
-   and `BETTER_AUTH_SECRET` with Wrangler, updates the site semantic layer,
+   and `BETTER_AUTH_SECRET` with Wrangler, updates handoff notes,
    and prints the final handoff. Commit and push the non-secret file
    changes so Cloudflare Workers Builds redeploys from source.
 

@@ -33,12 +33,12 @@ Use this only after production provision and owner sign-in. It is not an
 install-time prompt and should not block scaffold or deploy.
 
 ```text
-打開後台，列出目前的 collections。再幫我把首頁 "{{BRAND}}" 的內容草稿補上：一句話的開場 + 三個你看到 mantle/site.md 裡的關鍵點。先不要發佈，等我看過。
+打開後台，列出目前的 collections。再幫我把首頁 "{{BRAND}}" 的內容草稿補上：一句話的開場 + 三個你從 launch-state / AGENTS.md 看到的關鍵點。先不要發佈，等我看過。
 ```
 
 (EN equivalent, illustrative — render natively in the user's language:)
 ```text
-Open the admin and list the current collections. Then draft the home for "{{BRAND}}": one opening sentence + three points drawn from mantle/site.md. Leave it as a draft so I can read it before publishing.
+Open the admin and list the current collections. Then draft the home for "{{BRAND}}": one opening sentence + three points drawn from launch-state / AGENTS.md. Leave it as a draft so I can read it before publishing.
 ```
 
 ## Schema/View/Procedure extensions

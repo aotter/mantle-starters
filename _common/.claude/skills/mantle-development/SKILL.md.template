@@ -9,7 +9,7 @@ Use the shared repo-local skill at:
 
 `.agent/skills/mantle-development/SKILL.md`
 
-Read it fully before touching code. Then read `mantle/site.md`,
+Read it fully before touching code. Then read
 `.mantle/launch-state.json` when present, `.mantle/features.json`,
 `AGENTS.md`, `CLAUDE.md`, and the embedded Mantle docs under
 `node_modules/@aotter/mantle/docs/`.

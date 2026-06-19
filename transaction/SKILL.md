@@ -62,7 +62,7 @@ This constraint lifts in `commerce-pro` (roadmap) which models a `pending → re
 
 > "Which currency? (USD / TWD / JPY / EUR / ...)"
 
-Site-wide single currency; baked into `site_config.currency` + `mantle/site.md` at install. **Multi-currency is v0.3+ territory** — different starter entirely.
+Site-wide single currency; baked into `site_config.currency` at install. **Multi-currency is v0.3+ territory** — different starter entirely.
 
 ### 5. Refunds (just inform; not a decision)
 
@@ -132,7 +132,7 @@ export function buildPaymentProvider(env: PaymentEnv): PaymentProvider {
 
 Add the provider's secret bindings (commented section at the bottom of `wrangler.toml` shows the pattern). The actual values get set via `wrangler secret put` during provision; never commit them.
 
-### Step 5 — record in `mantle/site.md`
+### Step 5 — record in `AGENTS.md`
 
 Add a frontmatter entry so a future Mantle session knows which provider is wired:
 
@@ -140,7 +140,7 @@ Add a frontmatter entry so a future Mantle session knows which provider is wired
 payment_provider: stripe   # or ecpay | payuni | <custom-name>
 ```
 
-Append a `## history` line: "Wired <provider> at install per user choice."
+Append a short project note: "Wired <provider> at install per user choice."
 
 ### Step 6 — validate
 
@@ -153,7 +153,7 @@ Append a `## history` line: "Wired <provider> at install per user choice."
 - **Subscriptions / recurring billing.** → `subscription` (roadmap).
 - **Multi-currency / tax compliance.** → `commerce-pro` (roadmap, v0.3).
 
-For all of these: refuse warmly in the user's language; record the deferred future in `mantle/site.md` `futures:`.
+For all of these: refuse warmly in the user's language; record the deferred future in `AGENTS.md`.
 
 ## Schema/View/Procedure shape
 

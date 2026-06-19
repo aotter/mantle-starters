@@ -33,12 +33,12 @@ Use this only after production provision and owner sign-in. It is not an
 install-time prompt and should not block scaffold or deploy.
 
 ```text
-打開後台，看一下 leads collection — 應該是空的。然後幫我把 "{{BRAND}}" 首頁的開場改一下：一句話講這個 form 是收什麼的、幾天內會回覆。語氣參考 mantle/site.md。draft，等我看過。
+打開後台，看一下 leads collection — 應該是空的。然後幫我把 "{{BRAND}}" 首頁的開場改一下：一句話講這個 form 是收什麼的、幾天內會回覆。語氣參考 launch-state / AGENTS.md。draft，等我看過。
 ```
 
 (EN illustrative:)
 ```text
-Open the admin and look at the leads collection (should be empty). Then update the home opener for "{{BRAND}}": one sentence on what the form is for and the response window. Match the voice in mantle/site.md. Draft for my review.
+Open the admin and look at the leads collection (should be empty). Then update the home opener for "{{BRAND}}": one sentence on what the form is for and the response window. Use launch-state / AGENTS.md for voice. Draft for my review.
 ```
 
 ## Schema/View/Procedure shape
@@ -50,7 +50,7 @@ The starter ships:
 - **Procedure `submit-lead`** — `handler.kind: builtin`, `op: create`, `schema: leads`. CAPTCHA `before_create` (`errorPolicy: abort`); Slack-notify `after_create` (default `errorPolicy: continue`).
 - **Trigger** — `source.kind: http`, `path: /api/leads`, gated to anonymous.
 
-If the interview surfaces additional fields the lead actually needs, edit `manifests/leads.yaml` directly during the adjustment window. If the user wants assignment / qualification / pipeline state-machine workflow, they're asking for `leads-inbox`, which is **roadmap**. Acknowledge, deliver `intake` as a holding pattern, mark the future in `mantle/site.md` `futures:`.
+If the interview surfaces additional fields the lead actually needs, edit `manifests/leads.yaml` directly during the adjustment window. If the user wants assignment / qualification / pipeline state-machine workflow, they're asking for `leads-inbox`, which is **roadmap**. Acknowledge, deliver `intake` as a holding pattern, and note the deferred future in `AGENTS.md`.
 
 ## See also
 

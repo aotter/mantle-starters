@@ -6,6 +6,23 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 The repository version reflects the `create-mantle` scaffolder tarball attached to each GitHub release. Individual starter packages pin `@aotter/mantle-*` versions independently inside their own `package.json`.
 
+## [v0.0.11-alpha.30] — 2026-06-19
+
+### Removed
+
+- **\_common scaffold**: stop generating `mantle/site.md`. First-run
+  state now lives in `.mantle/launch-state.json` and `AGENTS.md`, so
+  the old letter/semantic prose surface cannot block deterministic
+  provision.
+
+### Changed
+
+- **Repo-local skills**: `mantle:development`, `mantle:provision`, and
+  `mantle:update` now read launch-state / AGENTS context instead of
+  `mantle/site.md`.
+- **Provision script**: `provision:up` updates `AGENTS.md` only; it no
+  longer rewrites `mantle/site.md` revisions.
+
 ## [v0.0.11-alpha.17] — 2026-06-09
 
 ### Added

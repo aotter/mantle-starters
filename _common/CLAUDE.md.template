@@ -6,9 +6,8 @@ across mantle starters; archetype-specific guidance (cart hot path,
 inventory gates, block dispatcher, etc.) lives in any longer
 `CLAUDE.md` your archetype overlays on top of this one.
 
-For the install / interview contract that scaffolded this site, see
-[`SKILL.md`](SKILL.md) (Mantle install voice) and
-[`AGENTS.md`](AGENTS.md) (per-site cached interview answers).
+For the launch choices that scaffolded this site, see
+[`AGENTS.md`](AGENTS.md) and [`.mantle/launch-state.json`](.mantle/launch-state.json).
 
 Repo-local Mantle skills are also checked into this scaffold. Use them
 before touching code:

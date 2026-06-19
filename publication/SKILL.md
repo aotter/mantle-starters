@@ -74,7 +74,7 @@ Use this only after production provision and owner sign-in. It is not an
 install-time prompt and should not block scaffold or deploy.
 
 ```text
-Open the admin and list the posts collection (should be empty). Draft a "Hello, {{BRAND}}" post: one paragraph introducing the site, one paragraph on why it exists. Match the voice in mantle/site.md. Leave as draft so I can review before publishing.
+Open the admin and list the posts collection (should be empty). Draft a "Hello, {{BRAND}}" post: one paragraph introducing the site, one paragraph on why it exists. Use the launch-state / AGENTS.md context for voice. Leave as draft so I can review before publishing.
 ```
 
 ## Schema/View/Procedure extensions

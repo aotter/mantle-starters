@@ -24,7 +24,7 @@ Bring up these three points, in your own phrasing:
 2. **Two holding paths, name both.**
    - `intake` (a structured request form). The visitor describes what and when; you confirm or reschedule manually. Right when volume is low and you can reply by email or message.
    - Wait for v0.2 `booking`. Right when the user explicitly needs live availability shown to the visitor.
-3. **What you'll capture now.** Write the intent into `mantle/site.md` `futures:` — what's being booked, who books it, the asked-for cadence.
+3. **What you'll capture now.** Note the future in `AGENTS.md` — what's being booked, who books it, the asked-for cadence.
 
 ## Example phrasing (illustrative; render natively)
 
