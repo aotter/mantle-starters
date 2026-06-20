@@ -89,6 +89,11 @@ export interface OrderRowData {
   readonly items?: ReadonlyArray<OrderLineItem>;
   readonly placedAt?: number;
   readonly confirmation_emailed_at?: number;
+  /** Set when inventory was deducted via the late-commit path — the
+   *  reservation had already expired when the payment landed.
+   *  Signals possible oversell: staff should reconcile stock for
+   *  this order's SKUs (available may have gone negative). */
+  readonly stockLateCommitAt?: number;
 }
 
 /**
@@ -136,7 +141,8 @@ export interface ConsumerEnv {
  * Side effects MUST be idempotent for the sweeper-then-retry path:
  *   - order row INSERT OR IGNORE on entries.id (deterministic from
  *     event.orderId) — second write is no-op.
- *   - inventory commit no-ops if the reservation is already consumed.
+ *   - inventory commit replays as "already-committed" via its
+ *     tombstone (no double deduction, even on the late path).
  *   - downstream `order.confirmed` enqueue is OK to fire twice
  *     (orderWorkConsumer dedups via confirmation_emailed_at).
  */
@@ -183,8 +189,9 @@ async function processCallback(
     // and re-doing the side effects is SAFE because they're idempotent:
     //   - commitOrder uses INSERT OR IGNORE on a deterministic
     //     entries.id derived from event.orderId
-    //   - inv.commit(orderId) + inv.release(orderId) are no-ops if
-    //     the reservation is already gone
+    //   - inv.commit(orderId) replays as "already-committed" via its
+    //     tombstone; inv.release(orderId) no-ops once the
+    //     reservation is gone
     //   - deleteOrderCart on KV is a no-op if the cart was already
     //     dropped by a prior attempt
     //   - the downstream ORDER_WORK_QUEUE.send is OK to fire twice
@@ -221,17 +228,67 @@ async function commitOrder(
   //
   // Once-and-only-once guarantees compose:
   //   - tryAcquire(event.eventId) at the caller deduplicates webhook
-  //     retries (different eventIds for the same orderId still hit
-  //     INSERT OR IGNORE below).
+  //     retries (different eventIds for the same orderId are caught
+  //     by the commit tombstone + INSERT OR IGNORE below).
+  //   - inv.commit(orderId, fallbackItems) is tombstone-idempotent:
+  //     replays observe "already-committed" and mutate nothing, even
+  //     through the late-commit path.
   //   - INSERT OR IGNORE on the deterministic entries.id derived from
   //     event.orderId makes the order row write idempotent.
-  //   - inv.commit(orderId) is idempotent (no-op if already
-  //     committed).
   //   - deleteOrderCart at the end is also a no-op on second arrival.
   const cart = await readOrderCart(env.KV, event.orderId);
+  const fallbackItems = await trackedFallbackItems(cart, env);
+
+  // Commit BEFORE the order-row INSERT so the row can stamp
+  // `stockLateCommitAt` from the commit outcome. Crash-retry safe:
+  // a retry re-runs commit (tombstone returns the same outcome) and
+  // the INSERT no-ops if the row already landed.
+  const commit = await inv.commit(event.orderId, fallbackItems);
+  if (commit.outcome === "late-committed") {
+    const detail = commit.committed
+      .map((i) => `${i.skuCode}×${i.qty}`)
+      .join(", ");
+    console.warn(
+      `[payment-callback-consumer] LATE COMMIT order=${event.orderId} — ` +
+        `reservation expired before payment; deducted ${detail} directly. ` +
+        `Stock may be negative (oversold); check staff inventory.`,
+    );
+    // Refresh staff snapshots for the affected SKUs right away — the
+    // 5-min cron tick would get there eventually, but negative stock
+    // should surface faster than that.
+    for (const item of commit.committed) {
+      await sendOrderWork(env.ORDER_WORK_QUEUE, {
+        type: "inventory.snapshot.requested",
+        skuCode: item.skuCode,
+      });
+    }
+    if (env.SLACK_WEBHOOK_URL) {
+      try {
+        await fetch(env.SLACK_WEBHOOK_URL, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            text: `⚠️ Late inventory commit on order ${event.orderId} (${detail}) — reservation expired before payment; stock may be oversold.`,
+          }),
+        });
+      } catch (err) {
+        console.warn(`[payment-callback-consumer] slack notify failed:`, err);
+      }
+    }
+  } else if (commit.outcome === "no-reservation" && !cart) {
+    // Tracked-or-not is unknowable here: the stash that recorded the
+    // line items expired before the payment landed. The order row
+    // below still captures payment + amount; stock needs human eyes.
+    console.warn(
+      `[payment-callback-consumer] order=${event.orderId} paid with no ` +
+        `reservation AND no cart stash — stock not deducted; manual ` +
+        `inventory review needed.`,
+    );
+  }
+
   const now = Date.now();
   const entryId = orderEntryId(event.orderId);
-  const orderData = buildOrderRowData(event, cart, now);
+  const orderData = buildOrderRowData(event, cart, now, commit.late);
   await env.DB.prepare(
     `INSERT OR IGNORE INTO entries
        (id, collection, status, version, data, created_at, updated_at)
@@ -248,11 +305,6 @@ async function commitOrder(
     )
     .run();
 
-  // inv.commit + deleteOrderCart are idempotent (no-op if the
-  // reservation / stash were already cleared by a prior attempt or
-  // by the 10-min reservation alarm). Untracked products carry no
-  // reservation, so commit is also a no-op for them.
-  await inv.commit(event.orderId);
   await deleteOrderCart(env.KV, event.orderId);
 
   // Safe to send twice — orderWorkConsumer dedups via the order
@@ -261,6 +313,42 @@ async function commitOrder(
     type: "order.confirmed",
     orderId: event.orderId,
   });
+}
+
+/**
+ * Tracked line items from the cart stash, shaped for
+ * `InventoryActor.commit`'s late-commit fallback. Lines stashed by
+ * the current checkoutStart carry `inventoryMode`; legacy stashes
+ * (written before the field existed) fall back to a product-skus
+ * lookup so late commits keep working through the 7-day stash window
+ * that straddles the deploy.
+ */
+async function trackedFallbackItems(
+  cart: OrderCart | null,
+  env: ConsumerEnv,
+): Promise<Array<{ skuCode: string; qty: number }> | undefined> {
+  if (!cart || cart.items.length === 0) return undefined;
+  let lookup: Map<string, string> | null = null;
+  if (cart.items.some((i) => i.inventoryMode === undefined)) {
+    lookup = new Map();
+    const rows = await env.DB.prepare(
+      `SELECT data FROM entries WHERE collection = ? AND status = ?`,
+    )
+      .bind("product-skus", "published")
+      .all<{ data: string }>();
+    for (const r of rows.results ?? []) {
+      const s = JSON.parse(r.data) as {
+        skuCode?: string;
+        inventoryMode?: string;
+      };
+      if (s.skuCode) lookup.set(s.skuCode, s.inventoryMode ?? "untracked");
+    }
+  }
+  const tracked = cart.items.filter(
+    (i) => (i.inventoryMode ?? lookup?.get(i.skuCode)) === "tracked",
+  );
+  if (tracked.length === 0) return undefined;
+  return tracked.map((i) => ({ skuCode: i.skuCode, qty: i.qty }));
 }
 
 /**
@@ -288,6 +376,7 @@ function buildOrderRowData(
   event: PaymentCallbackMessage,
   cart: OrderCart | null,
   now: number,
+  lateStockCommit: boolean,
 ): OrderRowData {
   const items: OrderLineItem[] =
     cart?.items.map((i) => ({
@@ -327,6 +416,7 @@ function buildOrderRowData(
     paymentIntentId: event.paymentIntentId,
     items,
     placedAt: now,
+    ...(lateStockCommit ? { stockLateCommitAt: now } : {}),
   };
 }
 
@@ -347,8 +437,9 @@ async function releaseIfReserved(
 ): Promise<void> {
   // Reservation is keyed by orderId (see InventoryActor); release is
   // idempotent — no-op if the reservation was already released by
-  // the 10-min TTL alarm OR by a prior failed/expired callback for
-  // the same order.
+  // the expiry alarm (RESERVATION_TTL_MS) OR by a prior
+  // failed/expired callback for the same order. Committed orders are
+  // protected by the tombstone guard inside release().
   //
   // We deliberately do NOT delete the KV cart stash here. Stripe
   // payment intents can move through `failed`-shaped events (e.g.

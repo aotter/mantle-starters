@@ -8,7 +8,8 @@
  *      record so post-callback INSERT can use them).
  *   3. CAPTCHA gate (Turnstile).
  *   4. InventoryActor.reserve() — atomic; rejects if any item is
- *      out of stock; sets 10-min auto-release alarm.
+ *      out of stock; sets the expiry auto-release alarm
+ *      (RESERVATION_TTL_MS).
  *   5. PaymentProvider.startCheckout() — returns redirect URL or
  *      auto-submit form.
  *
@@ -152,6 +153,7 @@ export function buildCheckoutStart(env: CheckoutStartEnv): AnyHandler {
         priceMinor: i.priceMinor,
         title: i.title,
         variantLabel: i.variantLabel,
+        inventoryMode: i.inventoryMode,
       })),
       subtotalMinor,
       createdAt: Date.now(),
