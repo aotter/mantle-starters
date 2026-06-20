@@ -5,6 +5,7 @@ import { renderSeoTagsHtml, type SeoMeta } from "@aotter/mantle/runtime";
 import { html, raw } from "hono/html";
 import { HEADER_RUNTIME_JS, SITE_CSS, THEME_BOOTSTRAP_JS } from "../styles.js";
 import { TOKENS_CSS } from "../tokens.js";
+import { GENERATED_EXPERIENCE_CSS, GENERATED_EXPERIENCE_JS } from "../generatedExperience.js";
 import { MARKDOWN_HEAD_HTML, MARKDOWN_RUNTIME_HTML } from "../markdownAssets.js";
 import {
   PageShell as BaselinePageShell,
@@ -81,8 +82,8 @@ export interface LayoutFactoryOptions {
  */
 export function createLayoutFactory(opts: LayoutFactoryOptions = {}): LayoutComponent {
   const PageShellResolved = opts.PageShell ?? BaselinePageShell;
-  const SITE_CSS_RESOLVED = TOKENS_CSS + SITE_CSS + (opts.extraCss ?? "");
-  const HEADER_JS_RESOLVED = HEADER_RUNTIME_JS + (opts.extraHeaderJs ?? "");
+  const SITE_CSS_RESOLVED = TOKENS_CSS + SITE_CSS + GENERATED_EXPERIENCE_CSS + (opts.extraCss ?? "");
+  const HEADER_JS_RESOLVED = HEADER_RUNTIME_JS + GENERATED_EXPERIENCE_JS + (opts.extraHeaderJs ?? "");
   const extraShellProps = opts.pageShellProps ?? {};
 
   return function Layout(props: LayoutProps) {

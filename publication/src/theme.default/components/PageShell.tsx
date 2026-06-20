@@ -3,6 +3,7 @@
 import type { SiteConfig } from "@aotter/mantle/spec";
 import { Header as BaselineHeader, type HeaderProps, type HeaderComponent } from "./Header.js";
 import { Footer as BaselineFooter, type FooterComponent } from "./Footer.js";
+import { GeneratedExperience } from "../generatedExperience.js";
 
 /**
  * Body composition slot — the arrangement of Header / `<main>` /
@@ -56,6 +57,7 @@ export function PageShell(props: PageShellProps) {
       <Header site={site} locale={locale} current={current} />
       <main class="site-main">{children}</main>
       <Footer site={site} locale={locale} />
+      <GeneratedExperience />
     </>
   );
 }
