@@ -1,0 +1,41 @@
+---
+name: mantle:theme
+description: Apply brand and visual direction after launch by editing Mantle/Kiwa tokens and source, not by choosing a starter theme.
+---
+
+# Mantle Theme
+
+Theme work happens after the blank repo exists. There is no first-run
+theme picker.
+
+## First read
+
+1. `.mantle/launch-state.json` for brand, description, locale, and type.
+2. `styles/tokens.css` and `styles/globals.css` for the current visual
+   base.
+3. `components/ui/` and `kiwa/` for copied Kiwa source references.
+4. Installed Mantle docs in `node_modules/@aotter/mantle/docs/`.
+
+## Work
+
+- Edit source the repo owns. Do not require Kiwa registry access.
+- Keep accessibility basics: semantic HTML, focus states, contrast, and
+  keyboard reachability.
+- The Kiwa manual base is already present: `clsx`, `tailwind-merge`,
+  `lucide`, `lib/utils.ts`, `styles/globals.css`, `kiwa-ui.json`, and
+  `@/*` path aliases.
+- Avoid adding more UI dependencies for token/style changes.
+- If a richer layout block is needed, use Kiwa free source as reference
+  and copy the smallest useful pieces.
+- Future optional path: if the user explicitly wants fresh Kiwa blocks
+  and accepts network access, use the Kiwa CLI inside this generated
+  repo. Keep `KIWA_UI_TOKEN` user-local for Pro blocks; never make it a
+  landing/provisioning requirement.
+
+## Check
+
+```bash
+pnpm validate
+pnpm typecheck
+pnpm dev
+```

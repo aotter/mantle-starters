@@ -1,9 +1,0 @@
-{
-  "schemaVersion": 2,
-  "auth_methods": {
-    "entries": [
-      "    { kind: \"magic-link\", sender, expiresInSeconds: 900 },",
-      "    { kind: \"email-otp\", sender, otpLength: 6, expiresInSeconds: 300 },"
-    ]
-  }
-}

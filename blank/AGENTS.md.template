@@ -1,0 +1,52 @@
+# This site
+
+{{BRAND}} is a blank Mantle site created by Mantle landing.
+Public site: {{SITE_URL}}  (placeholder until provision)
+
+## Launch facts
+
+- Type intent: `{{ARCHETYPE}}`
+- Locale list: `{{LOCALES}}`
+- GitHub owner: `{{GITHUB_OWNER}}`
+- Admin login: `{{ADMIN_GITHUB_LOGIN}}`
+- Summary: {{INSTALL_SUMMARY}}
+
+Read [`.mantle/launch-state.json`](.mantle/launch-state.json) and
+[`.mantle/features.json`](.mantle/features.json) before editing.
+
+## Agent handoff
+
+Use these repo-local Mantle skills:
+
+- [`.agent/skills/mantle-develop/SKILL.md`](.agent/skills/mantle-develop/SKILL.md)
+- [`.agent/skills/mantle-overlay/SKILL.md`](.agent/skills/mantle-overlay/SKILL.md)
+- [`.agent/skills/mantle-theme/SKILL.md`](.agent/skills/mantle-theme/SKILL.md)
+- [`.agent/skills/mantle-update/SKILL.md`](.agent/skills/mantle-update/SKILL.md)
+
+First task after landing succeeds:
+
+```text
+Read .mantle/launch-state.json, .mantle/features.json, and .mantle/handoff.md.
+Open the live site URL from Mantle landing. Then run mantle:overlay to apply
+the selected type intent as the smallest useful Mantle overlay.
+```
+
+## Commands
+
+- `pnpm dev` local preview on localhost:8787
+- `pnpm validate` manifest validation
+- `pnpm typecheck` TypeScript check
+- `pnpm check` validate + typecheck
+- `pnpm run deploy` deploy Worker after provider setup
+
+Daily content authoring should use the Staff MCP endpoint at
+`<SITE_URL>/mcp/staff`. Do not write directly to D1 or KV.
+
+## Notes
+
+- This repo starts blank on purpose. Do not copy old full starter
+  directories into it.
+- Theme work happens later through `mantle:theme`; there is no launch
+  theme picker.
+- Kiwa source in this repo is copied source material. The repo must keep
+  working without Kiwa registry access.

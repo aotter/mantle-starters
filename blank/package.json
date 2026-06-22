@@ -24,13 +24,17 @@
     "@cloudflare/workers-oauth-provider": "catalog:",
     "aws4fetch": "catalog:",
     "better-auth": "catalog:",
+    "clsx": "catalog:",
     "hono": "catalog:",
+    "lucide": "catalog:",
+    "tailwind-merge": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@aotter/mantle-spec": "0.0.11-alpha.32",
     "@cloudflare/workers-types": "catalog:",
     "@types/node": "catalog:",
+    "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "wrangler": "catalog:"
   },

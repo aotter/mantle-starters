@@ -23,7 +23,7 @@ execFileSync("pnpm", ["-C", "packages/create-mantle", "build"], {
 
 const { installFromExtractedRoot } = await import(pathToFileURL(distIndex).href);
 const sources = JSON.parse(readFileSync(join(root, "sources.json"), "utf8"));
-const archetypes = Object.keys(sources.archetypes ?? {});
+const archetypes = uniqueArchetypesByPath(sources);
 const changed = [];
 
 for (const archetype of archetypes) {
@@ -60,14 +60,14 @@ for (const archetype of archetypes) {
     );
 
     const generated = join(destination, "pnpm-lock.yaml");
-    const target = join(root, archetype, "pnpm-lock.yaml");
+    const target = join(root, sources.archetypes[archetype].path, "pnpm-lock.yaml");
     if (!existsSync(generated)) {
       throw new Error(`${archetype}: generated scaffold did not produce pnpm-lock.yaml`);
     }
     const generatedBytes = readFileSync(generated);
     const currentBytes = existsSync(target) ? readFileSync(target) : null;
     if (!currentBytes || !generatedBytes.equals(currentBytes)) {
-      changed.push(`${archetype}/pnpm-lock.yaml`);
+      changed.push(`${sources.archetypes[archetype].path}/pnpm-lock.yaml`);
       if (!check) copyFileSync(generated, target);
     }
   } finally {
@@ -85,4 +85,15 @@ if (changed.length > 0) {
   for (const file of changed) console.log(`  - ${file}`);
 } else {
   console.log("Starter lockfiles are current.");
+}
+
+function uniqueArchetypesByPath(sources) {
+  const seen = new Set();
+  const result = [];
+  for (const [archetype, source] of Object.entries(sources.archetypes ?? {})) {
+    if (!source?.path || seen.has(source.path)) continue;
+    seen.add(source.path);
+    result.push(archetype);
+  }
+  return result;
 }

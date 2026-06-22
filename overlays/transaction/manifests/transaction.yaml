@@ -1,0 +1,98 @@
+apiVersion: cms.mantle.aotter.net/v1
+kind: Schema
+metadata:
+  name: products
+spec:
+  title: Products
+  description: Minimal product catalog for a first transaction-shaped site.
+  schema:
+    type: object
+    required: [slug, title, priceMinor, currency]
+    properties:
+      slug:
+        type: string
+        pattern: "^[a-z0-9-]+$"
+      title:
+        type: string
+      summary:
+        type: string
+      priceMinor:
+        type: integer
+        minimum: 0
+      currency:
+        type: string
+        pattern: "^[A-Z]{3}$"
+      coverAssetId:
+        type: string
+        x-mcp-hint: media-image
+  uniqueIndexes:
+    - [slug]
+  localized: false
+  lifecycle: simple
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Schema
+metadata:
+  name: product-inquiries
+spec:
+  title: Product inquiries
+  description: First-pass purchase intent capture. Replace with checkout later.
+  schema:
+    type: object
+    required: [productSlug, email]
+    properties:
+      productSlug:
+        type: string
+      email:
+        type: string
+        format: email
+      note:
+        type: string
+      createdAt:
+        type: number
+        x-mantle-bind: now
+  lifecycle: simple
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: View
+metadata:
+  name: public-products
+spec:
+  from: products
+  fields: [id, slug, title, summary, priceMinor, currency, coverAssetId, updatedAt]
+  filter:
+    eq: { field: status, value: published }
+  orderBy:
+    - { field: updatedAt, direction: desc }
+  limit: 100
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Procedure
+metadata:
+  name: submit-product-inquiry
+spec:
+  input:
+    type: object
+    required: [productSlug, email]
+    properties:
+      productSlug: { type: string }
+      email: { type: string, format: email }
+      note: { type: string }
+  output:
+    type: object
+  handler:
+    kind: builtin
+    op: create
+    schema: product-inquiries
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Trigger
+metadata:
+  name: submit-product-inquiry-http
+spec:
+  source:
+    kind: http
+    method: POST
+    path: /api/product-inquiries
+  target:
+    procedure: submit-product-inquiry

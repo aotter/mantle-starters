@@ -31,10 +31,10 @@ body:
     id: reproduce
     attributes:
       label: Reproduction
-      description: Include the install command, archetype + theme used, terminal output, and a minimal repro if possible.
+      description: Include the install command, archetype intent, terminal output, and a minimal repro if possible.
       placeholder: |
         1. npx <release-tarball-url> my-site
-        2. Selected: archetype=publication, theme=l4-editorial-warm
+        2. Selected: archetype=publication
         3. ...
     validations:
       required: true
@@ -44,16 +44,12 @@ body:
       label: Area
       options:
         - starter:blank
-        - starter:publication
-        - starter:presence
-        - starter:intake
-        - starter:transaction
-        - starter:community
-        - starter:membership
-        - starter:reservation
+        - overlay:publication
+        - overlay:transaction
+        - overlay:community
+        - overlay:reservation
         - area:scaffolder
-        - area:themes
-        - area:_common
+        - area:kiwa
         - area:sources-json
         - area:ci
         - area:docs

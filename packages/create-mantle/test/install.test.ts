@@ -95,10 +95,31 @@ function fixtureExtractedRoot(): string {
     `export interface ThemeOverride { readonly tokens?: string; }\n`,
   );
 
-  // blank starter (minimal)
+  // blank starter (minimal first-launch base)
   writeFile(
     join(root, "blank", "package.json"),
-    JSON.stringify({ name: "blank-{{BRAND}}", private: true }, null, 2) + "\n",
+    JSON.stringify(
+      {
+        name: "blank-{{BRAND}}",
+        private: true,
+        dependencies: { hono: "catalog:" },
+        devDependencies: { "@types/node": "catalog:" },
+      },
+      null,
+      2,
+    ) + "\n",
+  );
+  writeFile(
+    join(root, "blank", "src", "mantleConfig.ts"),
+    `export const config = { brand: "{{BRAND}}", origin: "{{SITE_URL}}" };\n`,
+  );
+  writeFile(
+    join(root, "blank", ".dev.vars.example"),
+    "ADMIN_GITHUB_LOGIN={{ADMIN_GITHUB_LOGIN}}\n",
+  );
+  writeFile(
+    join(root, "blank", "src", "Theme.ts"),
+    `export interface ThemeOverride { readonly tokens?: string; }\n`,
   );
   return root;
 }
@@ -216,9 +237,7 @@ describe("installFromExtractedRoot", () => {
       extractedRoot,
     });
 
-    expect(notes.starter_source).toBe(
-      "aotter/mantle-starters/publication",
-    );
+    expect(notes.starter_source).toBe("aotter/mantle-starters/blank");
     expect(notes.overlays).toEqual([]);
     expect(existsSync(join(destination, "AGENTS.md"))).toBe(true);
     expect(
@@ -269,7 +288,7 @@ describe("installFromExtractedRoot", () => {
     const extractedRoot = fixtureExtractedRoot();
     const wrapper = "import './.mantle-shared-provision.mjs';\n";
     writeFile(join(extractedRoot, "_common", "scripts", "provision.mjs"), wrapper);
-    writeFile(join(extractedRoot, "publication", "scripts", "provision.mjs"), wrapper);
+    writeFile(join(extractedRoot, "blank", "scripts", "provision.mjs"), wrapper);
     const destination = join(tempRoot, "out-provision-wrapper");
     mkdirSync(destination, { recursive: true });
 
@@ -291,7 +310,7 @@ describe("installFromExtractedRoot", () => {
       "import './.mantle-shared-provision.mjs';\n",
     );
     writeFile(
-      join(extractedRoot, "publication", "scripts", "provision.mjs"),
+      join(extractedRoot, "blank", "scripts", "provision.mjs"),
       "console.log('forked');\n",
     );
     const destination = join(tempRoot, "out-provision-wrapper-fork");
@@ -329,7 +348,7 @@ describe("installFromExtractedRoot", () => {
   it("scopes top-level wrangler resource names to the project name", () => {
     const extractedRoot = fixtureExtractedRoot();
     writeFile(
-      join(extractedRoot, "publication", "wrangler.toml"),
+      join(extractedRoot, "blank", "wrangler.toml"),
       [
         'name = "mantle-publication"',
         'main = "src/index.ts"',
@@ -375,17 +394,17 @@ describe("installFromExtractedRoot", () => {
 
   it("does not copy local generated artifacts or private env files", () => {
     const extractedRoot = fixtureExtractedRoot();
-    writeFile(join(extractedRoot, "publication", ".fixture.test.sql"), "{{BRAND}}\n");
-    writeFile(join(extractedRoot, "publication", ".fixture.test.kv.json"), "{}\n");
-    writeFile(join(extractedRoot, "publication", ".mantle-seed.sql"), "{{BRAND}}\n");
-    writeFile(join(extractedRoot, "publication", ".dev.vars"), "SECRET=1\n");
-    writeFile(join(extractedRoot, "publication", ".dev.vars.test"), "SECRET=1\n");
-    writeFile(join(extractedRoot, "publication", ".env.local"), "SECRET=1\n");
-    writeFile(join(extractedRoot, "publication", "debug.log"), "noisy\n");
-    writeFile(join(extractedRoot, "publication", ".wrangler-test", "state"), "state\n");
-    writeFile(join(extractedRoot, "publication", ".pnpm-store", "state"), "state\n");
+    writeFile(join(extractedRoot, "blank", ".fixture.test.sql"), "{{BRAND}}\n");
+    writeFile(join(extractedRoot, "blank", ".fixture.test.kv.json"), "{}\n");
+    writeFile(join(extractedRoot, "blank", ".mantle-seed.sql"), "{{BRAND}}\n");
+    writeFile(join(extractedRoot, "blank", ".dev.vars"), "SECRET=1\n");
+    writeFile(join(extractedRoot, "blank", ".dev.vars.test"), "SECRET=1\n");
+    writeFile(join(extractedRoot, "blank", ".env.local"), "SECRET=1\n");
+    writeFile(join(extractedRoot, "blank", "debug.log"), "noisy\n");
+    writeFile(join(extractedRoot, "blank", ".wrangler-test", "state"), "state\n");
+    writeFile(join(extractedRoot, "blank", ".pnpm-store", "state"), "state\n");
     writeFile(
-      join(extractedRoot, "publication", ".dev.vars.test.example"),
+      join(extractedRoot, "blank", ".dev.vars.test.example"),
       "EXAMPLE=1\n",
     );
     const destination = join(tempRoot, "out-generated-artifacts");
@@ -475,6 +494,8 @@ describe("installFromExtractedRoot", () => {
     expect(manifest.archetype).toEqual({
       name: "publication",
       type: "registry:archetype",
+      overlayPath: "overlays/publication",
+      appliedAt: null,
     });
     expect(manifest.features).toEqual([
       {
@@ -1221,7 +1242,7 @@ describe("installFromExtractedRoot", () => {
     ).toThrow(/Feature overlay collision/);
   });
 
-  it("blank archetype skips publication-specific files", () => {
+  it("blank archetype installs the blank base files", () => {
     const extractedRoot = fixtureExtractedRoot();
     const destination = join(tempRoot, "out-blank");
     mkdirSync(destination, { recursive: true });
@@ -1238,7 +1259,7 @@ describe("installFromExtractedRoot", () => {
     expect(existsSync(join(destination, "package.json"))).toBe(true);
     expect(
       existsSync(join(destination, "src", "mantleConfig.ts")),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it(".template suffix is stripped from final filenames", () => {
@@ -1282,7 +1303,7 @@ describe("installFromExtractedRoot", () => {
   it("refuses install if any {{PLACEHOLDER}} remains in templated files", () => {
     const extractedRoot = fixtureExtractedRoot();
     writeFile(
-      join(extractedRoot, "publication", "broken.md.template"),
+      join(extractedRoot, "blank", "broken.md.template"),
       "this references {{NEVER_SUBSTITUTED}}",
     );
     const destination = join(tempRoot, "out-broken");

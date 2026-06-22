@@ -1,0 +1,72 @@
+apiVersion: cms.mantle.aotter.net/v1
+kind: Schema
+metadata:
+  name: reservation-requests
+spec:
+  title: Reservation requests
+  description: Minimal reservation intent capture.
+  schema:
+    type: object
+    required: [name, email, requestedFor]
+    properties:
+      name:
+        type: string
+      email:
+        type: string
+        format: email
+      requestedFor:
+        type: string
+        description: Requested date/time or slot label.
+      partySize:
+        type: integer
+        minimum: 1
+      note:
+        type: string
+      createdAt:
+        type: number
+        x-mantle-bind: now
+  lifecycle: simple
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: View
+metadata:
+  name: recent-reservation-requests
+spec:
+  from: reservation-requests
+  fields: [id, name, email, requestedFor, partySize, note, createdAt]
+  orderBy:
+    - { field: createdAt, direction: desc }
+  limit: 50
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Procedure
+metadata:
+  name: submit-reservation-request
+spec:
+  input:
+    type: object
+    required: [name, email, requestedFor]
+    properties:
+      name: { type: string }
+      email: { type: string, format: email }
+      requestedFor: { type: string }
+      partySize: { type: integer, minimum: 1 }
+      note: { type: string }
+  output:
+    type: object
+  handler:
+    kind: builtin
+    op: create
+    schema: reservation-requests
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Trigger
+metadata:
+  name: submit-reservation-request-http
+spec:
+  source:
+    kind: http
+    method: POST
+    path: /api/reservation-requests
+  target:
+    procedure: submit-reservation-request

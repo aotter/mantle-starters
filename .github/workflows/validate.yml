@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        starter: [blank, publication, presence, intake, transaction]
+        starter: [blank]
     steps:
       - uses: actions/checkout@v6.0.3
 
@@ -81,17 +81,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - archetype: blank
-            theme: ""
-          - archetype: intake
-            theme: ""
-          - archetype: presence
-            theme: ""
-          - archetype: publication
-            theme: l4-editorial-warm
-          - archetype: transaction
-            theme: ""
+        archetype: [blank, publication, transaction, reservation, community]
     steps:
       - uses: actions/checkout@v6.0.3
 
@@ -115,7 +105,6 @@ jobs:
         env:
           ARCHETYPE: ${{ matrix.archetype }}
           STARTER_REF: ${{ github.event.pull_request.head.sha || github.sha }}
-          THEME: ${{ matrix.theme }}
         run: |
           out="$(mktemp -d)"
           cd "$out"
@@ -129,9 +118,6 @@ jobs:
             --summary "CI smoke test scaffold"
             --ref "$STARTER_REF"
           )
-          if [ -n "$THEME" ]; then
-            args+=(--theme "$THEME")
-          fi
           node "$GITHUB_WORKSPACE/packages/create-mantle/dist/cli.js" "${args[@]}"
           echo "SCAFFOLD_OUT=$out" >> "$GITHUB_ENV"
 
@@ -151,6 +137,8 @@ jobs:
         run: |
           test -f "$SCAFFOLD_OUT/e2e-test/scripts/wrangler-dev.mjs"
           grep -F '"dev": "node scripts/wrangler-dev.mjs"' "$SCAFFOLD_OUT/e2e-test/package.json"
+          test -f "$SCAFFOLD_OUT/e2e-test/scripts/apply-overlay.mjs"
+          test -f "$SCAFFOLD_OUT/e2e-test/kiwa/manifest.json"
 
   starter-locks:
     name: starter lockfiles
@@ -174,6 +162,9 @@ jobs:
 
       - name: Check provision bundle is current
         run: pnpm check:provision-bundle
+
+      - name: Check Kiwa vendor source is current
+        run: pnpm check:kiwa
 
   sources-sanity:
     name: sources.json sanity

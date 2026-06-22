@@ -13,22 +13,7 @@ import { tmpdir } from "node:os";
 import { delimiter, join, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
-const wrappers = [
-  "blank/scripts/wrangler-dev.mjs",
-  "presence/scripts/wrangler-dev.mjs",
-  "intake/scripts/wrangler-dev.mjs",
-  "publication/scripts/wrangler-dev.mjs",
-  "transaction/scripts/wrangler-dev.mjs",
-];
-
-const common = readFileSync(join(root, wrappers[0]), "utf8");
-
-for (const wrapper of wrappers.slice(1)) {
-  const actual = readFileSync(join(root, wrapper), "utf8");
-  if (actual !== common) {
-    throw new Error(`${wrapper} drifted from ${wrappers[0]}`);
-  }
-}
+const wrappers = ["blank/scripts/wrangler-dev.mjs"];
 
 for (const wrapper of wrappers) {
   const temp = mkdtempSync(join(tmpdir(), "wrangler-dev-wrapper-"));

@@ -8,7 +8,7 @@ This repo ships consumer-facing starter scaffolds. Engine / runtime vulnerabilit
 
 **In-scope here:**
 
-- Starter scaffold code (`blank/`, `publication/`, `presence/`, `intake/`, `transaction/`, plus theme overlays under `themes/`, plus `_common/`).
+- Starter scaffold code (`blank/`, post-launch overlays under `overlays/`, vendored free Kiwa source under `kiwa/`, and the scaffolder packages).
 - The `create-mantle` scaffolder (`packages/create-mantle/`).
 - Released tarball assets attached to GitHub releases on this repo.
 

@@ -1,0 +1,93 @@
+apiVersion: cms.mantle.aotter.net/v1
+kind: Schema
+metadata:
+  name: community-updates
+spec:
+  title: Community updates
+  description: Public updates or activity notes for a community site.
+  schema:
+    type: object
+    required: [slug, title]
+    properties:
+      slug:
+        type: string
+        pattern: "^[a-z0-9-]+$"
+      title:
+        type: string
+      body:
+        type: string
+        x-mcp-hint: markdown
+      publishedAt:
+        type: number
+  uniqueIndexes:
+    - [slug]
+  localized: false
+  lifecycle: simple
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Schema
+metadata:
+  name: community-signups
+spec:
+  title: Community signups
+  description: Lightweight interest capture for joining or volunteering.
+  schema:
+    type: object
+    required: [name, email]
+    properties:
+      name:
+        type: string
+      email:
+        type: string
+        format: email
+      interest:
+        type: string
+      createdAt:
+        type: number
+        x-mantle-bind: now
+  lifecycle: simple
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: View
+metadata:
+  name: public-community-updates
+spec:
+  from: community-updates
+  fields: [id, slug, title, body, publishedAt, updatedAt]
+  filter:
+    eq: { field: status, value: published }
+  orderBy:
+    - { field: publishedAt, direction: desc }
+    - { field: updatedAt, direction: desc }
+  limit: 50
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Procedure
+metadata:
+  name: submit-community-signup
+spec:
+  input:
+    type: object
+    required: [name, email]
+    properties:
+      name: { type: string }
+      email: { type: string, format: email }
+      interest: { type: string }
+  output:
+    type: object
+  handler:
+    kind: builtin
+    op: create
+    schema: community-signups
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Trigger
+metadata:
+  name: submit-community-signup-http
+spec:
+  source:
+    kind: http
+    method: POST
+    path: /api/community-signups
+  target:
+    procedure: submit-community-signup
