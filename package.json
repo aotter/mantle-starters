@@ -2,7 +2,7 @@
   "name": "mantle-starters",
   "private": true,
   "version": "0.0.11-alpha.32",
-  "description": "Workspace root for the @aotter/mantle blank-first starter bundle, post-launch overlays, vendored Kiwa source, and create-mantle scaffolder.",
+  "description": "Workspace root for the @aotter/mantle blank-first starter bundle, post-launch overlays, and vendored Kiwa source.",
   "license": "MIT",
   "homepage": "https://mantle.tools/",
   "repository": {
@@ -18,6 +18,7 @@
     "build": "pnpm -r --filter './packages/**' build",
     "build:provision-bundle": "node scripts/build-provision-bundle.mjs",
     "check:provision-bundle": "node scripts/build-provision-bundle.mjs --check",
+    "smoke:provision-bundle": "node scripts/smoke-provision-bundle.mjs",
     "check:kiwa": "node scripts/sync-kiwa.mjs --check",
     "check:starter-locks": "node scripts/refresh-starter-locks.mjs --check",
     "check:repo-local-skills": "node scripts/check-repo-local-skills.mjs",

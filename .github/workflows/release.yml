@@ -42,7 +42,6 @@ jobs:
             import { readFileSync } from 'node:fs';
             const expected = '${{ steps.ver.outputs.version }}';
             const pkgs = [
-              'packages/create-mantle/package.json',
               'packages/mantle-media-tools/package.json',
             ];
             for (const path of pkgs) {
@@ -54,17 +53,9 @@ jobs:
             }
           "
 
-      - name: Build create-mantle
-        working-directory: packages/create-mantle
-        run: pnpm build
-
       - name: Build mantle-media-tools
         working-directory: packages/mantle-media-tools
         run: pnpm build
-
-      - name: Pack create-mantle tarball
-        working-directory: packages/create-mantle
-        run: pnpm pack
 
       - name: Pack mantle-media-tools tarball
         working-directory: packages/mantle-media-tools
@@ -75,17 +66,6 @@ jobs:
           set -euo pipefail
           VER="${{ steps.ver.outputs.version }}"
           mkdir -p out
-
-          # create-mantle scaffolder
-          SCAFFOLDER_TARBALL=$(ls packages/create-mantle/aotter-create-mantle-*.tgz | head -n 1)
-          if [ -z "$SCAFFOLDER_TARBALL" ]; then
-            echo "::error::pnpm pack did not produce the create-mantle tarball"
-            exit 1
-          fi
-          cp "$SCAFFOLDER_TARBALL" "out/aotter-create-mantle-${VER}.tgz"
-          cp "$SCAFFOLDER_TARBALL" "out/aotter-create-mantle.tgz"
-          (cd out && sha256sum aotter-create-mantle-${VER}.tgz > aotter-create-mantle-${VER}.tgz.sha256)
-          (cd out && sha256sum aotter-create-mantle.tgz > aotter-create-mantle.tgz.sha256)
 
           # mantle-media-tools (#272)
           MEDIA_TOOLS_TARBALL=$(ls packages/mantle-media-tools/aotter-mantle-media-tools-*.tgz | head -n 1)

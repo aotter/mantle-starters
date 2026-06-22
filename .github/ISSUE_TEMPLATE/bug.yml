@@ -1,5 +1,5 @@
 name: Bug report
-description: Report broken, surprising, or unsafe behavior in a starter or the scaffolder.
+description: Report broken, surprising, or unsafe behavior in a starter or provision bundle.
 title: "[Bug] "
 labels: ["bug"]
 body:
@@ -33,7 +33,7 @@ body:
       label: Reproduction
       description: Include the install command, archetype intent, terminal output, and a minimal repro if possible.
       placeholder: |
-        1. npx <release-tarball-url> my-site
+        1. Mantle landing provisioned a new repo
         2. Selected: archetype=publication
         3. ...
     validations:
@@ -48,7 +48,7 @@ body:
         - overlay:transaction
         - overlay:community
         - overlay:reservation
-        - area:scaffolder
+        - area:provision-bundle
         - area:kiwa
         - area:sources-json
         - area:ci
@@ -60,15 +60,15 @@ body:
     id: diagnostics
     attributes:
       label: Logs or diagnostics
-      description: Paste structured diagnostics, stack traces, scaffolder RUN_NOTES JSON, or command output.
+      description: Paste structured diagnostics, stack traces, launch state JSON, or command output.
       render: text
   - type: textarea
     id: environment
     attributes:
       label: Environment
-      description: Scaffolder release tag, Node version, pnpm version, platform.
+      description: Starters ref, Node version, pnpm version, platform.
       placeholder: |
-        scaffolder release:
+        starters ref:
         node:
         pnpm:
         platform:

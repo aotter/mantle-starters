@@ -1,6 +1,6 @@
 # Contributing to mantle-starters
 
-This repo holds the public starter scaffolds + the `create-mantle` scaffolder for the [mantle](https://github.com/aotter/mantle) project. Most consumers never see this repo directly — they run the scaffolder from the GitHub release tarball.
+This repo holds the blank starter source, post-launch overlays, vendored Kiwa source, and the provision bundle consumed by Mantle landing.
 
 Start here before changing code or docs. For project-wide doctrine, read the parent repo's [`CLAUDE.md`](https://github.com/aotter/mantle/blob/main/CLAUDE.md).
 
@@ -16,10 +16,10 @@ Start here before changing code or docs. For project-wide doctrine, read the par
 
 Requirements:
 
-- Node.js >= 22 (the `create-mantle` scaffolder package itself runs on Node >= 20)
+- Node.js >= 22
 - pnpm >= 9
 
-Each subdirectory under this monorepo is a **standalone project**. There is no monorepo-wide `pnpm install` — `cd` into the starter or `packages/create-mantle/` you're touching.
+`blank/` is the only standalone starter project. Root scripts build and check the provision bundle.
 
 ## Branches
 
@@ -32,8 +32,8 @@ git checkout -b feat/issue-NN-topic origin/develop
 
 Use these prefixes:
 
-- `feat/issue-NN-topic` — user-visible features (new archetype, new theme, scaffolder capability).
-- `fix/issue-NN-topic` — bug fixes (broken validate, broken scaffolder run).
+- `feat/issue-NN-topic` — user-visible features (new overlay, Kiwa source, bundle capability).
+- `fix/issue-NN-topic` — bug fixes (broken validate, broken provision bundle).
 - `docs/issue-NN-topic` — documentation-only changes.
 - `chore/issue-NN-topic` — tooling, metadata, dependency, maintenance.
 - `starter/<archetype>/<short-slug>` — starter-scoped work that doesn't fit a feat/fix bucket (e.g. content refresh on `publication`).
@@ -71,8 +71,8 @@ Then:
 1. Keep `sources.json` pointing launch intents at `blank` unless the
    first-launch contract changes.
 2. Add or update the smallest overlay under `overlays/<name>/`.
-3. Smoke-test the generated bundle and scaffolder: `pnpm test`,
-   `pnpm build:provision-bundle`, and `pnpm check:provision-bundle`.
+3. Smoke-test the generated bundle: `pnpm build:provision-bundle`,
+   `pnpm check:provision-bundle`, and `pnpm smoke:provision-bundle`.
 
 ### EN-only SKILLs
 
@@ -88,8 +88,8 @@ put generated-repo guidance in `mantle:theme`.
 
 Use the GitHub issue templates:
 
-- **Bug report** — broken, surprising, or unsafe behavior in a starter or the scaffolder. (Engine / runtime bugs go on the parent repo.)
-- **Feature request** — a concrete capability for an existing starter or the scaffolder.
+- **Bug report** — broken, surprising, or unsafe behavior in the blank starter, overlays, Kiwa source, or provision bundle. (Engine / runtime bugs go on the parent repo.)
+- **Feature request** — a concrete capability for the blank starter, overlays, Kiwa source, or provision bundle.
 - **New overlay** — propose a new post-launch type overlay.
 
 Apply at least one `starter:*` or `area:*` label.
@@ -101,7 +101,7 @@ Open PRs against `develop`. A useful PR body includes:
 - Summary of the change.
 - Why the change is needed.
 - Scope and non-goals.
-- Test plan with commands actually run (per-starter validate + typecheck; scaffolder tests if you touched it).
+- Test plan with commands actually run (`blank` validate/typecheck, bundle checks, or overlay smoke).
 - Follow-ups that should not block this PR.
 - Related issues.
 
@@ -111,23 +111,14 @@ Use [`.github/pull_request_template.md`](./.github/pull_request_template.md). Li
 
 ## Release process
 
-The `create-mantle` scaffolder is attached to each GitHub release as a
-tarball. Consumers run it via:
-
-```bash
-npx https://github.com/aotter/mantle-starters/releases/download/vX.Y.Z/aotter-create-mantle.tgz <archetype> ...
-```
-
-During alpha, use the exact prerelease tag such as `v0.0.11-alpha.13`.
-GitHub's `/releases/latest/` endpoint ignores prereleases and returns 404
-until a stable release exists.
+Mantle landing consumes `provision-bundles/blank.json` from the selected starters ref.
 
 Release process:
 
 1. Land changes on `develop`.
 2. Write the `CHANGELOG.md` entry for the new version. Aggregate the `git log` since the previous tag into Keep-a-Changelog buckets (`Added` / `Changed` / `Deprecated` / `Removed` / `Fixed` / `Security`). Prefix scope when relevant: `**transaction**: ...`. Cross-link the closing PR + issue. The entry lives under a new `## [vX.Y.Z] — YYYY-MM-DD` heading; no `[Unreleased]` placeholder.
 3. Pre-v0.1 alpha cadence: tag `v<version>` directly from `develop` (e.g. `v0.0.11-alpha.15`). Promotion to `main` happens when an alpha graduates to beta/stable — `main` updates intentionally lag the alpha cadence so the canonical "released" pointer doesn't churn daily. (Mirrors the parent `mantle` repo's release-process.md § "Pre-v0.1 alpha cadence".)
-4. CI release workflow builds the scaffolder and attaches a `pnpm pack` tarball + sha256 to the GitHub release.
+4. CI release workflow builds and attaches private helper package tarballs when present.
 
 Per-starter `@aotter/mantle-*` version pins move on their own cadence — independent of the tarball tag.
 
@@ -135,7 +126,7 @@ Per-starter `@aotter/mantle-*` version pins move on their own cadence — indepe
 
 - Each starter is **standalone**. No `workspace:*` cross-deps. Bump `@aotter/mantle-*` deps explicitly per starter.
 - `blank/` is the only first-launch base. Type-specific starter work belongs in `overlays/<type>/`.
-- `sources.json` is the **only** dispatch surface. The scaffolder does not introspect directory names; if it's not in `sources.json`, it doesn't exist.
+- `sources.json` keeps launch intents mapped to `blank`; landing provisions from `provision-bundles/blank.json`.
 - Macro expansion (`{{SITE_NAME}}`, `{{ARCHETYPE}}`, …) is governed by [ADR-0016](https://github.com/aotter/mantle/blob/main/docs/adr/0016-site-semantic-layer.md) on the parent repo. Unfilled macros in the scaffolded output are a release blocker.
 
 ## Security

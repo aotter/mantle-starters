@@ -8,8 +8,8 @@ This repo ships consumer-facing starter scaffolds. Engine / runtime vulnerabilit
 
 **In-scope here:**
 
-- Starter scaffold code (`blank/`, post-launch overlays under `overlays/`, vendored free Kiwa source under `kiwa/`, and the scaffolder packages).
-- The `create-mantle` scaffolder (`packages/create-mantle/`).
+- Starter scaffold code (`blank/`, post-launch overlays under `overlays/`, and vendored free Kiwa source under `kiwa/`).
+- Provision bundle generation (`provision-bundles/blank.json` and `scripts/build-provision-bundle.mjs`).
 - Released tarball assets attached to GitHub releases on this repo.
 
 **Out-of-scope here — report to parent `aotter/mantle`:**
@@ -27,9 +27,9 @@ Fallback contact: `security@aotter.net` (subject prefix `[mantle-starters securi
 
 Include:
 
-- affected starter, theme, or scaffolder area,
+- affected starter, overlay, Kiwa, or provision-bundle area,
 - reproduction steps,
-- expected impact (especially: does the scaffolder produce code that leaks credentials, OAuth secrets, or `.dev.vars` content?),
+- expected impact (especially: does the generated bundle leak credentials, OAuth secrets, or `.dev.vars` content?),
 - whether the issue affects the released tarball or only the source tree,
 - any temporary mitigation you already applied.
 
