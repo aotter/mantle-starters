@@ -19,7 +19,7 @@ local checks, and writes a report for the agent to review.
 
 1. `.mantle/launch-state.json` for original landing answers.
 2. `AGENTS.md` for site intent and handoff notes.
-3. `.mantle/features.json` for archetype, theme, selected features,
+3. `.mantle/features.json` for type intent, selected features,
    and current starter version.
 4. `.agent/skills/mantle-development/SKILL.md` for the 4-atom model
    before editing code.
@@ -47,7 +47,7 @@ pnpm run mantle:update -- --ref v0.0.11-alpha.21
 ```
 
 The command invokes the released `create-mantle` tarball with `npx`,
-scaffolds the same archetype/theme/features into a temporary directory,
+scaffolds the same type/features into a temporary directory,
 compares that upstream snapshot against this repo, runs local checks,
 and writes `.mantle/update-report.json`.
 
@@ -82,7 +82,7 @@ Run starter integration tests when present.
   user-written content without showing the diff and explaining why.
 - Do not commit `.mantle/update-report.json`; it is a local diagnostic
   artifact.
-- Do not switch archetype, theme, or feature list during update unless
+- Do not switch type intent or feature list during update unless
   the user explicitly asks for a rebuild.
 - If the report is large or ambiguous, stop after producing a concise
   risk summary and ask which upstream changes the user wants.
