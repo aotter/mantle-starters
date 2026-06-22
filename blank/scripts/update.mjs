@@ -28,10 +28,11 @@ async function main() {
   const features = readJson(join(root, ".mantle", "features.json"));
   const targetRef = flags.ref ?? stringField(features.registry, "version");
   if (!targetRef) throw new Error("Pass --ref <starters-ref> or set .mantle/features.json registry.version.");
+  const archetype = launchArchetype(launchState, features);
 
   const tempRoot = mkdtempSync(join(tmpdir(), "mantle-update-"));
   try {
-    const bundle = await fetchBundle(targetRef);
+    const bundle = await fetchBundle(targetRef, archetype);
     materializeBundle(tempRoot, bundle, placeholders({ launchState, features, targetRef }));
     const report = compare(root, tempRoot, {
       generated_at: new Date().toISOString(),
@@ -69,8 +70,8 @@ function parseArgs(argv) {
   return flags;
 }
 
-async function fetchBundle(ref) {
-  const url = `https://raw.githubusercontent.com/${STARTERS_REPO}/${ref}/provision-bundles/blank.json`;
+async function fetchBundle(ref, archetype) {
+  const url = `https://raw.githubusercontent.com/${STARTERS_REPO}/${ref}/provision-bundles/${encodeURIComponent(archetype)}.json`;
   const res = await fetch(url, { headers: { accept: "application/json" } });
   if (!res.ok) throw new Error(`Failed to fetch ${url}: HTTP ${res.status}`);
   const bundle = await res.json();
@@ -94,12 +95,11 @@ function placeholders({ launchState, features, targetRef }) {
   const locales = arrayField(launchState, "locales");
   const owner = stringField(repo, "owner") ?? stringField(github, "owner") ?? "unknown-owner";
   const projectName = stringField(launchState, "project_name") ?? stringField(repo, "name") ?? "mantle-site";
+  const archetype = launchArchetype(launchState, features);
+  const siteUrl = stringField(launchState, "site_url") ?? "https://example.com";
   return {
     PROJECT_NAME: projectName,
-    ARCHETYPE:
-      stringField(launchState, "archetype") ??
-      stringField(recordField(features, "archetype"), "name") ??
-      "blank",
+    ARCHETYPE: archetype,
     BRAND: stringField(launchState, "brand") ?? projectName,
     DESCRIPTION: stringField(launchState, "description") ?? `${projectName} site.`,
     INSTALL_SUMMARY: stringField(launchState, "summary") ?? `Mantle update check for ${projectName}.`,
@@ -108,9 +108,37 @@ function placeholders({ launchState, features, targetRef }) {
     STARTER_REF: targetRef,
     GITHUB_OWNER: owner,
     ADMIN_GITHUB_LOGIN: stringField(github, "admin_login") ?? owner,
-    SITE_URL: stringField(launchState, "site_url") ?? "https://example.com",
+    SITE_URL: siteUrl,
+    AFTER_LAUNCH_SKILL_URL:
+      stringField(launchState, "after_launch_skill_url") ??
+      afterLaunchSkillUrl({
+        repoUrl: `https://github.com/${owner}/${projectName}`,
+        siteUrl,
+        archetype,
+        locale: stringField(launchState, "canonical_locale") ?? locales[0] ?? "en",
+        purpose: stringField(launchState, "description") ?? "",
+      }),
     INSTALL_TIMESTAMP: new Date().toISOString(),
   };
+}
+
+function launchArchetype(launchState, features) {
+  const archetype =
+    stringField(launchState, "archetype") ??
+    stringField(recordField(features, "archetype"), "name") ??
+    "blank";
+  if (!/^[a-z0-9-]+$/.test(archetype)) throw new Error(`Invalid archetype: ${archetype}`);
+  return archetype;
+}
+
+function afterLaunchSkillUrl({ repoUrl, siteUrl, archetype, locale, purpose }) {
+  const url = new URL("https://mantle.tools/skill/after-launch");
+  url.searchParams.set("repo", repoUrl);
+  url.searchParams.set("site", siteUrl);
+  url.searchParams.set("type", archetype);
+  url.searchParams.set("locale", locale);
+  if (purpose) url.searchParams.set("purpose", purpose);
+  return url.toString();
 }
 
 function substitute(text, values) {

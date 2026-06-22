@@ -5,8 +5,9 @@ Blank-first starter source for Mantle provisioning.
 Current launch contract:
 
 - `blank/` is the only first-launch base.
-- `provision-bundles/blank.json` is the bundle landing fetches.
-- `overlays/<type>/` contains small post-launch type intent overlays.
+- `provision-bundles/<type>.json` are generated artifacts landing fetches.
+- `overlays/<type>/` contains small type intent overlays applied into each
+  matching bundle.
 - `kiwa/` vendors selected free Kiwa source for deterministic generated
   repos.
 - No first-run theme picker, full archetype starter fork, or Kiwa
@@ -55,14 +56,18 @@ overlays/
   reservation/
   community/
 kiwa/
-provision-bundles/blank.json
+provision-bundles/
+  blank.json
+  publication.json
+  transaction.json
+  reservation.json
+  community.json
 scripts/
   build-provision-bundle.mjs
   sync-kiwa.mjs
   apply-overlay.mjs
 ```
 
-`sources.json` keeps `publication`, `transaction`, `reservation`, and
-`community` as launch intents, but they all resolve to `blank`.
-Type-specific work happens after first deploy through repo-local
-`mantle:overlay`.
+Maintain bundles by editing `blank/`, `overlays/<type>/`, or `kiwa/`, then
+running `pnpm build:provision-bundle`. Do not hand-edit generated
+`provision-bundles/*.json`.

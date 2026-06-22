@@ -1,7 +1,7 @@
 # This site
 
 {{BRAND}} is a blank Mantle site created by Mantle landing.
-Public site: {{SITE_URL}}  (placeholder until provision)
+Public site: {{SITE_URL}}
 
 ## Launch facts
 
@@ -9,7 +9,9 @@ Public site: {{SITE_URL}}  (placeholder until provision)
 - Locale list: `{{LOCALES}}`
 - GitHub owner: `{{GITHUB_OWNER}}`
 - Admin login: `{{ADMIN_GITHUB_LOGIN}}`
+- Purpose: {{DESCRIPTION}}
 - Summary: {{INSTALL_SUMMARY}}
+- Full after-launch skill: {{AFTER_LAUNCH_SKILL_URL}}
 
 Read [`.mantle/launch-state.json`](.mantle/launch-state.json) and
 [`.mantle/features.json`](.mantle/features.json) before editing.
@@ -27,8 +29,8 @@ First task after landing succeeds:
 
 ```text
 Read .mantle/launch-state.json, .mantle/features.json, and .mantle/handoff.md.
-Open the live site URL from Mantle landing. Then run mantle:overlay to apply
-the selected type intent as the smallest useful Mantle overlay.
+Open {{SITE_URL}} and confirm the Worker boots. Then inspect the already
+composed type manifest, homepage, and seed files before making changes.
 ```
 
 ## Commands

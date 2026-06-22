@@ -14,9 +14,9 @@ Repo-local skills:
 - `.claude/skills/mantle-theme/SKILL.md`
 - `.claude/skills/mantle-update/SKILL.md`
 
-The launch archetype is intent only. Use `mantle:overlay` to apply the
-small overlay after first deploy; do not switch to an old full starter or
-a first-run theme.
+The launch archetype bundle is already applied. Inspect the generated
+manifest, overlay notes, and seed prompt before changing code; do not
+switch to an old full starter or a first-run theme.
 
 Local checks:
 

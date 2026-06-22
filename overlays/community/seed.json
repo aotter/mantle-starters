@@ -1,0 +1,14 @@
+{
+  "locale": "{{CANONICAL_LOCALE}}",
+  "collections": {
+    "community-updates": [
+      {
+        "slug": "welcome",
+        "title": "Welcome to {{BRAND}}",
+        "body": "{{DESCRIPTION}}",
+        "publishedAt": 1782130000000,
+        "status": "published"
+      }
+    ]
+  }
+}

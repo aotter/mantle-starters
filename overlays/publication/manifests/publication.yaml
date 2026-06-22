@@ -39,3 +39,57 @@ spec:
     - { field: publishedAt, direction: desc }
     - { field: updatedAt, direction: desc }
   limit: 50
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Schema
+metadata:
+  name: post-suggestions
+spec:
+  title: Post suggestions
+  description: Lightweight reader suggestions for future publication work.
+  schema:
+    type: object
+    required: [title, email]
+    properties:
+      title:
+        type: string
+      email:
+        type: string
+        format: email
+      note:
+        type: string
+      createdAt:
+        type: number
+        x-mantle-bind: now
+  lifecycle: simple
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Procedure
+metadata:
+  name: submit-post-suggestion
+spec:
+  input:
+    type: object
+    required: [title, email]
+    properties:
+      title: { type: string }
+      email: { type: string, format: email }
+      note: { type: string }
+  output:
+    type: object
+  handler:
+    kind: builtin
+    op: create
+    schema: post-suggestions
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Trigger
+metadata:
+  name: submit-post-suggestion-http
+spec:
+  source:
+    kind: http
+    method: POST
+    path: /api/post-suggestions
+  target:
+    procedure: submit-post-suggestion
