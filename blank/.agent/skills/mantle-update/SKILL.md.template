@@ -1,88 +1,33 @@
 ---
 name: mantle:update
-description: Check whether this generated Mantle site can absorb upstream starter improvements, run the local update report, and repair breakage before touching user-owned code.
+description: Compare this generated Mantle site against a deterministic upstream blank provision bundle.
 ---
 
 # Mantle Update
 
-Use this when the user asks to update Mantle, refresh the starter,
-pull upstream starter fixes, or check whether a generated site is
-behind the current starter release.
-
-This is a check-and-repair workflow, not an auto-merge engine. The
-full scaffold lock / three-way updater is tracked upstream in
-aotter/mantle-starters#192. Until that lands, `mantle:update` creates
-an upstream scaffold snapshot, compares it with the current repo, runs
-local checks, and writes a report for the agent to review.
-
-## First read
-
-1. `.mantle/launch-state.json` for original landing answers.
-2. `AGENTS.md` for site intent and handoff notes.
-3. `.mantle/features.json` for type intent, selected features,
-   and current starter version.
-4. `.agent/skills/mantle-develop/SKILL.md` for the 4-atom model
-   before editing code.
+Use this when the user asks to check upstream starter drift.
 
 ## Workflow
 
-1. Start from a clean git worktree. If user changes exist, summarize
-   them and do not mix update work with unrelated edits.
-2. Install dependencies if needed:
+1. Start from a clean git worktree.
+2. Run a deterministic bundle comparison:
 
 ```bash
-pnpm install --frozen-lockfile
+pnpm run mantle:update -- --ref <starters-ref>
 ```
 
-3. Run the update report:
+3. Read `.mantle/update-report.json`.
+4. Apply useful differences manually. Do not blindly overwrite
+   user-owned code.
+5. Re-run:
 
 ```bash
-pnpm run mantle:update
-```
-
-For a specific starter release:
-
-```bash
-pnpm run mantle:update -- --ref v0.0.11-alpha.21
-```
-
-The command invokes the released `create-mantle` tarball with `npx`,
-scaffolds the same type/features into a temporary directory,
-compares that upstream snapshot against this repo, runs local checks,
-and writes `.mantle/update-report.json`.
-
-4. Read `.mantle/update-report.json` fully. Treat these fields as the
-   worklist:
-
-- `differing`: upstream scaffold file differs from current repo. This
-  may be a real upstream fix or local customization because v0 has no
-  scaffold lock yet.
-- `missing_current`: upstream expects a file that is absent locally.
-- `line_ending_only`: byte diff is only BOM / CRLF noise; do not edit
-  unless the user wants normalization.
-- `checks`: local validation/typecheck status.
-
-5. If checks fail, fix the generated site using normal Mantle
-   development rules. Do not blindly copy the upstream snapshot over
-   user-owned files.
-6. If upstream differences look useful, apply them manually in small
-   patches, then rerun:
-
-```bash
-pnpm run mantle:update
 pnpm validate
 pnpm typecheck
 ```
 
-Run starter integration tests when present.
+## Boundary
 
-## Boundaries
-
-- Do not overwrite `wrangler.toml`, `package.json`, `.dev.vars*`, or
-  user-written content without showing the diff and explaining why.
-- Do not commit `.mantle/update-report.json`; it is a local diagnostic
-  artifact.
-- Do not switch type intent or apply a new overlay during update unless
-  the user explicitly asks for a rebuild.
-- If the report is large or ambiguous, stop after producing a concise
-  risk summary and ask which upstream changes the user wants.
+`mantle:update` only compares files from `provision-bundles/blank.json`.
+It never applies changes, installs dependencies, or calls the old
+create-mantle scaffolder.

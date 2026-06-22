@@ -44,102 +44,6 @@ jobs:
         working-directory: ${{ matrix.starter }}
         run: pnpm typecheck
 
-  scaffolder:
-    name: scaffolder
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6.0.3
-
-      - uses: pnpm/action-setup@v6.0.8
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: pnpm
-          cache-dependency-path: packages/create-mantle/pnpm-lock.yaml
-
-      - name: Install
-        working-directory: packages/create-mantle
-        run: pnpm install --frozen-lockfile
-
-      - name: Build
-        working-directory: packages/create-mantle
-        run: pnpm build
-
-      - name: Typecheck
-        working-directory: packages/create-mantle
-        run: pnpm typecheck
-
-      - name: Test
-        working-directory: packages/create-mantle
-        run: pnpm test
-
-  e2e-scaffold:
-    name: e2e scaffold ${{ matrix.archetype }}
-    runs-on: ubuntu-latest
-    needs: [scaffolder]
-    strategy:
-      fail-fast: false
-      matrix:
-        archetype: [blank, publication, transaction, reservation, community]
-    steps:
-      - uses: actions/checkout@v6.0.3
-
-      - uses: pnpm/action-setup@v6.0.8
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: pnpm
-          cache-dependency-path: packages/create-mantle/pnpm-lock.yaml
-
-      - name: Install
-        working-directory: packages/create-mantle
-        run: pnpm install --frozen-lockfile
-
-      - name: Build
-        working-directory: packages/create-mantle
-        run: pnpm build
-
-      - name: Run create-mantle end-to-end
-        env:
-          ARCHETYPE: ${{ matrix.archetype }}
-          STARTER_REF: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: |
-          out="$(mktemp -d)"
-          cd "$out"
-          args=(
-            "$ARCHETYPE"
-            --project-name e2e-test
-            --brand "E2E Test"
-            --description "End-to-end CI fixture."
-            --locales en
-            --github-owner aotter
-            --summary "CI smoke test scaffold"
-            --ref "$STARTER_REF"
-          )
-          node "$GITHUB_WORKSPACE/packages/create-mantle/dist/cli.js" "${args[@]}"
-          echo "SCAFFOLD_OUT=$out" >> "$GITHUB_ENV"
-
-      - name: Assert no unfilled macros remain
-        run: |
-          if grep -RInE --binary-files=without-match '\{\{[A-Za-z_][A-Za-z0-9_]*\}\}' "$SCAFFOLD_OUT" \
-            --exclude-dir='.git' \
-            --exclude-dir='node_modules' \
-            --exclude-dir='.wrangler' \
-            --exclude-dir='.wrangler-test'; then
-            echo "::error::Unfilled {{MACRO}} found in scaffolded output"
-            exit 1
-          fi
-          echo "No unfilled macros."
-
-      - name: Assert scaffolded safe dev command
-        run: |
-          test -f "$SCAFFOLD_OUT/e2e-test/scripts/wrangler-dev.mjs"
-          grep -F '"dev": "node scripts/wrangler-dev.mjs"' "$SCAFFOLD_OUT/e2e-test/package.json"
-          test -f "$SCAFFOLD_OUT/e2e-test/scripts/apply-overlay.mjs"
-          test -f "$SCAFFOLD_OUT/e2e-test/kiwa/manifest.json"
-
   starter-locks:
     name: starter lockfiles
     runs-on: ubuntu-latest
@@ -162,6 +66,9 @@ jobs:
 
       - name: Check provision bundle is current
         run: pnpm check:provision-bundle
+
+      - name: Smoke provision bundle
+        run: pnpm smoke:provision-bundle
 
       - name: Check Kiwa vendor source is current
         run: pnpm check:kiwa

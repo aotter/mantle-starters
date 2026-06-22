@@ -4,28 +4,14 @@
 > it on GitHub at `aotter/mantle-starters/blank`, the
 > Getting-started block below **does not work on a raw clone** —
 > `src/mantleConfig.ts` contains literal `{{BRAND}}` / `{{LOCALES}}` /
-> `{{DESCRIPTION}}` placeholders that the `create-mantle` scaffolder
-> substitutes at install time. A fresh-clone `pnpm dev` throws
+> `{{DESCRIPTION}}` placeholders that Mantle landing substitutes while
+> committing the provision bundle. A fresh-clone `pnpm dev` throws
 > `SyntaxError: Expected property name or '}' in JSON` at boot.
 >
-> **To evaluate this starter end-to-end**, scaffold a throwaway site:
->
-> ```bash
-> cd /tmp
-> npx https://github.com/aotter/mantle-starters/releases/download/v0.0.11-alpha.13/aotter-create-mantle.tgz blank \
->   --project-name eval-blank \
->   --brand "Eval Blank" \
->   --description "Throwaway blank mantle evaluation" \
->   --locales "en" \
->   --github-owner "<your-github-login>" \
->   --summary "Evaluate blank starter"
-> cd /tmp/eval-blank
-> # then follow the Getting-started block below in that directory
-> ```
->
-> Or use the Mantle landing page: answer the launch questions, sign in
-> with GitHub, then paste the generated launch command into your agent.
-> It runs the same scaffolder through a short-lived launch session.
+> **To evaluate this starter end-to-end**, use the Mantle landing
+> provisioning flow. It fetches `provision-bundles/blank.json`,
+> substitutes these placeholders, commits the repo, and starts
+> Cloudflare Workers CI.
 
 **Headless CMS starter.** Ships zero UI. Use this when you have your own
 frontend (Next.js, Astro, SvelteKit, native iOS/Android, partner
@@ -33,6 +19,14 @@ integration) and want mantle purely as a content + auth + MCP backend.
 
 If you want a public publication site, start from this blank base and
 apply the `publication` overlay after first deploy.
+
+## Kiwa UI Credit
+
+This starter includes selected free [Kiwa UI](https://kiwaui.com/)
+primitives copied into `components/ui/`, plus `lib/utils.ts`,
+`styles/globals.css`, and `kiwa-ui.json`. Kiwa source is MIT licensed;
+see `kiwa/LICENSE` and `kiwa/manifest.json` for the copied files and
+upstream commit.
 
 ## URL surface
 

@@ -9,7 +9,7 @@
 
 ## Engine / runtime vs. starter?
 
-This repo only holds starter scaffolds and the `create-mantle` scaffolder. Bugs that live inside `@aotter/mantle-*` packages (runtime, spec, admin UI, Cloudflare adapter) belong on the parent repo:
+This repo only holds starter scaffolds, overlays, Kiwa vendored source, and the blank provision bundle. Bugs that live inside `@aotter/mantle-*` packages (runtime, spec, admin UI, Cloudflare adapter) belong on the parent repo:
 [`aotter/mantle` issues](https://github.com/aotter/mantle/issues/new/choose).
 
 Not sure which? File here — a maintainer will redirect.
@@ -20,5 +20,4 @@ No paid support tier today. Aotter does not provide commercial SLA or production
 
 ## AI-agent tip
 
-If you're an AI agent (Claude / Codex / Cursor) helping a user scaffold a mantle project, **do not clone this repo.** Run the install Skill at
-[`skills/install/SKILL.md`](https://github.com/aotter/mantle/blob/main/skills/install/SKILL.md) on the parent repo.
+If you're an AI agent (Claude / Codex / Cursor) helping a user with a provisioned mantle project, start from that generated repo's local Mantle skills and `.mantle/launch-state.json`.
