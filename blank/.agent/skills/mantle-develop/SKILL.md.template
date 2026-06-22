@@ -1,0 +1,57 @@
+---
+name: mantle:develop
+description: Work on this generated Mantle site after launch. Use for manifest, runtime, content model, layout, bug fix, and validation work.
+---
+
+# Mantle Develop
+
+This is a generated Mantle site. Keep work inside this repo unless the
+user explicitly asks for an upstream starter change.
+
+## First read
+
+1. `.mantle/launch-state.json` for type intent, owner, repo, locales,
+   and handoff metadata.
+2. `.mantle/features.json` for selected overlay hints and current
+   starter version.
+3. `.mantle/handoff.md` and `AGENTS.md` for the launch handoff.
+4. Installed Mantle docs in `node_modules/@aotter/mantle/docs/`.
+
+If `node_modules/` is missing, run `pnpm install --frozen-lockfile`
+before falling back to remote docs.
+
+## The 4 atoms
+
+Mantle manifests use only:
+
+| Atom | Purpose |
+|---|---|
+| `Schema` | Stored entity/table shape. |
+| `View` | Read/query surface. |
+| `Procedure` | Typed mutation or operation. |
+| `Trigger` | HTTP/lifecycle/other invocation binding. |
+
+Do not invent manifest kinds such as `Form`, `Feature`, `Workflow`, or
+`Membership`. Compose those from the four atoms plus TypeScript only
+where the atoms cannot express the behavior.
+
+## Loop
+
+```bash
+pnpm install --frozen-lockfile
+pnpm validate
+pnpm typecheck
+pnpm check
+```
+
+Use `pnpm dev` for local preview on `localhost:8787`.
+
+## Rules
+
+- Prefer manifest YAML for content model changes.
+- Add TypeScript only for handlers, rendering, adapter wiring, or real
+  behavior.
+- Do not write directly to D1 or KV for content authoring. After deploy,
+  use the Staff MCP endpoint at `<SITE_URL>/mcp/staff`.
+- Do not commit provider secrets.
+- If the user asks to apply the launch type, run `mantle:overlay`.

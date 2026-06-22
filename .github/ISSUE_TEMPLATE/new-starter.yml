@@ -1,31 +1,31 @@
-name: New starter archetype request
-description: Propose a new starter archetype (or graduate a roadmap stub to "ready").
-title: "[Starter] "
+name: New overlay request
+description: Propose a new post-launch type overlay.
+title: "[Overlay] "
 labels: ["enhancement", "status:roadmap"]
 body:
   - type: markdown
     attributes:
       value: |
-        New archetypes start as **roadmap stubs** (`SKILL.md` refuse-path only) and graduate to **ready** once all files land and CI passes. See `CONTRIBUTING.md` ▸ "Adding a starter archetype" for the full process.
+        First launch always uses `blank/`. New type-specific work should start as a small post-launch overlay.
   - type: input
     id: name
     attributes:
-      label: Proposed archetype name (kebab-case)
+      label: Proposed overlay name (kebab-case)
       placeholder: "e.g. commerce-marketplace"
     validations:
       required: true
   - type: textarea
     id: shape
     attributes:
-      label: What does it produce?
-      description: 3–5 sentences. What URLs, what models, what auth surface, what deploy target.
+      label: What does it add?
+      description: 3–5 sentences. What 4-atoms manifest, seed prompt, or route/layout hint does this overlay add?
     validations:
       required: true
   - type: textarea
     id: contrast
     attributes:
       label: Why isn't an existing archetype enough?
-      description: How does this differ from publication / intake / transaction / presence / blank?
+      description: How does this differ from publication / transaction / reservation / community?
     validations:
       required: true
   - type: textarea
@@ -37,5 +37,5 @@ body:
     attributes:
       label: Gates
       options:
-        - label: I checked the existing roadmap list in `sources.json`.
+        - label: I checked existing overlays under `overlays/`.
         - label: This may need parent `mantle` engine changes (note them above).

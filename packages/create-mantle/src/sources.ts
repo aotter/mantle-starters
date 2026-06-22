@@ -1,14 +1,14 @@
 /**
- * Sources of truth for archetype → starter-monorepo + theme dispatch.
+ * Sources of truth for archetype → starter-monorepo dispatch.
  *
  * `create-mantle` fetches `sources.json` from the `mantle-starters`
  * monorepo at runtime (per Epic #116 / sub-issue #121). Adding a new
- * archetype or theme = update `sources.json` in that repo. The npx
+ * launch archetype = update `sources.json` in that repo. The npx
  * package does not need a new version unless the merge logic changes.
  *
  * Fetch failures fall back to a bundled snapshot (`STALE_FALLBACK_SOURCES`)
  * so installs can still complete in offline / GH-unreachable cases. The
- * snapshot tracks the current public starter + theme keys and is
+ * snapshot tracks the current public starter keys and is
  * updated whenever the live shape evolves significantly.
  */
 
@@ -78,73 +78,22 @@ export interface ResolvedFeature {
 
 /**
  * Bundled stale snapshot of `sources.json`. Tracks the live
- * `sources.json` shape (1:1 archetype-to-directory mapping post-split,
- * `transaction` ready as of PR #29). Theme keys stay current so
- * `--theme <key>` can still resolve when GH is unreachable. Refresh
- * whenever the live shape evolves significantly.
+ * `sources.json` shape. All launch archetypes intentionally resolve to
+ * the blank base; type-specific work is applied later by repo-local
+ * overlays.
  */
 export const STALE_FALLBACK_SOURCES: SourcesJson = {
   archetypes: {
-    presence: { path: "presence" },
-    publication: { path: "publication" },
-    intake: { path: "intake" },
-    transaction: { path: "transaction" },
     blank: { path: "blank" },
+    publication: { path: "blank" },
+    transaction: { path: "blank" },
+    reservation: { path: "blank" },
+    community: { path: "blank" },
   },
-  features: {
-    contact: {
-      path: "_common/features/contact",
-      title: "Contact Form",
-      summary: "Contact form with CAPTCHA guard and Slack notification stub.",
-      applicableArchetypes: ["publication", "presence", "intake"],
-    },
-    "customer-account": {
-      path: "_common/features/customer-account",
-      title: "Customer Account",
-      summary:
-        "Passwordless customer sign-in (magic-link + email-OTP) plus a /account dashboard, linked-accounts settings, and a server-side session helper.",
-      applicableArchetypes: ["transaction"],
-    },
-    "members-only-purchase": {
-      path: "_common/features/members-only-purchase",
-      title: "Members-only Purchase",
-      summary:
-        'Requires a signed-in customer session before checkout. Reads CHECKOUT_POLICY env ("open" | "members-only"); host wires the guard at the top of /api/checkout/start.',
-      applicableArchetypes: ["transaction"],
-      registryDependencies: ["customer-account"],
-    },
-    "customer-profile": {
-      path: "_common/features/customer-profile",
-      title: "Customer Profile (Addresses)",
-      summary:
-        "KV-backed profile + shipping-address book at /account/profile. Add / remove / set-default form-POST UI; no JS required. Depends on customer-account for the session helper.",
-      applicableArchetypes: ["transaction"],
-      registryDependencies: ["customer-account"],
-    },
-    "media-r2": {
-      path: "_common/features/media-r2",
-      title: "Media hosting on R2 (opt-in)",
-      summary:
-        "Opt-in R2-backed media hosting. Wires the [[r2_buckets]] binding + four env vars + an interactive `media-r2:provision` script that drives bucket create, CORS, and secret put. First-run install stays R2-free; the script is only run when the operator is ready to open Cloudflare billing.",
-      applicableArchetypes: ["transaction", "publication", "intake"],
-    },
-    "email-sender-smtp": {
-      path: "_common/features/email-sender-smtp",
-      title: "SMTP email sender (self-hosted)",
-      summary:
-        "Source-owned SmtpEmailSender adapter for Workers via worker-mailer. Implements Mantle's narrow EmailSender port over SMTP. Pairs with customer-account so passwordless sign-in mail goes through a real SMTP server instead of the console sink.",
-      applicableArchetypes: ["transaction"],
-      registryDependencies: ["customer-account"],
-    },
-  },
-  themes: {
-    "l4-minimal-ink": { path: "themes/l4-minimal-ink" },
-    "l4-editorial-warm": { path: "themes/l4-editorial-warm" },
-    "l4-editorial-journal": { path: "themes/l4-editorial-journal" },
-    "l4-playful-pop": { path: "themes/l4-playful-pop" },
-  },
-  roadmap: ["reservation", "community", "membership"],
-  version: "0.0.11-alpha.18",
+  features: {},
+  themes: {},
+  roadmap: [],
+  version: "0.0.11-alpha.32",
 };
 
 /**

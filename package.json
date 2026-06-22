@@ -2,7 +2,7 @@
   "name": "mantle-starters",
   "private": true,
   "version": "0.0.11-alpha.32",
-  "description": "Workspace root for the @aotter/mantle starter family — archetype source templates (publication, intake, presence, blank, transaction, ...) + theme overlays + the create-mantle scaffolder. Adopters never depend on this root; they scaffold from one archetype into a fresh consumer repo.",
+  "description": "Workspace root for the @aotter/mantle blank-first starter bundle, post-launch overlays, vendored Kiwa source, and create-mantle scaffolder.",
   "license": "MIT",
   "homepage": "https://mantle.tools/",
   "repository": {
@@ -18,6 +18,7 @@
     "build": "pnpm -r --filter './packages/**' build",
     "build:provision-bundle": "node scripts/build-provision-bundle.mjs",
     "check:provision-bundle": "node scripts/build-provision-bundle.mjs --check",
+    "check:kiwa": "node scripts/sync-kiwa.mjs --check",
     "check:starter-locks": "node scripts/refresh-starter-locks.mjs --check",
     "check:repo-local-skills": "node scripts/check-repo-local-skills.mjs",
     "check:wrangler-dev": "node scripts/check-wrangler-dev-wrapper.mjs",

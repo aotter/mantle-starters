@@ -5,21 +5,10 @@
 # Default
 * @guyspy
 
-# Archetypes
+# Launch base and post-launch overlays
 /blank/                          @guyspy
-/publication/                    @guyspy
-/presence/                       @guyspy
-/intake/                         @guyspy
-/transaction/                    @guyspy
-
-# Roadmap stubs
-/community/                      @guyspy
-/membership/                     @guyspy
-/reservation/                    @guyspy
-
-# Shared surface
-/_common/                        @guyspy
-/themes/                         @guyspy
+/overlays/                       @guyspy
+/kiwa/                           @guyspy
 /sources.json                    @guyspy
 
 # Scaffolder
