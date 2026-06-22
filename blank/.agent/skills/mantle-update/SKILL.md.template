@@ -1,6 +1,6 @@
 ---
 name: mantle:update
-description: Compare this generated Mantle site against a deterministic upstream blank provision bundle.
+description: Compare this generated Mantle site against its deterministic upstream provision bundle.
 ---
 
 # Mantle Update
@@ -28,6 +28,7 @@ pnpm typecheck
 
 ## Boundary
 
-`mantle:update` only compares files from `provision-bundles/blank.json`.
+`mantle:update` only compares files from the launch archetype's
+`provision-bundles/<type>.json`.
 It never applies changes, installs dependencies, or calls the old
 create-mantle scaffolder.
