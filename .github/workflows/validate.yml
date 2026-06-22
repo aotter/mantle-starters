@@ -172,6 +172,9 @@ jobs:
       - name: Check standalone starter lockfiles
         run: pnpm check:starter-locks
 
+      - name: Check provision bundle is current
+        run: pnpm check:provision-bundle
+
   sources-sanity:
     name: sources.json sanity
     runs-on: ubuntu-latest

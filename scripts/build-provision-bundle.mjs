@@ -5,6 +5,7 @@ import { dirname, join, posix } from "node:path";
 const root = new URL("..", import.meta.url).pathname;
 const version = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version;
 const outPath = join(root, "provision-bundles", "blank.json");
+const checkOnly = process.argv.includes("--check");
 const files = {};
 
 walk("_common", "");
@@ -81,14 +82,24 @@ files[".claude/skills/mantle-next/SKILL.md"] = [
   "",
 ].join("\n");
 
-mkdirSync(dirname(outPath), { recursive: true });
-writeFileSync(outPath, JSON.stringify({
+const bundleText = JSON.stringify({
   version,
   kind: "mantle-provision-bundle",
   files: Object.fromEntries(Object.entries(files).sort(([a], [b]) => a.localeCompare(b))),
-}, null, 2) + "\n");
+}, null, 2) + "\n";
 
-const bundle = JSON.parse(readFileSync(outPath, "utf8"));
+if (checkOnly) {
+  const current = readFileSync(outPath, "utf8");
+  if (current !== bundleText) {
+    console.error("provision-bundles/blank.json is stale; run pnpm build:provision-bundle");
+    process.exit(1);
+  }
+} else {
+  mkdirSync(dirname(outPath), { recursive: true });
+  writeFileSync(outPath, bundleText);
+}
+
+const bundle = JSON.parse(bundleText);
 for (const required of [
   "package.json",
   "wrangler.toml",
