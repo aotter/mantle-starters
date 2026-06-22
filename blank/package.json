@@ -14,10 +14,7 @@
     "emit-types": "node scripts/mantle.mjs emit-types --namespace BlankCms --output mantle-types.d.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "check": "pnpm validate && pnpm typecheck",
-    "deploy": "pnpm validate:deploy && pnpm typecheck && wrangler deploy",
-    "setup:site": "node scripts/setup-site.mjs",
-    "provision:plan": "node scripts/provision.mjs plan",
-    "provision:up": "node scripts/provision.mjs up"
+    "deploy": "pnpm validate:deploy && pnpm typecheck && wrangler deploy"
   },
   "dependencies": {
     "@aotter/mantle": "0.0.11-alpha.32",
