@@ -1,0 +1,15 @@
+{
+  "locale": "{{CANONICAL_LOCALE}}",
+  "collections": {
+    "posts": [
+      {
+        "slug": "welcome",
+        "title": "Welcome to {{BRAND}}",
+        "excerpt": "{{DESCRIPTION}}",
+        "body": "{{DESCRIPTION}}",
+        "publishedAt": 1782130000000,
+        "status": "published"
+      }
+    ]
+  }
+}
