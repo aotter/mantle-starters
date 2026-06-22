@@ -90,17 +90,9 @@ pnpm dev      # safe wrangler dev — http://localhost:8787
 Hit `GET http://localhost:8787/api/views/published-notes` to see the
 example View executing against an empty `notes` collection.
 
-Production installs use the shared provision flow:
-
-```bash
-pnpm run provision:plan
-pnpm exec wrangler login
-pnpm run provision:up -- --worker-url <worker_url> --github-username <github-login> --client-id <client-id>
-```
-
-Set `GITHUB_CLIENT_SECRET` in the environment before `provision:up`.
-The script writes non-secret config and Worker secrets; it does not ask
-for a Cloudflare API token.
+Production repos are created by Mantle landing. Landing substitutes the
+launch placeholders, commits this bundle, and either connects Cloudflare
+Workers CI or records the provider action the user still needs to take.
 
 > **Note:** `blank` is the headless starter; there is no `/admin` UI and
 > the `GITHUB_*` / `ADMIN_GITHUB_LOGIN` placeholders in `.dev.vars` are
