@@ -9,7 +9,7 @@
 > `SyntaxError: Expected property name or '}' in JSON` at boot.
 >
 > **To evaluate this starter end-to-end**, use the Mantle landing
-> provisioning flow. It fetches `provision-bundles/blank.json`,
+> provisioning flow. It fetches `provision-bundles/<type>.json`,
 > substitutes these placeholders, commits the repo, and starts
 > Cloudflare Workers CI.
 
@@ -17,8 +17,9 @@
 frontend (Next.js, Astro, SvelteKit, native iOS/Android, partner
 integration) and want mantle purely as a content + auth + MCP backend.
 
-If you want a public publication site, start from this blank base and
-apply the `publication` overlay after first deploy.
+Type-specific bundles include the selected manifest, overlay notes, and
+seed prompt up front. Continue from the after-launch handoff shown by
+Mantle landing.
 
 ## Kiwa UI Credit
 
@@ -45,10 +46,10 @@ No public read routes (`/{locale}/...`, `/sitemap.xml`, `.md` mirrors,
 
 MCP requests must carry a verified bearer token. The runtime's
 Cloudflare adapter now uses Better Auth for browser sign-in and MCP
-OAuth/DCR. `blank` wires the dual MCP surface (`/mcp/staff` for staff
-authoring, `/mcp` for end-user/read tools), but ships only a handoff
-page for `/`. Add your own frontend and policy surface before claiming
-a custom production workflow.
+OAuth/DCR. This starter wires the dual MCP surface (`/mcp/staff` for
+staff authoring, `/mcp` for end-user/read tools), but ships only a small
+public homepage for `/`. Add your own frontend and policy surface before
+claiming a custom production workflow.
 
 ## Layout
 

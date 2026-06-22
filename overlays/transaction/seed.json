@@ -1,0 +1,15 @@
+{
+  "locale": "{{CANONICAL_LOCALE}}",
+  "collections": {
+    "products": [
+      {
+        "slug": "starter-offer",
+        "title": "{{BRAND}} starter offer",
+        "summary": "{{DESCRIPTION}}",
+        "priceMinor": 0,
+        "currency": "USD",
+        "status": "published"
+      }
+    ]
+  }
+}
