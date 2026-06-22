@@ -1,0 +1,41 @@
+apiVersion: cms.mantle.aotter.net/v1
+kind: Schema
+metadata:
+  name: posts
+spec:
+  title: Posts
+  description: Publication posts for the first public content surface.
+  schema:
+    type: object
+    required: [slug, title]
+    properties:
+      slug:
+        type: string
+        pattern: "^[a-z0-9-]+$"
+      title:
+        type: string
+      excerpt:
+        type: string
+      body:
+        type: string
+        x-mcp-hint: markdown
+      publishedAt:
+        type: number
+  uniqueIndexes:
+    - [slug]
+  localized: false
+  lifecycle: simple
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: View
+metadata:
+  name: published-posts
+spec:
+  from: posts
+  fields: [id, slug, title, excerpt, body, publishedAt, updatedAt]
+  filter:
+    eq: { field: status, value: published }
+  orderBy:
+    - { field: publishedAt, direction: desc }
+    - { field: updatedAt, direction: desc }
+  limit: 50

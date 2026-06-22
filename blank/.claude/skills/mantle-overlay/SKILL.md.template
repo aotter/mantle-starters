@@ -1,0 +1,41 @@
+---
+name: mantle:overlay
+description: Apply the selected launch archetype as a small post-launch overlay from the generated repo.
+---
+
+# Mantle Overlay
+
+Landing always creates the same blank Mantle repo. Treat the archetype
+in `.mantle/launch-state.json` as intent, not as permission to copy an
+old full starter.
+
+## First read
+
+1. `.mantle/launch-state.json`
+2. `.mantle/features.json`
+3. `overlays/<archetype>/handoff.md`
+4. `node_modules/@aotter/mantle/docs/design-atoms.md`
+
+## Apply
+
+```bash
+node scripts/apply-overlay.mjs
+pnpm validate
+pnpm typecheck
+```
+
+Pass an explicit overlay only when the user asks:
+
+```bash
+node scripts/apply-overlay.mjs publication
+```
+
+## Boundaries
+
+- Keep overlays small: 4-atoms manifest, seed prompt, tiny route/layout
+  notes, and handoff guidance.
+- Avoid per-type runtime logic unless the type cannot function without
+  it.
+- Do not add a first-run theme picker.
+- Use Kiwa copied source as editable reference material; generated repos
+  must not need Kiwa registry access to continue.

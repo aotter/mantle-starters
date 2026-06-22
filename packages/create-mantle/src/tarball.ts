@@ -28,7 +28,7 @@ export function downloadAndExtractTarball(
   if (source.kind === "private") {
     throw new Error(
       `Premium starters are not yet available. Source: ${source.repo}. ` +
-        `Re-run with a public archetype (presence / publication / intake / blank), ` +
+        `Re-run with a public archetype (blank / publication / transaction / reservation / community), ` +
         `or wait for mantle-starters-premium content to ship.`,
     );
   }

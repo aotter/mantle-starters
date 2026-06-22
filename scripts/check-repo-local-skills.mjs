@@ -5,20 +5,20 @@ import { fileURLToPath } from "node:url";
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const expected = [
-  ["mantle-development", "mantle:development"],
-  ["mantle-feature-overlays", "mantle:feature-overlays"],
-  ["mantle-provision", "mantle:provision"],
+  ["mantle-develop", "mantle:develop"],
+  ["mantle-overlay", "mantle:overlay"],
+  ["mantle-theme", "mantle:theme"],
   ["mantle-update", "mantle:update"],
 ];
 const failures = [];
 
 for (const [dir, name] of expected) {
-  assertSkill(join(root, "_common", ".agent", "skills", dir, "SKILL.md.template"), name);
-  assertSkill(join(root, "_common", ".claude", "skills", dir, "SKILL.md.template"), name);
+  assertSkill(join(root, "blank", ".agent", "skills", dir, "SKILL.md.template"), name);
+  assertSkill(join(root, "blank", ".claude", "skills", dir, "SKILL.md.template"), name);
 }
 
 for (const base of [".agent", ".claude"]) {
-  const skillsDir = join(root, "_common", base, "skills");
+  const skillsDir = join(root, "blank", base, "skills");
   const dirs = readdirSync(skillsDir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
@@ -29,8 +29,8 @@ for (const base of [".agent", ".claude"]) {
   }
 }
 
-const agents = readFileSync(join(root, "_common", "AGENTS.md.template"), "utf8");
-const claude = readFileSync(join(root, "_common", "CLAUDE.md.template"), "utf8");
+const agents = readFileSync(join(root, "blank", "AGENTS.md.template"), "utf8");
+const claude = readFileSync(join(root, "blank", "CLAUDE.md.template"), "utf8");
 for (const [dir] of expected) {
   if (!agents.includes(`.agent/skills/${dir}/SKILL.md`)) {
     failures.push(`AGENTS.md.template does not mention .agent/skills/${dir}/SKILL.md`);

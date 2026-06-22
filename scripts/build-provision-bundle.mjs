@@ -8,9 +8,14 @@ const outPath = join(root, "provision-bundles", "blank.json");
 const checkOnly = process.argv.includes("--check");
 const files = {};
 
-walk("_common", "");
 walk("blank", "");
 resolveCatalogPackageJson();
+walk("overlays", "overlays");
+walk("kiwa", "kiwa");
+files["scripts/apply-overlay.mjs"] = readFileSync(
+  join(root, "scripts", "apply-overlay.mjs"),
+  "utf8",
+);
 
 files[".mantle/launch-state.json.template"] = [
   "{",
@@ -36,7 +41,11 @@ files[".mantle/launch-state.json.template"] = [
   '    "visibility": "private",',
   '    "defaultBranch": "main"',
   "  },",
-  '  "handoff": ".mantle/handoff.md"',
+  '  "handoff": ".mantle/handoff.md",',
+  '  "overlay": {',
+  '    "suggested": "{{ARCHETYPE}}",',
+  '    "path": "overlays/{{ARCHETYPE}}"',
+  "  }",
   "}",
   "",
 ].join("\n");
@@ -50,6 +59,8 @@ files[".mantle/features.json.template"] = JSON.stringify({
   archetype: {
     name: "{{ARCHETYPE}}",
     type: "registry:archetype",
+    overlayPath: "overlays/{{ARCHETYPE}}",
+    appliedAt: null,
   },
   theme: null,
   features: [],
@@ -65,47 +76,17 @@ files[".mantle/handoff.md.template"] = [
   "- Landing final page is the source of truth for the live Workers URL.",
   "- Generated fallback site hint: {{SITE_URL}}",
   "- Type intent: {{ARCHETYPE}}",
-  "- First task: open the live site URL from Mantle landing, then use `mantle:next`.",
+  "- First task: open the live site URL from Mantle landing, then use `mantle:overlay`.",
+  "",
+  "Copy this prompt into your coding agent:",
+  "",
+  "```text",
+  "Read .mantle/launch-state.json, .mantle/features.json, and .mantle/handoff.md.",
+  "Open the live site URL from Mantle landing and confirm the blank Worker boots.",
+  "Then run mantle:overlay to apply the selected type intent as the smallest useful Mantle overlay.",
+  "```",
   "",
 ].join("\n");
-
-const mantleNextSkill = [
-  "---",
-  "name: mantle:next",
-  "description: Continue a blank Mantle site after landing created the repo and started Cloudflare Workers CI.",
-  "---",
-  "",
-  "# Mantle Next",
-  "",
-  "Read `.mantle/launch-state.json`, `.mantle/features.json`, and `.mantle/handoff.md` first. Then open the live Workers URL shown on Mantle landing and confirm what is currently deployed.",
-  "",
-  "Do not run the old launch theme picker. Do not switch to a legacy themed starter. This repo starts blank on purpose.",
-  "",
-  "## Build From Type Intent",
-  "",
-  "Use the `archetype` in `.mantle/launch-state.json` as intent only:",
-  "",
-  "- add the smallest useful 4-atoms manifest for that type;",
-  "- seed tiny example data in the user's canonical locale;",
-  "- add only the type-specific layout/code needed to make the first page understandable;",
-  "- keep custom runtime logic out unless the type cannot work without it.",
-  "",
-  "If the user chose publication, presence, intake, or transaction, build upward from this blank base rather than copying an old starter wholesale.",
-  "",
-  "## Design Direction",
-  "",
-  "Use Kiwa UI marketing blocks as layout references when helpful, especially Navigation, Hero, Blog, Contact, CTA, Footer, Pricing, and product/listing patterns. Start from official docs: https://kiwaui.com/docs",
-  "",
-  "Do not expose a theme picker to the user. Apply brand and L4 visual direction as normal code changes with the user's feedback.",
-  "",
-  "## Then",
-  "",
-  "After the first useful site shape is in place, run `mantle:provision` to finish GitHub OAuth app setup, Wrangler secrets, admin auth, and smoke tests.",
-  "",
-].join("\n");
-
-files[".agent/skills/mantle-next/SKILL.md"] = mantleNextSkill;
-files[".claude/skills/mantle-next/SKILL.md"] = mantleNextSkill;
 
 const bundleText = JSON.stringify({
   version,
@@ -131,15 +112,23 @@ for (const required of [
   ".mantle/launch-state.json.template",
   ".mantle/features.json.template",
   ".mantle/handoff.md.template",
-  ".agent/skills/mantle-next/SKILL.md",
-  ".claude/skills/mantle-next/SKILL.md",
+  ".agent/skills/mantle-develop/SKILL.md",
+  ".agent/skills/mantle-overlay/SKILL.md",
+  ".agent/skills/mantle-theme/SKILL.md",
+  ".agent/skills/mantle-update/SKILL.md",
+  ".claude/skills/mantle-develop/SKILL.md",
+  ".claude/skills/mantle-overlay/SKILL.md",
+  ".claude/skills/mantle-theme/SKILL.md",
+  ".claude/skills/mantle-update/SKILL.md",
+  "scripts/apply-overlay.mjs",
+  "kiwa/manifest.json",
 ]) {
   if (!bundle.files[required]) throw new Error(`bundle missing ${required}`);
 }
 
 function walk(from, to) {
   for (const name of readdirSync(join(root, from))) {
-    if (skip(from, name)) continue;
+    if (skip(name)) continue;
     const source = join(root, from, name);
     const target = posix.join(to, name).replace(/\.template$/, "");
     const stat = statSync(source);
@@ -151,9 +140,8 @@ function walk(from, to) {
   }
 }
 
-function skip(parent, name) {
-  return [".git", ".DS_Store", ".wrangler", ".wrangler-test", ".pnpm-store", "node_modules", "dist", "_compose"].includes(name) ||
-    (parent === "_common" && name === "features");
+function skip(name) {
+  return [".git", ".DS_Store", ".wrangler", ".wrangler-test", ".pnpm-store", "node_modules", "dist", "_compose"].includes(name);
 }
 
 function resolveCatalogPackageJson() {
