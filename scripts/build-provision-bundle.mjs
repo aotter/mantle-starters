@@ -141,7 +141,7 @@ function walk(from, to) {
 }
 
 function skip(name) {
-  return [".git", ".DS_Store", ".wrangler", ".wrangler-test", ".pnpm-store", "node_modules", "dist", "_compose"].includes(name);
+  return [".git", ".DS_Store", ".wrangler", ".wrangler-test", ".pnpm-store", "node_modules", "dist"].includes(name);
 }
 
 function resolveCatalogPackageJson() {
