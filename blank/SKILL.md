@@ -12,20 +12,23 @@ Follow the [Mantle install brief](https://raw.githubusercontent.com/aotter/mantl
 
 ## What this is
 
-Headless CMS backend — API + MCP only, no public HTML. The user is bringing their own frontend (Next.js / Astro / SvelteKit / iOS / partner integration) and wants mantle purely as content + auth + MCP. Schema design happens **after** deploy through the `extend` skill.
+Blank is the launch base for new Mantle provisioning. It starts as a
+small deployable Mantle backend — API + MCP first, minimal public
+surface — and the user's coding agent grows the selected type on top
+after the first Cloudflare deploy succeeds.
 
 ## Interview probes to emphasize
 
-- Confirm "bring your own frontend" explicitly. If the user expects public HTML, route them to `publication` instead.
-- Which frontend? (Inform the post-deploy first content task so it references their stack.)
-- What is the first Schema they want? (Defer the design; just capture the noun. They will design it through `extend`.)
-- Will the frontend talk to `/mcp/staff` (write) or `/mcp` (read) — or both?
+- Confirm the selected type intent from `.mantle/launch-state.json`.
+- Ask what the first useful page or workflow should prove.
+- Identify the first Schema/View pair and seed only tiny example data.
+- Decide whether the first UI should be built in this Worker or whether the user is bringing an external frontend.
 
 ## Site defaults
 
-- **Mood default:** from interview; no archetype-level default. The user is technical-leaning if they chose `blank`.
-- **Ready-state wording:** technical-active. (zh-TW illustrative: "後端準備好了", "API 上線了"; EN illustrative: "the backend is up", "API is live". Match the user's own register.)
-- **Avoid:** marketing voice; "your beautiful new site" language — they explicitly opted out of UI.
+- **Mood default:** no premade theme. Apply brand and L4 direction with the user after the first deploy.
+- **Ready-state wording:** concrete and active. (zh-TW illustrative: "網站已上線，接著做第一個頁面"; EN illustrative: "the site is live; next we shape the first page".)
+- **Avoid:** theme picker language and copying old starter directories wholesale.
 
 ## Post-deploy first content task
 
@@ -38,12 +41,14 @@ install-time prompt and should not block scaffold or deploy.
 
 (EN illustrative:)
 ```text
-Open the admin and list current collections (the example one should be there). Show me what /api/views/published-notes returns against an empty collection. Then propose a draft Schema for the first real one we'll use — I'll edit the YAML manifest directly; don't apply yet.
+Open the live Workers URL and confirm the blank site boots. Then read `.mantle/launch-state.json`, propose the first small 4-atoms manifest for the selected type, and seed one tiny example in my default language before changing layout code.
 ```
 
 ## Schema/View/Procedure extensions
 
-Defer all schema design to [`skills/extend`](https://raw.githubusercontent.com/aotter/mantle/main/skills/extend/SKILL.md). The starter ships exactly one demo Schema/View (`notes` / `published-notes`); during install, do **not** add custom manifests. The user designs theirs after deploy.
+Defer real schema design until after deploy. The starter ships exactly
+one demo Schema/View (`notes` / `published-notes`); replace or remove
+it when the first type overlay lands.
 
 ## See also
 

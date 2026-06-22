@@ -1,28 +1,28 @@
 ---
 name: mantle:provision
-description: Finish first production deployment for this generated Mantle site. Use after scaffold when the user is ready to push to GitHub, connect Cloudflare, configure OAuth, run Wrangler, and smoke test.
+description: Finish provider setup after Mantle landing created the GitHub repo and started Cloudflare Workers CI.
 ---
 
 # Mantle Provision
 
-Provisioning is owned by the user's coding agent and provider accounts.
-Mantle landing captured launch intent, but it does not create
-Cloudflare resources or store provider secrets for this site.
+Mantle landing already created the private GitHub repo, committed this
+blank site, and started Cloudflare Workers CI. Provisioning is now the
+coding agent's handoff phase: verify the build, guide the user through
+the provider-owned OAuth steps, write secrets without exposing them in
+chat, then smoke test.
 
-Your job is to finish deterministic work first, then hand the user only
-the provider-browser steps they must own. Do not stop with a vague
-"Wrangler is not logged in" or "go to Cloudflare" message. Give the
-exact link, the exact button path, what they should see, and what they
-should report back.
+Do not recreate the GitHub repo or ask the user to run the old first-run
+Cloudflare dashboard flow. If something is missing, report the exact
+missing resource and the exact link or command needed to repair it.
 
 ## First Read
 
 1. `.mantle/launch-state.json` when present for GitHub owner/admin,
-   repo name, archetype, locales, theme, and feature choices.
+   repo name, selected type intent, locales, and feature choices.
 2. `.mantle/features.json` for selected overlays and feature provision
    requirements.
-3. `wrangler.toml`, `.dev.vars.example`, `scripts/provision.mjs`, and
-   `scripts/.mantle-provision.mjs`.
+3. `.mantle/handoff.md`, `wrangler.toml`, `.dev.vars.example`, and
+   `scripts/provision.mjs`.
 4. `AGENTS.md` for public intent and final handoff notes.
 5. `node_modules/@aotter/mantle/skills/provision/SKILL.md` for the
    versioned parent provision contract after dependencies are installed.
@@ -42,38 +42,18 @@ else
 fi
 ```
 
-2. Create a private GitHub repo in the user-selected owner, commit the
-   scaffold, and push. Use the user's GitHub auth context. If `gh auth
-   status` is missing or points at the wrong login, ask the user to fix
-   GitHub auth first, then resume.
-
-3. Print the deterministic browser plan:
+2. Verify the provider bootstrap that landing already started:
 
 ```bash
-pnpm run provision:plan
+git remote -v
+git status --short
 ```
 
-4. Send the user to Cloudflare for the first GitHub-backed deploy:
+Open the repo URL and Worker URL from `.mantle/handoff.md`. If the
+Cloudflare build is still running, tell the user exactly what status you
+see and wait. If the build failed, fix the repo and push a commit.
 
-```text
-https://dash.cloudflare.com/?to=%2F%3Aaccount%2Fworkers-and-pages
-```
-
-Ask them to create a Worker from the pushed GitHub repo, keep the Worker
-name equal to `wrangler.toml` `name`, set:
-
-- Build command: `pnpm run validate:deploy && pnpm run typecheck`
-- Deploy command: `npx wrangler deploy`
-- Root directory: `/`
-
-Then wait for deploy and send back:
-
-- Worker URL, for example `https://<worker>.<account>.workers.dev`;
-- Worker name, only if Cloudflare forced a name different from the repo.
-
-Do not ask for a Cloudflare API token in this base flow.
-
-5. Once the user reports the Worker URL, print the worker-specific plan:
+3. Print the worker-specific plan:
 
 ```bash
 pnpm run provision:plan -- --worker-url <worker-url>
@@ -88,7 +68,8 @@ Ask the user to create the per-site GitHub OAuth App:
 Ask for the Client ID in chat. Keep the Client Secret out of chat and
 pass it through the hidden shell prompt below.
 
-6. Authorize Wrangler for the same Cloudflare account and apply provision:
+4. Authorize Wrangler for the same Cloudflare account and apply the
+   remaining runtime settings:
 
 ```bash
 pnpm exec wrangler login
@@ -97,7 +78,7 @@ pnpm run provision:up -- --worker-url <worker-url> --github-username <admin-logi
 unset GITHUB_CLIENT_SECRET
 ```
 
-7. Commit and push generated non-secret outputs:
+5. Commit and push generated non-secret outputs:
 
 ```bash
 git status --short -- wrangler.toml src/mantleConfig.ts AGENTS.md
@@ -110,7 +91,7 @@ Wait for Cloudflare Workers Builds to redeploy from the pushed commit. If
 the dashboard build is unavailable, run `pnpm run deploy` from this repo as a
 fallback and tell the user why.
 
-8. Smoke test:
+6. Smoke test:
 
 - public home route;
 - `/admin/sign-in`;

@@ -22,7 +22,7 @@ Public site: {{SITE_URL}}  (placeholder until provision)
 - Site intent and install-time decisions start in
   [`.mantle/launch-state.json`](.mantle/launch-state.json). For durable
   notes, append a short dated note to this file under "Project notes".
-- Launch-time owner, repo, locale, archetype, theme, and feature choices:
+- Launch-time owner, repo, locale, type intent, and feature choices:
   [`.mantle/launch-state.json`](.mantle/launch-state.json) when present.
 - Starter feature inventory:
   [`.mantle/features.json`](.mantle/features.json). Read this before

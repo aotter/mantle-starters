@@ -1,6 +1,6 @@
 ---
 name: mantle:development
-description: Work on this generated Mantle site after scaffold. Use for feature work, bug fixes, manifest changes, content model changes, theme/layout edits, and local validation.
+description: Work on this generated Mantle site after scaffold. Use for feature work, bug fixes, manifest changes, content model changes, layout/style edits, and local validation.
 ---
 
 # Mantle Development
@@ -12,8 +12,8 @@ starter change.
 ## First read
 
 1. `.mantle/launch-state.json` when present. It records the landing
-   answers that scaffolded this repo: archetype, repo intent, GitHub
-   owner/admin, locales, theme, and selected features. It contains no
+   answers that scaffolded this repo: type intent, repo intent, GitHub
+   owner/admin, locales, and selected features. It contains no
    provider authority or secrets.
 2. `AGENTS.md` for the site's current handoff notes and operating rules.
 3. `.mantle/features.json` for selected starter features and registry

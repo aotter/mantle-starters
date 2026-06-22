@@ -59,28 +59,53 @@ files[".mantle/features.json.template"] = JSON.stringify({
 files[".mantle/handoff.md.template"] = [
   "# Mantle launch handoff",
   "",
-  "Mantle landing created this blank site repo first. Do not rerun the old one-shot provisioning path.",
+  "Mantle landing created this blank site repo, pushed it to GitHub, and started Cloudflare Workers CI.",
   "",
   "- Repo: https://github.com/{{GITHUB_OWNER}}/{{PROJECT_NAME}}",
-  "- Expected site: {{SITE_URL}}",
+  "- Landing final page is the source of truth for the live Workers URL.",
+  "- Generated fallback site hint: {{SITE_URL}}",
   "- Type intent: {{ARCHETYPE}}",
-  "- First task: read `.mantle/launch-state.json`, then use `.claude/skills/mantle-next/SKILL.md`.",
+  "- First task: open the live site URL from Mantle landing, then use `mantle:next`.",
   "",
 ].join("\n");
 
-files[".claude/skills/mantle-next/SKILL.md"] = [
+const mantleNextSkill = [
   "---",
-  "name: mantle-next",
-  "description: Continue a blank Mantle site after landing v2 created the repo and started provider setup.",
+  "name: mantle:next",
+  "description: Continue a blank Mantle site after landing created the repo and started Cloudflare Workers CI.",
   "---",
   "",
   "# Mantle Next",
   "",
-  "Read `.mantle/launch-state.json`, `.mantle/features.json`, and `.mantle/handoff.md` first.",
+  "Read `.mantle/launch-state.json`, `.mantle/features.json`, and `.mantle/handoff.md` first. Then open the live Workers URL shown on Mantle landing and confirm what is currently deployed.",
   "",
-  "Do not run the old launch theme picker or resurrect `provision:up` as the first step. Start from the blank repo, verify the Worker/build status, then add content/features with the repo-local Mantle skills.",
+  "Do not run the old launch theme picker. Do not switch to a legacy themed starter. This repo starts blank on purpose.",
+  "",
+  "## Build From Type Intent",
+  "",
+  "Use the `archetype` in `.mantle/launch-state.json` as intent only:",
+  "",
+  "- add the smallest useful 4-atoms manifest for that type;",
+  "- seed tiny example data in the user's canonical locale;",
+  "- add only the type-specific layout/code needed to make the first page understandable;",
+  "- keep custom runtime logic out unless the type cannot work without it.",
+  "",
+  "If the user chose publication, presence, intake, or transaction, build upward from this blank base rather than copying an old starter wholesale.",
+  "",
+  "## Design Direction",
+  "",
+  "Use Kiwa UI marketing blocks as layout references when helpful, especially Navigation, Hero, Blog, Contact, CTA, Footer, Pricing, and product/listing patterns. Start from official docs: https://kiwaui.com/docs",
+  "",
+  "Do not expose a theme picker to the user. Apply brand and L4 visual direction as normal code changes with the user's feedback.",
+  "",
+  "## Then",
+  "",
+  "After the first useful site shape is in place, run `mantle:provision` to finish GitHub OAuth app setup, Wrangler secrets, admin auth, and smoke tests.",
   "",
 ].join("\n");
+
+files[".agent/skills/mantle-next/SKILL.md"] = mantleNextSkill;
+files[".claude/skills/mantle-next/SKILL.md"] = mantleNextSkill;
 
 const bundleText = JSON.stringify({
   version,
@@ -106,6 +131,7 @@ for (const required of [
   ".mantle/launch-state.json.template",
   ".mantle/features.json.template",
   ".mantle/handoff.md.template",
+  ".agent/skills/mantle-next/SKILL.md",
   ".claude/skills/mantle-next/SKILL.md",
 ]) {
   if (!bundle.files[required]) throw new Error(`bundle missing ${required}`);
