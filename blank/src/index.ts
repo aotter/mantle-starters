@@ -59,7 +59,7 @@ function createSetupIncompleteAuth(): Auth {
       throw new Error(AUTH_NOT_CONFIGURED.message);
     },
     revokeInvite: async () => false,
-  };
+  } as unknown as Auth;
 }
 
 function buildWorker(env: Env): WorkerFetch {
