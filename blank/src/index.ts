@@ -19,7 +19,7 @@ let workerFetchCache: { readonly key: string; readonly fetch: WorkerFetch } | nu
 const AUTH_NOT_CONFIGURED = {
   error: "setup_incomplete",
   message:
-    "Admin auth is not configured yet. Finish the post-deploy provisioning step to set BETTER_AUTH_SECRET and GitHub OAuth credentials.",
+    "Admin auth is not configured yet. Finish the Mantle landing provider setup to set BETTER_AUTH_SECRET and GitHub OAuth credentials.",
 } as const;
 
 function buildAuthFromEnv(env: Env): Auth {

@@ -8,7 +8,7 @@
 # and auth surfaces, but not for the headless `/` preview. Generate with:
 #   openssl rand -hex 32
 # (or `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`)
-# Production: set during post-deploy provisioning with Wrangler. Back the value up
+# Production: set by the landing/provider provisioning path. Back the value up
 # (1Password / Bitwarden / secret manager) if you ever rotate it — keeping it across host
 # migrations preserves sessions and JWK-encrypted rows; losing it logs
 # every user out and any JWT plugin's stored private key won't decrypt.
