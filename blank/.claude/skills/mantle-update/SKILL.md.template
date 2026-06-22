@@ -1,6 +1,6 @@
 ---
 name: mantle:update
-description: Check this generated Mantle site against upstream starter improvements.
+description: Compare this generated Mantle site against upstream starter drift.
 ---
 
 # Mantle Update
@@ -9,6 +9,4 @@ Use the shared repo-local skill at:
 
 `.agent/skills/mantle-update/SKILL.md`
 
-Read it fully before running `pnpm run mantle:update`, reviewing
-`.mantle/update-report.json`, applying upstream starter changes, or
-repairing validation failures after an update check.
+Read it before running `pnpm run mantle:update -- --ref <starters-ref>`.

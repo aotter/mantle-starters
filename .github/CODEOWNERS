@@ -11,8 +11,5 @@
 /kiwa/                           @guyspy
 /sources.json                    @guyspy
 
-# Scaffolder
-/packages/create-mantle/       @guyspy
-
 # CI / governance
 /.github/                        @guyspy

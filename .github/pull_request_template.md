@@ -17,8 +17,7 @@
 ## Test plan
 
 - [ ] Blank starter: `cd blank && pnpm install --frozen-lockfile && pnpm validate && pnpm typecheck`
-- [ ] Scaffolder: `cd packages/create-mantle && pnpm test && pnpm typecheck`
-- [ ] Scaffolder e2e: run the scaffolder against a temp dir and verify no unfilled `{{MACRO}}` remains
+- [ ] Provision bundle smoke: `pnpm smoke:provision-bundle`
 - [ ] Not run / not applicable:
 - [ ] Other:
 
