@@ -111,7 +111,6 @@ jobs:
             const paths = [
               'package.json',
               'blank/package.json',
-              'packages/create-mantle/package.json',
               // mantle-media-tools mirrors the SDK version (added in
               // aotter/mantle#272 / starters #153). release.yml verifies
               // every packed package matches the pushed tag, so missing

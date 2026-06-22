@@ -1,5 +1,5 @@
 name: Feature request
-description: Request a concrete new capability for the blank base, overlays, Kiwa source, or the scaffolder.
+description: Request a concrete new capability for the blank base, overlays, Kiwa source, or provision bundle.
 title: "[Feature] "
 labels: ["enhancement"]
 body:
@@ -14,7 +14,7 @@ body:
     id: proposal
     attributes:
       label: Proposed behavior
-      description: What should the blank base, overlay, Kiwa source, or scaffolder do?
+      description: What should the blank base, overlay, Kiwa source, or provision bundle do?
     validations:
       required: true
   - type: dropdown
@@ -27,7 +27,7 @@ body:
         - overlay:transaction
         - overlay:reservation
         - overlay:community
-        - area:scaffolder
+        - area:provision-bundle
         - area:kiwa
         - area:sources-json
         - area:ci

@@ -12,6 +12,13 @@ Current launch contract:
 - No first-run theme picker, full archetype starter fork, or Kiwa
   registry access is required to boot.
 
+## Kiwa Credit
+
+Selected UI primitives are copied from the free
+[Kiwa UI](https://kiwaui.com/) registry and vendored here so generated
+repos boot without registry access. Kiwa source is MIT licensed; keep
+`kiwa/LICENSE` and `kiwa/manifest.json` with any copied Kiwa files.
+
 ## Commands
 
 ```bash

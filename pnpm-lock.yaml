@@ -102,18 +102,6 @@ importers:
         specifier: 'catalog:'
         version: 4.99.0(@cloudflare/workers-types@4.20260610.1)
 
-  packages/create-mantle:
-    devDependencies:
-      '@types/node':
-        specifier: 'catalog:'
-        version: 25.8.0
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-      vitest:
-        specifier: 'catalog:'
-        version: 2.1.9(@types/node@25.8.0)
-
   packages/mantle-media-tools:
     dependencies:
       sharp:
