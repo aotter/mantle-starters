@@ -13,23 +13,15 @@ import {
 } from "../src/sources.js";
 
 describe("resolveSource (back-compat, stale fallback)", () => {
-  it("returns presence → presence starter (1:1, no overlay)", () => {
-    const s = resolveSource("presence");
+  it("returns launch archetypes to the blank starter", () => {
+    const s = resolveSource("publication");
     expect(s.kind).toBe("public");
     expect(s.repo).toBe("aotter/mantle-starters");
-    expect(s.path).toBe("presence");
+    expect(s.path).toBe("blank");
     expect(s.overlays).toBeUndefined();
-  });
-
-  it("returns intake → intake starter (1:1, no overlay)", () => {
-    const s = resolveSource("intake");
-    expect(s.path).toBe("intake");
-    expect(s.overlays).toBeUndefined();
-  });
-
-  it("returns transaction → transaction starter", () => {
-    const s = resolveSource("transaction");
-    expect(s.path).toBe("transaction");
+    expect(resolveSource("transaction").path).toBe("blank");
+    expect(resolveSource("reservation").path).toBe("blank");
+    expect(resolveSource("community").path).toBe("blank");
   });
 
   it("returns blank → blank starter", () => {
@@ -37,10 +29,8 @@ describe("resolveSource (back-compat, stale fallback)", () => {
     expect(s.path).toBe("blank");
   });
 
-  it("throws helpful message for roadmap archetypes", () => {
-    for (const k of ROADMAP_ARCHETYPES) {
-      expect(() => resolveSource(k)).toThrow(/roadmap-only/);
-    }
+  it("has no roadmap-only archetypes in the fallback", () => {
+    expect(ROADMAP_ARCHETYPES).toEqual([]);
   });
 
   it("throws unknown-archetype message with the known list", () => {
@@ -48,41 +38,16 @@ describe("resolveSource (back-compat, stale fallback)", () => {
     expect(() => resolveSource("does-not-exist")).toThrow(/blank/);
   });
 
-  it("keeps public L4 theme keys in the stale fallback", () => {
-    expect(resolveTheme("l4-minimal-ink", STALE_FALLBACK_SOURCES)).toEqual({
-      path: "themes/l4-minimal-ink",
-    });
-    expect(resolveTheme("l4-editorial-warm", STALE_FALLBACK_SOURCES)).toEqual({
-      path: "themes/l4-editorial-warm",
-    });
-    expect(resolveTheme("l4-editorial-journal", STALE_FALLBACK_SOURCES)).toEqual({
-      path: "themes/l4-editorial-journal",
-    });
-    expect(resolveTheme("l4-playful-pop", STALE_FALLBACK_SOURCES)).toEqual({
-      path: "themes/l4-playful-pop",
-    });
+  it("has no first-run themes in the stale fallback", () => {
+    expect(resolveTheme(null, STALE_FALLBACK_SOURCES)).toBeNull();
+    expect(() => resolveTheme("l4-minimal-ink", STALE_FALLBACK_SOURCES)).toThrow(/no themes/);
   });
 
-  it("keeps public feature keys in the stale fallback", () => {
-    expect(
-      resolveFeatures([{ name: "contact" }], "publication", STALE_FALLBACK_SOURCES)
-        .map((feature) => feature.name),
-    ).toEqual(["contact"]);
-    expect(
-      resolveFeatures(
-        [{ name: "members-only-purchase" }],
-        "transaction",
-        STALE_FALLBACK_SOURCES,
-      ).map((feature) => feature.name),
-    ).toEqual(["customer-account", "members-only-purchase"]);
-    expect(
-      resolveFeatures([{ name: "customer-profile" }], "transaction", STALE_FALLBACK_SOURCES)
-        .map((feature) => feature.name),
-    ).toEqual(["customer-account", "customer-profile"]);
-    expect(
-      resolveFeatures([{ name: "media-r2" }], "publication", STALE_FALLBACK_SOURCES)
-        .map((feature) => feature.name),
-    ).toEqual(["media-r2"]);
+  it("has no first-run features in the stale fallback", () => {
+    expect(resolveFeatures([], "publication", STALE_FALLBACK_SOURCES)).toEqual([]);
+    expect(() =>
+      resolveFeatures([{ name: "contact" }], "publication", STALE_FALLBACK_SOURCES),
+    ).toThrow(/no features/);
   });
 
   it("every roadmap archetype is absent from SOURCES", () => {
@@ -95,23 +60,21 @@ describe("resolveSource (back-compat, stale fallback)", () => {
 describe("resolveArchetype (live sources)", () => {
   const live: SourcesJson = {
     archetypes: {
-      presence: { path: "presence" },
-      publication: { path: "publication" },
-      intake: { path: "intake" },
-      transaction: { path: "transaction" },
       blank: { path: "blank" },
+      publication: { path: "blank" },
+      transaction: { path: "blank" },
+      reservation: { path: "blank" },
+      community: { path: "blank" },
     },
-    themes: {
-      "l4-minimal-ink": { path: "themes/l4-minimal-ink" },
-    },
-    roadmap: ["reservation"],
+    themes: {},
+    roadmap: [],
   };
 
-  it("resolves against the supplied SourcesJson (1:1 paths)", () => {
-    expect(resolveArchetype("presence", live).path).toBe("presence");
-    expect(resolveArchetype("intake", live).path).toBe("intake");
-    expect(resolveArchetype("intake", live).overlays).toBeUndefined();
-    expect(resolveArchetype("transaction", live).path).toBe("transaction");
+  it("resolves supplied launch archetypes to the blank path", () => {
+    expect(resolveArchetype("publication", live).path).toBe("blank");
+    expect(resolveArchetype("transaction", live).path).toBe("blank");
+    expect(resolveArchetype("reservation", live).path).toBe("blank");
+    expect(resolveArchetype("community", live).path).toBe("blank");
   });
 
   it("returns repo = STARTERS_REPO and kind = public", () => {
@@ -120,8 +83,8 @@ describe("resolveArchetype (live sources)", () => {
     expect(s.repo).toBe(STARTERS_REPO);
   });
 
-  it("throws for roadmap archetype in the supplied sources", () => {
-    expect(() => resolveArchetype("reservation", live)).toThrow(/roadmap-only/);
+  it("returns no roadmap-only archetypes in the supplied sources", () => {
+    expect(live.roadmap).toEqual([]);
   });
 
   it("throws for unknown archetype with sources.archetypes list", () => {

@@ -72,24 +72,7 @@ function buildWorker(env: Env): WorkerFetch {
   mountServerEndpoints(app, cms);
   mountAuthorize(app, { auth, loginPath: "/admin/sign-in" });
 
-  // Headless friendly index. blank ships no UI on purpose, but a bare
-  // `GET /` returning 404 looks broken on first visit during local
-  // dev. Surface a tiny JSON sitemap pointing at what *is* mounted
-  // so the operator can confirm the worker booted and find the next
-  // URL to hit. Replace this route with your own frontend's `/` once
-  // you start building.
-  app.get("/", (c) =>
-    c.json({
-      starter: "blank",
-      mounts: {
-        viewsRest: "/api/views/<view-name>",
-        mcpStaff: "/mcp/staff",
-        mcpPublic: "/mcp",
-        auth: "/api/auth/*",
-      },
-      note: "blank is headless — no HTML chrome ships. Wire your own frontend (Next.js / Astro / native) to the mounts above.",
-    }),
-  );
+  app.get("/", (c) => c.html(renderBlankHandoff()));
 
   const oauthProvider = createOAuthProvider({
     defaultHandler: {
@@ -149,6 +132,79 @@ function setupIncompleteResponse(): Response {
   return Response.json(AUTH_NOT_CONFIGURED, {
     status: 503,
     headers: { "cache-control": "no-store" },
+  });
+}
+
+function renderBlankHandoff(): string {
+  const prompt = [
+    "Read .mantle/launch-state.json, .mantle/features.json, and .mantle/handoff.md.",
+    "Open this live site URL and confirm the blank Worker boots.",
+    "Then run mantle:overlay to apply the selected type intent as the smallest useful Mantle overlay.",
+  ].join("\n");
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{BRAND}} - Mantle handoff</title>
+    <style>
+      :root {
+        color: #18201f;
+        background: #fbfaf7;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      body { margin: 0; }
+      main { max-width: 760px; padding: 56px 24px; }
+      h1 { margin: 0 0 12px; font-size: 32px; line-height: 1.15; letter-spacing: 0; }
+      p { max-width: 640px; color: #596462; line-height: 1.65; }
+      textarea {
+        width: 100%;
+        min-height: 132px;
+        margin-top: 18px;
+        padding: 14px 16px;
+        border: 1px solid #d8ddd6;
+        border-radius: 8px;
+        background: #fff;
+        color: #18201f;
+        font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      ul { margin-top: 24px; padding-left: 20px; color: #596462; line-height: 1.7; }
+      code { color: #235a55; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>{{BRAND}} is ready for your coding agent</h1>
+      <p>
+        Mantle landing created a blank deployable Worker. Copy this prompt
+        into your agent to apply the selected type overlay and continue.
+      </p>
+      <textarea readonly>${escapeHtml(prompt)}</textarea>
+      <ul>
+        <li>Public views: <code>/api/views/&lt;view-name&gt;</code></li>
+        <li>Staff MCP: <code>/mcp/staff</code></li>
+        <li>Public MCP: <code>/mcp</code></li>
+        <li>Repo prompt: <code>.mantle/handoff.md</code></li>
+      </ul>
+    </main>
+  </body>
+</html>`;
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (char) => {
+    switch (char) {
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case '"':
+        return "&quot;";
+      default:
+        return "&#39;";
+    }
   });
 }
 

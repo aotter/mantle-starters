@@ -198,8 +198,8 @@ function canonicalizeMantleLocale(raw: string): string | null {
 /**
  * Bootstrap a new mantle consumer project from the starters
  * monorepo. Fetches `sources.json` at the requested ref, downloads
- * the tarball, merges `_common/` + `<archetype>/` + (optional)
- * `themes/<theme-key>/` into the destination, substitutes
+ * the tarball, merges the resolved starter path plus any legacy
+ * compatibility layers into the destination, substitutes
  * `{{PLACEHOLDER}}` macros, and returns a RunNotes shape.
  */
 export async function createMantle(opts: CreateOptions): Promise<RunNotes> {
@@ -237,13 +237,16 @@ export function installFromExtractedRoot(
     sources,
   );
 
-  const filesWritten = mergeStarterIntoDestination({
-    extractedRoot: opts.extractedRoot,
-    source,
-    themeSource,
-    features: resolvedFeatures,
-    destination: opts.destination,
-  });
+  const filesWritten = [
+    ...mergeStarterIntoDestination({
+      extractedRoot: opts.extractedRoot,
+      source,
+      themeSource,
+      features: resolvedFeatures,
+      destination: opts.destination,
+    }),
+    ...copyGeneratedRepoAssets(opts.extractedRoot, opts.destination),
+  ].sort();
   const values = buildPlaceholderValues({ ...opts, locales });
   substitutePlaceholdersInTree(opts.destination, values, filesWritten);
   applyProjectNameToWrangler(opts.destination, opts.projectName);
@@ -270,7 +273,7 @@ export function installFromExtractedRoot(
     opts: { ...opts, locales },
     sources,
     notesNextStep:
-      "Run local validation, create the private GitHub repo, then follow the repo-local mantle:provision skill for Cloudflare first deploy.",
+      "Run local validation, then follow the repo-local mantle:overlay skill to apply the launch type intent.",
   });
   const generatedGlueFiles = writeGeneratedFeatureGlue({
     destination: opts.destination,
@@ -300,7 +303,7 @@ export function installFromExtractedRoot(
     overlays: source.overlays ?? [],
     files_written: allFiles,
     next_step:
-      "Run local validation, create the private GitHub repo, then follow the repo-local mantle:provision skill for Cloudflare first deploy.",
+      "Run local validation, then follow the repo-local mantle:overlay skill to apply the launch type intent.",
   };
 }
 
@@ -381,6 +384,8 @@ function writeFeaturesManifest(args: {
     archetype: {
       name: args.archetype,
       type: "registry:archetype",
+      overlayPath: `overlays/${args.archetype}`,
+      appliedAt: null,
     },
     theme: args.theme
       ? {
@@ -413,9 +418,10 @@ function writeScaffoldState(args: {
   mkdirSync(dir, { recursive: true });
   const relPath = ".mantle/launch-state.json";
   const path = join(args.destination, relPath);
+  const handoffRelPath = ".mantle/handoff.md";
   const adminGithubLogin = args.opts.adminGithubLogin ?? args.opts.githubOwner;
   const state = {
-    schema_version: 1,
+    schema_version: 2,
     session_id: null,
     claimed_at: new Date().toISOString(),
     expires_at: null,
@@ -440,10 +446,34 @@ function writeScaffoldState(args: {
       visibility: "private",
       defaultBranch: "main",
     },
+    handoff: handoffRelPath,
+    overlay: {
+      suggested: args.opts.archetype,
+      path: `overlays/${args.opts.archetype}`,
+    },
     next_step: args.notesNextStep,
   };
   writeFileSync(path, JSON.stringify(state, null, 2) + "\n");
-  return [relPath];
+  writeFileSync(
+    join(args.destination, handoffRelPath),
+    [
+      "# Mantle launch handoff",
+      "",
+      "This repo starts from the blank Mantle base.",
+      "",
+      `- Type intent: ${args.opts.archetype}`,
+      `- Repo: https://github.com/${args.opts.githubOwner}/${args.opts.projectName}`,
+      "- First task: use `mantle:overlay`.",
+      "",
+      "```text",
+      "Read .mantle/launch-state.json, .mantle/features.json, and .mantle/handoff.md.",
+      "Open the live site URL when available and confirm the blank Worker boots.",
+      "Then run mantle:overlay to apply the selected type intent as the smallest useful Mantle overlay.",
+      "```",
+      "",
+    ].join("\n"),
+  );
+  return [relPath, handoffRelPath];
 }
 
 export interface ImportSpec {
@@ -509,7 +539,7 @@ interface FeatureGlueSpec {
    *  alphabetically; conflicting version specs from multiple features
    *  error at install time (matching the wrangler.toml binding-conflict
    *  rule). `"catalog:"` resolves through the same pnpm-catalog
-   *  expansion pass that handles `_common/` package.json entries. */
+   *  expansion pass as the base package.json. */
   readonly dependencies?: Readonly<Record<string, string>>;
 }
 
@@ -1014,6 +1044,7 @@ interface CopyLayer {
   readonly id: string;
   readonly kind: CopyLayerKind;
   readonly root: string;
+  readonly targetPrefix?: string;
 }
 
 function featureCopyLayer(extractedRoot: string, feature: ResolvedFeature): CopyLayer {
@@ -1038,13 +1069,46 @@ function copyTreeRecording(
     if (entry.name === "_compose") continue;
     if (isCommonRegistryDirectory(layer, entry.name)) continue;
     const srcPath = join(layer.root, entry.name);
-    const dstPath = join(dst, entry.name);
+    const dstPath = join(dst, layer.targetPrefix ?? "", entry.name);
     if (entry.isDirectory()) {
       copyTreeChildren(srcPath, dstPath, dst, layer, writtenRelativeToDst, owners);
     } else if (entry.isFile()) {
       writeFileForLayer(srcPath, dstPath, relative(dst, dstPath), layer, writtenRelativeToDst, owners);
     }
   }
+}
+
+function copyGeneratedRepoAssets(
+  extractedRoot: string,
+  destination: string,
+): readonly string[] {
+  const writtenSet = new Set<string>();
+  const owners = new Map<string, CopyLayer>();
+  for (const layer of [
+    {
+      id: "overlays",
+      kind: "base" as const,
+      root: join(extractedRoot, "overlays"),
+      targetPrefix: "overlays",
+    },
+    {
+      id: "kiwa",
+      kind: "base" as const,
+      root: join(extractedRoot, "kiwa"),
+      targetPrefix: "kiwa",
+    },
+  ]) {
+    if (existsSync(layer.root)) copyTreeRecording(layer, destination, writtenSet, owners);
+  }
+  const overlayScript = join(extractedRoot, "scripts", "apply-overlay.mjs");
+  if (existsSync(overlayScript)) {
+    const relPath = "scripts/apply-overlay.mjs";
+    const dstPath = join(destination, relPath);
+    mkdirSync(dirname(dstPath), { recursive: true });
+    cpSync(overlayScript, dstPath);
+    writtenSet.add(relPath);
+  }
+  return [...writtenSet].sort();
 }
 
 function isCommonRegistryDirectory(layer: CopyLayer, entryName: string): boolean {
@@ -1658,8 +1722,8 @@ function isRegularFile(p: string): boolean {
 
 /**
  * Renames `<name>.template` artifacts to `<name>` after substitution.
- * This is how `_common/AGENTS.md.template` lands as `AGENTS.md` in
- * the user's project. Returns the rewritten file list in place by
+ * This is how `blank/AGENTS.md.template` lands as `AGENTS.md` in the
+ * user's project. Returns the rewritten file list in place by
  * mutating the destination filesystem; the caller's `files` array is
  * no longer authoritative for `.template`-named paths after this.
  */

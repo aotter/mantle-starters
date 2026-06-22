@@ -54,48 +54,35 @@ When an AI agent authored or substantially rewrote a commit, add a co-author tra
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
-## Adding a starter archetype
+## Adding an overlay
 
-Archetypes graduate in two stages: **roadmap stub** → **ready**.
+First launch always uses `blank/`. New type-specific work belongs in a
+small post-launch overlay, not a full starter directory.
 
-### 1. Roadmap stub (entry on the roadmap list)
+An overlay should contain only what the user's coding agent needs next:
 
-1. Add the archetype name to the `roadmap` array in [`sources.json`](./sources.json).
-2. Create `<archetype>/SKILL.md` with a refuse-path message (the scaffolder reads this when a user asks for a not-yet-ready archetype).
-3. Open a `[Starter]` issue using the "New starter archetype" template.
-
-### 2. Promote to ready
-
-To graduate, the directory must contain:
-
-- `package.json` (pinned `@aotter/mantle-*` versions; no `workspace:*` deps — each starter is standalone).
-- `wrangler.toml` (Cloudflare Worker entry).
-- `manifests/` (Mantle atom manifests — Schema / View / Procedure / Trigger).
-- `src/index.ts` (Worker entry; mounts runtime + auth).
-- `SKILL.md` (agent brief; EN-only — see "EN-only SKILLs" below).
-- `README.md` (what-you-get / what-you-don't-get; on par with `publication/README.md`).
-- `.dev.vars.example` and `.dev.vars.test.example` (env-var skeleton; **no real secrets**).
-- `.gitignore`.
+- `manifests/*.yaml` with the smallest useful 4-atoms model.
+- `handoff.md` for the agent.
+- `seed-prompt.md` when example data helps.
+- `layout.md` when route/layout guidance helps.
 
 Then:
 
-1. Move the archetype name from `roadmap` to `archetypes` in `sources.json`.
-2. Run per-starter tests locally: `cd <archetype>/ && pnpm install && pnpm validate && pnpm typecheck`.
-3. Smoke-test the scaffolder against your archetype: `cd packages/create-mantle && pnpm test`.
+1. Keep `sources.json` pointing launch intents at `blank` unless the
+   first-launch contract changes.
+2. Add or update the smallest overlay under `overlays/<name>/`.
+3. Smoke-test the generated bundle and scaffolder: `pnpm test`,
+   `pnpm build:provision-bundle`, and `pnpm check:provision-bundle`.
 
 ### EN-only SKILLs
 
 `SKILL.md` and any skill prompts in this repo are written in **English only**. They instruct the consuming agent to render output in the user's language. Do not embed zh-TW (or other non-English) example bodies in skill files; the language is a runtime concern, not a source-file concern.
 
-## Adding a theme
+## Adding visual source
 
-Themes are visual overlays. They live under `themes/<key>/` and contain only files that go *under* `src/theme/` in a scaffolded project — never a full starter scaffold.
-
-1. Pick a key following `l<tier>-<mood>` (e.g. `l4-minimal-ink`, `l3-editorial-bold`).
-2. Add `themes/<key>/src/theme/tokens.ts` plus any optional component / template overrides.
-3. Add a corresponding entry in [`sources.json`](./sources.json) under `themes`.
-
-See [`themes/README.md`](./themes/README.md) for the existing palette and conventions.
+Theme work is post-launch source editing, not a first-run picker. Put
+shared Kiwa source under `kiwa/` through `scripts/sync-kiwa.mjs`, and
+put generated-repo guidance in `mantle:theme`.
 
 ## Issues
 
@@ -103,7 +90,7 @@ Use the GitHub issue templates:
 
 - **Bug report** — broken, surprising, or unsafe behavior in a starter or the scaffolder. (Engine / runtime bugs go on the parent repo.)
 - **Feature request** — a concrete capability for an existing starter or the scaffolder.
-- **New starter archetype** — propose a new archetype or graduate a roadmap stub.
+- **New overlay** — propose a new post-launch type overlay.
 
 Apply at least one `starter:*` or `area:*` label.
 
@@ -147,7 +134,7 @@ Per-starter `@aotter/mantle-*` version pins move on their own cadence — indepe
 ## Architecture gates
 
 - Each starter is **standalone**. No `workspace:*` cross-deps. Bump `@aotter/mantle-*` deps explicitly per starter.
-- `_common/` is **merge-first**: every file in `_common/` ends up in every scaffold (unless overridden by the archetype). Anything starter-specific belongs in `<archetype>/`, not `_common/`.
+- `blank/` is the only first-launch base. Type-specific starter work belongs in `overlays/<type>/`.
 - `sources.json` is the **only** dispatch surface. The scaffolder does not introspect directory names; if it's not in `sources.json`, it doesn't exist.
 - Macro expansion (`{{SITE_NAME}}`, `{{ARCHETYPE}}`, …) is governed by [ADR-0016](https://github.com/aotter/mantle/blob/main/docs/adr/0016-site-semantic-layer.md) on the parent repo. Unfilled macros in the scaffolded output are a release blocker.
 

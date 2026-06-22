@@ -1,0 +1,26 @@
+# CLAUDE.md
+
+This is a generated blank Mantle site. Start from:
+
+1. [`.mantle/launch-state.json`](.mantle/launch-state.json)
+2. [`.mantle/features.json`](.mantle/features.json)
+3. [`.mantle/handoff.md`](.mantle/handoff.md)
+4. [`AGENTS.md`](AGENTS.md)
+
+Repo-local skills:
+
+- `.claude/skills/mantle-develop/SKILL.md`
+- `.claude/skills/mantle-overlay/SKILL.md`
+- `.claude/skills/mantle-theme/SKILL.md`
+- `.claude/skills/mantle-update/SKILL.md`
+
+The launch archetype is intent only. Use `mantle:overlay` to apply the
+small overlay after first deploy; do not switch to an old full starter or
+a first-run theme.
+
+Local checks:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm check
+```

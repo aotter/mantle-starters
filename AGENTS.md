@@ -1,19 +1,28 @@
-# AGENTS.md
+# mantle-starters agent notes
 
-This is the **starter monorepo**, not a consumer project. The `AGENTS.md` that ends up in a scaffolded project is templated from [`_common/AGENTS.md.template`](./_common/AGENTS.md.template) per [ADR-0016](https://github.com/aotter/mantle/blob/main/docs/adr/0016-site-semantic-layer.md) on the parent repo.
+This is the starter monorepo, not a generated consumer project.
 
-## If you're using this monorepo to scaffold a project for a user
+Use ponytail defaults here: keep launch deterministic, prefer deletion
+over new framework, and do not rebuild the old full-starter/theme path.
 
-**Do not clone this repo.** Run the install Skill on the parent repo:
-[`skills/install/SKILL.md`](https://github.com/aotter/mantle/blob/main/skills/install/SKILL.md).
+Current contract:
 
-The scaffolder downloads a pinned tarball, merges `_common/` + `<archetype>/` + selected feature overlays + optional theme overlays into the user's empty directory, fills `{{PLACEHOLDER}}` macros, and initializes a fresh user-owned git repo.
+- Landing provisions only `provision-bundles/blank.json`.
+- `blank/` owns the generated repo base, including repo-local Mantle
+  skills.
+- `overlays/` are small post-launch archetype hints.
+- `kiwa/` is vendored free Kiwa source; generated repos must boot
+  without registry access.
+- `sources.json` maps all launch archetypes to `blank`.
 
-## If you're maintaining this monorepo
+Useful checks:
 
-- Contribution contract → [CONTRIBUTING.md](./CONTRIBUTING.md) (branch model: `develop` is the integration branch; PRs base on `develop`).
-- Project doctrine → [parent CLAUDE.md](https://github.com/aotter/mantle/blob/main/CLAUDE.md). Agents write config; the runtime carries complexity.
-- Dispatch SoT → [`sources.json`](./sources.json). Adding an archetype, feature, or theme starts here.
-- Macro list → [parent ADR-0016](https://github.com/aotter/mantle/blob/main/docs/adr/0016-site-semantic-layer.md).
-
-Premium / per-customer starters live in the private sibling [`aotter/mantle-starters-premium`](https://github.com/aotter/mantle-starters-premium). Sync strategy with this repo is tracked at TBD.
+```bash
+pnpm build:provision-bundle
+pnpm check:provision-bundle
+pnpm check:kiwa
+pnpm check:repo-local-skills
+pnpm check:starter-locks
+pnpm typecheck
+pnpm test
+```

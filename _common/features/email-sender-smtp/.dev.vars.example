@@ -1,6 +1,0 @@
-# SMTP email sender (optional)
-# SMTP_HOST=smtp.example.com
-# SMTP_PORT=465
-# SMTP_USER=auth@example.com
-# SMTP_PASS=
-# EMAIL_FROM="Acme <auth@example.com>"

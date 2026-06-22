@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "source": {
+    "registry": "https://registry.kiwaui.com",
+    "repo": "https://github.com/kiwa-ui/kiwa-ui",
+    "commit": "d00aba1ce6fc0f0c48c0102d803dc15e5f1ce3d5"
+  },
+  "items": [
+    "button",
+    "card",
+    "badge"
+  ],
+  "files": [
+    {
+      "path": "components/ui/badge.tsx",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://registry.kiwaui.com/r/badge.json",
+      "sha256": "9e7cea2ae7d205e2cb69bf6c5f3ccce54475543d9afed0a7ec16a4bb5d57407a"
+    },
+    {
+      "path": "components/ui/button.tsx",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://registry.kiwaui.com/r/button.json",
+      "sha256": "d8f2aa24eae2c8701c8ec56b7297bd73adf1437278bf53b78088b1a15293da5d"
+    },
+    {
+      "path": "components/ui/card.tsx",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://registry.kiwaui.com/r/card.json",
+      "sha256": "b6e6ee34a959a76120854b9e30a87974aa32985cae3b7d6b0dc7bcf74364ab94"
+    },
+    {
+      "path": "kiwa/LICENSE",
+      "mirrors": [
+        "kiwa"
+      ],
+      "source": "https://raw.githubusercontent.com/kiwa-ui/kiwa-ui/d00aba1ce6fc0f0c48c0102d803dc15e5f1ce3d5/LICENSE",
+      "sha256": "e62cab355d79a5df04efaafe704b2cd363946c86bcc816a4e284e2b5c0f14cea"
+    },
+    {
+      "path": "lib/utils.ts",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://raw.githubusercontent.com/kiwa-ui/kiwa-ui/d00aba1ce6fc0f0c48c0102d803dc15e5f1ce3d5/registry/lib/utils.ts",
+      "sha256": "cc415674b12bea27cf6e2255b94453c772ae1c9f26513ad6c51910e0d6049ed5"
+    }
+  ]
+}

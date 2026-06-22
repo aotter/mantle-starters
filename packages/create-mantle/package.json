@@ -1,7 +1,7 @@
 {
   "name": "@aotter/create-mantle",
   "version": "0.0.11-alpha.32",
-  "description": "npx scaffolder for mantle consumer projects. Fetches the starters-monorepo tarball at a runtime-resolved sources.json, merges _common/ + <archetype>/ + (optional) themes/<theme>/ into the user's directory, fills {{PLACEHOLDER}} macros, and prints RUN_NOTES JSON for the Mantle install skill.",
+  "description": "npx scaffolder for blank-first Mantle projects. Fetches sources.json, installs the blank base, records type intent, and includes post-launch overlays.",
   "license": "MIT",
   "private": true,
   "homepage": "https://mantle.tools/",
