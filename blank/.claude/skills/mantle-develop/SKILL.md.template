@@ -46,6 +46,16 @@ pnpm check
 
 Use `pnpm dev` for local preview on `localhost:8787`.
 
+## MCP Media Uploads
+
+When the user provides an image in chat, handle it in the agent runtime:
+read the attachment bytes, prepare the required variants locally, call
+Staff MCP `create_media_upload`, PUT each variant to the returned signed
+URL with its required headers, then call `commit_media_upload`.
+
+Do not ask the user to open a terminal for image upload work, and do not
+send image bytes or base64 payloads through MCP tool arguments.
+
 ## Rules
 
 - Prefer manifest YAML for content model changes.

@@ -112,6 +112,8 @@ function buildBundleFiles(archetype) {
     "",
     "The public homepage is for visitors. The coding-agent handoff lives in Mantle landing and this repo file.",
     "",
+    "For chat-provided images, use Staff MCP upload sessions: the agent reads attachment bytes, prepares variants, PUTs to signed URLs, and commits the asset. Never pass base64 bytes as MCP tool arguments.",
+    "",
     "Next: clone/open this repo, read the launch files above, inspect the already-composed manifest/pages/seed, then make the smallest useful improvement and push.",
     "",
   ].join("\n");
