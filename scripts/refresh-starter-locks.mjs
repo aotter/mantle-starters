@@ -28,6 +28,7 @@ for (const starterPath of uniqueStarterPaths(sources)) {
         "--lockfile-only",
         "--ignore-scripts",
         "--no-frozen-lockfile",
+        "--config.shared-workspace-lockfile=false",
       ],
       { cwd: tempRoot, stdio: "inherit" },
     );
