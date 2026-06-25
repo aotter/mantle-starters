@@ -39,9 +39,6 @@ catalogs:
     typescript:
       specifier: ^6.0.3
       version: 6.0.3
-    vitest:
-      specifier: ^2.1.4
-      version: 2.1.9
     wrangler:
       specifier: ^4.95.0
       version: 4.99.0
@@ -56,8 +53,8 @@ importers:
   blank:
     dependencies:
       '@aotter/mantle':
-        specifier: 0.0.11-alpha.32
-        version: 0.0.11-alpha.32(@cloudflare/workers-oauth-provider@0.7.0)(aws4fetch@1.0.20)(better-auth@1.6.19(@cloudflare/workers-types@4.20260610.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.26)(zod@4.4.3)
+        specifier: 0.0.11-alpha.33
+        version: 0.0.11-alpha.33(@cloudflare/workers-oauth-provider@0.7.0)(aws4fetch@1.0.20)(better-auth@1.6.19(@cloudflare/workers-types@4.20260610.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.26)(zod@4.4.3)
       '@cloudflare/workers-oauth-provider':
         specifier: 'catalog:'
         version: 0.7.0
@@ -84,8 +81,8 @@ importers:
         version: 4.4.3
     devDependencies:
       '@aotter/mantle-spec':
-        specifier: 0.0.11-alpha.32
-        version: 0.0.11-alpha.32(zod@4.4.3)
+        specifier: 0.0.11-alpha.33
+        version: 0.0.11-alpha.33(zod@4.4.3)
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 4.20260610.1
@@ -102,29 +99,13 @@ importers:
         specifier: 'catalog:'
         version: 4.99.0(@cloudflare/workers-types@4.20260610.1)
 
-  packages/mantle-media-tools:
-    dependencies:
-      sharp:
-        specifier: ^0.34.0
-        version: 0.34.5
-    devDependencies:
-      '@types/node':
-        specifier: 'catalog:'
-        version: 25.8.0
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-      vitest:
-        specifier: 'catalog:'
-        version: 2.1.9(@types/node@25.8.0)
-
 packages:
 
-  '@aotter/mantle-admin-ui@0.0.11-alpha.32':
-    resolution: {integrity: sha512-/fCL56n45HzdgDYvEIQv+FaRdwGYUjQKEHu9qtjIDjE3tEtvIhL561WBD/rDOhlPhPjeTKnoqOyLnCfI+7X0zA==}
+  '@aotter/mantle-admin-ui@0.0.11-alpha.33':
+    resolution: {integrity: sha512-bA7aAQF8+vV/MkDKFDHaa8PqXHl0aLIaLlKum1yia3Ni29JLu14ozbLlMzvqayUUHA78cgcC2M63384rwpgW6A==}
 
-  '@aotter/mantle-cloudflare@0.0.11-alpha.32':
-    resolution: {integrity: sha512-UlZNnJzSk/d4cAd0e+KS3PwlKOAXSBTHzB9SC7GHE0SHVM+fky95qWFlliuw81JADIoA0P4p5ufUMjyYswqSMQ==}
+  '@aotter/mantle-cloudflare@0.0.11-alpha.33':
+    resolution: {integrity: sha512-EFzkEqIQPIpwjmuOUBLdXer34z+xvdN1qEl1zASkn4TfRs8IiP/NSHplwSuKijZvUwmKn8qWV6YY5hh29NJVnA==}
     peerDependencies:
       '@cloudflare/workers-oauth-provider': ^0.7.0
       aws4fetch: ^1.0.20
@@ -132,19 +113,19 @@ packages:
       hono: ^4.12.0
       zod: ^4.0.0
 
-  '@aotter/mantle-runtime@0.0.11-alpha.32':
-    resolution: {integrity: sha512-9CDXPi8JrVM0epexEKOpDx9fTkupObOogE29W7IhtcR6iPbgjbDHQVGplXWs9oTXTVuEh91eeQUEck5mI9Sj2w==}
+  '@aotter/mantle-runtime@0.0.11-alpha.33':
+    resolution: {integrity: sha512-6O/dn+OiEA4p+NtQcH1TJ7HU9fZtWuQgtSS/IisYOp6uN+lTNdsbMIIUyvf+p3TpT8TCODVEFjCRS5U99J/1Iw==}
     peerDependencies:
       zod: ^4.0.0
 
-  '@aotter/mantle-spec@0.0.11-alpha.32':
-    resolution: {integrity: sha512-R2uqt0DeFc0fAz8hCC2Oqwbo3lz88r41BF5oOtLlwWb/80CNPpRQkJUsMTjAGY2lSfliEZv3Ij+sInpI2Tkjig==}
+  '@aotter/mantle-spec@0.0.11-alpha.33':
+    resolution: {integrity: sha512-i3KTp8WEAdJwB7IH8gzCdnrQBgsO2Q52bliDxF14mrX5hbQf0WRN7Pp9OVUmm0OgTGtnmx5HlAJSByutlo+4wA==}
     hasBin: true
     peerDependencies:
       zod: ^4.0.0
 
-  '@aotter/mantle@0.0.11-alpha.32':
-    resolution: {integrity: sha512-0FbcR9+RzLw5QyhxLGYngFMURuNRhYG0y5OkRH17dWF8rOWJJ1jAhO8qpTKhmH9k4fJPqFSslFazwxFsaNqYSg==}
+  '@aotter/mantle@0.0.11-alpha.33':
+    resolution: {integrity: sha512-5f6VpSeAWzZYQiD4Dkv/Z6AVl0NogdAVIT/C72Bpb31GKE07jOr53m2r0sZnolr4XRG6wLx0Qwxa1ucgnRf6Pg==}
     engines: {node: '>=22'}
     peerDependencies:
       '@cloudflare/workers-oauth-provider': ^0.7.0
@@ -1751,7 +1732,7 @@ packages:
 
 snapshots:
 
-  '@aotter/mantle-admin-ui@0.0.11-alpha.32':
+  '@aotter/mantle-admin-ui@0.0.11-alpha.33':
     dependencies:
       '@radix-ui/react-collapsible': 1.1.12(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@radix-ui/react-dialog': 1.1.15(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -1769,11 +1750,11 @@ snapshots:
       - '@types/react'
       - '@types/react-dom'
 
-  '@aotter/mantle-cloudflare@0.0.11-alpha.32(@cloudflare/workers-oauth-provider@0.7.0)(aws4fetch@1.0.20)(better-auth@1.6.19(@cloudflare/workers-types@4.20260610.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.26)(zod@4.4.3)':
+  '@aotter/mantle-cloudflare@0.0.11-alpha.33(@cloudflare/workers-oauth-provider@0.7.0)(aws4fetch@1.0.20)(better-auth@1.6.19(@cloudflare/workers-types@4.20260610.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.26)(zod@4.4.3)':
     dependencies:
-      '@aotter/mantle-admin-ui': 0.0.11-alpha.32
-      '@aotter/mantle-runtime': 0.0.11-alpha.32(zod@4.4.3)
-      '@aotter/mantle-spec': 0.0.11-alpha.32(zod@4.4.3)
+      '@aotter/mantle-admin-ui': 0.0.11-alpha.33
+      '@aotter/mantle-runtime': 0.0.11-alpha.33(zod@4.4.3)
+      '@aotter/mantle-spec': 0.0.11-alpha.33(zod@4.4.3)
       '@cloudflare/workers-oauth-provider': 0.7.0
       aws4fetch: 1.0.20
       better-auth: 1.6.19(@cloudflare/workers-types@4.20260610.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@2.1.9(@types/node@25.8.0))
@@ -1783,22 +1764,22 @@ snapshots:
       - '@types/react'
       - '@types/react-dom'
 
-  '@aotter/mantle-runtime@0.0.11-alpha.32(zod@4.4.3)':
+  '@aotter/mantle-runtime@0.0.11-alpha.33(zod@4.4.3)':
     dependencies:
-      '@aotter/mantle-spec': 0.0.11-alpha.32(zod@4.4.3)
+      '@aotter/mantle-spec': 0.0.11-alpha.33(zod@4.4.3)
       zod: 4.4.3
 
-  '@aotter/mantle-spec@0.0.11-alpha.32(zod@4.4.3)':
+  '@aotter/mantle-spec@0.0.11-alpha.33(zod@4.4.3)':
     dependencies:
       yaml: 2.9.0
       zod: 4.4.3
 
-  '@aotter/mantle@0.0.11-alpha.32(@cloudflare/workers-oauth-provider@0.7.0)(aws4fetch@1.0.20)(better-auth@1.6.19(@cloudflare/workers-types@4.20260610.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.26)(zod@4.4.3)':
+  '@aotter/mantle@0.0.11-alpha.33(@cloudflare/workers-oauth-provider@0.7.0)(aws4fetch@1.0.20)(better-auth@1.6.19(@cloudflare/workers-types@4.20260610.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.26)(zod@4.4.3)':
     dependencies:
-      '@aotter/mantle-admin-ui': 0.0.11-alpha.32
-      '@aotter/mantle-cloudflare': 0.0.11-alpha.32(@cloudflare/workers-oauth-provider@0.7.0)(aws4fetch@1.0.20)(better-auth@1.6.19(@cloudflare/workers-types@4.20260610.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.26)(zod@4.4.3)
-      '@aotter/mantle-runtime': 0.0.11-alpha.32(zod@4.4.3)
-      '@aotter/mantle-spec': 0.0.11-alpha.32(zod@4.4.3)
+      '@aotter/mantle-admin-ui': 0.0.11-alpha.33
+      '@aotter/mantle-cloudflare': 0.0.11-alpha.33(@cloudflare/workers-oauth-provider@0.7.0)(aws4fetch@1.0.20)(better-auth@1.6.19(@cloudflare/workers-types@4.20260610.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@2.1.9(@types/node@25.8.0)))(hono@4.12.26)(zod@4.4.3)
+      '@aotter/mantle-runtime': 0.0.11-alpha.33(zod@4.4.3)
+      '@aotter/mantle-spec': 0.0.11-alpha.33(zod@4.4.3)
       '@cloudflare/workers-oauth-provider': 0.7.0
       aws4fetch: 1.0.20
       better-auth: 1.6.19(@cloudflare/workers-types@4.20260610.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@2.1.9(@types/node@25.8.0))
@@ -2502,9 +2483,11 @@ snapshots:
       '@tanstack/query-core': 5.101.0
       react: 19.2.7
 
-  '@types/estree@1.0.8': {}
+  '@types/estree@1.0.8':
+    optional: true
 
-  '@types/estree@1.0.9': {}
+  '@types/estree@1.0.9':
+    optional: true
 
   '@types/node@25.8.0':
     dependencies:
@@ -2516,6 +2499,7 @@ snapshots:
       '@vitest/utils': 2.1.9
       chai: 5.3.3
       tinyrainbow: 1.2.0
+    optional: true
 
   '@vitest/mocker@2.1.9(vite@5.4.21(@types/node@25.8.0))':
     dependencies:
@@ -2524,37 +2508,44 @@ snapshots:
       magic-string: 0.30.21
     optionalDependencies:
       vite: 5.4.21(@types/node@25.8.0)
+    optional: true
 
   '@vitest/pretty-format@2.1.9':
     dependencies:
       tinyrainbow: 1.2.0
+    optional: true
 
   '@vitest/runner@2.1.9':
     dependencies:
       '@vitest/utils': 2.1.9
       pathe: 1.1.2
+    optional: true
 
   '@vitest/snapshot@2.1.9':
     dependencies:
       '@vitest/pretty-format': 2.1.9
       magic-string: 0.30.21
       pathe: 1.1.2
+    optional: true
 
   '@vitest/spy@2.1.9':
     dependencies:
       tinyspy: 3.0.2
+    optional: true
 
   '@vitest/utils@2.1.9':
     dependencies:
       '@vitest/pretty-format': 2.1.9
       loupe: 3.2.1
       tinyrainbow: 1.2.0
+    optional: true
 
   aria-hidden@1.2.6:
     dependencies:
       tslib: 2.8.1
 
-  assertion-error@2.0.1: {}
+  assertion-error@2.0.1:
+    optional: true
 
   aws4fetch@1.0.20: {}
 
@@ -2596,7 +2587,8 @@ snapshots:
 
   blake3-wasm@2.1.5: {}
 
-  cac@6.7.14: {}
+  cac@6.7.14:
+    optional: true
 
   chai@5.3.3:
     dependencies:
@@ -2605,8 +2597,10 @@ snapshots:
       deep-eql: 5.0.2
       loupe: 3.2.1
       pathval: 2.0.1
+    optional: true
 
-  check-error@2.1.3: {}
+  check-error@2.1.3:
+    optional: true
 
   class-variance-authority@0.7.1:
     dependencies:
@@ -2619,8 +2613,10 @@ snapshots:
   debug@4.4.3:
     dependencies:
       ms: 2.1.3
+    optional: true
 
-  deep-eql@5.0.2: {}
+  deep-eql@5.0.2:
+    optional: true
 
   defu@6.1.7: {}
 
@@ -2630,7 +2626,8 @@ snapshots:
 
   error-stack-parser-es@1.0.5: {}
 
-  es-module-lexer@1.7.0: {}
+  es-module-lexer@1.7.0:
+    optional: true
 
   esbuild@0.21.5:
     optionalDependencies:
@@ -2657,6 +2654,7 @@ snapshots:
       '@esbuild/win32-arm64': 0.21.5
       '@esbuild/win32-ia32': 0.21.5
       '@esbuild/win32-x64': 0.21.5
+    optional: true
 
   esbuild@0.27.3:
     optionalDependencies:
@@ -2690,8 +2688,10 @@ snapshots:
   estree-walker@3.0.3:
     dependencies:
       '@types/estree': 1.0.9
+    optional: true
 
-  expect-type@1.3.0: {}
+  expect-type@1.3.0:
+    optional: true
 
   fsevents@2.3.3:
     optional: true
@@ -2706,7 +2706,8 @@ snapshots:
 
   kysely@0.28.17: {}
 
-  loupe@3.2.1: {}
+  loupe@3.2.1:
+    optional: true
 
   lucide-react@1.21.0(react@19.2.7):
     dependencies:
@@ -2717,6 +2718,7 @@ snapshots:
   magic-string@0.30.21:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
+    optional: true
 
   miniflare@4.20260609.0:
     dependencies:
@@ -2730,27 +2732,33 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  ms@2.1.3: {}
+  ms@2.1.3:
+    optional: true
 
-  nanoid@3.3.12: {}
+  nanoid@3.3.12:
+    optional: true
 
   nanostores@1.3.0: {}
 
   path-to-regexp@6.3.0: {}
 
-  pathe@1.1.2: {}
+  pathe@1.1.2:
+    optional: true
 
   pathe@2.0.3: {}
 
-  pathval@2.0.1: {}
+  pathval@2.0.1:
+    optional: true
 
-  picocolors@1.1.1: {}
+  picocolors@1.1.1:
+    optional: true
 
   postcss@8.5.14:
     dependencies:
       nanoid: 3.3.12
       picocolors: 1.1.1
       source-map-js: 1.2.1
+    optional: true
 
   react-dom@19.2.7(react@19.2.7):
     dependencies:
@@ -2810,6 +2818,7 @@ snapshots:
       '@rollup/rollup-win32-x64-gnu': 4.60.4
       '@rollup/rollup-win32-x64-msvc': 4.60.4
       fsevents: 2.3.3
+    optional: true
 
   rou3@0.7.12: {}
 
@@ -2850,13 +2859,17 @@ snapshots:
       '@img/sharp-win32-ia32': 0.34.5
       '@img/sharp-win32-x64': 0.34.5
 
-  siginfo@2.0.0: {}
+  siginfo@2.0.0:
+    optional: true
 
-  source-map-js@1.2.1: {}
+  source-map-js@1.2.1:
+    optional: true
 
-  stackback@0.0.2: {}
+  stackback@0.0.2:
+    optional: true
 
-  std-env@3.10.0: {}
+  std-env@3.10.0:
+    optional: true
 
   supports-color@10.2.2: {}
 
@@ -2864,15 +2877,20 @@ snapshots:
 
   tailwindcss@4.3.1: {}
 
-  tinybench@2.9.0: {}
+  tinybench@2.9.0:
+    optional: true
 
-  tinyexec@0.3.2: {}
+  tinyexec@0.3.2:
+    optional: true
 
-  tinypool@1.1.1: {}
+  tinypool@1.1.1:
+    optional: true
 
-  tinyrainbow@1.2.0: {}
+  tinyrainbow@1.2.0:
+    optional: true
 
-  tinyspy@3.0.2: {}
+  tinyspy@3.0.2:
+    optional: true
 
   tslib@2.8.1: {}
 
@@ -2914,6 +2932,7 @@ snapshots:
       - sugarss
       - supports-color
       - terser
+    optional: true
 
   vite@5.4.21(@types/node@25.8.0):
     dependencies:
@@ -2923,6 +2942,7 @@ snapshots:
     optionalDependencies:
       '@types/node': 25.8.0
       fsevents: 2.3.3
+    optional: true
 
   vitest@2.1.9(@types/node@25.8.0):
     dependencies:
@@ -2958,11 +2978,13 @@ snapshots:
       - sugarss
       - supports-color
       - terser
+    optional: true
 
   why-is-node-running@2.3.0:
     dependencies:
       siginfo: 2.0.0
       stackback: 0.0.2
+    optional: true
 
   workerd@1.20260609.1:
     optionalDependencies:
