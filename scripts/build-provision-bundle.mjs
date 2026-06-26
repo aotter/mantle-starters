@@ -6,6 +6,7 @@ const root = new URL("..", import.meta.url).pathname;
 const version = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version;
 const checkOnly = process.argv.includes("--check");
 const archetypes = ["blank", "publication", "transaction", "reservation", "community"];
+const dependencySectionKeys = ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"];
 
 for (const archetype of archetypes) {
   const files = buildBundleFiles(archetype);
@@ -35,6 +36,7 @@ function buildBundleFiles(archetype) {
   const files = {};
   walk(files, "blank", "");
   resolveCatalogPackageJson(files);
+  resolveCatalogLockfile(files);
   if (archetype === "blank") {
     walk(files, "overlays", "overlays");
   } else {
@@ -143,6 +145,7 @@ function assertBundle(bundle, archetype) {
   if (archetype !== "blank" && !bundle.files[`manifests/${archetype}.yaml`]) {
     throw new Error(`${archetype} bundle missing applied manifest`);
   }
+  assertLockfileMatchesPackageJson(bundle, archetype);
 }
 
 function walk(files, from, to) {
@@ -191,6 +194,165 @@ function resolveCatalogPackageJson(files) {
     }
   }
   files["package.json"] = JSON.stringify(manifest, null, 2) + "\n";
+}
+
+function resolveCatalogLockfile(files) {
+  const raw = files["pnpm-lock.yaml"];
+  const manifestRaw = files["package.json"];
+  if (!raw || !manifestRaw) return;
+  const expected = collectPackageSpecifiers(JSON.parse(manifestRaw));
+  const lines = raw.split("\n");
+  let inImporters = false;
+  let inRootImporter = false;
+  let inDependencySection = false;
+  let dependencyName = null;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (line === "importers:") {
+      inImporters = true;
+      inRootImporter = false;
+      inDependencySection = false;
+      dependencyName = null;
+      continue;
+    }
+    if (!inImporters) continue;
+    if (/^\S/.test(line) && line.trim() && line !== "importers:") {
+      inImporters = false;
+      inRootImporter = false;
+      inDependencySection = false;
+      dependencyName = null;
+      continue;
+    }
+    if (line === "  .:") {
+      inRootImporter = true;
+      inDependencySection = false;
+      dependencyName = null;
+      continue;
+    }
+    if (!inRootImporter) continue;
+    if (/^  \S/.test(line) && line !== "  .:") {
+      inRootImporter = false;
+      inDependencySection = false;
+      dependencyName = null;
+      continue;
+    }
+
+    const sectionMatch = line.match(/^    ([A-Za-z]+Dependencies|dependencies):$/);
+    if (sectionMatch) {
+      inDependencySection = dependencySectionKeys.includes(sectionMatch[1]);
+      dependencyName = null;
+      continue;
+    }
+    if (!inDependencySection) continue;
+    const dependencyMatch = line.match(/^      (.+):$/);
+    if (dependencyMatch) {
+      dependencyName = parseLockfileKey(dependencyMatch[1]);
+      continue;
+    }
+    if (!dependencyName) continue;
+    if (/^        specifier:/.test(line) && expected.has(dependencyName)) {
+      lines[index] = `        specifier: ${formatLockfileScalar(expected.get(dependencyName))}`;
+    }
+  }
+
+  files["pnpm-lock.yaml"] = lines.join("\n");
+}
+
+function assertLockfileMatchesPackageJson(bundle, archetype) {
+  const manifest = JSON.parse(bundle.files["package.json"]);
+  const expected = collectPackageSpecifiers(manifest);
+  const actual = collectRootLockfileSpecifiers(bundle.files["pnpm-lock.yaml"]);
+  for (const [name, specifier] of expected) {
+    const lockfileSpecifier = actual.get(name);
+    if (lockfileSpecifier !== specifier) {
+      throw new Error(
+        `${archetype} bundle lockfile mismatch for ${name}: package.json=${specifier}, pnpm-lock.yaml=${lockfileSpecifier ?? "(missing)"}`,
+      );
+    }
+  }
+}
+
+function collectPackageSpecifiers(manifest) {
+  const specifiers = new Map();
+  for (const key of dependencySectionKeys) {
+    const deps = manifest[key];
+    if (!deps || typeof deps !== "object" || Array.isArray(deps)) continue;
+    for (const [name, specifier] of Object.entries(deps)) {
+      specifiers.set(name, specifier);
+    }
+  }
+  return specifiers;
+}
+
+function collectRootLockfileSpecifiers(text) {
+  const specifiers = new Map();
+  if (!text) return specifiers;
+  const lines = text.split("\n");
+  let inImporters = false;
+  let inRootImporter = false;
+  let inDependencySection = false;
+  let dependencyName = null;
+
+  for (const line of lines) {
+    if (line === "importers:") {
+      inImporters = true;
+      inRootImporter = false;
+      inDependencySection = false;
+      dependencyName = null;
+      continue;
+    }
+    if (!inImporters) continue;
+    if (/^\S/.test(line) && line.trim() && line !== "importers:") break;
+    if (line === "  .:") {
+      inRootImporter = true;
+      inDependencySection = false;
+      dependencyName = null;
+      continue;
+    }
+    if (!inRootImporter) continue;
+    if (/^  \S/.test(line) && line !== "  .:") break;
+
+    const sectionMatch = line.match(/^    ([A-Za-z]+Dependencies|dependencies):$/);
+    if (sectionMatch) {
+      inDependencySection = dependencySectionKeys.includes(sectionMatch[1]);
+      dependencyName = null;
+      continue;
+    }
+    if (!inDependencySection) continue;
+    const dependencyMatch = line.match(/^      (.+):$/);
+    if (dependencyMatch) {
+      dependencyName = parseLockfileKey(dependencyMatch[1]);
+      continue;
+    }
+    const specifierMatch = line.match(/^        specifier:\s+(.+)$/);
+    if (dependencyName && specifierMatch) {
+      specifiers.set(dependencyName, parseLockfileScalar(specifierMatch[1]));
+    }
+  }
+  return specifiers;
+}
+
+function parseLockfileKey(value) {
+  return parseLockfileScalar(value.trim());
+}
+
+function parseLockfileScalar(value) {
+  const trimmed = value.trim();
+  if (trimmed.startsWith("'") && trimmed.endsWith("'")) {
+    return trimmed.slice(1, -1).replaceAll("''", "'");
+  }
+  if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+    return JSON.parse(trimmed);
+  }
+  return trimmed;
+}
+
+function formatLockfileScalar(value) {
+  if (/^[A-Za-z0-9^~<>=.*| -]+$/.test(value) && !value.includes(":")) {
+    return value;
+  }
+  return `'${String(value).replaceAll("'", "''")}'`;
 }
 
 function parseCatalog(text) {
