@@ -33,6 +33,7 @@ for (const archetype of archetypes) {
     }
     assertNoLeftovers(tempRoot, bundle.files);
     assertPublicHomeIsNotHandoff(tempRoot);
+    assertMantleSiteSignature(tempRoot, archetype);
     const launchState = JSON.parse(readFileSync(join(tempRoot, ".mantle", "launch-state.json"), "utf8"));
     if (launchState.site_url !== replacements.SITE_URL) throw new Error(`${archetype} missing launch-state site_url`);
     if (launchState.purpose !== replacements.DESCRIPTION) throw new Error(`${archetype} missing launch-state purpose`);
@@ -78,6 +79,13 @@ function assertPublicHomeIsNotHandoff(root) {
   const text = readFileSync(join(root, "src", "index.ts"), "utf8");
   for (const forbidden of ["ready for your coding agent", "Copy this prompt", "Open this live site URL", "<textarea"]) {
     if (text.includes(forbidden)) throw new Error(`public homepage still contains handoff text: ${forbidden}`);
+  }
+}
+
+function assertMantleSiteSignature(root, archetype) {
+  const text = readFileSync(join(root, "src", "index.ts"), "utf8");
+  if (!text.includes('<meta name="mantle:site" content="v1" />')) {
+    throw new Error(`${archetype} missing Mantle site signature meta`);
   }
 }
 
