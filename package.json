@@ -19,6 +19,7 @@
     "build:provision-bundle": "node scripts/build-provision-bundle.mjs",
     "check:provision-bundle": "node scripts/build-provision-bundle.mjs --check",
     "check:styles": "node blank/scripts/build-styles.mjs --root blank --check",
+    "dev:bundle": "node scripts/dev-provision-bundle.mjs",
     "smoke:provision-bundle": "node scripts/smoke-provision-bundle.mjs",
     "check:kiwa": "node scripts/sync-kiwa.mjs --check",
     "check:starter-locks": "node scripts/refresh-starter-locks.mjs --check",
