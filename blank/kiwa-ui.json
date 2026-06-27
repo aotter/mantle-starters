@@ -9,5 +9,31 @@
     "components": "@/components",
     "utils": "@/lib/utils"
   },
-  "components": ["button", "card", "badge"]
+  "components": [
+    "accordion",
+    "avatar",
+    "badge",
+    "bento-02",
+    "button",
+    "contact-02",
+    "content-01",
+    "cta-02",
+    "display-card",
+    "faq-02",
+    "features-02",
+    "footer-02",
+    "hero-02",
+    "icon",
+    "input",
+    "label",
+    "metrics-02",
+    "nav-02",
+    "placeholder-data",
+    "placeholder-gradient",
+    "placeholder-logo",
+    "social-icon",
+    "social-proof-02",
+    "testimonials-02",
+    "textarea"
+  ]
 }
