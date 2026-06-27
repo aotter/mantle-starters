@@ -1,7 +1,6 @@
-const brand = "{{BRAND}}";
-const description =
-  "{{DESCRIPTION}}".trim() ||
-  "A focused studio helping visitors understand the work and get in touch.";
+import { siteContent } from "./siteContent.js";
+
+const { brand, description } = siteContent;
 
 export type HomeAction = {
   readonly label: string;
@@ -59,36 +58,10 @@ export type HomeSection = {
 };
 
 export type HomeContent = {
-  readonly brand: string;
-  readonly description: string;
-  readonly navLinks: readonly HomeAction[];
-  readonly navAction: HomeAction;
   readonly sections: readonly HomeSection[];
-  readonly footer: {
-    readonly tagline: string;
-    readonly columns: readonly {
-      readonly title: string;
-      readonly links: readonly HomeAction[];
-    }[];
-    readonly socialLinks: readonly {
-      readonly name: string;
-      readonly href: string;
-      readonly icon: "github" | "linkedin" | "instagram" | "facebook" | "youtube" | "x";
-    }[];
-    readonly bottomLinks: readonly HomeAction[];
-  };
 };
 
 export const homeContent: HomeContent = {
-  brand,
-  description,
-  navLinks: [
-    { label: "About", href: "#about" },
-    { label: "Services", href: "#services" },
-    { label: "Work", href: "#work" },
-    { label: "Contact", href: "#contact" },
-  ],
-  navAction: { label: "Start a conversation", href: "#contact" },
   sections: [
     {
       type: "hero",
@@ -324,27 +297,4 @@ export const homeContent: HomeContent = {
       secondaryAction: { label: "Review sections", href: "#about" },
     },
   ],
-  footer: {
-    tagline: "A focused web presence ready for real content, proof, and contact details.",
-    columns: [
-      {
-        title: "Site",
-        links: [
-          { label: "About", href: "#about" },
-          { label: "Services", href: "#services" },
-          { label: "Work", href: "#work" },
-          { label: "Contact", href: "#contact" },
-        ],
-      },
-      {
-        title: "Contact",
-        links: [
-          { label: "Email", href: "mailto:hello@example.com" },
-          { label: "Inquiry form", href: "#contact-form" },
-        ],
-      },
-    ],
-    socialLinks: [{ name: "GitHub", href: "https://github.com", icon: "github" }],
-    bottomLinks: [{ label: "Contact", href: "#contact" }],
-  },
 };

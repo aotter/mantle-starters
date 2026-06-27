@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { homeContent, type HomeField, type HomeItem, type HomeSection } from "./homeContent.js";
+import { siteContent } from "./siteContent.js";
 
 const archetype = "{{ARCHETYPE}}" as string;
 
@@ -53,28 +54,28 @@ function HomePage() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="mantle:site" content="v1" />
         <meta name="mantle:archetype" content={archetype} />
-        <title>{homeContent.brand}</title>
-        <meta name="description" content={homeContent.description} />
+        <title>{siteContent.brand}</title>
+        <meta name="description" content={siteContent.description} />
         <link rel="stylesheet" href="/assets/styles.css" />
       </head>
       <body class="min-h-screen bg-background text-foreground antialiased">
         <Nav02
-          logo={homeContent.brand}
-          links={homeContent.navLinks.map((link) => ({ ...link }))}
-          ctaText={homeContent.navAction.label}
-          ctaHref={homeContent.navAction.href}
+          logo={siteContent.brand}
+          links={siteContent.navLinks.map((link) => ({ ...link }))}
+          ctaText={siteContent.navAction.label}
+          ctaHref={siteContent.navAction.href}
         />
         <main>{homeContent.sections.map(renderSection)}</main>
         <Footer02
-          logo={{ text: homeContent.brand }}
-          tagline={homeContent.footer.tagline}
-          columns={homeContent.footer.columns.map((column) => ({
+          logo={{ text: siteContent.brand }}
+          tagline={siteContent.footer.tagline}
+          columns={siteContent.footer.columns.map((column) => ({
             title: column.title,
             links: column.links.map((link) => ({ ...link })),
           }))}
-          socialLinks={homeContent.footer.socialLinks.map((link) => ({ ...link }))}
-          copyright={`Copyright ${new Date().getFullYear()} ${homeContent.brand}.`}
-          bottomLinks={homeContent.footer.bottomLinks.map((link) => ({ ...link }))}
+          socialLinks={siteContent.footer.socialLinks.map((link) => ({ ...link }))}
+          copyright={`Copyright ${new Date().getFullYear()} ${siteContent.brand}.`}
+          bottomLinks={siteContent.footer.bottomLinks.map((link) => ({ ...link }))}
         />
         <script type="module" src="/assets/kiwa-home.js" />
       </body>
@@ -180,7 +181,7 @@ function renderSection(section: HomeSection, index: number): Child {
             author: {
               name: item.name ?? "Example Client",
               title: item.role ?? "Client",
-              company: item.company ?? homeContent.brand,
+              company: item.company ?? siteContent.brand,
             },
           }))}
         />,
