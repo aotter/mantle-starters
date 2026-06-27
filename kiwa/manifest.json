@@ -3,14 +3,163 @@
   "source": {
     "registry": "https://registry.kiwaui.com",
     "repo": "https://github.com/kiwa-ui/kiwa-ui",
-    "commit": "d00aba1ce6fc0f0c48c0102d803dc15e5f1ce3d5"
+    "commit": "d00aba1ce6fc0f0c48c0102d803dc15e5f1ce3d5",
+    "enhance": "@kiwa-ui/enhance@2.1.0"
   },
   "items": [
+    "accordion",
+    "avatar",
+    "badge",
+    "bento-02",
     "button",
-    "card",
-    "badge"
+    "contact-02",
+    "content-01",
+    "cta-02",
+    "display-card",
+    "faq-02",
+    "features-02",
+    "footer-02",
+    "hero-02",
+    "icon",
+    "input",
+    "label",
+    "metrics-02",
+    "nav-02",
+    "placeholder-data",
+    "placeholder-gradient",
+    "placeholder-logo",
+    "social-icon",
+    "social-proof-02",
+    "testimonials-02",
+    "textarea"
   ],
   "files": [
+    {
+      "path": "components/blocks/marketing/bento-02.tsx",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://registry.kiwaui.com/r/bento-02.json",
+      "sha256": "7bed774bf12a3e610a8428c44312650a4d90e435e388a2c04d6747189bcf74bc"
+    },
+    {
+      "path": "components/blocks/marketing/contact-02.tsx",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://registry.kiwaui.com/r/contact-02.json",
+      "sha256": "dea5904e6214cfdceba76d931ffa65a1b9b5850a620a36857b6dbc9b6113c76f"
+    },
+    {
+      "path": "components/blocks/marketing/content-01.tsx",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://registry.kiwaui.com/r/content-01.json",
+      "sha256": "efb94bcab8b75530a039b62324d08197fd1599175d3197f0a495a137c2adbe2c"
+    },
+    {
+      "path": "components/blocks/marketing/cta-02.tsx",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://registry.kiwaui.com/r/cta-02.json",
+      "sha256": "3555dbf7d6ad22fe40b9570b01362358f36a016fac6ac3f6d022b3053ff9557b"
+    },
+    {
+      "path": "components/blocks/marketing/faq-02.tsx",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://registry.kiwaui.com/r/faq-02.json",
+      "sha256": "9fccbb70d1e33be67c39a0de1fc50e62c102f522d6a1f51af091d12b143bda8b"
+    },
+    {
+      "path": "components/blocks/marketing/features-02.tsx",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://registry.kiwaui.com/r/features-02.json",
+      "sha256": "da7dbd0a1568faf7bda0e37a0287cad78478ea7ce00b13342d517397e5daa89d"
+    },
+    {
+      "path": "components/blocks/marketing/footer-02.tsx",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://registry.kiwaui.com/r/footer-02.json",
+      "sha256": "9c3177a1a49e464229af9c7ea5acef6c6a8ba8adc5107204b9ebced299f55a5f"
+    },
+    {
+      "path": "components/blocks/marketing/hero-02.tsx",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://registry.kiwaui.com/r/hero-02.json",
+      "sha256": "c5c923a2e023d1080fb6abedb9f640497781e3a7cadeb3724dd9c6dc509076b6"
+    },
+    {
+      "path": "components/blocks/marketing/metrics-02.tsx",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://registry.kiwaui.com/r/metrics-02.json",
+      "sha256": "d076a8b008789cd71c626e401aaa062dd3e3c4a8f19e4e7d6fef3ca5ecc904f4"
+    },
+    {
+      "path": "components/blocks/marketing/nav-02.tsx",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://registry.kiwaui.com/r/nav-02.json",
+      "sha256": "eb4556d4d46d5f4b8e9465ba95f9a12170db8fa451c19e2808c05319d488cf89"
+    },
+    {
+      "path": "components/blocks/marketing/social-proof-02.tsx",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://registry.kiwaui.com/r/social-proof-02.json",
+      "sha256": "c54d9acede6601abf5aff051526e7c0b7048667fe64f4a83bf52068bb12b576e"
+    },
+    {
+      "path": "components/blocks/marketing/testimonials-02.tsx",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://registry.kiwaui.com/r/testimonials-02.json",
+      "sha256": "72750c327c41d3cfe8aee567062064d00bf0333fae65c5595b9d9cc5168f692a"
+    },
+    {
+      "path": "components/ui/accordion.tsx",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://registry.kiwaui.com/r/accordion.json",
+      "sha256": "156b4a47a9437ae3627ca3c433b118691e8b6101aeac7f9913a9596ec619ce98"
+    },
+    {
+      "path": "components/ui/avatar.tsx",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://registry.kiwaui.com/r/avatar.json",
+      "sha256": "d6eec88c6cdff9565b37ae6276c8419fb2629ab31de90d1893f0b5bd7d93eeae"
+    },
     {
       "path": "components/ui/badge.tsx",
       "mirrors": [
@@ -30,13 +179,116 @@
       "sha256": "d8f2aa24eae2c8701c8ec56b7297bd73adf1437278bf53b78088b1a15293da5d"
     },
     {
-      "path": "components/ui/card.tsx",
+      "path": "components/ui/display-card.tsx",
       "mirrors": [
         "kiwa",
         "blank"
       ],
-      "source": "https://registry.kiwaui.com/r/card.json",
-      "sha256": "b6e6ee34a959a76120854b9e30a87974aa32985cae3b7d6b0dc7bcf74364ab94"
+      "source": "https://registry.kiwaui.com/r/display-card.json",
+      "sha256": "74f5862afecfaec110fa46c06a07682360e4f66e51606f7e1d96b1cf9851adf2"
+    },
+    {
+      "path": "components/ui/icon.tsx",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://registry.kiwaui.com/r/icon.json",
+      "sha256": "3b0d28152083c27c3b41f08e12d4dc1229f224bf47355d882edf4438a16ee5a7"
+    },
+    {
+      "path": "components/ui/input.tsx",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://registry.kiwaui.com/r/input.json",
+      "sha256": "39325528e9f30603463d45e3782f880578eb70b1e8d21e99d4eacb68d7bb0a8a"
+    },
+    {
+      "path": "components/ui/label.tsx",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://registry.kiwaui.com/r/label.json",
+      "sha256": "bb840e780b5270af18cf5abf2bde5906296c5ded29e1ed74a1083a8cfaabfd07"
+    },
+    {
+      "path": "components/ui/placeholder-gradient.tsx",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://registry.kiwaui.com/r/placeholder-gradient.json",
+      "sha256": "48df1987672596e1c5d1592b8dc2090ecc6ee76702ea20a136e79883210a103d"
+    },
+    {
+      "path": "components/ui/placeholder-logo.tsx",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://registry.kiwaui.com/r/placeholder-logo.json",
+      "sha256": "96a306a3fd3cf048fbbd367ce6cc1e8710ad5e7dd5b7e472b08743de6b8a6baf"
+    },
+    {
+      "path": "components/ui/social-icon.tsx",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://registry.kiwaui.com/r/social-icon.json",
+      "sha256": "16121f1d35a5453316e3e63fca3fe3b9ca4b3087c3bde004e34017f084e37a02"
+    },
+    {
+      "path": "components/ui/textarea.tsx",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://registry.kiwaui.com/r/textarea.json",
+      "sha256": "20b67feaef227403fe54607631c2bfcfbce2c1cff0de30c8fc037edcabbef71f"
+    },
+    {
+      "path": "kiwa/enhance/accordion.js",
+      "mirrors": [
+        "kiwa"
+      ],
+      "source": "https://unpkg.com/@kiwa-ui/enhance@2.1.0/dist/accordion.js",
+      "sha256": "c208181b4a1c8917ce8d071115a4718f2442a36e7c56aec7d4e896f76c7a854d"
+    },
+    {
+      "path": "kiwa/enhance/chunk-7CQYLTMT.js",
+      "mirrors": [
+        "kiwa"
+      ],
+      "source": "https://unpkg.com/@kiwa-ui/enhance@2.1.0/dist/chunk-7CQYLTMT.js",
+      "sha256": "21233379a77609586f925619c823213f0fb763abab58673e1c9ac919b781c7ea"
+    },
+    {
+      "path": "kiwa/enhance/chunk-BZTFZYW6.js",
+      "mirrors": [
+        "kiwa"
+      ],
+      "source": "https://unpkg.com/@kiwa-ui/enhance@2.1.0/dist/chunk-BZTFZYW6.js",
+      "sha256": "f7ab79eeba0cb4226e85a4653d9c5e683813b87b826b6fdcb1886b1bd8f5fab4"
+    },
+    {
+      "path": "kiwa/enhance/chunk-XSYCANLE.js",
+      "mirrors": [
+        "kiwa"
+      ],
+      "source": "https://unpkg.com/@kiwa-ui/enhance@2.1.0/dist/chunk-XSYCANLE.js",
+      "sha256": "2deff60e09ca37e07d96bb8e401033c8942a7e50c6246303cc88c0e964d74084"
+    },
+    {
+      "path": "kiwa/enhance/collapsible.js",
+      "mirrors": [
+        "kiwa"
+      ],
+      "source": "https://unpkg.com/@kiwa-ui/enhance@2.1.0/dist/collapsible.js",
+      "sha256": "f7a1ba2792fddd5735d82b71a38d43d105ea5b2c1691ad24521beb0f7e51cc08"
     },
     {
       "path": "kiwa/LICENSE",
@@ -47,6 +299,15 @@
       "sha256": "e62cab355d79a5df04efaafe704b2cd363946c86bcc816a4e284e2b5c0f14cea"
     },
     {
+      "path": "lib/placeholder-data.ts",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://registry.kiwaui.com/r/placeholder-data.json",
+      "sha256": "ddb04831d343d9ced77ee91f0035dd80e621a736f1844443508f5b2511f212df"
+    },
+    {
       "path": "lib/utils.ts",
       "mirrors": [
         "kiwa",
@@ -54,6 +315,32 @@
       ],
       "source": "https://raw.githubusercontent.com/kiwa-ui/kiwa-ui/d00aba1ce6fc0f0c48c0102d803dc15e5f1ce3d5/registry/lib/utils.ts",
       "sha256": "cc415674b12bea27cf6e2255b94453c772ae1c9f26513ad6c51910e0d6049ed5"
+    },
+    {
+      "path": "src/kiwaEnhanceAssets.ts",
+      "mirrors": [
+        "blank"
+      ],
+      "source": "https://unpkg.com/@kiwa-ui/enhance@2.1.0/dist/",
+      "sha256": "a92eddfb1db98c952b84551c73ff9ff9c3d21b9467193fe0ac34d6c3e607452f"
+    },
+    {
+      "path": "styles/globals.css",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://raw.githubusercontent.com/kiwa-ui/kiwa-ui/d00aba1ce6fc0f0c48c0102d803dc15e5f1ce3d5/templates/styles/globals.css",
+      "sha256": "dcfc125f4c348dad34c3c5efd8eb74c08dbd6acb990b31f539dba5c9ad534ae2"
+    },
+    {
+      "path": "styles/swirl-images.css",
+      "mirrors": [
+        "kiwa",
+        "blank"
+      ],
+      "source": "https://raw.githubusercontent.com/kiwa-ui/kiwa-ui/d00aba1ce6fc0f0c48c0102d803dc15e5f1ce3d5/templates/styles/swirl-images.css",
+      "sha256": "e85d32a1e49227713e6ad4b1836dcd5af52d2ca2a87284026911913cc656bb75"
     }
   ]
 }
