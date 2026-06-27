@@ -1,6 +1,6 @@
 # Contributing to mantle-starters
 
-This repo holds the blank starter source, post-launch overlays, vendored Kiwa source, and the provision bundle consumed by Mantle landing.
+This repo holds the blank starter source, type bundle overlays, vendored Kiwa source, and the provision bundles consumed by Mantle landing.
 
 Start here before changing code or docs. For project-wide doctrine, read the parent repo's [`CLAUDE.md`](https://github.com/aotter/mantle/blob/main/CLAUDE.md).
 
@@ -54,10 +54,11 @@ When an AI agent authored or substantially rewrote a commit, add a co-author tra
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
-## Adding an overlay
+## Adding a type overlay
 
-First launch always uses `blank/`. New type-specific work belongs in a
-small post-launch overlay, not a full starter directory.
+First launch uses a generated `provision-bundles/<type>.json`. New
+type-specific work belongs in a small overlay source, not a full starter
+directory.
 
 An overlay should contain only what the user's coding agent needs next:
 
@@ -68,10 +69,8 @@ An overlay should contain only what the user's coding agent needs next:
 
 Then:
 
-1. Keep `sources.json` pointing launch intents at `blank` unless the
-   first-launch contract changes.
-2. Add or update the smallest overlay under `overlays/<name>/`.
-3. Smoke-test the generated bundle: `pnpm build:provision-bundle`,
+1. Add or update the smallest overlay under `overlays/<name>/`.
+2. Smoke-test the generated bundle: `pnpm build:provision-bundle`,
    `pnpm check:provision-bundle`, and `pnpm smoke:provision-bundle`.
 
 ### EN-only SKILLs
@@ -90,7 +89,7 @@ Use the GitHub issue templates:
 
 - **Bug report** — broken, surprising, or unsafe behavior in the blank starter, overlays, Kiwa source, or provision bundle. (Engine / runtime bugs go on the parent repo.)
 - **Feature request** — a concrete capability for the blank starter, overlays, Kiwa source, or provision bundle.
-- **New overlay** — propose a new post-launch type overlay.
+- **New overlay** — propose a new type bundle overlay.
 
 Apply at least one `starter:*` or `area:*` label.
 
@@ -111,7 +110,7 @@ Use [`.github/pull_request_template.md`](./.github/pull_request_template.md). Li
 
 ## Release process
 
-Mantle landing consumes `provision-bundles/blank.json` from the selected starters ref.
+Mantle landing consumes `provision-bundles/<type>.json` from the selected starters ref.
 
 Release process:
 
@@ -125,8 +124,8 @@ Per-starter `@aotter/mantle-*` version pins move on their own cadence — indepe
 ## Architecture gates
 
 - Each starter is **standalone**. No `workspace:*` cross-deps. Bump `@aotter/mantle-*` deps explicitly per starter.
-- `blank/` is the only first-launch base. Type-specific starter work belongs in `overlays/<type>/`.
-- `sources.json` keeps launch intents mapped to `blank`; landing provisions from `provision-bundles/blank.json`.
+- `blank/` is the shared first-launch source base. Type-specific starter work belongs in `overlays/<type>/`.
+- Landing provisions from the generated `provision-bundles/<type>.json`; do not add a second overlay step to generated repos.
 - Macro expansion (`{{SITE_NAME}}`, `{{ARCHETYPE}}`, …) is governed by [ADR-0016](https://github.com/aotter/mantle/blob/main/docs/adr/0016-site-semantic-layer.md) on the parent repo. Unfilled macros in the scaffolded output are a release blocker.
 
 ## Security

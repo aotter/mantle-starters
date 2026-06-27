@@ -8,10 +8,9 @@ import { fileURLToPath } from "node:url";
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const check = process.argv.includes("--check");
 const keepTemp = process.argv.includes("--keep-temp");
-const sources = JSON.parse(readFileSync(join(root, "sources.json"), "utf8"));
 const changed = [];
 
-for (const starterPath of uniqueStarterPaths(sources)) {
+for (const starterPath of ["blank"]) {
   const tempRoot = mkdtempSync(join(tmpdir(), "mantle-lock-"));
   try {
     cpSync(join(root, "pnpm-workspace.yaml"), join(tempRoot, "pnpm-workspace.yaml"));
@@ -57,14 +56,4 @@ if (changed.length > 0) {
   for (const file of changed) console.log(`  - ${file}`);
 } else {
   console.log("Starter lockfiles are current.");
-}
-
-function uniqueStarterPaths(sources) {
-  return [
-    ...new Set(
-      Object.values(sources.archetypes ?? {})
-        .map((source) => source?.path)
-        .filter(Boolean),
-    ),
-  ].sort();
 }

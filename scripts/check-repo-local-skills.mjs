@@ -6,7 +6,6 @@ import { fileURLToPath } from "node:url";
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const expected = [
   ["mantle-develop", "mantle:develop"],
-  ["mantle-overlay", "mantle:overlay"],
   ["mantle-theme", "mantle:theme"],
   ["mantle-update", "mantle:update"],
 ];

@@ -1,9 +1,8 @@
 import type { AnyHandler } from "@aotter/mantle/runtime";
 
 /**
- * Procedure handler registry. Empty for the headless starter — add
- * entries when your manifests declare Procedures with
- * `handler.kind: ref` and a matching `handler.ref` name.
+ * Procedure handler registry. Blank ships no ref handlers; archetype
+ * overlays replace this file when their manifests need runtime hooks.
  */
 export function buildHandlers(): Readonly<Record<string, AnyHandler>> {
   return {};

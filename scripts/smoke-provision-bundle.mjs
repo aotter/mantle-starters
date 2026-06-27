@@ -1,11 +1,10 @@
 #!/usr/bin/env node
-import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
 const root = new URL("..", import.meta.url).pathname;
-const archetypes = ["blank", "publication", "transaction", "reservation", "community"];
+const archetypes = ["blank", "presence", "publication", "transaction", "reservation", "community"];
 const replacements = {
   PROJECT_NAME: "bundle-smoke",
   ARCHETYPE: "publication",
@@ -34,6 +33,7 @@ for (const archetype of archetypes) {
     assertNoLeftovers(tempRoot, bundle.files);
     assertPublicHomeIsNotHandoff(tempRoot);
     assertMantleSiteSignature(tempRoot, archetype);
+    assertStylesheetMounted(tempRoot, archetype);
     const launchState = JSON.parse(readFileSync(join(tempRoot, ".mantle", "launch-state.json"), "utf8"));
     if (launchState.site_url !== replacements.SITE_URL) throw new Error(`${archetype} missing launch-state site_url`);
     if (launchState.purpose !== replacements.DESCRIPTION) throw new Error(`${archetype} missing launch-state purpose`);
@@ -44,12 +44,9 @@ for (const archetype of archetypes) {
     if (archetype !== "blank") {
       if (!features?.archetype?.appliedAt) throw new Error(`${archetype} overlay not marked applied`);
       assertFourAtoms(tempRoot, archetype);
+      assertOverlayManifestLoaded(tempRoot, archetype);
       readFileSync(join(tempRoot, ".mantle", "overlays", archetype, "seed.json"), "utf8");
-    } else {
-      execFileSync("node", ["scripts/apply-overlay.mjs", "publication"], {
-        cwd: tempRoot,
-        stdio: "inherit",
-      });
+      if (archetype === "presence") assertPresenceHandlerLoaded(tempRoot);
     }
   } finally {
     rmSync(tempRoot, { recursive: true, force: true });
@@ -76,16 +73,37 @@ function assertNoLeftovers(root, files) {
 }
 
 function assertPublicHomeIsNotHandoff(root) {
-  const text = readFileSync(join(root, "src", "index.ts"), "utf8");
+  const text = readSource(root);
   for (const forbidden of ["ready for your coding agent", "Copy this prompt", "Open this live site URL", "<textarea"]) {
     if (text.includes(forbidden)) throw new Error(`public homepage still contains handoff text: ${forbidden}`);
   }
 }
 
 function assertMantleSiteSignature(root, archetype) {
-  const text = readFileSync(join(root, "src", "index.ts"), "utf8");
+  const text = readSource(root);
   if (!text.includes('<meta name="mantle:site" content="v1" />')) {
     throw new Error(`${archetype} missing Mantle site signature meta`);
+  }
+}
+
+function assertStylesheetMounted(root, archetype) {
+  const source = readSource(root);
+  const css = readFileSync(join(root, "styles", "generated.css"), "utf8");
+  if (!source.includes("/assets/styles.css")) {
+    throw new Error(`${archetype} homepage does not link generated stylesheet`);
+  }
+  if (!source.includes("stylesCss")) {
+    throw new Error(`${archetype} worker does not mount generated stylesheet`);
+  }
+  if (!css.includes("tailwindcss") || !css.includes(".bg-primary")) {
+    throw new Error(`${archetype} generated stylesheet does not include Kiwa/Tailwind utilities`);
+  }
+}
+
+function assertOverlayManifestLoaded(root, archetype) {
+  const text = readFileSync(join(root, "src", "loadManifests.ts"), "utf8");
+  if (!text.includes(`../manifests/${archetype}.yaml`)) {
+    throw new Error(`${archetype} manifest is present but not loaded`);
   }
 }
 
@@ -96,4 +114,23 @@ function assertFourAtoms(root, archetype) {
       throw new Error(`${archetype} manifest missing ${atom}`);
     }
   }
+}
+
+function assertPresenceHandlerLoaded(root) {
+  const text = readFileSync(join(root, "src", "handlers", "index.ts"), "utf8");
+  if (!text.includes('"notify-contact": notifyContact')) {
+    throw new Error("presence overlay did not install notify-contact handler");
+  }
+}
+
+function readSource(root) {
+  return ["src/index.ts", "src/home.tsx"]
+    .map((path) => {
+      try {
+        return readFileSync(join(root, path), "utf8");
+      } catch {
+        return "";
+      }
+    })
+    .join("\n");
 }

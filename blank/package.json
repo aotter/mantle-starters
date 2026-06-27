@@ -2,10 +2,12 @@
   "name": "mantle-starter-blank",
   "version": "0.0.11-alpha.35",
   "private": true,
-  "description": "Headless CMS starter for mantle — API + MCP only, no public HTML rendering. Bring your own frontend.",
+  "description": "Mantle launch base with a small Kiwa public homepage plus API and MCP surfaces.",
   "type": "module",
   "scripts": {
-    "dev": "node scripts/wrangler-dev.mjs",
+    "build:styles": "node scripts/build-styles.mjs",
+    "check:styles": "node scripts/build-styles.mjs --check",
+    "dev": "node scripts/build-styles.mjs && node scripts/wrangler-dev.mjs",
     "validate": "mantle validate",
     "validate:deploy": "mantle validate --phase deploy",
     "mantle:update": "node scripts/update.mjs",
@@ -13,8 +15,8 @@
     "emit-openapi": "node scripts/mantle.mjs emit-openapi --output openapi.json",
     "emit-types": "node scripts/mantle.mjs emit-types --namespace BlankCms --output mantle-types.d.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "check": "pnpm validate && pnpm typecheck",
-    "deploy": "pnpm validate:deploy && pnpm typecheck && wrangler deploy"
+    "check": "pnpm validate && pnpm check:styles && pnpm typecheck",
+    "deploy": "pnpm validate:deploy && pnpm check:styles && pnpm typecheck && wrangler deploy"
   },
   "dependencies": {
     "@aotter/mantle": "0.0.11-alpha.35",

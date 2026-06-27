@@ -31,3 +31,8 @@ binding = "OAUTH_KV"
 type = "Text"
 globs = ["**/*.yaml"]
 fallthrough = true
+
+[[rules]]
+type = "Text"
+globs = ["**/*.css"]
+fallthrough = true

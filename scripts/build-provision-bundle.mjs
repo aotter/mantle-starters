@@ -1,12 +1,15 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, posix } from "node:path";
 
 const root = new URL("..", import.meta.url).pathname;
 const version = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version;
 const checkOnly = process.argv.includes("--check");
-const archetypes = ["blank", "publication", "transaction", "reservation", "community"];
+const archetypes = ["blank", "presence", "publication", "transaction", "reservation", "community"];
 const dependencySectionKeys = ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"];
+
+ensureStarterStyles();
 
 for (const archetype of archetypes) {
   const files = buildBundleFiles(archetype);
@@ -37,16 +40,11 @@ function buildBundleFiles(archetype) {
   walk(files, "blank", "");
   resolveCatalogPackageJson(files);
   resolveCatalogLockfile(files);
-  if (archetype === "blank") {
-    walk(files, "overlays", "overlays");
-  } else {
+  if (archetype !== "blank") {
     applyOverlay(files, archetype);
+    applyOverlayManifestLoader(files, archetype);
   }
   walk(files, "kiwa", "kiwa");
-  files["scripts/apply-overlay.mjs"] = readFileSync(
-    join(root, "scripts", "apply-overlay.mjs"),
-    "utf8",
-  );
 
   files[".mantle/launch-state.json.template"] = [
     "{",
@@ -78,7 +76,7 @@ function buildBundleFiles(archetype) {
     '  "handoff": ".mantle/handoff.md",',
     '  "overlay": {',
     '    "suggested": "{{ARCHETYPE}}",',
-    '    "path": "overlays/{{ARCHETYPE}}"',
+    `    "path": ${archetype === "blank" ? "null" : '".mantle/overlays/{{ARCHETYPE}}"'}`,
     "  }",
     "}",
     "",
@@ -93,7 +91,7 @@ function buildBundleFiles(archetype) {
     archetype: {
       name: "{{ARCHETYPE}}",
       type: "registry:archetype",
-      overlayPath: "overlays/{{ARCHETYPE}}",
+      overlayPath: archetype === "blank" ? null : ".mantle/overlays/{{ARCHETYPE}}",
       appliedAt: archetype === "blank" ? null : "{{INSTALL_TIMESTAMP}}",
     },
     theme: null,
@@ -130,22 +128,30 @@ function assertBundle(bundle, archetype) {
     ".mantle/features.json.template",
     ".mantle/handoff.md.template",
     ".agent/skills/mantle-develop/SKILL.md",
-    ".agent/skills/mantle-overlay/SKILL.md",
     ".agent/skills/mantle-theme/SKILL.md",
     ".agent/skills/mantle-update/SKILL.md",
     ".claude/skills/mantle-develop/SKILL.md",
-    ".claude/skills/mantle-overlay/SKILL.md",
     ".claude/skills/mantle-theme/SKILL.md",
     ".claude/skills/mantle-update/SKILL.md",
-    "scripts/apply-overlay.mjs",
     "kiwa/manifest.json",
+    "styles/generated.css",
   ]) {
     if (!bundle.files[required]) throw new Error(`${archetype} bundle missing ${required}`);
+  }
+  if (!bundle.files["src/index.ts"]?.includes("/assets/styles.css")) {
+    throw new Error(`${archetype} bundle missing generated stylesheet route`);
   }
   if (archetype !== "blank" && !bundle.files[`manifests/${archetype}.yaml`]) {
     throw new Error(`${archetype} bundle missing applied manifest`);
   }
   assertLockfileMatchesPackageJson(bundle, archetype);
+}
+
+function ensureStarterStyles() {
+  const args = [join(root, "blank", "scripts", "build-styles.mjs"), "--root", join(root, "blank")];
+  if (checkOnly) args.push("--check");
+  const result = spawnSync(process.execPath, args, { stdio: "inherit" });
+  if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
 function walk(files, from, to) {
@@ -163,8 +169,8 @@ function walk(files, from, to) {
 }
 
 function applyOverlay(files, archetype) {
-  walk(files, `overlays/${archetype}`, `overlays/${archetype}`);
   walk(files, `overlays/${archetype}/manifests`, "manifests");
+  walkIfExists(files, `overlays/${archetype}/src`, "src");
   for (const name of ["handoff.md", "layout.md", "seed-prompt.md", "seed.json"]) {
     const path = join(root, "overlays", archetype, name);
     try {
@@ -175,6 +181,28 @@ function applyOverlay(files, archetype) {
       // optional
     }
   }
+}
+
+function walkIfExists(files, from, to) {
+  try {
+    statSync(join(root, from));
+  } catch {
+    return;
+  }
+  walk(files, from, to);
+}
+
+function applyOverlayManifestLoader(files, archetype) {
+  const bindingName = `${archetype.replace(/[^a-zA-Z0-9]/g, "_")}Yaml`;
+  files["src/loadManifests.ts"] = [
+    'import { parseManifestsOrThrow, type Manifest } from "@aotter/mantle/spec";',
+    `import ${bindingName} from "../manifests/${archetype}.yaml";`,
+    "",
+    "export function loadManifests(): readonly Manifest[] {",
+    `  return parseManifestsOrThrow([${bindingName}], { context: "starters/${archetype}" });`,
+    "}",
+    "",
+  ].join("\n");
 }
 
 function skip(name) {
