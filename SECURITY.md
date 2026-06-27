@@ -8,8 +8,8 @@ This repo ships consumer-facing starter scaffolds. Engine / runtime vulnerabilit
 
 **In-scope here:**
 
-- Starter scaffold code (`blank/`, post-launch overlays under `overlays/`, and vendored free Kiwa source under `kiwa/`).
-- Provision bundle generation (`provision-bundles/blank.json` and `scripts/build-provision-bundle.mjs`).
+- Starter scaffold code (`blank/`, type bundle overlays under `overlays/`, and vendored free Kiwa source under `kiwa/`).
+- Provision bundle generation (`provision-bundles/<type>.json` and `scripts/build-provision-bundle.mjs`).
 - Released tarball assets attached to GitHub releases on this repo.
 
 **Out-of-scope here — report to parent `aotter/mantle`:**

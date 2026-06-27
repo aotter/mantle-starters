@@ -50,7 +50,6 @@ body:
         - overlay:reservation
         - area:provision-bundle
         - area:kiwa
-        - area:sources-json
         - area:ci
         - area:docs
         - unknown

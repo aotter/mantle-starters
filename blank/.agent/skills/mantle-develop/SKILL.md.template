@@ -76,4 +76,3 @@ MCP tool arguments.
 - Do not write directly to D1 or KV for content authoring. After deploy,
   use the Staff MCP endpoint at `<SITE_URL>/mcp/staff`.
 - Do not commit provider secrets.
-- If the user asks to apply the launch type, run `mantle:overlay`.
