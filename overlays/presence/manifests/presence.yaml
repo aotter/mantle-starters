@@ -25,7 +25,20 @@ spec:
           properties:
             type:
               type: string
-              enum: [hero, features, about, cta, contact]
+              enum:
+                - hero
+                - socialProof
+                - content
+                - features
+                - bento
+                - metrics
+                - testimonials
+                - faq
+                - contact
+                - contactForm
+                - cta
+            id:
+              type: string
             eyebrow:
               type: string
             title:
@@ -33,20 +46,80 @@ spec:
             body:
               type: string
               x-mcp-hint: markdown
-            actionLabel:
+            action:
+              type: object
+              properties:
+                label:
+                  type: string
+                href:
+                  type: string
+            secondaryAction:
+              type: object
+              properties:
+                label:
+                  type: string
+                href:
+                  type: string
+            footerTitle:
               type: string
-            actionHref:
+            footerBody:
               type: string
+              x-mcp-hint: markdown
+            footerAction:
+              type: object
+              properties:
+                label:
+                  type: string
+                href:
+                  type: string
             items:
               type: array
               items:
                 type: object
-                required: [title]
                 properties:
                   title:
                     type: string
                   body:
                     type: string
+                    x-mcp-hint: markdown
+                  label:
+                    type: string
+                  href:
+                    type: string
+                  value:
+                    type: string
+                  icon:
+                    type: string
+                  quote:
+                    type: string
+                  name:
+                    type: string
+                  role:
+                    type: string
+                  company:
+                    type: string
+                  mark:
+                    type: number
+            fields:
+              type: array
+              items:
+                type: object
+                required: [name, label]
+                properties:
+                  name:
+                    type: string
+                  label:
+                    type: string
+                  type:
+                    type: string
+                  placeholder:
+                    type: string
+                  autocomplete:
+                    type: string
+                  required:
+                    type: boolean
+                  multiline:
+                    type: boolean
   uniqueIndexes:
     - [type]
   localized: false

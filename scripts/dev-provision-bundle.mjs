@@ -39,7 +39,11 @@ console.log(`local URL: http://localhost:${port}`);
 run(process.execPath, ["scripts/build-styles.mjs"], targetRoot);
 if (!prepareOnly) {
   run(process.execPath, ["scripts/wrangler-dev.mjs"], targetRoot, {
-    PATH: [join(targetRoot, "node_modules", ".bin"), process.env.PATH ?? ""].join(delimiter),
+    PATH: [
+      join(root, "blank", "node_modules", ".bin"),
+      join(targetRoot, "node_modules", ".bin"),
+      process.env.PATH ?? "",
+    ].join(delimiter),
     WRANGLER_DEV_PORT: port,
     WRANGLER_INSPECTOR_PORT: process.env.WRANGLER_INSPECTOR_PORT ?? "0",
   });
