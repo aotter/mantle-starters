@@ -4,12 +4,12 @@
     "page": [
       {
         "type": "home",
-        "title": "A useful web presence for {{BRAND}}",
+        "title": "A Mantle-ready presence for {{BRAND}}",
         "summary": "{{DESCRIPTION}}",
         "sections": [
           {
             "type": "hero",
-            "title": "A useful web presence for {{BRAND}}",
+            "title": "A Mantle-ready presence for {{BRAND}}",
             "body": "{{DESCRIPTION}}",
             "action": {
               "label": "Start a conversation",
@@ -22,7 +22,7 @@
           },
           {
             "type": "socialProof",
-            "title": "A first site shaped for clients, collaborators, and serious inquiries.",
+            "title": "Placeholder proof slots for clients, partners, press, or community signals.",
             "items": [
               {
                 "title": "Studio",
@@ -46,14 +46,14 @@
             "type": "content",
             "id": "about",
             "eyebrow": "About",
-            "title": "{{BRAND}} gives visitors a clear first impression",
-            "body": "A concise home base for the work, the people it serves, and the next step.",
+            "title": "{{BRAND}} starts with a clean Mantle content shape",
+            "body": "Use this block for the short positioning paragraph every useful presence site needs.",
             "items": [
               {
-                "body": "{{BRAND}} explains the offer in plain language so visitors can decide quickly whether it fits their needs."
+                "body": "{{BRAND}} can explain the offer, audience, and next step here without committing to a final visual direction."
               },
               {
-                "body": "The first version stays small: a strong opening, proof points, useful services, and a direct way to start a conversation."
+                "body": "The copy is intentionally plain so the owner can replace it with real voice, proof, and details after launch."
               }
             ]
           },
@@ -61,38 +61,38 @@
             "type": "features",
             "id": "services",
             "eyebrow": "Services",
-            "title": "What this site makes easy to understand",
-            "body": "A presence site should help visitors understand the offer, trust the work, and know how to reach you.",
+            "title": "What this Mantle starter is ready to hold",
+            "body": "Each item is a placeholder for a common presence-site section, not a fixed theme.",
             "items": [
               {
                 "icon": "layout",
-                "title": "Clear pages",
-                "body": "Present who you are, what you do, and how visitors should move next."
+                "title": "Positioning",
+                "body": "A concise statement of who this is for and what the site should make obvious."
               },
               {
                 "icon": "sparkles",
-                "title": "Useful first impression",
-                "body": "Give first-time visitors enough context to trust the next click."
+                "title": "Offer",
+                "body": "A place for services, packages, products, or the first useful thing to understand."
               },
               {
                 "icon": "chat",
-                "title": "Contact ready",
-                "body": "Capture serious inquiries through a simple contact path."
+                "title": "Contact path",
+                "body": "A simple route for serious inquiries before richer workflows are added."
               },
               {
                 "icon": "handshake",
-                "title": "Proof of work",
-                "body": "Make services, outcomes, testimonials, and working style easy to scan."
+                "title": "Proof",
+                "body": "Slots for outcomes, client names, quotes, partners, or lightweight case notes."
               },
               {
                 "icon": "shield",
-                "title": "Focused trust",
-                "body": "Answer the questions a serious visitor has before reaching out."
+                "title": "Trust",
+                "body": "Short answers to visitor doubts before they decide to reach out."
               },
               {
                 "icon": "check",
-                "title": "Easy to update",
-                "body": "Keep the first structure simple enough to edit as the business changes."
+                "title": "Editable structure",
+                "body": "A section model that is easy for the owner or team to rewrite."
               }
             ]
           },
@@ -100,28 +100,28 @@
             "type": "bento",
             "id": "work",
             "eyebrow": "Work",
-            "title": "Enough substance before the custom design pass",
-            "body": "Use these sections to show a real first version with the site's own proof, examples, and visuals.",
+            "title": "A compact set of starter blocks, not a finished brand",
+            "body": "Use this area to decide which pieces stay, which become real content, and which should disappear.",
             "items": [
               {
-                "title": "Homepage narrative",
-                "body": "Hero, proof, services, contact, and FAQ give visitors a complete first visit."
+                "title": "Main story",
+                "body": "The hero and about blocks establish the first plain-English narrative."
               },
               {
-                "title": "Service snapshot",
-                "body": "A compact place to explain the main offer and ideal audience."
+                "title": "Offer snapshot",
+                "body": "Feature cards can become services, capabilities, product lines, or use cases."
               },
               {
                 "title": "Proof snapshot",
-                "body": "A starter area for quotes, partners, outcomes, or recent work."
+                "body": "Proof blocks give Mantle something concrete to refine instead of an empty page."
               }
             ]
           },
           {
             "type": "metrics",
             "eyebrow": "Signals",
-            "title": "A first visit that does not feel empty",
-            "body": "The page starts with practical sections ready for real details.",
+            "title": "Small signals show where real numbers can land",
+            "body": "These are placeholder counters for reach, work, speed, outcomes, or other honest proof.",
             "action": {
               "label": "Open contact",
               "href": "#contact"
@@ -129,11 +129,11 @@
             "items": [
               {
                 "value": "1",
-                "title": "Clear home"
+                "title": "Home view"
               },
               {
                 "value": "4",
-                "title": "Useful sections"
+                "title": "Proof slots"
               },
               {
                 "value": "3",
@@ -141,57 +141,57 @@
               },
               {
                 "value": "1",
-                "title": "Direct next step"
+                "title": "Next step"
               }
             ]
           },
           {
             "type": "testimonials",
             "eyebrow": "Proof",
-            "title": "Examples of useful social proof",
-            "body": "Use this area for real quotes, partner names, outcomes, or recent work.",
+            "title": "Quote placeholders with a real replacement shape",
+            "body": "Keep the structure, then swap in honest quotes, partner blurbs, or short outcome notes.",
             "items": [
               {
-                "quote": "The page made the offer obvious and gave prospects a direct way to reach us.",
+                "quote": "This placeholder quote should become a concrete sentence from a real client, partner, or user.",
                 "name": "Mia Chen",
-                "role": "Founder",
-                "company": "Northline Studio"
+                "role": "Example client",
+                "company": "Placeholder Studio"
               },
               {
-                "quote": "It felt like a proper first version: focused, useful, and ready to iterate.",
+                "quote": "Use this card for a short proof point that makes the offer easier to trust.",
                 "name": "Alex Rivera",
-                "role": "Creative Lead",
-                "company": "Field Notes Co."
+                "role": "Example partner",
+                "company": "Sample Collective"
               },
               {
-                "quote": "The structure was simple enough to customize without fighting the page.",
+                "quote": "Mantle keeps the first draft plain so the site can become specific quickly.",
                 "name": "Sam Patel",
-                "role": "Operator",
-                "company": "Harbor Desk"
+                "role": "Example operator",
+                "company": "Demo Desk"
               }
             ]
           },
           {
             "type": "faq",
             "eyebrow": "FAQ",
-            "title": "Questions visitors often ask first",
-            "body": "Keep answers short, concrete, and specific to the site's real details.",
+            "title": "Starter questions to replace with real visitor concerns",
+            "body": "Use this block for clear answers before adding heavier support or content flows.",
             "items": [
               {
-                "title": "What kind of work fits best?",
-                "body": "{{BRAND}} is best for focused projects where the next step can be explained clearly before a call."
+                "title": "What should this site explain first?",
+                "body": "{{BRAND}} should answer the visitor's first practical question before asking them to take action."
               },
               {
-                "title": "How quickly can someone get a response?",
-                "body": "Set a realistic expectation here, then route the contact form to the right inbox."
+                "title": "What should the first call to action be?",
+                "body": "Keep one obvious next step: contact, book, subscribe, join, or read more."
               },
               {
-                "title": "Where should proof or examples go?",
-                "body": "Use the work section for a small set of examples, outcomes, partner logos, or quotes."
+                "title": "Where does proof belong?",
+                "body": "Use logos, metrics, quotes, or work examples only when they help visitors decide."
               },
               {
-                "title": "Can the site grow later?",
-                "body": "Yes. Start with the core presence page, then add deeper pages or workflows when they are needed."
+                "title": "Can this grow after launch?",
+                "body": "Yes. Start with the presence page, then add richer Mantle features only when the site needs them."
               }
             ]
           },
@@ -199,10 +199,10 @@
             "type": "contact",
             "id": "contact",
             "eyebrow": "Contact",
-            "title": "Give visitors a direct next step",
-            "body": "Use the form below or list the preferred contact channels.",
-            "footerTitle": "Prefer a short brief?",
-            "footerBody": "Share the goal, timeline, and best reply email so the first response has the right context.",
+            "title": "Give the placeholder site one useful action",
+            "body": "This section can become an email card, booking path, intake form, or simple contact surface.",
+            "footerTitle": "Keep the first action focused",
+            "footerBody": "Ask only for the details needed to reply well; add richer intake later.",
             "footerAction": {
               "label": "Send a message",
               "href": "#contact-form"
@@ -211,20 +211,20 @@
               {
                 "icon": "email",
                 "title": "Email",
-                "body": "Use the best reply address for new inquiries.",
+                "body": "Swap in the inbox that should receive first inquiries.",
                 "value": "hello@example.com",
                 "href": "mailto:hello@example.com"
               },
               {
                 "icon": "phone",
                 "title": "Response",
-                "body": "Set a realistic expectation for new inquiries.",
+                "body": "Set a realistic response expectation for visitors.",
                 "value": "Within one business day"
               },
               {
                 "icon": "location",
                 "title": "Location",
-                "body": "Keep this broad if the site is remote-first.",
+                "body": "Keep this broad for remote-first or service-area businesses.",
                 "value": "Remote-friendly"
               }
             ]
@@ -233,9 +233,9 @@
             "type": "contactForm",
             "id": "contact-form",
             "eyebrow": "Inquiry",
-            "title": "Send a concise message",
-            "body": "Tell us what you want to build, who it is for, and the best way to reply.",
-            "footerBody": "The first version stores the message. Connect real email delivery when the site is ready.",
+            "title": "A minimal form for the first serious message",
+            "body": "Use these fields as a placeholder intake shape before adding validation, routing, or richer workflows.",
+            "footerBody": "The first version stores the message. Connect email delivery when the owner is ready.",
             "action": {
               "label": "Send message",
               "href": "/api/contact"
@@ -243,15 +243,15 @@
             "items": [
               {
                 "icon": "mail",
-                "body": "Name, email, and message"
+                "body": "Only ask for the essentials"
               },
               {
                 "icon": "clock",
-                "body": "A short note is enough for the first reply"
+                "body": "Set a simple response promise"
               },
               {
                 "icon": "map",
-                "body": "Add the best contact guidance for this team"
+                "body": "Add real routing details later"
               }
             ],
             "fields": [
@@ -283,8 +283,8 @@
           {
             "type": "cta",
             "eyebrow": "Next",
-            "title": "Make {{BRAND}} easier to understand",
-            "body": "Use this page as a starting point, then add real positioning, examples, and contact details.",
+            "title": "Turn this Mantle placeholder into {{BRAND}}",
+            "body": "Keep the useful blocks, delete the rest, and replace every placeholder with real words.",
             "action": {
               "label": "Start contact",
               "href": "#contact"
