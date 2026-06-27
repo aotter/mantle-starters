@@ -13,9 +13,10 @@
 > substitutes these placeholders, commits the repo, and starts
 > Cloudflare Workers CI.
 
-**Headless CMS starter.** Ships zero UI. Use this when you have your own
-frontend (Next.js, Astro, SvelteKit, native iOS/Android, partner
-integration) and want mantle purely as a content + auth + MCP backend.
+**Headless CMS starter.** Ships a small public homepage plus the Mantle
+API/MCP backend. Use this when you have your own frontend (Next.js,
+Astro, SvelteKit, native iOS/Android, partner integration) and want
+Mantle primarily as content + auth + MCP infrastructure.
 
 Type-specific bundles include the selected manifest, overlay notes, and
 seed prompt up front. Continue from the after-launch handoff shown by
@@ -57,8 +58,9 @@ claiming a custom production workflow.
 mantle-starters/blank/
 ├── manifests/example.yaml     # one-file demo: Schema + View
 ├── src/
-│   ├── index.ts               # worker entrypoint (mountServerEndpoints + mountMcp)
-│   ├── mantleConfig.ts          # env + manifests + handlers wiring
+│   ├── index.ts               # worker entrypoint (routes + OAuth/MCP)
+│   ├── home.tsx               # small public homepage using Kiwa primitives
+│   ├── mantleConfig.ts        # env + manifests + handlers wiring
 │   ├── loadManifests.ts
 │   ├── handlers/index.ts      # empty registry — add Procedure handlers here
 │   └── types.d.ts
@@ -89,7 +91,8 @@ pnpm dev      # safe wrangler dev — http://localhost:8787
 ```
 
 Hit `GET http://localhost:8787/api/views/published-notes` to see the
-example View executing against an empty `notes` collection.
+example View executing against an empty `notes` collection. Type-specific
+bundles replace that loader with their selected manifest.
 
 Production repos are created by Mantle landing. Landing substitutes the
 launch placeholders, commits this bundle, and either connects Cloudflare

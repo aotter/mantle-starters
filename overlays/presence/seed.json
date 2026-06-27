@@ -1,0 +1,66 @@
+{
+  "locale": "{{CANONICAL_LOCALE}}",
+  "collections": {
+    "page": [
+      {
+        "type": "home",
+        "title": "A clear home for {{BRAND}}",
+        "summary": "{{DESCRIPTION}}",
+        "sections": [
+          {
+            "type": "hero",
+            "eyebrow": "Presence",
+            "title": "A clear home for {{BRAND}}",
+            "body": "{{DESCRIPTION}}",
+            "actionLabel": "Start a conversation",
+            "actionHref": "#contact"
+          },
+          {
+            "type": "features",
+            "title": "What this site makes clear",
+            "items": [
+              {
+                "title": "What you do",
+                "body": "A concise explanation of the offer and audience."
+              },
+              {
+                "title": "Why it matters",
+                "body": "A short proof point that helps visitors decide quickly."
+              },
+              {
+                "title": "How to reach you",
+                "body": "A direct contact path for the next step."
+              }
+            ]
+          },
+          {
+            "type": "about",
+            "title": "Built for a focused first impression",
+            "body": "{{BRAND}} uses this page to explain the work, show the next step, and stay easy to update."
+          },
+          {
+            "type": "cta",
+            "title": "Ready to talk?",
+            "body": "Send a short note and the team can follow up.",
+            "actionLabel": "Contact {{BRAND}}",
+            "actionHref": "#contact"
+          },
+          {
+            "type": "contact",
+            "title": "Contact {{BRAND}}",
+            "body": "Share your name, email, and a short message so the team can follow up with the right context."
+          }
+        ],
+        "status": "published"
+      }
+    ],
+    "contact": [
+      {
+        "name": "Sample Visitor",
+        "email": "hello@example.com",
+        "message": "I would like to learn more about {{BRAND}}.",
+        "status": "draft"
+      }
+    ]
+  }
+}
