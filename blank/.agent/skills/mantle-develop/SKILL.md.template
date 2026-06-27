@@ -48,11 +48,26 @@ Use `pnpm dev` for local preview on `localhost:8787`.
 
 ## MCP Media Uploads
 
+Media uploads are optional post-launch work. R2 setup may require
+Cloudflare billing or a credit card, so do not block the first useful page
+or first production handoff on it.
+
+If the owner asks for staff-managed images/files and the site has not
+enabled media yet, follow `node_modules/@aotter/mantle/docs/media-uploads.md`
+or the upstream recipe at
+https://raw.githubusercontent.com/aotter/mantle/develop/docs/media-uploads.md
+before expecting `create_media_upload` to appear in Staff MCP.
+
 When the user provides an image in chat, handle it in the agent runtime:
 read the live upload policy from Staff MCP `create_media_upload`, choose
 exactly one allowed mime per required slot, read the attachment bytes,
 prepare variants locally, PUT each variant to the returned signed URL
 with its required headers, then call `commit_media_upload`.
+
+Use Claude Code, Codex, Cursor, or another local/non-sandboxed coding
+agent for this workflow. Do not rely on Claude Cowork for R2 uploads
+unless its sandbox egress allowlist includes
+`*.r2.cloudflarestorage.com`.
 
 Do not default to JPEG. Preserve source semantics: opaque photos may use
 JPEG primary plus modern alternates; transparent PNG/logo artwork must

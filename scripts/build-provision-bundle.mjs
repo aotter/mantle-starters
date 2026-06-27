@@ -112,7 +112,7 @@ function buildBundleFiles(archetype) {
     "",
     "The public homepage is for visitors. The coding-agent handoff lives in Mantle landing and this repo file.",
     "",
-    "For chat-provided images, use Staff MCP upload sessions: read the live upload policy, preserve transparency/animation, PUT variants to signed URLs, then commit the asset. Never pass base64 bytes as MCP tool arguments or ask the user to run terminal uploads.",
+    "Media uploads are optional post-launch work because R2 may require Cloudflare billing or a credit card. When the owner asks for staff-managed images/files, read node_modules/@aotter/mantle/docs/media-uploads.md or https://raw.githubusercontent.com/aotter/mantle/develop/docs/media-uploads.md, use Staff MCP upload sessions, preserve transparency/animation, PUT variants to signed URLs, then commit the asset. Use Claude Code or another local/non-sandboxed coding agent for that workflow; Claude Cowork usually cannot PUT to R2 unless *.r2.cloudflarestorage.com is allowlisted for egress. Never pass base64 bytes as MCP tool arguments or ask the user to run terminal uploads.",
     "",
     "Next: clone/open this repo, read the launch files above, inspect the already-composed manifest/pages/seed, then make the smallest useful improvement and push.",
     "",
