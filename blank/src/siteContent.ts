@@ -27,7 +27,7 @@ export const siteContent: SiteContent = {
   brand: "{{BRAND}}",
   description:
     "{{DESCRIPTION}}".trim() ||
-    "A focused studio helping visitors understand the work and get in touch.",
+    "A Mantle starter presence page with clear placeholder sections for the first useful site.",
   navLinks: [
     { label: "About", href: "#about" },
     { label: "Services", href: "#services" },
@@ -36,7 +36,7 @@ export const siteContent: SiteContent = {
   ],
   navAction: { label: "Start a conversation", href: "#contact" },
   footer: {
-    tagline: "A focused web presence ready for real content, proof, and contact details.",
+    tagline: "A Mantle-shaped starter page with practical slots for real content.",
     columns: [
       {
         title: "Site",
