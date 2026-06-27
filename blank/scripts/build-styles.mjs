@@ -18,8 +18,8 @@ const compiler = await compile(readFileSync(inputPath, "utf8"), {
     const path =
       id === "tailwindcss"
         ? require.resolve("tailwindcss/index.css", { paths: [root] })
-        : id === "./tokens.css"
-          ? join(root, "styles", "tokens.css")
+        : id === "./swirl-images.css"
+          ? join(root, "styles", "swirl-images.css")
         : resolveStylesheet(id, base);
     return {
       base: dirname(path),

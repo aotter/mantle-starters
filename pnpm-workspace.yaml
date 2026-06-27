@@ -19,6 +19,7 @@ packages:
 #
 catalog:
   # Runtime — every starter ships these.
+  '@kiwa-ui/enhance': ^2.1.0
   '@cloudflare/workers-oauth-provider': ^0.7.0
   aws4fetch: ^1.0.20
   better-auth: ^1.6.14

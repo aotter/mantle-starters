@@ -9,6 +9,8 @@ const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const check = process.argv.includes("--check");
 const keepTemp = process.argv.includes("--keep-temp");
 const changed = [];
+const packageManager = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).packageManager;
+const pnpmVersion = packageManager?.startsWith("pnpm@") ? packageManager.slice("pnpm@".length) : null;
 
 for (const starterPath of ["blank"]) {
   const tempRoot = mkdtempSync(join(tmpdir(), "mantle-lock-"));
@@ -18,8 +20,7 @@ for (const starterPath of ["blank"]) {
       recursive: true,
       filter: (path) => !path.includes(`${starterPath}/node_modules`),
     });
-    execFileSync(
-      "pnpm",
+    runPnpm(
       [
         "-C",
         join(tempRoot, starterPath),
@@ -56,4 +57,16 @@ if (changed.length > 0) {
   for (const file of changed) console.log(`  - ${file}`);
 } else {
   console.log("Starter lockfiles are current.");
+}
+
+function runPnpm(args, options) {
+  if (pnpmVersion) {
+    try {
+      execFileSync("corepack", [`pnpm@${pnpmVersion}`, ...args], options);
+      return;
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+    }
+  }
+  execFileSync("pnpm", args, options);
 }

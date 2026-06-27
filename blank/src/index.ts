@@ -11,6 +11,7 @@ import {
 } from "@aotter/mantle/cloudflare";
 import stylesCss from "../styles/generated.css";
 import { renderHome } from "./home.js";
+import { kiwaEnhanceAssets } from "./kiwaEnhanceAssets.js";
 import { buildCmsConfig, type Env } from "./mantleConfig.js";
 
 /** Worker entrypoint: small public home plus Mantle API/MCP surfaces.
@@ -82,6 +83,32 @@ function buildWorker(env: Env): WorkerFetch {
       },
     }),
   );
+  app.get("/assets/kiwa-home.js", () =>
+    new Response(
+      "import { collapsible } from '/enhance/collapsible.js';\n" +
+        "import { accordion } from '/enhance/accordion.js';\n" +
+        "collapsible();\n" +
+        "accordion();\n",
+      {
+        headers: {
+          "cache-control": "public, max-age=31536000, immutable",
+          "content-type": "text/javascript; charset=utf-8",
+        },
+      },
+    ),
+  );
+  app.get("/enhance/:file", (c) => {
+    const file = c.req.param("file");
+    if (!/^[A-Za-z0-9._-]+\.js$/.test(file)) return c.notFound();
+    const asset = kiwaEnhanceAssets[file];
+    if (!asset) return c.notFound();
+    return new Response(asset, {
+      headers: {
+        "cache-control": "public, max-age=31536000, immutable",
+        "content-type": "text/javascript; charset=utf-8",
+      },
+    });
+  });
   app.get("/", (c) => c.html(renderHome()));
 
   const oauthProvider = createOAuthProvider({

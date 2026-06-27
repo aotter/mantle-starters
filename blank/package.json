@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@aotter/mantle": "0.0.11-alpha.35",
+    "@kiwa-ui/enhance": "catalog:",
     "@cloudflare/workers-oauth-provider": "catalog:",
     "aws4fetch": "catalog:",
     "better-auth": "catalog:",
