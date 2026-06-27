@@ -21,7 +21,6 @@ Read [`.mantle/launch-state.json`](.mantle/launch-state.json) and
 Use these repo-local Mantle skills:
 
 - [`.agent/skills/mantle-develop/SKILL.md`](.agent/skills/mantle-develop/SKILL.md)
-- [`.agent/skills/mantle-overlay/SKILL.md`](.agent/skills/mantle-overlay/SKILL.md)
 - [`.agent/skills/mantle-theme/SKILL.md`](.agent/skills/mantle-theme/SKILL.md)
 - [`.agent/skills/mantle-update/SKILL.md`](.agent/skills/mantle-update/SKILL.md)
 

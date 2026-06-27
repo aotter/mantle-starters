@@ -9,7 +9,6 @@
 /blank/                          @guyspy
 /overlays/                       @guyspy
 /kiwa/                           @guyspy
-/sources.json                    @guyspy
 
 # CI / governance
 /.github/                        @guyspy

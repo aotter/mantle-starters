@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -45,11 +44,6 @@ for (const archetype of archetypes) {
       if (!features?.archetype?.appliedAt) throw new Error(`${archetype} overlay not marked applied`);
       assertFourAtoms(tempRoot, archetype);
       readFileSync(join(tempRoot, ".mantle", "overlays", archetype, "seed.json"), "utf8");
-    } else {
-      execFileSync("node", ["scripts/apply-overlay.mjs", "publication"], {
-        cwd: tempRoot,
-        stdio: "inherit",
-      });
     }
   } finally {
     rmSync(tempRoot, { recursive: true, force: true });

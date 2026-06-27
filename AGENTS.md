@@ -7,13 +7,12 @@ over new framework, and do not rebuild the old full-starter/theme path.
 
 Current contract:
 
-- Landing provisions only `provision-bundles/blank.json`.
-- `blank/` owns the generated repo base, including repo-local Mantle
-  skills.
-- `overlays/` are small post-launch archetype hints.
+- Landing provisions `provision-bundles/<type>.json`.
+- `blank/` owns the shared generated repo base, including repo-local
+  Mantle skills.
+- `overlays/` are source inputs applied while building each type bundle.
 - `kiwa/` is vendored free Kiwa source; generated repos must boot
   without registry access.
-- `sources.json` maps all launch archetypes to `blank`.
 
 Useful checks:
 

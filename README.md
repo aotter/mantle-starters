@@ -6,8 +6,8 @@ Current launch contract:
 
 - `blank/` is the only first-launch base.
 - `provision-bundles/<type>.json` are generated artifacts landing fetches.
-- `overlays/<type>/` contains small type intent overlays applied into each
-  matching bundle.
+- `overlays/<type>/` contains small type intent overlays applied while
+  building each matching bundle.
 - `kiwa/` vendors selected free Kiwa source for deterministic generated
   repos.
 - No first-run theme picker, full archetype starter fork, or Kiwa
@@ -39,13 +39,6 @@ Refresh selected Kiwa source:
 node scripts/sync-kiwa.mjs
 ```
 
-Apply an overlay inside a generated repo:
-
-```bash
-node scripts/apply-overlay.mjs          # reads .mantle/launch-state.json
-node scripts/apply-overlay.mjs publication
-```
-
 ## Shape
 
 ```txt
@@ -65,7 +58,6 @@ provision-bundles/
 scripts/
   build-provision-bundle.mjs
   sync-kiwa.mjs
-  apply-overlay.mjs
 ```
 
 Maintain bundles by editing `blank/`, `overlays/<type>/`, or `kiwa/`, then
