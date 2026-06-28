@@ -29,5 +29,5 @@ R2-backed media is optional post-launch work and may require Cloudflare
 billing or a credit card. If media is needed, read
 `node_modules/@aotter/mantle/docs/media-uploads.md` or
 https://raw.githubusercontent.com/aotter/mantle/develop/docs/media-uploads.md.
-Claude Cowork usually cannot complete the R2 PUT step unless
-`*.r2.cloudflarestorage.com` is allowlisted for egress.
+Do not rely on Claude Cowork for R2 uploads; use Claude Code or another
+non-sandboxed agent.
