@@ -326,8 +326,7 @@
     {
       "path": "styles/globals.css",
       "mirrors": [
-        "kiwa",
-        "blank"
+        "kiwa"
       ],
       "source": "https://raw.githubusercontent.com/kiwa-ui/kiwa-ui/d00aba1ce6fc0f0c48c0102d803dc15e5f1ce3d5/templates/styles/globals.css",
       "sha256": "dcfc125f4c348dad34c3c5efd8eb74c08dbd6acb990b31f539dba5c9ad534ae2"
