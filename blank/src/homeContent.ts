@@ -65,7 +65,7 @@ export const homeContent: HomeContent = {
   sections: [
     {
       type: "hero",
-      title: `A Mantle-ready presence for ${brand}`,
+      title: `${brand} starts here`,
       body: description,
       action: { label: "Start a conversation", href: "#contact" },
       secondaryAction: { label: "See the work", href: "#work" },

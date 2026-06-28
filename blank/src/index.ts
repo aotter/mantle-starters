@@ -13,11 +13,53 @@ import stylesCss from "../styles/generated.css";
 import { renderHome } from "./home.js";
 import { kiwaEnhanceAssets } from "./kiwaEnhanceAssets.js";
 import { buildCmsConfig, type Env } from "./mantleConfig.js";
+import { mantleOceanHeroSvg } from "./mantleOceanHero.js";
 
 /** Worker entrypoint: small public home plus Mantle API/MCP surfaces.
  *  Wire your own frontend to /api/views/* + /mcp/staff + /mcp + /api/auth/*. */
 type WorkerFetch = (req: Request, env: Env, ctx: ExecutionContext) => Promise<Response>;
 let workerFetchCache: { readonly key: string; readonly fetch: WorkerFetch } | null = null;
+const homeJs = [
+  "import { collapsible } from '/enhance/collapsible.js';",
+  "import { accordion } from '/enhance/accordion.js';",
+  "collapsible();",
+  "accordion();",
+  "document.querySelectorAll('[data-contact-form]').forEach((form) => {",
+  "  form.addEventListener('submit', async (event) => {",
+  "    event.preventDefault();",
+  "    const status = form.querySelector('[data-contact-status]');",
+  "    const button = form.querySelector('button[type=\"submit\"]');",
+  "    const setStatus = (message, error) => {",
+  "      if (!status) return;",
+  "      status.hidden = false;",
+  "      status.textContent = message;",
+  "      if (error) status.dataset.error = 'true';",
+  "      else delete status.dataset.error;",
+  "    };",
+  "    if (button) button.disabled = true;",
+  "    setStatus('Sending message...', false);",
+  "    try {",
+  "      const body = Object.fromEntries(new FormData(form).entries());",
+  "      const res = await fetch(form.action, {",
+  "        method: form.method || 'POST',",
+  "        headers: { 'content-type': 'application/json' },",
+  "        body: JSON.stringify(body),",
+  "      });",
+  "      const payload = await res.json().catch(() => null);",
+  "      if (!res.ok || payload?.ok === false) {",
+  "        throw new Error(payload?.diagnostic?.message || 'Message could not be sent.');",
+  "      }",
+  "      form.reset();",
+  "      setStatus('Message saved. The site owner can review it in Mantle.', false);",
+  "    } catch (error) {",
+  "      setStatus(error instanceof Error ? error.message : 'Message could not be sent.', true);",
+  "    } finally {",
+  "      if (button) button.disabled = false;",
+  "    }",
+  "  });",
+  "});",
+  "",
+].join("\n");
 
 const AUTH_NOT_CONFIGURED = {
   error: "setup_incomplete",
@@ -84,18 +126,20 @@ function buildWorker(env: Env): WorkerFetch {
     }),
   );
   app.get("/assets/kiwa-home.js", () =>
-    new Response(
-      "import { collapsible } from '/enhance/collapsible.js';\n" +
-        "import { accordion } from '/enhance/accordion.js';\n" +
-        "collapsible();\n" +
-        "accordion();\n",
-      {
-        headers: {
-          "cache-control": "public, max-age=31536000, immutable",
-          "content-type": "text/javascript; charset=utf-8",
-        },
+    new Response(homeJs, {
+      headers: {
+        "cache-control": "public, max-age=31536000, immutable",
+        "content-type": "text/javascript; charset=utf-8",
       },
-    ),
+    }),
+  );
+  app.get("/assets/mantle-ocean-hero.svg", () =>
+    new Response(mantleOceanHeroSvg, {
+      headers: {
+        "cache-control": "public, max-age=31536000, immutable",
+        "content-type": "image/svg+xml; charset=utf-8",
+      },
+    }),
   );
   app.get("/enhance/:file", (c) => {
     const file = c.req.param("file");
