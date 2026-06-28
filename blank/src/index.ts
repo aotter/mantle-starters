@@ -85,6 +85,7 @@ const AUTH_NOT_CONFIGURED = {
   message:
     "Admin auth is not configured yet. Finish the Mantle landing provider setup to set BETTER_AUTH_SECRET and GitHub OAuth credentials.",
 } as const;
+const ASSET_CACHE_CONTROL = "public, max-age=300";
 
 function buildAuthFromEnv(env: Env): Auth {
   if (!authSetupComplete(env)) return createSetupIncompleteAuth();
@@ -139,7 +140,7 @@ function buildWorker(env: Env): WorkerFetch {
   app.get("/assets/styles.css", () =>
     new Response(stylesCss, {
       headers: {
-        "cache-control": "public, max-age=31536000, immutable",
+        "cache-control": ASSET_CACHE_CONTROL,
         "content-type": "text/css; charset=utf-8",
       },
     }),
@@ -147,7 +148,7 @@ function buildWorker(env: Env): WorkerFetch {
   app.get("/assets/kiwa-home.js", () =>
     new Response(homeJs, {
       headers: {
-        "cache-control": "public, max-age=31536000, immutable",
+        "cache-control": ASSET_CACHE_CONTROL,
         "content-type": "text/javascript; charset=utf-8",
       },
     }),
@@ -155,7 +156,7 @@ function buildWorker(env: Env): WorkerFetch {
   app.get("/assets/mantle-ocean-hero.svg", () =>
     new Response(mantleOceanHeroSvg, {
       headers: {
-        "cache-control": "public, max-age=31536000, immutable",
+        "cache-control": ASSET_CACHE_CONTROL,
         "content-type": "image/svg+xml; charset=utf-8",
       },
     }),
