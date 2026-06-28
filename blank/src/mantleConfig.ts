@@ -39,7 +39,7 @@ export function buildCmsConfig(env: Env, auth: Auth): CmsConfig {
       // JSON.parse keeps this file TS-valid pre-substitution
       // so contributors can `pnpm typecheck` the starter directly; the runtime
       // cost is one tiny parse at worker cold-start.
-      locales: JSON.parse('{{LOCALES}}') as readonly string[],
+      locales: parseLocales(),
     },
     bindings: {
       db: new D1DatabaseDriver(env.DB),
@@ -50,4 +50,9 @@ export function buildCmsConfig(env: Env, auth: Auth): CmsConfig {
     },
     auth,
   };
+}
+
+function parseLocales(): readonly string[] {
+  const raw = '{{LOCALES}}';
+  return raw.startsWith('{{') ? ['en'] : JSON.parse(raw);
 }

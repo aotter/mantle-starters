@@ -68,6 +68,7 @@ function collectFromDir(dir, candidates) {
       collectFromDir(path, candidates);
       continue;
     }
+    if (name.name === "mantleOceanHero.ts") continue;
     if (![".js", ".jsx", ".ts", ".tsx"].includes(extname(name.name))) continue;
     for (const token of readFileSync(path, "utf8").match(/[A-Za-z0-9_!:[\]./%#(),=>*+-]+/g) ?? []) {
       candidates.add(token);
