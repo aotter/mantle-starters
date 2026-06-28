@@ -34,6 +34,10 @@ const enhanceFiles = [
   "chunk-XSYCANLE.js",
 ];
 const mirrorRoots = ["kiwa", "blank"];
+const blankOverridePaths = new Set([
+  "components/blocks/marketing/nav-02.tsx",
+  "styles/swirl-images.css",
+]);
 const manifestPath = join(root, "kiwa", "manifest.json");
 
 if (checkOnly) {
@@ -191,7 +195,10 @@ async function fetchText(url) {
 }
 
 function writeMirrored(path, content) {
-  for (const mirrorRoot of mirrorRoots) writeOne(`${mirrorRoot}/${path}`, content);
+  for (const mirrorRoot of mirrorRoots) {
+    if (mirrorRoot === "blank" && blankOverridePaths.has(path)) continue;
+    writeOne(`${mirrorRoot}/${path}`, content);
+  }
 }
 
 function writeOne(path, content) {
@@ -201,9 +208,12 @@ function writeOne(path, content) {
 }
 
 function record(path, source, content, mirrors = mirrorRoots) {
+  const effectiveMirrors = mirrors.includes("blank") && blankOverridePaths.has(path)
+    ? mirrors.filter((mirror) => mirror !== "blank")
+    : mirrors;
   return {
     path,
-    mirrors,
+    mirrors: effectiveMirrors,
     source,
     sha256: sha256(content.endsWith("\n") ? content : `${content}\n`),
   };
