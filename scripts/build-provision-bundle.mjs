@@ -149,6 +149,9 @@ function assertBundle(bundle, archetype) {
   if (!bundle.files["src/home.tsx"]?.includes("/assets/mantle-ocean-hero.svg")) {
     throw new Error(`${archetype} homepage missing Mantle ocean hero image`);
   }
+  if (!bundle.files["pnpm-workspace.yaml"]?.includes('  - "."')) {
+    throw new Error(`${archetype} bundle missing root package workspace entry`);
+  }
   if (archetype !== "blank" && !bundle.files[`manifests/${archetype}.yaml`]) {
     throw new Error(`${archetype} bundle missing applied manifest`);
   }
