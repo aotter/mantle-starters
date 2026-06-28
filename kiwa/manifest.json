@@ -118,8 +118,7 @@
     {
       "path": "components/blocks/marketing/nav-02.tsx",
       "mirrors": [
-        "kiwa",
-        "blank"
+        "kiwa"
       ],
       "source": "https://registry.kiwaui.com/r/nav-02.json",
       "sha256": "eb4556d4d46d5f4b8e9465ba95f9a12170db8fa451c19e2808c05319d488cf89"
@@ -336,8 +335,7 @@
     {
       "path": "styles/swirl-images.css",
       "mirrors": [
-        "kiwa",
-        "blank"
+        "kiwa"
       ],
       "source": "https://raw.githubusercontent.com/kiwa-ui/kiwa-ui/d00aba1ce6fc0f0c48c0102d803dc15e5f1ce3d5/templates/styles/swirl-images.css",
       "sha256": "e85d32a1e49227713e6ad4b1836dcd5af52d2ca2a87284026911913cc656bb75"

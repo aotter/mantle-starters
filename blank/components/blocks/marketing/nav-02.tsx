@@ -36,7 +36,7 @@ export const Nav02: FC<Nav02Props> = ({
   ctaHref = '#',
   class: className,
 }) => (
-  <nav data-collapsible class={cn('border-b border-b-border-subtle bg-background data-[state=open]:bg-card', className)}>
+  <nav class={cn('border-b border-b-border-subtle bg-background', className)}>
     <div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
       <div class="flex items-center gap-8">
         <a href={logoHref} class="text-lg font-semibold tracking-tight text-foreground">
@@ -67,9 +67,11 @@ export const Nav02: FC<Nav02Props> = ({
         </div>
 
         <button
-          data-collapsible-trigger
+          data-mobile-nav-trigger
           class={cn(getButtonClasses('ghost', 'iconSm'), 'group lg:hidden')}
-          aria-label="Toggle navigation"
+          aria-controls="mobile-navigation"
+          aria-expanded="false"
+          aria-label="Open navigation"
         >
           <MenuIcon class="size-4 group-aria-expanded:hidden" />
           <XIcon class="hidden size-4 group-aria-expanded:block" />
@@ -77,30 +79,61 @@ export const Nav02: FC<Nav02Props> = ({
       </div>
     </div>
 
-    {/* Mobile expanded menu */}
-    <div data-collapsible-content hidden class="lg:hidden">
-      <div class="border-t border-t-border-subtle">
-        <div class="mx-auto max-w-6xl px-4 pb-4 pt-3 sm:px-6 lg:px-8">
-          <div class="-mx-3 flex flex-col gap-1">
-            {links.map((link) => (
-              <a
-                href={link.href}
-                class="flex h-10 items-center rounded-lg px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-              >
-                {link.label}
-              </a>
-            ))}
-          </div>
-          <div class="mt-4 flex flex-col gap-2">
-            {loginText && (
-              <a href={loginHref} class={cn(getButtonClasses('ghost', 'sm'), 'w-full')}>
-                {loginText}
-              </a>
-            )}
-            <a href={ctaHref} class={cn(getButtonClasses('default', 'sm'), 'w-full')}>
-              {ctaText}
+    <div
+      id="mobile-navigation"
+      data-mobile-nav
+      data-sheet
+      data-sheet-side="right"
+      data-state="closed"
+      class="fixed inset-0 z-50 lg:hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Navigation"
+    >
+      <button
+        data-sheet-overlay
+        data-mobile-nav-close="true"
+        class="fixed inset-0 bg-background/80 backdrop-blur-sm"
+        aria-label="Close navigation"
+      />
+      <div
+        data-sheet-content
+        class="fixed inset-y-0 right-0 flex h-dvh w-80 max-w-[calc(100vw-2rem)] flex-col border-l border-border-subtle bg-background p-4 shadow-xl"
+      >
+        <div class="flex h-10 items-center justify-between gap-4">
+          <a href={logoHref} data-mobile-nav-close="true" class="text-base font-semibold tracking-tight text-foreground">
+            {logo}
+          </a>
+          <button
+            data-mobile-nav-close="true"
+            class={getButtonClasses('ghost', 'iconSm')}
+            aria-label="Close navigation"
+          >
+            <XIcon class="size-4" />
+          </button>
+        </div>
+
+        <div class="mt-8 flex flex-col gap-1">
+          {links.map((link) => (
+            <a
+              href={link.href}
+              data-mobile-nav-close="true"
+              class="flex min-h-11 items-center rounded-lg px-3 text-base font-medium text-foreground transition-colors hover:bg-muted"
+            >
+              {link.label}
             </a>
-          </div>
+          ))}
+        </div>
+
+        <div class="mt-auto flex flex-col gap-2 pt-8">
+          {loginText && (
+            <a href={loginHref} data-mobile-nav-close="true" class={cn(getButtonClasses('ghost', 'sm'), 'w-full')}>
+              {loginText}
+            </a>
+          )}
+          <a href={ctaHref} data-mobile-nav-close="true" class={cn(getButtonClasses('default', 'sm'), 'w-full')}>
+            {ctaText}
+          </a>
         </div>
       </div>
     </div>
