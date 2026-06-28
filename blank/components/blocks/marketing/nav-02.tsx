@@ -2,6 +2,7 @@ import type { FC } from 'hono/jsx'
 import { cn } from '@/lib/utils'
 import { getButtonClasses } from '@/components/ui/button'
 import { MenuIcon, XIcon } from '@/components/ui/icon'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 
 type NavLink = {
   label: string
@@ -64,6 +65,7 @@ export const Nav02: FC<Nav02Props> = ({
           <a href={ctaHref} class={getButtonClasses('default', 'sm')}>
             {ctaText}
           </a>
+          <ThemeToggle />
         </div>
 
         <button
@@ -118,6 +120,7 @@ export const Nav02: FC<Nav02Props> = ({
             <a
               href={link.href}
               data-mobile-nav-close="true"
+              data-mobile-nav-link
               class="flex min-h-11 items-center rounded-lg px-3 text-base font-medium text-foreground transition-colors hover:bg-muted"
             >
               {link.label}
@@ -126,6 +129,7 @@ export const Nav02: FC<Nav02Props> = ({
         </div>
 
         <div class="mt-auto flex flex-col gap-2 pt-8">
+          <ThemeToggle showLabel class="w-full" />
           {loginText && (
             <a href={loginHref} data-mobile-nav-close="true" class={cn(getButtonClasses('ghost', 'sm'), 'w-full')}>
               {loginText}

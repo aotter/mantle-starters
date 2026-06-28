@@ -8,9 +8,12 @@ First useful shape:
 - expose the homepage content at `/api/views/home`;
 - keep `contact` as the only capture Schema;
 - submit messages through `POST /api/contact`;
+- let `contact-before-create-verify-turnstile` abort spammy submissions when `TURNSTILE_SECRET_KEY` is configured;
 - let `contact-notify` call the `notify-contact` stub after create.
 
 The notification stub is intentionally best-effort. Configure Cloudflare
 Email Service and the `EMAIL` send binding only when the site owner wants
-email alerts. Use `mantle:theme` for visual override after the content
-model works.
+email alerts. Turnstile is also opt-in: add `TURNSTILE_SITE_KEY` as a Worker
+var and `TURNSTILE_SECRET_KEY` as a Cloudflare secret when the contact form
+needs bot protection. Use `mantle:theme` for visual override after the
+content model works.

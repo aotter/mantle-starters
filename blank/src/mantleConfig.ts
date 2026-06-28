@@ -24,6 +24,8 @@ export interface Env {
   readonly ADMIN_GITHUB_LOGIN?: string;
   readonly BETTER_AUTH_SECRET: string;
   readonly PUBLIC_ORIGIN?: string;
+  readonly TURNSTILE_SITE_KEY?: string;
+  readonly TURNSTILE_SECRET_KEY?: string;
 }
 
 export function buildCmsConfig(env: Env, auth: Auth): CmsConfig {

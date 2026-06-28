@@ -128,6 +128,9 @@ function assertPresenceHandlerLoaded(root) {
   if (!text.includes('"notify-contact": notifyContact')) {
     throw new Error("presence overlay did not install notify-contact handler");
   }
+  if (!text.includes('"verify-contact-turnstile": verifyContactTurnstile')) {
+    throw new Error("presence overlay did not install verify-contact-turnstile handler");
+  }
 }
 
 function assertPresenceContactForm(root) {
@@ -137,6 +140,9 @@ function assertPresenceContactForm(root) {
   }
   if (!text.includes("content-type': 'application/json'")) {
     throw new Error("presence contact form submit does not send JSON");
+  }
+  if (!text.includes("cf-turnstile")) {
+    throw new Error("presence contact form is missing Turnstile support");
   }
 }
 

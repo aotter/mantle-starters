@@ -32,11 +32,22 @@ import { homeContent, type HomeField, type HomeItem, type HomeSection } from "./
 import { siteContent } from "./siteContent.js";
 
 const archetype = "{{ARCHETYPE}}" as string;
-const assetVersion = "starter-asset-v4";
-const asset = (path: string) => `${path}?v=${assetVersion}`;
+const assetBuild = "mantle-starter-assets-20260628-theme-turnstile";
+const asset = (path: string) => `${path}?v=${assetBuild}`;
 const heroImage = {
   src: asset("/assets/mantle-ocean-hero.svg"),
   alt: "",
+};
+const themeBootScript = `(() => {
+  try {
+    const stored = localStorage.getItem("mantle-theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.classList.toggle("dark", stored ? stored === "dark" : prefersDark);
+  } catch {}
+})();`;
+
+type HomePageProps = {
+  readonly turnstileSiteKey?: string;
 };
 
 const featureIcons: Record<string, FC<{ class?: string }>> = {
@@ -48,11 +59,12 @@ const featureIcons: Record<string, FC<{ class?: string }>> = {
   sparkles: SparklesIcon,
 };
 
-export function renderHome(): string {
-  return "<!doctype html>" + renderToString(<HomePage />);
+export function renderHome(options: HomePageProps = {}): string {
+  return "<!doctype html>" + renderToString(<HomePage {...options} />);
 }
 
-function HomePage() {
+function HomePage({ turnstileSiteKey }: HomePageProps) {
+  const siteKey = turnstileSiteKey?.trim();
   return (
     <html lang="en">
       <head>
@@ -62,6 +74,14 @@ function HomePage() {
         <meta name="mantle:archetype" content={archetype} />
         <title>{siteContent.brand}</title>
         <meta name="description" content={siteContent.description} />
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+        {siteKey && (
+          <script
+            src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+            async
+            defer
+          ></script>
+        )}
         <link rel="stylesheet" href={asset("/assets/styles.css")} />
       </head>
       <body class="min-h-screen bg-background text-foreground antialiased">
@@ -71,7 +91,7 @@ function HomePage() {
           ctaText={siteContent.navAction.label}
           ctaHref={siteContent.navAction.href}
         />
-        <main>{homeContent.sections.map(renderSection)}</main>
+        <main>{homeContent.sections.map((section, index) => renderSection(section, index, siteKey))}</main>
         <Footer02
           logo={{ text: siteContent.brand }}
           tagline={siteContent.footer.tagline}
@@ -89,7 +109,7 @@ function HomePage() {
   );
 }
 
-function renderSection(section: HomeSection, index: number): Child {
+function renderSection(section: HomeSection, index: number, turnstileSiteKey?: string): Child {
   const key = `${section.type}-${section.id ?? index}`;
   switch (section.type) {
     case "hero":
@@ -228,7 +248,7 @@ function renderSection(section: HomeSection, index: number): Child {
         />,
       );
     case "contactForm":
-      return <ContactFormSection key={key} section={section} />;
+      return <ContactFormSection key={key} section={section} turnstileSiteKey={turnstileSiteKey} />;
     case "cta":
       return withAnchor(
         section,
@@ -244,7 +264,13 @@ function renderSection(section: HomeSection, index: number): Child {
   }
 }
 
-function ContactFormSection({ section }: { readonly section: HomeSection }) {
+function ContactFormSection({
+  section,
+  turnstileSiteKey,
+}: {
+  readonly section: HomeSection;
+  readonly turnstileSiteKey?: string;
+}) {
   const fields = section.fields?.length ? section.fields : defaultContactFields;
   return (
     <section id={section.id} class="py-16 md:py-24">
@@ -284,6 +310,9 @@ function ContactFormSection({ section }: { readonly section: HomeSection }) {
             {fields.slice(2).map((field) => (
               <FieldControl key={field.name} field={field} />
             ))}
+            {turnstileSiteKey && (
+              <div class="cf-turnstile" data-sitekey={turnstileSiteKey}></div>
+            )}
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               {section.footerBody && (
                 <p class="text-sm text-foreground-muted">{section.footerBody}</p>
