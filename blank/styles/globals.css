@@ -341,6 +341,40 @@
   }
 }
 
+/* Sticky page nav */
+[data-site-nav] {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background-color: var(--background);
+  background-color: color-mix(in oklch, var(--background) 92%, transparent);
+  backdrop-filter: blur(14px);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+[data-site-nav-inner] {
+  min-height: 3.25rem;
+  height: 4rem;
+  transition: height 0.2s ease;
+}
+
+[data-site-nav-logo] {
+  transition: font-size 0.2s ease;
+}
+
+[data-site-nav][data-scrolled="true"] {
+  border-bottom-color: var(--border);
+  box-shadow: 0 8px 24px oklch(0% 0 0 / 0.08);
+}
+
+[data-site-nav][data-scrolled="true"] [data-site-nav-inner] {
+  height: 3.25rem;
+}
+
+[data-site-nav][data-scrolled="true"] [data-site-nav-logo] {
+  font-size: 1rem;
+}
+
 /* Dialog/Sheet/AlertDialog state styles */
 [data-dialog][data-state="closed"],
 [data-sheet][data-state="closed"],

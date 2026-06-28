@@ -36,10 +36,10 @@ export const Nav02: FC<Nav02Props> = ({
   ctaHref = '#',
   class: className,
 }) => (
-  <nav class={cn('border-b border-b-border-subtle bg-background', className)}>
-    <div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
+  <nav data-site-nav class={cn('border-b border-b-border-subtle bg-background', className)}>
+    <div data-site-nav-inner class="mx-auto flex max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
       <div class="flex items-center gap-8">
-        <a href={logoHref} class="text-lg font-semibold tracking-tight text-foreground">
+        <a href={logoHref} data-site-nav-logo class="text-lg font-semibold tracking-tight text-foreground">
           {logo}
         </a>
         <div class="hidden items-center gap-1 lg:flex">

@@ -32,7 +32,7 @@ import { homeContent, type HomeField, type HomeItem, type HomeSection } from "./
 import { siteContent } from "./siteContent.js";
 
 const archetype = "{{ARCHETYPE}}" as string;
-const assetVersion = "starter-asset-v2";
+const assetVersion = "starter-asset-v3";
 const asset = (path: string) => `${path}?v=${assetVersion}`;
 const heroImage = {
   src: asset("/assets/mantle-ocean-hero.svg"),
