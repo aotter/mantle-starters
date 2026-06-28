@@ -324,6 +324,12 @@
 
 /* Base styles */
 @layer base {
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
   * {
     border-color: var(--border);
   }
@@ -339,6 +345,10 @@
     letter-spacing: -0.025em;
     font-variation-settings: 'opsz' 32;
   }
+}
+
+[id] {
+  scroll-margin-top: 4.5rem;
 }
 
 /* Sticky page nav */
