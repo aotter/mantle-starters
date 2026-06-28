@@ -1369,10 +1369,10 @@
 }
 @import url("https://rsms.me/inter/inter.css");
 :root {
-  --swirl-1: url("/assets/mantle-ocean-hero.svg?v=starter-asset-v3");
-  --swirl-2: url("/assets/mantle-ocean-hero.svg?v=starter-asset-v3");
-  --swirl-3: url("/assets/mantle-ocean-hero.svg?v=starter-asset-v3");
-  --swirl-4: url("/assets/mantle-ocean-hero.svg?v=starter-asset-v3");
+  --swirl-1: url("/assets/mantle-ocean-hero.svg?v=starter-asset-v4");
+  --swirl-2: url("/assets/mantle-ocean-hero.svg?v=starter-asset-v4");
+  --swirl-3: url("/assets/mantle-ocean-hero.svg?v=starter-asset-v4");
+  --swirl-4: url("/assets/mantle-ocean-hero.svg?v=starter-asset-v4");
 }
 :root {
   --radius: 0.625rem;
@@ -1600,6 +1600,11 @@
   background: linear-gradient(to bottom, oklch(100% 0 0 / 0) 0%, oklch(100% 0 0 / 0.2) 100%), var(--primary);
 }
 @layer base {
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
   * {
     border-color: var(--border);
   }
@@ -1613,6 +1618,9 @@
     letter-spacing: -0.025em;
     font-variation-settings: 'opsz' 32;
   }
+}
+[id] {
+  scroll-margin-top: 4.5rem;
 }
 [data-site-nav] {
   position: sticky;
