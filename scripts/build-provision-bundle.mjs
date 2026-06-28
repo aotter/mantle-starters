@@ -149,6 +149,15 @@ function assertBundle(bundle, archetype) {
   if (!bundle.files["src/home.tsx"]?.includes("/assets/mantle-ocean-hero.svg")) {
     throw new Error(`${archetype} homepage missing Mantle ocean hero image`);
   }
+  if (!bundle.files["src/home.tsx"]?.includes("assetVersion")) {
+    throw new Error(`${archetype} homepage assets must be cache-busted`);
+  }
+  if (!bundle.files["styles/swirl-images.css"]?.includes("?v=")) {
+    throw new Error(`${archetype} swirl images must be cache-busted`);
+  }
+  if (!bundle.files["src/index.ts"]?.includes('const ASSET_CACHE_CONTROL = "public, max-age=300"')) {
+    throw new Error(`${archetype} homepage asset routes must avoid immutable caching`);
+  }
   if (!bundle.files["pnpm-workspace.yaml"]?.includes('  - "."')) {
     throw new Error(`${archetype} bundle missing root package workspace entry`);
   }
