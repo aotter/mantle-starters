@@ -1369,10 +1369,10 @@
 }
 @import url("https://rsms.me/inter/inter.css");
 :root {
-  --swirl-1: url("/assets/mantle-ocean-hero.svg?v=starter-asset-v4");
-  --swirl-2: url("/assets/mantle-ocean-hero.svg?v=starter-asset-v4");
-  --swirl-3: url("/assets/mantle-ocean-hero.svg?v=starter-asset-v4");
-  --swirl-4: url("/assets/mantle-ocean-hero.svg?v=starter-asset-v4");
+  --swirl-1: url("/assets/mantle-ocean-hero.svg?v=mantle-starter-assets-20260628-theme-turnstile");
+  --swirl-2: url("/assets/mantle-ocean-hero.svg?v=mantle-starter-assets-20260628-theme-turnstile");
+  --swirl-3: url("/assets/mantle-ocean-hero.svg?v=mantle-starter-assets-20260628-theme-turnstile");
+  --swirl-4: url("/assets/mantle-ocean-hero.svg?v=mantle-starter-assets-20260628-theme-turnstile");
 }
 :root {
   --radius: 0.625rem;
@@ -1651,6 +1651,24 @@
 }
 [data-site-nav][data-scrolled="true"] [data-site-nav-logo] {
   font-size: 1rem;
+}
+[data-theme-toggle][data-theme="light"] [data-theme-icon="sun"], [data-theme-toggle][data-theme="dark"] [data-theme-icon="moon"] {
+  display: none;
+}
+[data-theme-toggle][data-theme="light"] [data-theme-icon="moon"], [data-theme-toggle][data-theme="dark"] [data-theme-icon="sun"] {
+  display: block;
+}
+#mobile-navigation [data-mobile-nav-link] {
+  color: var(--foreground) !important;
+}
+#mobile-navigation [data-theme-toggle] {
+  color: var(--foreground-muted) !important;
+}
+.dark #mobile-navigation [data-mobile-nav-link] {
+  color: rgb(250 250 250) !important;
+}
+.dark #mobile-navigation [data-theme-toggle] {
+  color: rgb(163 163 163) !important;
 }
 [data-dialog][data-state="closed"], [data-sheet][data-state="closed"], [data-alert-dialog][data-state="closed"] {
   display: none;

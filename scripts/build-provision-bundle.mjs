@@ -149,7 +149,7 @@ function assertBundle(bundle, archetype) {
   if (!bundle.files["src/home.tsx"]?.includes("/assets/mantle-ocean-hero.svg")) {
     throw new Error(`${archetype} homepage missing Mantle ocean hero image`);
   }
-  if (!bundle.files["src/home.tsx"]?.includes("assetVersion")) {
+  if (!bundle.files["src/home.tsx"]?.includes("assetBuild")) {
     throw new Error(`${archetype} homepage assets must be cache-busted`);
   }
   if (!bundle.files["styles/swirl-images.css"]?.includes("?v=")) {
@@ -229,7 +229,16 @@ function applyOverlayManifestLoader(files, archetype) {
 }
 
 function skip(name) {
-  return [".git", ".DS_Store", ".wrangler", ".wrangler-test", ".pnpm-store", "node_modules", "dist"].includes(name);
+  return [
+    ".git",
+    ".DS_Store",
+    ".dry-build",
+    ".wrangler",
+    ".wrangler-test",
+    ".pnpm-store",
+    "node_modules",
+    "dist",
+  ].includes(name);
 }
 
 function resolveCatalogPackageJson(files) {
