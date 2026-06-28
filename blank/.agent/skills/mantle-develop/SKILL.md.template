@@ -65,9 +65,8 @@ prepare variants locally, PUT each variant to the returned signed URL
 with its required headers, then call `commit_media_upload`.
 
 Use Claude Code, Codex, Cursor, or another local/non-sandboxed coding
-agent for this workflow. Do not rely on Claude Cowork for R2 uploads
-unless its sandbox egress allowlist includes
-`*.r2.cloudflarestorage.com`.
+agent for this workflow. Do not rely on Claude Cowork for R2 uploads;
+use a non-sandboxed agent instead.
 
 Do not default to JPEG. Preserve source semantics: opaque photos may use
 JPEG primary plus modern alternates; transparent PNG/logo artwork must

@@ -48,9 +48,8 @@ owner explicitly needs staff-managed images/files; R2 may require
 Cloudflare billing or a credit card. When media uploads are needed, read
 `node_modules/@aotter/mantle/docs/media-uploads.md` or
 https://raw.githubusercontent.com/aotter/mantle/develop/docs/media-uploads.md
-and use Claude Code or another local/non-sandboxed coding agent. Claude
-Cowork usually cannot PUT to R2 unless `*.r2.cloudflarestorage.com` is
-allowlisted for egress.
+and use Claude Code or another local/non-sandboxed coding agent. Do not
+rely on Claude Cowork for R2 uploads.
 
 ## Notes
 
