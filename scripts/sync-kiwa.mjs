@@ -36,6 +36,7 @@ const enhanceFiles = [
 const mirrorRoots = ["kiwa", "blank"];
 const blankOverridePaths = new Set([
   "components/blocks/marketing/nav-02.tsx",
+  "styles/globals.css",
   "styles/swirl-images.css",
 ]);
 const manifestPath = join(root, "kiwa", "manifest.json");

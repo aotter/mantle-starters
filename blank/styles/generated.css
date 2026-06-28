@@ -344,9 +344,6 @@
   .h-10 {
     height: calc(var(--spacing) * 10);
   }
-  .h-16 {
-    height: calc(var(--spacing) * 16);
-  }
   .h-\[320px\] {
     height: 320px;
   }
@@ -1372,10 +1369,10 @@
 }
 @import url("https://rsms.me/inter/inter.css");
 :root {
-  --swirl-1: url("/assets/mantle-ocean-hero.svg?v=starter-asset-v2");
-  --swirl-2: url("/assets/mantle-ocean-hero.svg?v=starter-asset-v2");
-  --swirl-3: url("/assets/mantle-ocean-hero.svg?v=starter-asset-v2");
-  --swirl-4: url("/assets/mantle-ocean-hero.svg?v=starter-asset-v2");
+  --swirl-1: url("/assets/mantle-ocean-hero.svg?v=starter-asset-v3");
+  --swirl-2: url("/assets/mantle-ocean-hero.svg?v=starter-asset-v3");
+  --swirl-3: url("/assets/mantle-ocean-hero.svg?v=starter-asset-v3");
+  --swirl-4: url("/assets/mantle-ocean-hero.svg?v=starter-asset-v3");
 }
 :root {
   --radius: 0.625rem;
@@ -1616,6 +1613,36 @@
     letter-spacing: -0.025em;
     font-variation-settings: 'opsz' 32;
   }
+}
+[data-site-nav] {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background-color: var(--background);
+  background-color: var(--background);
+  @supports (color: color-mix(in lab, red, red)) {
+    background-color: color-mix(in oklch, var(--background) 92%, transparent);
+  }
+  backdrop-filter: blur(14px);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+[data-site-nav-inner] {
+  min-height: 3.25rem;
+  height: 4rem;
+  transition: height 0.2s ease;
+}
+[data-site-nav-logo] {
+  transition: font-size 0.2s ease;
+}
+[data-site-nav][data-scrolled="true"] {
+  border-bottom-color: var(--border);
+  box-shadow: 0 8px 24px oklch(0% 0 0 / 0.08);
+}
+[data-site-nav][data-scrolled="true"] [data-site-nav-inner] {
+  height: 3.25rem;
+}
+[data-site-nav][data-scrolled="true"] [data-site-nav-logo] {
+  font-size: 1rem;
 }
 [data-dialog][data-state="closed"], [data-sheet][data-state="closed"], [data-alert-dialog][data-state="closed"] {
   display: none;
