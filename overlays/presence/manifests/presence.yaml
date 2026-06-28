@@ -176,6 +176,10 @@ spec:
       message:
         type: string
         minLength: 1
+      "cf-turnstile-response":
+        type: string
+      turnstileToken:
+        type: string
   output:
     type: object
   handler:
@@ -194,6 +198,37 @@ spec:
     path: /api/contact
   target:
     procedure: send-contact-message
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Procedure
+metadata:
+  name: verify-contact-turnstile
+spec:
+  input:
+    type: object
+    properties:
+      "cf-turnstile-response":
+        type: string
+      turnstileToken:
+        type: string
+  output:
+    type: object
+  handler:
+    kind: ref
+    ref: verify-contact-turnstile
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Trigger
+metadata:
+  name: contact-before-create-verify-turnstile
+spec:
+  source:
+    kind: lifecycle
+    schema: contact
+    on: [before_create]
+    errorPolicy: abort
+  target:
+    procedure: verify-contact-turnstile
 ---
 apiVersion: cms.mantle.aotter.net/v1
 kind: Procedure

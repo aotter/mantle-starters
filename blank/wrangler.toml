@@ -7,6 +7,9 @@ compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
 # Post-deploy provisioning writes PUBLIC_ORIGIN, GITHUB_CLIENT_ID,
 # and ADMIN_GITHUB_LOGIN here. Secrets stay in Cloudflare via
 # `wrangler secret put`.
+# Optional contact protection:
+# TURNSTILE_SITE_KEY = "0x..."
+# Set TURNSTILE_SECRET_KEY with `wrangler secret put TURNSTILE_SECRET_KEY`.
 
 [[d1_databases]]
 binding = "DB"

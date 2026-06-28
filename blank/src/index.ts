@@ -24,6 +24,33 @@ const homeJs = [
   "import { accordion } from '/enhance/accordion.js';",
   "collapsible();",
   "accordion();",
+  "const THEME_KEY = 'mantle-theme';",
+  "const readTheme = () => {",
+  "  const stored = localStorage.getItem(THEME_KEY);",
+  "  if (stored === 'light' || stored === 'dark') return stored;",
+  "  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';",
+  "};",
+  "const applyTheme = (theme) => {",
+  "  document.documentElement.classList.toggle('dark', theme === 'dark');",
+  "  document.querySelectorAll('[data-theme-toggle]').forEach((button) => {",
+  "    button.dataset.theme = theme;",
+  "    button.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');",
+  "    button.querySelectorAll('[data-theme-label]').forEach((label) => {",
+  "      label.textContent = theme === 'dark' ? 'Light mode' : 'Dark mode';",
+  "    });",
+  "  });",
+  "};",
+  "applyTheme(readTheme());",
+  "window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {",
+  "  if (!localStorage.getItem(THEME_KEY)) applyTheme(readTheme());",
+  "});",
+  "document.querySelectorAll('[data-theme-toggle]').forEach((button) => {",
+  "  button.addEventListener('click', () => {",
+  "    const next = document.documentElement.classList.contains('dark') ? 'light' : 'dark';",
+  "    localStorage.setItem(THEME_KEY, next);",
+  "    applyTheme(next);",
+  "  });",
+  "});",
   "const updateSiteNav = () => {",
   "  document.querySelectorAll('[data-site-nav]').forEach((nav) => {",
   "    nav.dataset.scrolled = window.scrollY > 8 ? 'true' : 'false';",
@@ -55,6 +82,7 @@ const homeJs = [
   "    event.preventDefault();",
   "    const status = form.querySelector('[data-contact-status]');",
   "    const button = form.querySelector('button[type=\"submit\"]');",
+  "    const turnstile = form.querySelector('.cf-turnstile');",
   "    const setStatus = (message, error) => {",
   "      if (!status) return;",
   "      status.hidden = false;",
@@ -80,6 +108,7 @@ const homeJs = [
   "    } catch (error) {",
   "      setStatus(error instanceof Error ? error.message : 'Message could not be sent.', true);",
   "    } finally {",
+  "      if (turnstile && window.turnstile?.reset) window.turnstile.reset(turnstile);",
   "      if (button) button.disabled = false;",
   "    }",
   "  });",
@@ -180,7 +209,7 @@ function buildWorker(env: Env): WorkerFetch {
       },
     });
   });
-  app.get("/", (c) => c.html(renderHome()));
+  app.get("/", (c) => c.html(renderHome({ turnstileSiteKey: env.TURNSTILE_SITE_KEY })));
 
   const oauthProvider = createOAuthProvider({
     defaultHandler: {
@@ -210,6 +239,7 @@ function authCacheKey(env: Env): string {
     env.GITHUB_CLIENT_ID ?? "",
     env.GITHUB_CLIENT_SECRET ?? "",
     env.ADMIN_GITHUB_LOGIN ?? "",
+    env.TURNSTILE_SITE_KEY ?? "",
   ].join("\0");
 }
 
