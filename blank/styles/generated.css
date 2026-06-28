@@ -1110,6 +1110,11 @@
       }
     }
   }
+  .data-\[error\=true\]\:text-destructive {
+    &[data-error="true"] {
+      color: var(--destructive);
+    }
+  }
   .data-\[state\=closed\]\:grid-rows-\[0fr\] {
     &[data-state="closed"] {
       grid-template-rows: 0fr;

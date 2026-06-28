@@ -43,6 +43,7 @@ function buildBundleFiles(archetype) {
   if (archetype !== "blank") {
     applyOverlay(files, archetype);
     applyOverlayManifestLoader(files, archetype);
+    delete files["manifests/example.yaml"];
   }
   walk(files, "kiwa", "kiwa");
 
@@ -135,14 +136,24 @@ function assertBundle(bundle, archetype) {
     ".claude/skills/mantle-update/SKILL.md",
     "kiwa/manifest.json",
     "styles/generated.css",
+    "src/mantleOceanHero.ts",
   ]) {
     if (!bundle.files[required]) throw new Error(`${archetype} bundle missing ${required}`);
   }
   if (!bundle.files["src/index.ts"]?.includes("/assets/styles.css")) {
     throw new Error(`${archetype} bundle missing generated stylesheet route`);
   }
+  if (!bundle.files["src/index.ts"]?.includes("/assets/mantle-ocean-hero.svg")) {
+    throw new Error(`${archetype} bundle missing Mantle ocean hero asset route`);
+  }
+  if (!bundle.files["src/home.tsx"]?.includes("/assets/mantle-ocean-hero.svg")) {
+    throw new Error(`${archetype} homepage missing Mantle ocean hero image`);
+  }
   if (archetype !== "blank" && !bundle.files[`manifests/${archetype}.yaml`]) {
     throw new Error(`${archetype} bundle missing applied manifest`);
+  }
+  if (archetype !== "blank" && bundle.files["manifests/example.yaml"]) {
+    throw new Error(`${archetype} bundle should not include blank example manifest`);
   }
   assertLockfileMatchesPackageJson(bundle, archetype);
 }
@@ -284,11 +295,14 @@ function resolveCatalogLockfile(files) {
     }
   }
 
-  files["pnpm-lock.yaml"] = lines.join("\n");
+  files["pnpm-lock.yaml"] = stripLockfileCatalogs(lines).join("\n");
 }
 
 function assertLockfileMatchesPackageJson(bundle, archetype) {
   const manifest = JSON.parse(bundle.files["package.json"]);
+  if (/^catalogs:\n/m.test(bundle.files["pnpm-lock.yaml"])) {
+    throw new Error(`${archetype} bundle lockfile still contains workspace catalog metadata`);
+  }
   const expected = collectPackageSpecifiers(manifest);
   const actual = collectRootLockfileSpecifiers(bundle.files["pnpm-lock.yaml"]);
   for (const [name, specifier] of expected) {
@@ -299,6 +313,22 @@ function assertLockfileMatchesPackageJson(bundle, archetype) {
       );
     }
   }
+}
+
+function stripLockfileCatalogs(lines) {
+  const next = [];
+  let skipping = false;
+  for (const line of lines) {
+    if (line === "catalogs:") {
+      skipping = true;
+      continue;
+    }
+    if (skipping && /^\S/.test(line) && line.trim()) {
+      skipping = false;
+    }
+    if (!skipping) next.push(line);
+  }
+  return next;
 }
 
 function collectPackageSpecifiers(manifest) {

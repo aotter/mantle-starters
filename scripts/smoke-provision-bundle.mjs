@@ -45,8 +45,12 @@ for (const archetype of archetypes) {
       if (!features?.archetype?.appliedAt) throw new Error(`${archetype} overlay not marked applied`);
       assertFourAtoms(tempRoot, archetype);
       assertOverlayManifestLoaded(tempRoot, archetype);
+      assertNoBlankExampleManifest(tempRoot, archetype);
       readFileSync(join(tempRoot, ".mantle", "overlays", archetype, "seed.json"), "utf8");
-      if (archetype === "presence") assertPresenceHandlerLoaded(tempRoot);
+      if (archetype === "presence") {
+        assertPresenceHandlerLoaded(tempRoot);
+        assertPresenceContactForm(tempRoot);
+      }
     }
   } finally {
     rmSync(tempRoot, { recursive: true, force: true });
@@ -95,6 +99,9 @@ function assertStylesheetMounted(root, archetype) {
   if (!source.includes("stylesCss")) {
     throw new Error(`${archetype} worker does not mount generated stylesheet`);
   }
+  if (!source.includes("/assets/mantle-ocean-hero.svg")) {
+    throw new Error(`${archetype} homepage does not mount Mantle ocean hero asset`);
+  }
   if (!css.includes("tailwindcss") || !css.includes(".bg-primary")) {
     throw new Error(`${archetype} generated stylesheet does not include Kiwa/Tailwind utilities`);
   }
@@ -121,6 +128,25 @@ function assertPresenceHandlerLoaded(root) {
   if (!text.includes('"notify-contact": notifyContact')) {
     throw new Error("presence overlay did not install notify-contact handler");
   }
+}
+
+function assertPresenceContactForm(root) {
+  const text = readSource(root);
+  if (!text.includes("data-contact-form")) {
+    throw new Error("presence homepage does not mark the contact form for JSON submit");
+  }
+  if (!text.includes("content-type': 'application/json'")) {
+    throw new Error("presence contact form submit does not send JSON");
+  }
+}
+
+function assertNoBlankExampleManifest(root, archetype) {
+  try {
+    readFileSync(join(root, "manifests", "example.yaml"), "utf8");
+  } catch {
+    return;
+  }
+  throw new Error(`${archetype} bundle still includes blank example manifest`);
 }
 
 function readSource(root) {

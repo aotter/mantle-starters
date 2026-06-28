@@ -32,6 +32,10 @@ import { homeContent, type HomeField, type HomeItem, type HomeSection } from "./
 import { siteContent } from "./siteContent.js";
 
 const archetype = "{{ARCHETYPE}}" as string;
+const heroImage = {
+  src: "/assets/mantle-ocean-hero.svg",
+  alt: "",
+};
 
 const featureIcons: Record<string, FC<{ class?: string }>> = {
   chat: ChatIcon,
@@ -94,6 +98,7 @@ function renderSection(section: HomeSection, index: number): Child {
           description={section.body}
           primaryCta={section.action}
           secondaryCta={section.secondaryAction}
+          image={heroImage}
         />
       );
     case "socialProof":
@@ -267,6 +272,7 @@ function ContactFormSection({ section }: { readonly section: HomeSection }) {
             action={section.action?.href ?? "/api/contact"}
             method="post"
             class="flex flex-col gap-5"
+            data-contact-form="true"
           >
             <div class="grid gap-5 sm:grid-cols-2">
               {fields.slice(0, 2).map((field) => (
@@ -284,6 +290,13 @@ function ContactFormSection({ section }: { readonly section: HomeSection }) {
                 {section.action?.label ?? "Send message"}
               </Button>
             </div>
+            <p
+              class="text-sm text-foreground-muted data-[error=true]:text-destructive"
+              data-contact-status
+              hidden
+              role="status"
+              aria-live="polite"
+            ></p>
           </form>
         </DisplayCard>
       </div>
