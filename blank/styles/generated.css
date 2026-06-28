@@ -1372,10 +1372,10 @@
 }
 @import url("https://rsms.me/inter/inter.css");
 :root {
-  --swirl-1: url("/assets/mantle-ocean-hero.svg");
-  --swirl-2: url("/assets/mantle-ocean-hero.svg");
-  --swirl-3: url("/assets/mantle-ocean-hero.svg");
-  --swirl-4: url("/assets/mantle-ocean-hero.svg");
+  --swirl-1: url("/assets/mantle-ocean-hero.svg?v=starter-asset-v2");
+  --swirl-2: url("/assets/mantle-ocean-hero.svg?v=starter-asset-v2");
+  --swirl-3: url("/assets/mantle-ocean-hero.svg?v=starter-asset-v2");
+  --swirl-4: url("/assets/mantle-ocean-hero.svg?v=starter-asset-v2");
 }
 :root {
   --radius: 0.625rem;

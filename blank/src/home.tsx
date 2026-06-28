@@ -32,8 +32,10 @@ import { homeContent, type HomeField, type HomeItem, type HomeSection } from "./
 import { siteContent } from "./siteContent.js";
 
 const archetype = "{{ARCHETYPE}}" as string;
+const assetVersion = "starter-asset-v2";
+const asset = (path: string) => `${path}?v=${assetVersion}`;
 const heroImage = {
-  src: "/assets/mantle-ocean-hero.svg",
+  src: asset("/assets/mantle-ocean-hero.svg"),
   alt: "",
 };
 
@@ -60,7 +62,7 @@ function HomePage() {
         <meta name="mantle:archetype" content={archetype} />
         <title>{siteContent.brand}</title>
         <meta name="description" content={siteContent.description} />
-        <link rel="stylesheet" href="/assets/styles.css" />
+        <link rel="stylesheet" href={asset("/assets/styles.css")} />
       </head>
       <body class="min-h-screen bg-background text-foreground antialiased">
         <Nav02
@@ -81,7 +83,7 @@ function HomePage() {
           copyright={`Copyright ${new Date().getFullYear()} ${siteContent.brand}.`}
           bottomLinks={siteContent.footer.bottomLinks.map((link) => ({ ...link }))}
         />
-        <script type="module" src="/assets/kiwa-home.js" />
+        <script type="module" src={asset("/assets/kiwa-home.js")} />
       </body>
     </html>
   );
