@@ -138,8 +138,8 @@ function assertPresenceHandlerLoaded(root) {
 
 function assertPresenceContactForm(root) {
   const text = readSource(root);
-  if (!text.includes("data-contact-form")) {
-    throw new Error("presence homepage does not mark the contact form for JSON submit");
+  if (!text.includes("data-mantle-form")) {
+    throw new Error("presence homepage does not mark forms for JSON submit");
   }
   if (!text.includes("content-type': 'application/json'")) {
     throw new Error("presence contact form submit does not send JSON");
