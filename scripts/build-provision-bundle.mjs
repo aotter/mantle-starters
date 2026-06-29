@@ -146,8 +146,14 @@ function assertBundle(bundle, archetype) {
   if (!bundle.files["src/index.ts"]?.includes("/assets/mantle-ocean-hero.svg")) {
     throw new Error(`${archetype} bundle missing Mantle ocean hero asset route`);
   }
-  if (!bundle.files["src/home.tsx"]?.includes("/assets/mantle-ocean-hero.svg")) {
+  if (!bundle.files["src/index.ts"]?.includes("/assets/mantle-ocean-hero-dark.svg")) {
+    throw new Error(`${archetype} bundle missing dark Mantle ocean hero asset route`);
+  }
+  if (!bundle.files["src/home.tsx"]?.includes("/assets/mantle-ocean-hero-light.svg")) {
     throw new Error(`${archetype} homepage missing Mantle ocean hero image`);
+  }
+  if (!bundle.files["src/index.ts"]?.includes("/assets/mantle-ocean-hero-light.svg', '/assets/mantle-ocean-hero-dark.svg")) {
+    throw new Error(`${archetype} homepage hero image must support manual theme switching`);
   }
   if (!bundle.files["src/home.tsx"]?.includes("assetBuild")) {
     throw new Error(`${archetype} homepage assets must be cache-busted`);

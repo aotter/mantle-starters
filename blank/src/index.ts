@@ -13,7 +13,11 @@ import stylesCss from "../styles/generated.css";
 import { renderHome } from "./home.js";
 import { kiwaEnhanceAssets } from "./kiwaEnhanceAssets.js";
 import { buildCmsConfig, type Env } from "./mantleConfig.js";
-import { mantleOceanHeroSvg } from "./mantleOceanHero.js";
+import {
+  mantleOceanHeroDarkSvg,
+  mantleOceanHeroLightSvg,
+  mantleOceanHeroSvg,
+} from "./mantleOceanHero.js";
 
 /** Worker entrypoint: small public home plus Mantle API/MCP surfaces.
  *  Wire your own frontend to /api/views/* + /mcp/staff + /mcp + /api/auth/*. */
@@ -32,6 +36,11 @@ const homeJs = [
   "};",
   "const applyTheme = (theme) => {",
   "  document.documentElement.classList.toggle('dark', theme === 'dark');",
+  "  document.querySelectorAll('img[src*=\"/assets/mantle-ocean-hero-light.svg\"], img[src*=\"/assets/mantle-ocean-hero-dark.svg\"]').forEach((image) => {",
+  "    const src = image.getAttribute('src') || '';",
+  "    const nextSrc = theme === 'dark' ? src.replace('/assets/mantle-ocean-hero-light.svg', '/assets/mantle-ocean-hero-dark.svg') : src.replace('/assets/mantle-ocean-hero-dark.svg', '/assets/mantle-ocean-hero-light.svg');",
+  "    if (nextSrc && image.getAttribute('src') !== nextSrc) image.setAttribute('src', nextSrc);",
+  "  });",
   "  document.querySelectorAll('[data-theme-toggle]').forEach((button) => {",
   "    button.dataset.theme = theme;",
   "    button.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');",
@@ -191,6 +200,22 @@ function buildWorker(env: Env): WorkerFetch {
   );
   app.get("/assets/mantle-ocean-hero.svg", () =>
     new Response(mantleOceanHeroSvg, {
+      headers: {
+        "cache-control": ASSET_CACHE_CONTROL,
+        "content-type": "image/svg+xml; charset=utf-8",
+      },
+    }),
+  );
+  app.get("/assets/mantle-ocean-hero-light.svg", () =>
+    new Response(mantleOceanHeroLightSvg, {
+      headers: {
+        "cache-control": ASSET_CACHE_CONTROL,
+        "content-type": "image/svg+xml; charset=utf-8",
+      },
+    }),
+  );
+  app.get("/assets/mantle-ocean-hero-dark.svg", () =>
+    new Response(mantleOceanHeroDarkSvg, {
       headers: {
         "cache-control": ASSET_CACHE_CONTROL,
         "content-type": "image/svg+xml; charset=utf-8",
