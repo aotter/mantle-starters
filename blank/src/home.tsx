@@ -127,6 +127,7 @@ function renderSection(section: HomeSection, index: number, turnstileSiteKey?: s
       return (
         <SocialProof02
           key={key}
+          class="mantle-social-proof"
           title={section.title}
           logos={items(section).map((item) => ({
             name: item.title ?? item.name ?? "Logo",
