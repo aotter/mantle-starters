@@ -58,6 +58,10 @@ for (const archetype of archetypes) {
         assertIntakeHandlerLoaded(tempRoot);
         assertIntakeForm(tempRoot);
       }
+      if (archetype === "publication") {
+        assertPublicationSeedDrivenHome(tempRoot);
+        assertPublicationSeed(tempRoot);
+      }
     } else {
       assertBlankHomeDataIsBlank(tempRoot);
     }
@@ -241,6 +245,25 @@ function assertIntakeSeedDrivenHome(root) {
   const seedImport = '../.mantle/overlays/intake/seed.json';
   if (!homeContent.includes(seedImport) || !siteContent.includes(seedImport)) {
     throw new Error("intake homepage content is not driven by the overlay seed");
+  }
+}
+
+function assertPublicationSeed(root) {
+  const seed = readFileSync(join(root, ".mantle", "overlays", "publication", "seed.json"), "utf8");
+  if (!seed.includes('"site"') || !seed.includes('"type": "home"')) {
+    throw new Error("publication seed does not drive site/page content");
+  }
+  if (!seed.includes('"posts"') || !seed.includes('"slug": "welcome"')) {
+    throw new Error("publication seed does not include starter posts");
+  }
+}
+
+function assertPublicationSeedDrivenHome(root) {
+  const homeContent = readFileSync(join(root, "src", "homeContent.ts"), "utf8");
+  const siteContent = readFileSync(join(root, "src", "siteContent.ts"), "utf8");
+  const seedImport = '../.mantle/overlays/publication/seed.json';
+  if (!homeContent.includes(seedImport) || !siteContent.includes(seedImport)) {
+    throw new Error("publication homepage content is not driven by the overlay seed");
   }
 }
 

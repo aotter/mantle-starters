@@ -1,6 +1,85 @@
 apiVersion: cms.mantle.aotter.net/v1
 kind: Schema
 metadata:
+  name: page
+spec:
+  title: Pages
+  description: Public page content for a publication site.
+  schema:
+    type: object
+    required: [type, title, sections]
+    properties:
+      type:
+        type: string
+        enum: [home]
+      title:
+        type: string
+      summary:
+        type: string
+      sections:
+        type: array
+        minItems: 1
+        items:
+          type: object
+          required: [type, title]
+          properties:
+            type:
+              type: string
+              enum:
+                - hero
+                - content
+                - features
+                - bento
+                - faq
+                - cta
+            id:
+              type: string
+            eyebrow:
+              type: string
+            title:
+              type: string
+            body:
+              type: string
+              x-mcp-hint: markdown
+            action:
+              type: object
+              properties:
+                label: { type: string }
+                href: { type: string }
+            secondaryAction:
+              type: object
+              properties:
+                label: { type: string }
+                href: { type: string }
+            items:
+              type: array
+              items:
+                type: object
+                properties:
+                  title: { type: string }
+                  body:
+                    type: string
+                    x-mcp-hint: markdown
+                  icon: { type: string }
+  uniqueIndexes:
+    - [type]
+  localized: false
+  lifecycle: simple
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: View
+metadata:
+  name: home
+spec:
+  from: page
+  fields: [id, type, title, summary, sections, updatedAt]
+  filter:
+    eq: { field: status, value: published }
+  limit: 1
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Schema
+metadata:
   name: posts
 spec:
   title: Posts

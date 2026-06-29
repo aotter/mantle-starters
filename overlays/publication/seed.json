@@ -1,14 +1,175 @@
 {
   "locale": "{{CANONICAL_LOCALE}}",
+  "site": {
+    "brand": "{{BRAND}}",
+    "description": "{{DESCRIPTION}}",
+    "navLinks": [
+      { "label": "Overview", "href": "#overview" },
+      { "label": "Dispatches", "href": "#dispatches" },
+      { "label": "System", "href": "#system" },
+      { "label": "FAQ", "href": "#faq" }
+    ],
+    "navAction": { "label": "Read latest", "href": "#dispatches" },
+    "footer": {
+      "tagline": "A Mantle publication starter with seeded editorial structure.",
+      "copyright": "Copyright {{BRAND}}.",
+      "columns": [
+        {
+          "title": "Publication",
+          "links": [
+            { "label": "Overview", "href": "#overview" },
+            { "label": "Dispatches", "href": "#dispatches" },
+            { "label": "Editorial system", "href": "#system" }
+          ]
+        },
+        {
+          "title": "Next",
+          "links": [
+            { "label": "Questions", "href": "#faq" },
+            { "label": "Subscribe placeholder", "href": "#next" }
+          ]
+        }
+      ],
+      "socialLinks": [
+        { "name": "GitHub", "href": "https://github.com", "icon": "github" }
+      ],
+      "bottomLinks": [
+        { "label": "Read latest", "href": "#dispatches" }
+      ]
+    }
+  },
   "collections": {
+    "page": [
+      {
+        "type": "home",
+        "title": "{{BRAND}}",
+        "summary": "{{DESCRIPTION}}",
+        "status": "published",
+        "sections": [
+          {
+            "type": "hero",
+            "title": "{{BRAND}} is ready to publish its first useful notes",
+            "body": "{{DESCRIPTION}}",
+            "action": { "label": "Read latest", "href": "#dispatches" },
+            "secondaryAction": { "label": "See the system", "href": "#system" }
+          },
+          {
+            "type": "content",
+            "id": "overview",
+            "eyebrow": "Overview",
+            "title": "A clean publication shape before the archive gets large",
+            "body": "Use this starter when the first product is a readable stream of posts, changelogs, essays, notes, or documentation.",
+            "items": [
+              {
+                "body": "The public page starts with a small editorial promise and a few seeded pieces instead of an empty blog shell."
+              },
+              {
+                "body": "Mantle stores posts as structured content, so the owner can later add authors, tags, subscriptions, review flow, or member-only entries."
+              }
+            ]
+          },
+          {
+            "type": "features",
+            "id": "dispatches",
+            "eyebrow": "Dispatches",
+            "title": "Seeded pieces to replace after launch",
+            "body": "These cards mirror the starter posts in the manifest seed. Keep the shape, then rewrite the titles and excerpts.",
+            "items": [
+              {
+                "icon": "sparkles",
+                "title": "Welcome to {{BRAND}}",
+                "body": "A short opening note that explains what this publication will help readers understand."
+              },
+              {
+                "icon": "layout",
+                "title": "How this publication will grow",
+                "body": "A plain update that demonstrates the post model before richer editorial features exist."
+              },
+              {
+                "icon": "check",
+                "title": "Next dispatch draft",
+                "body": "A draft placeholder for the first real note the owner should write with their coding agent."
+              }
+            ]
+          },
+          {
+            "type": "bento",
+            "id": "system",
+            "eyebrow": "System",
+            "title": "The starter ships an editorial model, not a theme",
+            "body": "Publication keeps the same blank Kiwa runtime as every other type. The type-specific work lives in the manifest and seed.",
+            "items": [
+              {
+                "title": "Posts are the core",
+                "body": "The `posts` schema starts with slug, title, excerpt, body, and publishedAt."
+              },
+              {
+                "title": "A public view is ready",
+                "body": "`published-posts` exposes published entries for a future index or detail route."
+              },
+              {
+                "title": "Suggestions are optional",
+                "body": "The suggestion procedure is available when the owner wants a lightweight reader feedback path."
+              }
+            ]
+          },
+          {
+            "type": "faq",
+            "id": "faq",
+            "eyebrow": "FAQ",
+            "title": "Questions to answer before adding more publication code",
+            "body": "Use these as replacement prompts for the real editorial plan.",
+            "items": [
+              {
+                "title": "What should the first real post explain?",
+                "body": "Start with one useful note for the intended audience before adding categories or complex templates."
+              },
+              {
+                "title": "Does this need authors, tags, or subscriptions now?",
+                "body": "Not yet. Add them only when the owner has real content that needs those fields."
+              },
+              {
+                "title": "Where should the agent work next?",
+                "body": "Read `.mantle/launch-state.json`, inspect `manifests/publication.yaml`, then replace this seed with real editorial content."
+              }
+            ]
+          },
+          {
+            "type": "cta",
+            "id": "next",
+            "eyebrow": "Next",
+            "title": "Turn {{BRAND}} into a real publication",
+            "body": "Replace the seeded posts, decide whether the home page should become an archive, and push the first real content update.",
+            "action": { "label": "Read latest", "href": "#dispatches" },
+            "secondaryAction": { "label": "Review model", "href": "#system" }
+          }
+        ]
+      }
+    ],
     "posts": [
       {
         "slug": "welcome",
         "title": "Welcome to {{BRAND}}",
         "excerpt": "{{DESCRIPTION}}",
-        "body": "{{DESCRIPTION}}",
+        "body": "{{DESCRIPTION}}\n\nThis first note is intentionally short. Replace it with the first useful article, update, or field note for the audience.",
         "publishedAt": 1782130000000,
         "status": "published"
+      },
+      {
+        "slug": "how-this-publication-will-grow",
+        "title": "How this publication will grow",
+        "excerpt": "A starter update that shows the publication model before the archive gets complex.",
+        "body": "Mantle starts with a small posts schema and a public published-posts view. Add authors, tags, subscriptions, or gated posts only after the first real publishing workflow needs them.",
+        "publishedAt": 1782216400000,
+        "status": "published"
+      },
+      {
+        "slug": "next-dispatch-draft",
+        "title": "Next dispatch draft",
+        "excerpt": "A draft placeholder for the first real editorial update.",
+        "body": "Use this draft to outline the next article before changing the homepage layout.",
+        "publishedAt": 1782302800000,
+        "status": "draft"
       }
     ]
   }
