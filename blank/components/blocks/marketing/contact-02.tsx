@@ -27,29 +27,6 @@ export type Contact02Props = {
   class?: string
 }
 
-const defaultItems: ContactItem[] = [
-  {
-    icon: 'email',
-    title: 'Email',
-    description: 'Our team is here to help.',
-    value: 'hello@kiwaui.com',
-    href: 'mailto:hello@kiwaui.com',
-  },
-  {
-    icon: 'phone',
-    title: 'Phone',
-    description: 'Mon-Fri from 8am to 5pm.',
-    value: '+1 (555) 000-0000',
-    href: 'tel:+15550000000',
-  },
-  {
-    icon: 'location',
-    title: 'Office',
-    description: 'Come say hello at our HQ.',
-    value: '430 Madison Ave, NY 10022',
-  },
-]
-
 const icons = {
   email: <MailIcon class="size-4" />,
   phone: <PhoneIcon class="size-4" />,
@@ -57,13 +34,13 @@ const icons = {
 }
 
 export const Contact02: FC<Contact02Props> = ({
-  eyebrow = 'Contact',
-  title = 'Get in touch',
-  description = 'Reach out through any of the channels below and our team will respond promptly.',
-  items = defaultItems,
-  footerTitle = 'Need more help?',
-  footerDescription = 'Browse our guides and resources to find answers fast.',
-  footerCta = { label: 'View documentation', href: '#' },
+  eyebrow,
+  title = '',
+  description,
+  items = [],
+  footerTitle,
+  footerDescription,
+  footerCta,
   showHeader = true,
   class: className,
 }) => (
@@ -115,24 +92,32 @@ export const Contact02: FC<Contact02Props> = ({
         ))}
       </div>
 
-      <div class="mx-auto mt-3 max-w-3xl rounded-2xl bg-muted p-8 shadow-sm sm:p-10">
-        <div class="mx-auto flex max-w-md flex-col items-center gap-3 text-center">
-          <h3 class="text-lg tracking-tight">
-            {footerTitle}
-          </h3>
-          <p class="text-sm text-foreground-muted">
-            {footerDescription}
-          </p>
-          <div class="mt-2 w-full sm:w-auto">
-            <a
-              href={footerCta.href}
-              class={cn(getButtonClasses('outline'), 'w-full sm:w-auto')}
-            >
-              {footerCta.label}
-            </a>
+      {(footerTitle || footerDescription || footerCta) && (
+        <div class="mx-auto mt-3 max-w-3xl rounded-2xl bg-muted p-8 shadow-sm sm:p-10">
+          <div class="mx-auto flex max-w-md flex-col items-center gap-3 text-center">
+            {footerTitle && (
+              <h3 class="text-lg tracking-tight">
+                {footerTitle}
+              </h3>
+            )}
+            {footerDescription && (
+              <p class="text-sm text-foreground-muted">
+                {footerDescription}
+              </p>
+            )}
+            {footerCta && (
+              <div class="mt-2 w-full sm:w-auto">
+                <a
+                  href={footerCta.href}
+                  class={cn(getButtonClasses('outline'), 'w-full sm:w-auto')}
+                >
+                  {footerCta.label}
+                </a>
+              </div>
+            )}
           </div>
         </div>
-      </div>
+      )}
     </div>
   </section>
 )

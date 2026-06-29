@@ -48,9 +48,12 @@ for (const archetype of archetypes) {
       assertNoBlankExampleManifest(tempRoot, archetype);
       readFileSync(join(tempRoot, ".mantle", "overlays", archetype, "seed.json"), "utf8");
       if (archetype === "presence") {
+        assertPresenceSeedDrivenHome(tempRoot);
         assertPresenceHandlerLoaded(tempRoot);
         assertPresenceContactForm(tempRoot);
       }
+    } else {
+      assertBlankHomeDataIsBlank(tempRoot);
     }
   } finally {
     rmSync(tempRoot, { recursive: true, force: true });
@@ -138,6 +141,7 @@ function assertPresenceHandlerLoaded(root) {
 
 function assertPresenceContactForm(root) {
   const text = readSource(root);
+  const seed = readFileSync(join(root, ".mantle", "overlays", "presence", "seed.json"), "utf8");
   if (!text.includes("data-mantle-form")) {
     throw new Error("presence homepage does not mark forms for JSON submit");
   }
@@ -146,6 +150,31 @@ function assertPresenceContactForm(root) {
   }
   if (!text.includes("cf-turnstile")) {
     throw new Error("presence contact form is missing Turnstile support");
+  }
+  if (!seed.includes('"type": "form"') || !seed.includes('"/api/contact"')) {
+    throw new Error("presence seed does not define the contact form section");
+  }
+}
+
+function assertPresenceSeedDrivenHome(root) {
+  const homeContent = readFileSync(join(root, "src", "homeContent.ts"), "utf8");
+  const siteContent = readFileSync(join(root, "src", "siteContent.ts"), "utf8");
+  const seedImport = '../.mantle/overlays/presence/seed.json';
+  if (!homeContent.includes(seedImport) || !siteContent.includes(seedImport)) {
+    throw new Error("presence homepage content is not driven by the overlay seed");
+  }
+}
+
+function assertBlankHomeDataIsBlank(root) {
+  const homeContent = readFileSync(join(root, "src", "homeContent.ts"), "utf8");
+  const siteContent = readFileSync(join(root, "src", "siteContent.ts"), "utf8");
+  if (!homeContent.includes("sections: []")) {
+    throw new Error("blank homepage should not seed visible sections");
+  }
+  for (const forbidden of ["contactForm", "Placeholder proof", "Start a conversation", "navAction"]) {
+    if (homeContent.includes(forbidden) || siteContent.includes(forbidden)) {
+      throw new Error(`blank homepage still seeds visible copy: ${forbidden}`);
+    }
   }
 }
 

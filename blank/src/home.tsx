@@ -28,7 +28,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { homeContent, type HomeField, type HomeItem, type HomeSection } from "./homeContent.js";
+import type { HomeField, HomeItem, HomeSection } from "./contentTypes.js";
+import { homeContent } from "./homeContent.js";
 import { siteContent } from "./siteContent.js";
 
 const archetype = "{{ARCHETYPE}}" as string;
@@ -65,6 +66,14 @@ export function renderHome(options: HomePageProps = {}): string {
 
 function HomePage({ turnstileSiteKey }: HomePageProps) {
   const siteKey = turnstileSiteKey?.trim();
+  const hasNavigation = siteContent.navLinks.length > 0 || Boolean(siteContent.navAction);
+  const hasFooter = Boolean(
+    siteContent.footer.tagline ||
+      siteContent.footer.copyright ||
+      siteContent.footer.columns.length > 0 ||
+      siteContent.footer.socialLinks.length > 0 ||
+      siteContent.footer.bottomLinks.length > 0,
+  );
   return (
     <html lang="en">
       <head>
@@ -85,24 +94,28 @@ function HomePage({ turnstileSiteKey }: HomePageProps) {
         <link rel="stylesheet" href={asset("/assets/styles.css")} />
       </head>
       <body class="min-h-screen bg-background text-foreground antialiased">
-        <Nav02
-          logo={siteContent.brand}
-          links={siteContent.navLinks.map((link) => ({ ...link }))}
-          ctaText={siteContent.navAction.label}
-          ctaHref={siteContent.navAction.href}
-        />
+        {hasNavigation && (
+          <Nav02
+            logo={siteContent.brand}
+            links={siteContent.navLinks.map((link) => ({ ...link }))}
+            ctaText={siteContent.navAction?.label}
+            ctaHref={siteContent.navAction?.href}
+          />
+        )}
         <main>{homeContent.sections.map((section, index) => renderSection(section, index, siteKey))}</main>
-        <Footer02
-          logo={{ text: siteContent.brand }}
-          tagline={siteContent.footer.tagline}
-          columns={siteContent.footer.columns.map((column) => ({
-            title: column.title,
-            links: column.links.map((link) => ({ ...link })),
-          }))}
-          socialLinks={siteContent.footer.socialLinks.map((link) => ({ ...link }))}
-          copyright={`Copyright ${new Date().getFullYear()} ${siteContent.brand}.`}
-          bottomLinks={siteContent.footer.bottomLinks.map((link) => ({ ...link }))}
-        />
+        {hasFooter && (
+          <Footer02
+            logo={{ text: siteContent.brand }}
+            tagline={siteContent.footer.tagline}
+            columns={siteContent.footer.columns.map((column) => ({
+              title: column.title,
+              links: column.links.map((link) => ({ ...link })),
+            }))}
+            socialLinks={siteContent.footer.socialLinks.map((link) => ({ ...link }))}
+            copyright={siteContent.footer.copyright}
+            bottomLinks={siteContent.footer.bottomLinks.map((link) => ({ ...link }))}
+          />
+        )}
         <script type="module" src={asset("/assets/kiwa-home.js")} />
       </body>
     </html>
@@ -130,7 +143,7 @@ function renderSection(section: HomeSection, index: number, turnstileSiteKey?: s
           class="mantle-social-proof"
           title={section.title}
           logos={items(section).map((item) => ({
-            name: item.title ?? item.name ?? "Logo",
+            name: item.title ?? item.name ?? "",
             mark: item.mark ?? 1,
           }))}
         />
@@ -156,7 +169,7 @@ function renderSection(section: HomeSection, index: number, turnstileSiteKey?: s
           description={section.body}
           features={items(section).map((item) => ({
             icon: featureIcon(item.icon),
-            title: item.title ?? "Feature",
+            title: item.title ?? "",
             description: item.body ?? "",
           }))}
         />,
@@ -175,7 +188,7 @@ function renderSection(section: HomeSection, index: number, turnstileSiteKey?: s
             description: mainItem?.body ?? section.body ?? "",
           }}
           cards={cardItems.map((item) => ({
-            title: item.title ?? "Detail",
+            title: item.title ?? "",
             description: item.body ?? "",
           }))}
         />,
@@ -207,9 +220,9 @@ function renderSection(section: HomeSection, index: number, turnstileSiteKey?: s
           testimonials={items(section).map((item) => ({
             quote: item.quote ?? item.body ?? "",
             author: {
-              name: item.name ?? "Example Client",
-              title: item.role ?? "Client",
-              company: item.company ?? siteContent.brand,
+              name: item.name ?? "",
+              title: item.role ?? "",
+              company: item.company ?? "",
             },
           }))}
         />,
@@ -223,7 +236,7 @@ function renderSection(section: HomeSection, index: number, turnstileSiteKey?: s
           title={section.title}
           description={section.body}
           items={items(section).map((item) => ({
-            question: item.title ?? "Question",
+            question: item.title ?? "",
             answer: item.body ?? "",
           }))}
         />,
@@ -238,7 +251,7 @@ function renderSection(section: HomeSection, index: number, turnstileSiteKey?: s
           description={section.body}
           items={items(section).map((item) => ({
             icon: contactIcon(item.icon),
-            title: item.title ?? "Contact",
+            title: item.title ?? "",
             description: item.body ?? "",
             value: item.value ?? "",
             href: item.href,
@@ -273,7 +286,7 @@ function FormSection({
   readonly section: HomeSection;
   readonly turnstileSiteKey?: string;
 }) {
-  const fields = section.fields?.length ? section.fields : defaultFormFields;
+  const fields = section.fields ?? [];
   return (
     <section id={section.id} class="py-16 md:py-24">
       <div class="mx-auto grid max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
@@ -299,7 +312,7 @@ function FormSection({
 
         <DisplayCard class="p-6 sm:p-8">
           <form
-            action={section.action?.href ?? "/api/contact"}
+            action={section.action?.href ?? ""}
             method="post"
             class="flex flex-col gap-5"
             data-contact-form="true"
@@ -320,9 +333,9 @@ function FormSection({
               {section.footerBody && (
                 <p class="text-sm text-foreground-muted">{section.footerBody}</p>
               )}
-              <Button type="submit" class="w-full sm:w-auto">
-                {section.action?.label ?? "Send message"}
-              </Button>
+              {section.action?.label && (
+                <Button type="submit" class="w-full sm:w-auto">{section.action.label}</Button>
+              )}
             </div>
             <p
               class="text-sm text-foreground-muted data-[error=true]:text-destructive"
@@ -394,9 +407,3 @@ function contactIcon(name: string | undefined): "email" | "phone" | "location" {
   if (name === "location") return "location";
   return "email";
 }
-
-const defaultFormFields: readonly HomeField[] = [
-  { name: "name", label: "Name", type: "text", autocomplete: "name", required: true },
-  { name: "email", label: "Email", type: "email", autocomplete: "email", required: true },
-  { name: "message", label: "Message", required: true, multiline: true },
-];

@@ -20,19 +20,12 @@ type Metrics02Props = {
   class?: string
 }
 
-const defaultMetrics: Metric[] = [
-  { value: '2x', label: 'Faster deploys' },
-  { value: '10k+', label: 'Teams worldwide' },
-  { value: '50M', label: 'API calls per day' },
-  { value: '99.99%', label: 'SLA guaranteed' },
-]
-
 export const Metrics02: FC<Metrics02Props> = ({
-  eyebrow = 'Results',
-  title = 'Built for speed and reliability',
-  description = 'Our infrastructure scales with your business so you can focus on building, not firefighting.',
-  cta = { label: 'See case studies', href: '#' },
-  metrics = defaultMetrics,
+  eyebrow,
+  title = '',
+  description,
+  cta,
+  metrics = [],
   showHeader = true,
   class: className,
 }) => (
