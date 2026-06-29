@@ -185,7 +185,7 @@ function assertBundle(bundle, archetype) {
       }
     }
   }
-  if (archetype === "presence" || archetype === "intake") {
+  if (archetype === "presence" || archetype === "intake" || archetype === "publication") {
     const seedImport = `../.mantle/overlays/${archetype}/seed.json`;
     if (!bundle.files["src/homeContent.ts"]?.includes(seedImport)) {
       throw new Error(`${archetype} homeContent must read the overlay seed`);
