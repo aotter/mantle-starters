@@ -248,8 +248,9 @@ function renderSection(section: HomeSection, index: number, turnstileSiteKey?: s
           footerCta={section.footerAction}
         />,
       );
+    case "form":
     case "contactForm":
-      return <ContactFormSection key={key} section={section} turnstileSiteKey={turnstileSiteKey} />;
+      return <FormSection key={key} section={section} turnstileSiteKey={turnstileSiteKey} />;
     case "cta":
       return withAnchor(
         section,
@@ -265,14 +266,14 @@ function renderSection(section: HomeSection, index: number, turnstileSiteKey?: s
   }
 }
 
-function ContactFormSection({
+function FormSection({
   section,
   turnstileSiteKey,
 }: {
   readonly section: HomeSection;
   readonly turnstileSiteKey?: string;
 }) {
-  const fields = section.fields?.length ? section.fields : defaultContactFields;
+  const fields = section.fields?.length ? section.fields : defaultFormFields;
   return (
     <section id={section.id} class="py-16 md:py-24">
       <div class="mx-auto grid max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
@@ -302,6 +303,7 @@ function ContactFormSection({
             method="post"
             class="flex flex-col gap-5"
             data-contact-form="true"
+            data-mantle-form="true"
           >
             <div class="grid gap-5 sm:grid-cols-2">
               {fields.slice(0, 2).map((field) => (
@@ -325,6 +327,7 @@ function ContactFormSection({
             <p
               class="text-sm text-foreground-muted data-[error=true]:text-destructive"
               data-contact-status
+              data-mantle-form-status
               hidden
               role="status"
               aria-live="polite"
@@ -392,7 +395,7 @@ function contactIcon(name: string | undefined): "email" | "phone" | "location" {
   return "email";
 }
 
-const defaultContactFields: readonly HomeField[] = [
+const defaultFormFields: readonly HomeField[] = [
   { name: "name", label: "Name", type: "text", autocomplete: "name", required: true },
   { name: "email", label: "Email", type: "email", autocomplete: "email", required: true },
   { name: "message", label: "Message", required: true, multiline: true },
