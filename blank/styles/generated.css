@@ -194,6 +194,12 @@
   }
 }
 @layer utilities {
+  .\!visible {
+    visibility: visible !important;
+  }
+  .visible {
+    visibility: visible;
+  }
   .fixed {
     position: fixed;
   }
@@ -251,6 +257,9 @@
   .mt-4 {
     margin-top: calc(var(--spacing) * 4);
   }
+  .mt-5 {
+    margin-top: calc(var(--spacing) * 5);
+  }
   .mt-6 {
     margin-top: calc(var(--spacing) * 6);
   }
@@ -268,6 +277,9 @@
   }
   .mt-auto {
     margin-top: auto;
+  }
+  .block {
+    display: block;
   }
   .flex {
     display: flex;
@@ -500,6 +512,9 @@
   }
   .rounded-2xl {
     border-radius: calc(var(--radius) + 4px);
+  }
+  .rounded-full {
+    border-radius: calc(infinity * 1px);
   }
   .rounded-lg {
     border-radius: var(--radius);
@@ -1307,6 +1322,11 @@
   .lg\:grid-cols-\[0\.9fr_1\.1fr\] {
     @media (width >= 64rem) {
       grid-template-columns: 0.9fr 1.1fr;
+    }
+  }
+  .lg\:grid-cols-\[0\.82fr_1\.18fr\] {
+    @media (width >= 64rem) {
+      grid-template-columns: 0.82fr 1.18fr;
     }
   }
   .lg\:gap-8 {
