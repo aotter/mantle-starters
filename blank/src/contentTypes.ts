@@ -51,6 +51,32 @@ export type HomeField = {
   readonly autocomplete?: string;
   readonly required?: boolean;
   readonly multiline?: boolean;
+  readonly step?: string;
+  readonly options?: readonly {
+    readonly label: string;
+    readonly value: string;
+    readonly body?: string;
+  }[];
+  readonly when?: HomeCondition;
+};
+
+export type HomeCondition = {
+  readonly field: string;
+  readonly equals?: string;
+  readonly oneOf?: readonly string[];
+};
+
+export type HomeStep = {
+  readonly id: string;
+  readonly title: string;
+  readonly body?: string;
+};
+
+export type HomeResult = {
+  readonly key: string;
+  readonly title: string;
+  readonly body?: string;
+  readonly when?: HomeCondition;
 };
 
 export type HomeSection = {
@@ -65,6 +91,7 @@ export type HomeSection = {
     | "faq"
     | "contact"
     | "form"
+    | "intake"
     | "cta";
   readonly id?: string;
   readonly eyebrow?: string;
@@ -77,6 +104,8 @@ export type HomeSection = {
   readonly footerAction?: HomeAction;
   readonly items?: readonly HomeItem[];
   readonly fields?: readonly HomeField[];
+  readonly steps?: readonly HomeStep[];
+  readonly results?: readonly HomeResult[];
 };
 
 export type HomeContent = {
