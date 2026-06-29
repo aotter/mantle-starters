@@ -1,6 +1,13 @@
 :root {
-  --swirl-1: url("/assets/mantle-ocean-hero.svg?v=mantle-starter-assets-20260628-theme-turnstile");
-  --swirl-2: url("/assets/mantle-ocean-hero.svg?v=mantle-starter-assets-20260628-theme-turnstile");
-  --swirl-3: url("/assets/mantle-ocean-hero.svg?v=mantle-starter-assets-20260628-theme-turnstile");
-  --swirl-4: url("/assets/mantle-ocean-hero.svg?v=mantle-starter-assets-20260628-theme-turnstile");
+  --swirl-1: url("/assets/mantle-ocean-hero-light.svg?v=mantle-starter-assets-20260629-theme-svg");
+  --swirl-2: url("/assets/mantle-ocean-hero-light.svg?v=mantle-starter-assets-20260629-theme-svg");
+  --swirl-3: url("/assets/mantle-ocean-hero-light.svg?v=mantle-starter-assets-20260629-theme-svg");
+  --swirl-4: url("/assets/mantle-ocean-hero-light.svg?v=mantle-starter-assets-20260629-theme-svg");
+}
+
+.dark {
+  --swirl-1: url("/assets/mantle-ocean-hero-dark.svg?v=mantle-starter-assets-20260629-theme-svg");
+  --swirl-2: url("/assets/mantle-ocean-hero-dark.svg?v=mantle-starter-assets-20260629-theme-svg");
+  --swirl-3: url("/assets/mantle-ocean-hero-dark.svg?v=mantle-starter-assets-20260629-theme-svg");
+  --swirl-4: url("/assets/mantle-ocean-hero-dark.svg?v=mantle-starter-assets-20260629-theme-svg");
 }

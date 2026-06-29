@@ -102,6 +102,9 @@ function assertStylesheetMounted(root, archetype) {
   if (!source.includes("/assets/mantle-ocean-hero.svg")) {
     throw new Error(`${archetype} homepage does not mount Mantle ocean hero asset`);
   }
+  if (!source.includes("/assets/mantle-ocean-hero-dark.svg")) {
+    throw new Error(`${archetype} homepage does not support dark Mantle ocean hero switching`);
+  }
   if (!css.includes("tailwindcss") || !css.includes(".bg-primary")) {
     throw new Error(`${archetype} generated stylesheet does not include Kiwa/Tailwind utilities`);
   }
