@@ -15,18 +15,9 @@ type SocialProof02Props = {
   class?: string
 }
 
-const defaultLogos: Logo[] = [
-  { name: 'Nova', mark: 1 },
-  { name: 'Orbit', mark: 2 },
-  { name: 'Pulse', mark: 3 },
-  { name: 'Vertex', mark: 4 },
-  { name: 'Arc', mark: 5 },
-  { name: 'Prism', mark: 6 },
-]
-
 export const SocialProof02: FC<SocialProof02Props> = ({
-  title = 'Trusted by product-led teams everywhere',
-  logos = defaultLogos,
+  title = '',
+  logos = [],
   fluid = false,
   class: className,
 }) => (

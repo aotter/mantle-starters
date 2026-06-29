@@ -13,16 +13,11 @@ type Content01Props = {
   class?: string
 }
 
-const defaultParagraphs = [
-  'We started Kiwa UI because we believe building beautiful, fast websites should be accessible to every team. The tools we had felt either too rigid or too complicated for the way modern teams ship.',
-  'Today we work with thousands of designers and engineers across startups and enterprises, helping them launch polished products in hours instead of weeks. Everything we build is shaped by their feedback.',
-]
-
 export const Content01: FC<Content01Props> = ({
-  eyebrow = 'About',
-  title = 'Built for teams that ship',
-  description = 'A small team obsessed with making the web a better place to build.',
-  paragraphs = defaultParagraphs,
+  eyebrow,
+  title = '',
+  description,
+  paragraphs = [],
   image,
   imagePosition = 'right',
   showHeader = true,

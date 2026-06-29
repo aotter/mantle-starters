@@ -3,16 +3,6 @@ import { cn } from '@/lib/utils'
 import { DisplayCard } from '@/components/ui/display-card'
 import { PlaceholderGradient } from '@/components/ui/placeholder-gradient'
 
-const defaultMainCard = {
-  title: 'Unified dashboard',
-  description: 'Manage everything from one place.',
-}
-
-const defaultCards = [
-  { title: 'App integrations', description: 'Connect with your favorite tools and services.' },
-  { title: 'Revenue tracking', description: 'Monitor your earnings in real-time.' },
-]
-
 type Bento02Props = {
   eyebrow?: string
   title?: string
@@ -30,11 +20,11 @@ type Bento02Props = {
 }
 
 export const Bento02: FC<Bento02Props> = ({
-  eyebrow = 'Platform',
-  title = 'Built for teams that ship fast',
-  description = 'Powerful tools and integrations to supercharge your workflow.',
-  mainCard = defaultMainCard,
-  cards = defaultCards,
+  eyebrow,
+  title = '',
+  description,
+  mainCard = { title: '', description: '' },
+  cards = [],
   showHeader = true,
   class: className,
 }) => (

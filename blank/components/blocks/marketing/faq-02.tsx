@@ -21,54 +21,11 @@ type Faq02Props = {
   class?: string
 }
 
-const defaultItems: FaqItem[] = [
-  {
-    question: 'What integrations do you support?',
-    answer:
-      'We connect with Slack, Jira, GitHub, Salesforce, HubSpot, and dozens more. Custom integrations are available through our webhook and API layer.',
-  },
-  {
-    question: 'How is billing calculated?',
-    answer:
-      'Billing is per workspace on a monthly or annual cycle. Annual plans save 20%. You can add or remove seats at any time and only pay the prorated difference.',
-  },
-  {
-    question: 'Can I change my plan later?',
-    answer:
-      'Yes. Upgrade, downgrade, or cancel at any time from your account settings. Changes take effect on your next billing cycle.',
-  },
-  {
-    question: 'Is there a setup fee?',
-    answer:
-      'No setup fees. You only pay the subscription price listed on our pricing page. Enterprise plans include dedicated onboarding at no extra cost.',
-  },
-  {
-    question: 'Do you offer a service level agreement?',
-    answer:
-      'All paid plans include a 99.9% uptime SLA. Enterprise plans come with a 99.99% SLA, dedicated account manager, and priority incident response.',
-  },
-  {
-    question: 'Where are your servers located?',
-    answer:
-      'We run on a global edge network with data centers in North America, Europe, and Asia-Pacific. You can choose your primary data region during onboarding.',
-  },
-  {
-    question: 'Do you offer refunds?',
-    answer:
-      'We offer a 30-day money-back guarantee on all paid plans. If you are not satisfied, contact support for a full refund with no questions asked.',
-  },
-  {
-    question: 'Can I use it for client projects?',
-    answer:
-      'Yes. All plans allow commercial use. Agency and freelancer teams can manage multiple client workspaces from a single account.',
-  },
-]
-
 export const Faq02: FC<Faq02Props> = ({
-  eyebrow = 'FAQ',
-  title = 'Frequently asked questions',
-  description = 'Find answers to common questions about our product and billing.',
-  items = defaultItems,
+  eyebrow,
+  title = '',
+  description,
+  items = [],
   showHeader = true,
   class: className,
 }) => {

@@ -20,20 +20,13 @@ type Nav02Props = {
   class?: string
 }
 
-const defaultLinks: NavLink[] = [
-  { label: 'Products', href: '#' },
-  { label: 'Features', href: '#' },
-  { label: 'Pricing', href: '#' },
-  { label: 'About', href: '#' },
-]
-
 export const Nav02: FC<Nav02Props> = ({
-  logo = 'Kiwa UI',
+  logo = '',
   logoHref = '/',
-  links = defaultLinks,
+  links = [],
   loginText,
   loginHref = '#',
-  ctaText = 'Get started',
+  ctaText,
   ctaHref = '#',
   class: className,
 }) => (
@@ -62,9 +55,11 @@ export const Nav02: FC<Nav02Props> = ({
               {loginText}
             </a>
           )}
-          <a href={ctaHref} class={getButtonClasses('default', 'sm')}>
-            {ctaText}
-          </a>
+          {ctaText && (
+            <a href={ctaHref} class={getButtonClasses('default', 'sm')}>
+              {ctaText}
+            </a>
+          )}
           <ThemeToggle />
         </div>
 
@@ -135,9 +130,11 @@ export const Nav02: FC<Nav02Props> = ({
               {loginText}
             </a>
           )}
-          <a href={ctaHref} data-mobile-nav-close="true" class={cn(getButtonClasses('default', 'sm'), 'w-full')}>
-            {ctaText}
-          </a>
+          {ctaText && (
+            <a href={ctaHref} data-mobile-nav-close="true" class={cn(getButtonClasses('default', 'sm'), 'w-full')}>
+              {ctaText}
+            </a>
+          )}
         </div>
       </div>
     </div>

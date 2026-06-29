@@ -52,51 +52,13 @@ const socialIcons: Record<SocialLink['icon'], FC> = {
   youtube: () => <YoutubeIcon class="size-4" />,
 }
 
-const defaultColumns: LinkGroup[] = [
-  {
-    title: 'Product',
-    links: [
-      { label: 'Features', href: '#' },
-      { label: 'Pricing', href: '#' },
-      { label: 'Changelog', href: '#' },
-      { label: 'Documentation', href: '#' },
-    ],
-  },
-  {
-    title: 'Company',
-    links: [
-      { label: 'About', href: '#' },
-      { label: 'Blog', href: '#' },
-      { label: 'Careers', href: '#' },
-      { label: 'Contact', href: '#' },
-    ],
-  },
-  {
-    title: 'Legal',
-    links: [
-      { label: 'Privacy', href: '#' },
-      { label: 'Terms', href: '#' },
-      { label: 'License', href: '#' },
-    ],
-  },
-]
-
-const defaultSocialLinks: SocialLink[] = [
-  { name: 'Twitter', href: '#', icon: 'twitter' },
-  { name: 'GitHub', href: '#', icon: 'github' },
-  { name: 'LinkedIn', href: '#', icon: 'linkedin' },
-]
-
 export const Footer02: FC<Footer02Props> = ({
-  logo = { text: 'Logo' },
-  tagline = 'Build faster, ship sooner. Modern tools for modern teams.',
-  columns = defaultColumns,
-  socialLinks = defaultSocialLinks,
-  copyright = `© ${new Date().getFullYear()} Your Company. All rights reserved.`,
-  bottomLinks = [
-    { label: 'Privacy Policy', href: '#' },
-    { label: 'Terms of Service', href: '#' },
-  ],
+  logo = { text: '' },
+  tagline,
+  columns = [],
+  socialLinks = [],
+  copyright,
+  bottomLinks = [],
   class: className,
 }) => (
   <footer class={cn('border-t border-border-subtle bg-background', className)}>
@@ -104,10 +66,10 @@ export const Footer02: FC<Footer02Props> = ({
       <div class="lg:grid lg:grid-cols-3 lg:gap-8">
         <div>
           {logo?.src ? (
-            <img src={logo.src} alt={logo.alt || 'Logo'} class="h-8 w-auto" />
+            <img src={logo.src} alt={logo.alt || ''} class="h-8 w-auto" />
           ) : (
             <span class="text-xl font-bold text-foreground">
-              {logo?.text || 'Logo'}
+              {logo?.text}
             </span>
           )}
           {tagline && (
