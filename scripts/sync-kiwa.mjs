@@ -35,7 +35,18 @@ const enhanceFiles = [
 ];
 const mirrorRoots = ["kiwa", "blank"];
 const blankOverridePaths = new Set([
+  "components/blocks/marketing/bento-02.tsx",
+  "components/blocks/marketing/contact-02.tsx",
+  "components/blocks/marketing/content-01.tsx",
+  "components/blocks/marketing/cta-02.tsx",
+  "components/blocks/marketing/faq-02.tsx",
+  "components/blocks/marketing/features-02.tsx",
+  "components/blocks/marketing/footer-02.tsx",
+  "components/blocks/marketing/hero-02.tsx",
+  "components/blocks/marketing/metrics-02.tsx",
   "components/blocks/marketing/nav-02.tsx",
+  "components/blocks/marketing/social-proof-02.tsx",
+  "components/blocks/marketing/testimonials-02.tsx",
   "styles/globals.css",
   "styles/swirl-images.css",
 ]);

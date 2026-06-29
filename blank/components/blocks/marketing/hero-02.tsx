@@ -22,10 +22,10 @@ type Hero02Props = {
 }
 
 export const Hero02: FC<Hero02Props> = ({
-  title = 'Your workflow, supercharged with AI',
-  description = 'Automate the repetitive. Focus on what matters. Our AI-powered platform handles the rest so your team can ship faster.',
-  primaryCta = { label: 'Start free trial', href: '#' },
-  secondaryCta = { label: 'Book a demo', href: '#' },
+  title = '',
+  description = '',
+  primaryCta,
+  secondaryCta,
   image,
   class: className,
 }) => (
@@ -36,25 +36,31 @@ export const Hero02: FC<Hero02Props> = ({
           <h1 class="max-w-2xl text-4xl tracking-tight sm:text-5xl lg:text-6xl">
             {title}
           </h1>
-          <p class="mt-6 max-w-lg text-lg text-foreground-muted">
-            {description}
-          </p>
-          <div class="mt-10 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
-            <a
-              href={primaryCta.href}
-              class={cn(getButtonClasses('default'), 'w-full sm:w-auto')}
-            >
-              {primaryCta.label}
-            </a>
-            {secondaryCta && (
-              <a
-                href={secondaryCta.href}
-                class={cn(getButtonClasses('ghost'), 'w-full sm:w-auto')}
-              >
-                {secondaryCta.label}
-              </a>
-            )}
-          </div>
+          {description && (
+            <p class="mt-6 max-w-lg text-lg text-foreground-muted">
+              {description}
+            </p>
+          )}
+          {(primaryCta || secondaryCta) && (
+            <div class="mt-10 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+              {primaryCta && (
+                <a
+                  href={primaryCta.href}
+                  class={cn(getButtonClasses('default'), 'w-full sm:w-auto')}
+                >
+                  {primaryCta.label}
+                </a>
+              )}
+              {secondaryCta && (
+                <a
+                  href={secondaryCta.href}
+                  class={cn(getButtonClasses('ghost'), 'w-full sm:w-auto')}
+                >
+                  {secondaryCta.label}
+                </a>
+              )}
+            </div>
+          )}
         </div>
         <div>
           {image ? (

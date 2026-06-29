@@ -134,6 +134,7 @@ function assertBundle(bundle, archetype) {
     ".claude/skills/mantle-develop/SKILL.md",
     ".claude/skills/mantle-theme/SKILL.md",
     ".claude/skills/mantle-update/SKILL.md",
+    "src/contentTypes.ts",
     "kiwa/manifest.json",
     "styles/generated.css",
     "src/mantleOceanHero.ts",
@@ -173,6 +174,24 @@ function assertBundle(bundle, archetype) {
   if (archetype !== "blank" && bundle.files["manifests/example.yaml"]) {
     throw new Error(`${archetype} bundle should not include blank example manifest`);
   }
+  if (archetype === "blank") {
+    const homeContent = bundle.files["src/homeContent.ts"] ?? "";
+    const siteContent = bundle.files["src/siteContent.ts"] ?? "";
+    for (const forbidden of ["starts here", "contactForm", "Placeholder proof", "Start a conversation"]) {
+      if (homeContent.includes(forbidden) || siteContent.includes(forbidden)) {
+        throw new Error(`blank bundle contains seeded homepage copy: ${forbidden}`);
+      }
+    }
+  }
+  if (archetype === "presence") {
+    const seedImport = '../.mantle/overlays/presence/seed.json';
+    if (!bundle.files["src/homeContent.ts"]?.includes(seedImport)) {
+      throw new Error("presence homeContent must read the overlay seed");
+    }
+    if (!bundle.files["src/siteContent.ts"]?.includes(seedImport)) {
+      throw new Error("presence siteContent must read the overlay seed");
+    }
+  }
   assertLockfileMatchesPackageJson(bundle, archetype);
 }
 
@@ -200,15 +219,58 @@ function walk(files, from, to) {
 function applyOverlay(files, archetype) {
   walk(files, `overlays/${archetype}/manifests`, "manifests");
   walkIfExists(files, `overlays/${archetype}/src`, "src");
+  let seedText = null;
   for (const name of ["handoff.md", "layout.md", "seed-prompt.md", "seed.json"]) {
     const path = join(root, "overlays", archetype, name);
     try {
       if (statSync(path).isFile()) {
-        files[`.mantle/overlays/${archetype}/${name}`] = readFileSync(path, "utf8");
+        const text = readFileSync(path, "utf8");
+        files[`.mantle/overlays/${archetype}/${name}`] = text;
+        if (name === "seed.json") seedText = text;
       }
     } catch {
       // optional
     }
+  }
+  if (seedText) applyOverlaySeedContent(files, archetype, seedText);
+}
+
+function applyOverlaySeedContent(files, archetype, seedText) {
+  let seed;
+  try {
+    seed = JSON.parse(seedText);
+  } catch {
+    return;
+  }
+  const seedImport = `../.mantle/overlays/${archetype}/seed.json`;
+  if (seed?.site) {
+    files["src/siteContent.ts"] = [
+      `import seed from "${seedImport}";`,
+      'import type { SiteContent } from "./contentTypes.js";',
+      "",
+      "type Seed = { readonly site?: SiteContent };",
+      "const seedData = seed as Seed;",
+      "export const siteContent: SiteContent = seedData.site ?? {",
+      '  brand: "{{BRAND}}",',
+      '  description: "{{DESCRIPTION}}".trim(),',
+      "  navLinks: [],",
+      "  footer: { columns: [], socialLinks: [], bottomLinks: [] },",
+      "};",
+      "",
+    ].join("\n");
+  }
+  if (Array.isArray(seed?.collections?.page)) {
+    files["src/homeContent.ts"] = [
+      `import seed from "${seedImport}";`,
+      'import type { HomeContent, HomeSection } from "./contentTypes.js";',
+      "",
+      "type SeedPage = { readonly type?: string; readonly sections?: readonly HomeSection[] };",
+      "type Seed = { readonly collections?: { readonly page?: readonly SeedPage[] } };",
+      "const seedData = seed as Seed;",
+      'const homePage = (seedData.collections?.page ?? []).find((page) => page.type === "home");',
+      "export const homeContent: HomeContent = { sections: homePage?.sections ?? [] };",
+      "",
+    ].join("\n");
   }
 }
 

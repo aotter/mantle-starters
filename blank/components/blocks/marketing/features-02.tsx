@@ -1,52 +1,11 @@
 import type { Child, FC } from 'hono/jsx'
 import { cn } from '@/lib/utils'
-import {
-  ChartIcon,
-  CodeIcon,
-  LayersIcon,
-  FeatureIcon,
-  ShieldIcon,
-  SparklesIcon,
-} from '@/components/ui/icon'
 
 type Feature = {
   icon: FC<{ class?: string }>
   title: string
   description: string
 }
-
-const defaultFeatures: Feature[] = [
-  {
-    icon: FeatureIcon,
-    title: 'Lightning fast',
-    description: 'Built for speed with edge-first architecture and instant loading.',
-  },
-  {
-    icon: CodeIcon,
-    title: 'SSR first',
-    description: 'Server-side rendering by default with zero client JavaScript.',
-  },
-  {
-    icon: ShieldIcon,
-    title: 'Fully accessible',
-    description: 'WCAG compliant with keyboard navigation and screen readers.',
-  },
-  {
-    icon: SparklesIcon,
-    title: 'Dark mode',
-    description: 'Beautiful dark mode support out of the box via CSS variables.',
-  },
-  {
-    icon: LayersIcon,
-    title: 'Customizable',
-    description: 'Tailwind CSS powered. Every component is customizable to your brand.',
-  },
-  {
-    icon: ChartIcon,
-    title: 'Type safe',
-    description: 'Written in TypeScript with full type definitions for great developer experience.',
-  },
-]
 
 type Features02Props = {
   eyebrow?: string
@@ -58,10 +17,10 @@ type Features02Props = {
 }
 
 export const Features02: FC<Features02Props> = ({
-  eyebrow = 'Features',
-  title = 'Built for developers, loved by teams everywhere',
-  description = 'Powerful tools and integrations to supercharge your development workflow from start to finish.',
-  features = defaultFeatures,
+  eyebrow,
+  title = '',
+  description,
+  features = [],
   showHeader = true,
   class: className,
 }) => (

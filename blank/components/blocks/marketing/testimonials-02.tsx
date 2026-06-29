@@ -1,6 +1,5 @@
 import type { FC } from 'hono/jsx'
 import { cn } from '@/lib/utils'
-import { testimonials as placeholderTestimonials } from '@/lib/placeholder-data'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { DisplayCard } from '@/components/ui/display-card'
 
@@ -23,16 +22,11 @@ type Testimonials02Props = {
   class?: string
 }
 
-const defaultTestimonials: Testimonial[] = placeholderTestimonials.slice(0, 6).map((t) => ({
-  quote: t.quote,
-  author: { ...t.author },
-}))
-
 export const Testimonials02: FC<Testimonials02Props> = ({
-  eyebrow = 'Testimonials',
-  title = 'What our customers say',
-  description = 'Hear from the teams who build with us every day.',
-  testimonials = defaultTestimonials,
+  eyebrow,
+  title = '',
+  description,
+  testimonials = [],
   showHeader = true,
   class: className,
 }) => (
