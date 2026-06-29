@@ -1,0 +1,276 @@
+apiVersion: cms.mantle.aotter.net/v1
+kind: Schema
+metadata:
+  name: page
+spec:
+  title: Pages
+  description: Public page content for an intake site.
+  schema:
+    type: object
+    required: [type, title, sections]
+    properties:
+      type:
+        type: string
+        enum: [home]
+      title:
+        type: string
+      summary:
+        type: string
+      sections:
+        type: array
+        minItems: 1
+        items:
+          type: object
+          required: [type, title]
+          properties:
+            type:
+              type: string
+              enum:
+                - hero
+                - content
+                - features
+                - faq
+                - intake
+                - cta
+            id:
+              type: string
+            eyebrow:
+              type: string
+            title:
+              type: string
+            body:
+              type: string
+              x-mcp-hint: markdown
+            action:
+              type: object
+              properties:
+                label: { type: string }
+                href: { type: string }
+            secondaryAction:
+              type: object
+              properties:
+                label: { type: string }
+                href: { type: string }
+            items:
+              type: array
+              items:
+                type: object
+                properties:
+                  title: { type: string }
+                  body:
+                    type: string
+                    x-mcp-hint: markdown
+                  icon: { type: string }
+            steps:
+              type: array
+              items:
+                type: object
+                required: [id, title]
+                properties:
+                  id: { type: string }
+                  title: { type: string }
+                  body:
+                    type: string
+                    x-mcp-hint: markdown
+            fields:
+              type: array
+              items:
+                type: object
+                required: [name, label]
+                properties:
+                  name: { type: string }
+                  label: { type: string }
+                  type: { type: string }
+                  step: { type: string }
+                  placeholder: { type: string }
+                  autocomplete: { type: string }
+                  required: { type: boolean }
+                  multiline: { type: boolean }
+                  options:
+                    type: array
+                    items:
+                      type: object
+                      required: [label, value]
+                      properties:
+                        label: { type: string }
+                        value: { type: string }
+                        body:
+                          type: string
+                          x-mcp-hint: markdown
+                  when:
+                    type: object
+                    required: [field]
+                    properties:
+                      field: { type: string }
+                      equals: { type: string }
+                      oneOf:
+                        type: array
+                        items: { type: string }
+            results:
+              type: array
+              items:
+                type: object
+                required: [key, title]
+                properties:
+                  key: { type: string }
+                  title: { type: string }
+                  body:
+                    type: string
+                    x-mcp-hint: markdown
+                  when:
+                    type: object
+                    required: [field]
+                    properties:
+                      field: { type: string }
+                      equals: { type: string }
+                      oneOf:
+                        type: array
+                        items: { type: string }
+  uniqueIndexes:
+    - [type]
+  localized: false
+  lifecycle: simple
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: View
+metadata:
+  name: home
+spec:
+  from: page
+  fields: [id, type, title, summary, sections, updatedAt]
+  filter:
+    eq: { field: status, value: published }
+  limit: 1
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Schema
+metadata:
+  name: intake-submissions
+spec:
+  title: Intake submissions
+  description: Visitor responses submitted through the public intake flow.
+  schema:
+    type: object
+    required: [name, email, attendance, resultKey]
+    properties:
+      name:
+        type: string
+      email:
+        type: string
+        format: email
+      attendance:
+        type: string
+        enum: [yes, maybe, no]
+      role:
+        type: string
+      session:
+        type: string
+      updates:
+        type: string
+      note:
+        type: string
+      resultKey:
+        type: string
+      createdAt:
+        type: number
+        x-mantle-bind: now
+  lifecycle: simple
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Procedure
+metadata:
+  name: submit-intake
+spec:
+  input:
+    type: object
+    required: [name, email, attendance, resultKey]
+    properties:
+      name: { type: string }
+      email: { type: string, format: email }
+      attendance: { type: string, enum: [yes, maybe, no] }
+      role: { type: string }
+      session: { type: string }
+      updates: { type: string }
+      note: { type: string }
+      resultKey: { type: string }
+      "cf-turnstile-response": { type: string }
+      turnstileToken: { type: string }
+  output:
+    type: object
+  handler:
+    kind: builtin
+    op: create
+    schema: intake-submissions
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Trigger
+metadata:
+  name: intake-http
+spec:
+  source:
+    kind: http
+    method: POST
+    path: /api/intake
+  target:
+    procedure: submit-intake
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Procedure
+metadata:
+  name: verify-intake-turnstile
+spec:
+  input:
+    type: object
+    properties:
+      "cf-turnstile-response": { type: string }
+      turnstileToken: { type: string }
+  output:
+    type: object
+  handler:
+    kind: ref
+    ref: verify-intake-turnstile
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Trigger
+metadata:
+  name: intake-before-create-verify-turnstile
+spec:
+  source:
+    kind: lifecycle
+    schema: intake-submissions
+    on: [before_create]
+    errorPolicy: abort
+  target:
+    procedure: verify-intake-turnstile
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Procedure
+metadata:
+  name: notify-intake
+spec:
+  input:
+    type: object
+    properties:
+      name: { type: string }
+      email: { type: string }
+      attendance: { type: string }
+      resultKey: { type: string }
+      note: { type: string }
+  output:
+    type: object
+  handler:
+    kind: ref
+    ref: notify-intake
+---
+apiVersion: cms.mantle.aotter.net/v1
+kind: Trigger
+metadata:
+  name: intake-notify
+spec:
+  source:
+    kind: lifecycle
+    schema: intake-submissions
+    on: [after_create]
+    errorPolicy: continue
+  target:
+    procedure: notify-intake

@@ -6,7 +6,7 @@ import { dirname, join, posix } from "node:path";
 const root = new URL("..", import.meta.url).pathname;
 const version = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version;
 const checkOnly = process.argv.includes("--check");
-const archetypes = ["blank", "presence", "publication", "transaction", "reservation", "community"];
+const archetypes = ["blank", "presence", "intake", "publication", "transaction", "reservation", "community"];
 const dependencySectionKeys = ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"];
 
 ensureStarterStyles();
@@ -183,13 +183,13 @@ function assertBundle(bundle, archetype) {
       }
     }
   }
-  if (archetype === "presence") {
-    const seedImport = '../.mantle/overlays/presence/seed.json';
+  if (archetype === "presence" || archetype === "intake") {
+    const seedImport = `../.mantle/overlays/${archetype}/seed.json`;
     if (!bundle.files["src/homeContent.ts"]?.includes(seedImport)) {
-      throw new Error("presence homeContent must read the overlay seed");
+      throw new Error(`${archetype} homeContent must read the overlay seed`);
     }
     if (!bundle.files["src/siteContent.ts"]?.includes(seedImport)) {
-      throw new Error("presence siteContent must read the overlay seed");
+      throw new Error(`${archetype} siteContent must read the overlay seed`);
     }
   }
   assertLockfileMatchesPackageJson(bundle, archetype);

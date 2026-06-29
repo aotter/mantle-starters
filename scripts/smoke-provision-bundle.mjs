@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
 const root = new URL("..", import.meta.url).pathname;
-const archetypes = ["blank", "presence", "publication", "transaction", "reservation", "community"];
+const archetypes = ["blank", "presence", "intake", "publication", "transaction", "reservation", "community"];
 const replacements = {
   PROJECT_NAME: "bundle-smoke",
   ARCHETYPE: "publication",
@@ -52,6 +52,11 @@ for (const archetype of archetypes) {
         assertPresenceSeedDrivenHome(tempRoot);
         assertPresenceHandlerLoaded(tempRoot);
         assertPresenceContactForm(tempRoot);
+      }
+      if (archetype === "intake") {
+        assertIntakeSeedDrivenHome(tempRoot);
+        assertIntakeHandlerLoaded(tempRoot);
+        assertIntakeForm(tempRoot);
       }
     } else {
       assertBlankHomeDataIsBlank(tempRoot);
@@ -203,6 +208,39 @@ function assertPresenceSeedDrivenHome(root) {
   const seedImport = '../.mantle/overlays/presence/seed.json';
   if (!homeContent.includes(seedImport) || !siteContent.includes(seedImport)) {
     throw new Error("presence homepage content is not driven by the overlay seed");
+  }
+}
+
+function assertIntakeHandlerLoaded(root) {
+  const text = readFileSync(join(root, "src", "handlers", "index.ts"), "utf8");
+  if (!text.includes('"notify-intake": notifyIntake')) {
+    throw new Error("intake overlay did not install notify-intake handler");
+  }
+  if (!text.includes('"verify-intake-turnstile": verifyIntakeTurnstile')) {
+    throw new Error("intake overlay did not install verify-intake-turnstile handler");
+  }
+}
+
+function assertIntakeForm(root) {
+  const text = readSource(root);
+  const seed = readFileSync(join(root, ".mantle", "overlays", "intake", "seed.json"), "utf8");
+  if (!text.includes("data-intake-form")) {
+    throw new Error("intake homepage does not render the intake form surface");
+  }
+  if (!text.includes("mantle:form-success")) {
+    throw new Error("intake homepage does not render a saved-response result state");
+  }
+  if (!seed.includes('"type": "intake"') || !seed.includes('"/api/intake"')) {
+    throw new Error("intake seed does not define the intake section");
+  }
+}
+
+function assertIntakeSeedDrivenHome(root) {
+  const homeContent = readFileSync(join(root, "src", "homeContent.ts"), "utf8");
+  const siteContent = readFileSync(join(root, "src", "siteContent.ts"), "utf8");
+  const seedImport = '../.mantle/overlays/intake/seed.json';
+  if (!homeContent.includes(seedImport) || !siteContent.includes(seedImport)) {
+    throw new Error("intake homepage content is not driven by the overlay seed");
   }
 }
 

@@ -44,6 +44,8 @@ node scripts/sync-kiwa.mjs
 ```txt
 blank/
 overlays/
+  presence/
+  intake/
   publication/
   transaction/
   reservation/
@@ -51,6 +53,8 @@ overlays/
 kiwa/
 provision-bundles/
   blank.json
+  presence.json
+  intake.json
   publication.json
   transaction.json
   reservation.json
