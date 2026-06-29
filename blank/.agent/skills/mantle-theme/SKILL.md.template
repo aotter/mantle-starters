@@ -1,36 +1,34 @@
 ---
 name: mantle:theme
-description: Apply brand and visual direction after launch by editing Mantle/Kiwa tokens and source, not by choosing a starter theme.
+description: Apply brand and visual direction in a Mantle project without depending on starter-owned skill semantics.
+source: "@aotter/mantle"
+sourcePath: skills/theme/SKILL.md
+when_to_invoke: |
+  User wants visual, brand, layout, copy, or UI polish in an existing Mantle project.
+applies_to: mantle@v0.1.0
 ---
 
 # Mantle Theme
 
-Theme work happens after the blank repo exists. There is no first-run
-theme picker.
+Theme work is project-owned source editing. Starters may ship Kiwa files,
+tokens, or recipes, but the skill contract is Core-owned.
 
-## First read
+## First Read
 
-1. `.mantle/launch-state.json` for brand, description, locale, and type.
-2. `styles/tokens.css` and `styles/globals.css` for the current visual
-   base.
-3. `components/ui/` and `kiwa/` for copied Kiwa source references.
-4. Installed Mantle docs in `node_modules/@aotter/mantle/docs/`.
+1. `.mantle/handoff.md` and `.mantle/recipes/` if present.
+2. `styles/`, `components/`, `src/home.tsx`, `src/theme*`, and `kiwa-ui.json`
+   if present.
+3. `manifests/` to understand which content shape drives the public UI.
 
 ## Work
 
-- Edit source the repo owns. Do not require Kiwa registry access.
+- Edit source the repo owns.
+- Use existing tokens, CSS, components, and installed dependencies first.
 - Keep accessibility basics: semantic HTML, focus states, contrast, and
   keyboard reachability.
-- The Kiwa manual base is already present: `clsx`, `tailwind-merge`,
-  `lucide`, `lib/utils.ts`, `styles/globals.css`, `kiwa-ui.json`, and
-  `@/*` path aliases.
-- Avoid adding more UI dependencies for token/style changes.
-- If a richer layout block is needed, use Kiwa free source as reference
-  and copy the smallest useful pieces.
-- Future optional path: if the user explicitly wants fresh Kiwa blocks
-  and accepts network access, use the Kiwa CLI inside this generated
-  repo. Keep `KIWA_UI_TOKEN` user-local for Pro blocks; never make it a
-  landing/provisioning requirement.
+- Do not require registry access for a project that already vendors UI source.
+- Add UI dependencies only when existing source cannot cover the requested
+  change.
 
 ## Check
 
@@ -39,3 +37,5 @@ pnpm validate
 pnpm typecheck
 pnpm dev
 ```
+
+Visually verify UI changes before calling them done.

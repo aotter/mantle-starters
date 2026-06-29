@@ -1,39 +1,55 @@
 ---
 name: mantle:develop
-description: Work on this generated Mantle site after launch. Use for manifest, runtime, content model, layout, bug fix, and validation work.
+description: Work on any Mantle project using the Core SDK contract. Use for manifest, runtime, content model, handler, adapter, validation, and MCP work after a project already exists.
+source: "@aotter/mantle"
+sourcePath: skills/develop/SKILL.md
+when_to_invoke: |
+  Working dir contains a Mantle project: package.json depends on @aotter/mantle or @aotter/mantle-*, and manifests/ or src/mantleConfig.ts exists.
+applies_to: mantle@v0.1.0
 ---
 
 # Mantle Develop
 
-This is a generated Mantle site. Keep work inside this repo unless the
-user explicitly asks for an upstream starter change.
+This is the Core SDK skill for working inside an existing Mantle project.
+Starter files, launch handoffs, and plugin recipes are context; this skill
+owns the workflow vocabulary.
 
-## First read
+## First Read
 
-1. `.mantle/launch-state.json` for type intent, owner, repo, locales,
-   and handoff metadata.
-2. `.mantle/features.json` for selected overlay hints and current
-   starter version.
-3. `.mantle/handoff.md` and `AGENTS.md` for the launch handoff.
-4. Installed Mantle docs in `node_modules/@aotter/mantle/docs/`.
+1. `package.json` for the installed `@aotter/mantle*` versions.
+2. `manifests/` and `src/mantleConfig.ts` for the active atoms and adapter wiring.
+3. Optional local context: `.mantle/launch-state.json`, `.mantle/handoff.md`,
+   `.mantle/plugins.json`, `.mantle/plugins.lock.json`, and `.mantle/recipes/`.
+4. Installed Core docs in `node_modules/@aotter/mantle/docs/`.
 
-If `node_modules/` is missing, run `pnpm install --frozen-lockfile`
-before falling back to remote docs.
+If `node_modules/` is missing, run `pnpm install --frozen-lockfile` before
+falling back to remote docs.
 
-## The 4 atoms
+## Core Model
 
-Mantle manifests use only:
+Mantle exposes exactly four declarative atoms:
 
 | Atom | Purpose |
 |---|---|
 | `Schema` | Stored entity/table shape. |
 | `View` | Read/query surface. |
 | `Procedure` | Typed mutation or operation. |
-| `Trigger` | HTTP/lifecycle/other invocation binding. |
+| `Trigger` | HTTP/lifecycle/MCP invocation binding. |
 
 Do not invent manifest kinds such as `Form`, `Feature`, `Workflow`, or
-`Membership`. Compose those from the four atoms plus TypeScript only
-where the atoms cannot express the behavior.
+`Membership`. Compose those from the four atoms plus TypeScript only where
+the atoms cannot express the behavior.
+
+## Adapter Boundary
+
+The runtime is adapter-neutral. Required runtime ports are `DatabaseDriver`,
+`KvCache`, and `AssetServer`. Optional feature ports, such as `MediaStorage`
+or `DeferredHookDispatcher`, are enabled only when the current adapter wires
+them.
+
+Do not assume Cloudflare unless the project imports `@aotter/mantle/cloudflare`
+or its adapter config is visible. A future Netlify adapter should satisfy the
+same Core workflow through its own ports and provider setup.
 
 ## Loop
 
@@ -44,49 +60,13 @@ pnpm typecheck
 pnpm check
 ```
 
-Use `pnpm dev` for local preview on `localhost:8787`.
-
-## MCP Media Uploads
-
-Media uploads are optional post-launch work. R2 setup may require
-Cloudflare billing or a credit card, so do not block the first useful page
-or first production handoff on it.
-
-If the owner asks for staff-managed images/files and the site has not
-enabled media yet, follow `node_modules/@aotter/mantle/docs/media-uploads.md`
-or the upstream recipe at
-https://raw.githubusercontent.com/aotter/mantle/develop/docs/media-uploads.md
-before expecting `create_media_upload` to appear in Staff MCP.
-
-When the user provides an image in chat, handle it in the agent runtime:
-read the live upload policy from Staff MCP `create_media_upload`, choose
-exactly one allowed mime per required slot, read the attachment bytes,
-prepare variants locally, PUT each variant to the returned signed URL
-with its required headers, then call `commit_media_upload`.
-
-Use Claude Code, Codex, Cursor, or another local/non-sandboxed coding
-agent for this workflow. Do not rely on Claude Cowork for R2 uploads;
-use a non-sandboxed agent instead.
-
-Do not default to JPEG. Preserve source semantics: opaque photos may use
-JPEG primary plus modern alternates; transparent PNG/logo artwork must
-keep alpha; animated GIFs must stay animated in every generated variant.
-If the available processor would flatten animation or drop transparency,
-stop and report the limitation instead of uploading degraded media.
-
-If the source or prepared variants are obviously wasteful for website
-delivery, ask the user before optimizing, compressing, or resizing. If
-the current MCP host/runtime cannot perform direct HTTP PUT uploads to
-the signed URL, say so and suggest retrying from an agent/runtime that
-allows outbound file uploads. Do not ask the user to open a terminal for
-image upload work, and do not send image bytes or base64 payloads through
-MCP tool arguments.
+Use `pnpm dev` for local preview when the project provides it.
 
 ## Rules
 
 - Prefer manifest YAML for content model changes.
-- Add TypeScript only for handlers, rendering, adapter wiring, or real
-  behavior.
-- Do not write directly to D1 or KV for content authoring. After deploy,
-  use the Staff MCP endpoint at `<SITE_URL>/mcp/staff`.
+- Add TypeScript only for handlers, rendering, adapter wiring, or real behavior.
+- Do not write directly to D1, KV, Postgres, or object storage for content
+  authoring. Use runtime use cases, admin APIs, or Staff MCP.
 - Do not commit provider secrets.
+- If the work is an installable capability, switch to `mantle:plugin`.

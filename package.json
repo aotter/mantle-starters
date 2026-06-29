@@ -24,7 +24,9 @@
     "check:kiwa": "node scripts/sync-kiwa.mjs --check",
     "check:starter-locks": "node scripts/refresh-starter-locks.mjs --check",
     "check:repo-local-skills": "node scripts/check-repo-local-skills.mjs",
+    "check:core-skills": "node scripts/sync-core-skills.mjs --check",
     "check:wrangler-dev": "node scripts/check-wrangler-dev-wrapper.mjs",
+    "sync:core-skills": "node scripts/sync-core-skills.mjs",
     "refresh:starter-locks": "node scripts/refresh-starter-locks.mjs",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test"

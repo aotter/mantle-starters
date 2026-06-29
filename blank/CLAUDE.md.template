@@ -7,9 +7,10 @@ This is a generated blank Mantle site. Start from:
 3. [`.mantle/handoff.md`](.mantle/handoff.md)
 4. [`AGENTS.md`](AGENTS.md)
 
-Repo-local skills:
+Repo-local skills are vendored copies from `@aotter/mantle`:
 
 - `.claude/skills/mantle-develop/SKILL.md`
+- `.claude/skills/mantle-plugin/SKILL.md`
 - `.claude/skills/mantle-theme/SKILL.md`
 - `.claude/skills/mantle-update/SKILL.md`
 

@@ -4,16 +4,23 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
+const coreRoot = resolve(root, "../mantle");
 const expected = [
-  ["mantle-develop", "mantle:develop"],
-  ["mantle-theme", "mantle:theme"],
-  ["mantle-update", "mantle:update"],
+  ["mantle-develop", "mantle:develop", "skills/develop/SKILL.md"],
+  ["mantle-plugin", "mantle:plugin", "skills/plugin/SKILL.md"],
+  ["mantle-theme", "mantle:theme", "skills/theme/SKILL.md"],
+  ["mantle-update", "mantle:update", "skills/update/SKILL.md"],
 ];
 const failures = [];
 
-for (const [dir, name] of expected) {
-  assertSkill(join(root, "blank", ".agent", "skills", dir, "SKILL.md.template"), name);
-  assertSkill(join(root, "blank", ".claude", "skills", dir, "SKILL.md.template"), name);
+for (const [dir, name, sourcePath] of expected) {
+  const agentPath = join(root, "blank", ".agent", "skills", dir, "SKILL.md.template");
+  const claudePath = join(root, "blank", ".claude", "skills", dir, "SKILL.md.template");
+  assertSkill(agentPath, name, sourcePath);
+  assertSkill(claudePath, name, sourcePath);
+  assertSame(agentPath, claudePath);
+  const corePath = join(coreRoot, sourcePath);
+  if (existsSync(corePath)) assertSame(agentPath, corePath);
 }
 
 for (const base of [".agent", ".claude"]) {
@@ -45,7 +52,7 @@ if (failures.length) {
 }
 console.log("repo-local skills: ok");
 
-function assertSkill(path, expectedName) {
+function assertSkill(path, expectedName, expectedSourcePath) {
   if (!existsSync(path)) {
     failures.push(`${path} is missing`);
     return;
@@ -63,4 +70,19 @@ function assertSkill(path, expectedName) {
   if (!actual.startsWith("mantle:")) {
     failures.push(`${path} name must start with mantle:`);
   }
+  const source = text.match(/^source:\s*(.+)$/m)?.[1]?.trim().replace(/^["']|["']$/g, "");
+  if (source !== "@aotter/mantle") {
+    failures.push(`${path} source is ${source ?? "(missing)"}; expected @aotter/mantle`);
+  }
+  const sourcePath = text.match(/^sourcePath:\s*(.+)$/m)?.[1]?.trim().replace(/^["']|["']$/g, "");
+  if (sourcePath !== expectedSourcePath) {
+    failures.push(`${path} sourcePath is ${sourcePath ?? "(missing)"}; expected ${expectedSourcePath}`);
+  }
+}
+
+function assertSame(left, right) {
+  if (!existsSync(left) || !existsSync(right)) return;
+  const a = readFileSync(left, "utf8");
+  const b = readFileSync(right, "utf8");
+  if (a !== b) failures.push(`${left} differs from ${right}`);
 }
