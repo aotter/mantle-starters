@@ -32,10 +32,10 @@ import { homeContent, type HomeField, type HomeItem, type HomeSection } from "./
 import { siteContent } from "./siteContent.js";
 
 const archetype = "{{ARCHETYPE}}" as string;
-const assetBuild = "mantle-starter-assets-20260628-theme-turnstile";
+const assetBuild = "mantle-starter-assets-20260629-theme-svg";
 const asset = (path: string) => `${path}?v=${assetBuild}`;
 const heroImage = {
-  src: asset("/assets/mantle-ocean-hero.svg"),
+  src: asset("/assets/mantle-ocean-hero-light.svg"),
   alt: "",
 };
 const themeBootScript = `(() => {

@@ -91,3 +91,18 @@ export const mantleOceanHeroSvg = String.raw`<svg xmlns="http://www.w3.org/2000/
   <rect x="32" y="32" width="736" height="536" rx="34" fill="none" stroke="var(--frame)" stroke-opacity=".18" />
 </svg>
 `;
+
+export const mantleOceanHeroLightSvg = mantleOceanHeroSvg
+  .replace("color-scheme: light dark;", "color-scheme: light;")
+  .replace(
+    /\n    @media \(prefers-color-scheme: dark\) \{\n      :root \{\n[\s\S]*?\n      \}\n    \}/,
+    "",
+  );
+
+export const mantleOceanHeroDarkSvg = mantleOceanHeroSvg.replace(
+  /    :root \{\n[\s\S]*?\n    \}\n    @media \(prefers-color-scheme: dark\) \{\n      :root \{\n([\s\S]*?)\n      \}\n    \}/,
+  (_match: string, vars: string) => `    :root {
+      color-scheme: dark;
+${vars}
+    }`,
+);
