@@ -262,7 +262,6 @@ function renderSection(section: HomeSection, index: number, turnstileSiteKey?: s
         />,
       );
     case "form":
-    case "contactForm":
       return <FormSection key={key} section={section} turnstileSiteKey={turnstileSiteKey} />;
     case "cta":
       return withAnchor(

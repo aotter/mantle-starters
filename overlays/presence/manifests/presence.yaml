@@ -36,7 +36,6 @@ spec:
                 - faq
                 - contact
                 - form
-                - contactForm
                 - cta
             id:
               type: string
