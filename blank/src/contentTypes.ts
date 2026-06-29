@@ -65,7 +65,6 @@ export type HomeSection = {
     | "faq"
     | "contact"
     | "form"
-    | "contactForm"
     | "cta";
   readonly id?: string;
   readonly eyebrow?: string;

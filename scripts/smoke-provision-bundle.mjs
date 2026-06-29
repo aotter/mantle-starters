@@ -34,6 +34,7 @@ for (const archetype of archetypes) {
     assertPublicHomeIsNotHandoff(tempRoot);
     assertMantleSiteSignature(tempRoot, archetype);
     assertStylesheetMounted(tempRoot, archetype);
+    assertRuntimeHasNoKiwaDemoCopy(tempRoot, archetype);
     const launchState = JSON.parse(readFileSync(join(tempRoot, ".mantle", "launch-state.json"), "utf8"));
     if (launchState.site_url !== replacements.SITE_URL) throw new Error(`${archetype} missing launch-state site_url`);
     if (launchState.purpose !== replacements.DESCRIPTION) throw new Error(`${archetype} missing launch-state purpose`);
@@ -110,6 +111,46 @@ function assertStylesheetMounted(root, archetype) {
   }
   if (!css.includes("tailwindcss") || !css.includes(".bg-primary")) {
     throw new Error(`${archetype} generated stylesheet does not include Kiwa/Tailwind utilities`);
+  }
+}
+
+function assertRuntimeHasNoKiwaDemoCopy(root, archetype) {
+  const files = [
+    "src/home.tsx",
+    "src/homeContent.ts",
+    "src/siteContent.ts",
+    "components/blocks/marketing/bento-02.tsx",
+    "components/blocks/marketing/contact-02.tsx",
+    "components/blocks/marketing/content-01.tsx",
+    "components/blocks/marketing/cta-02.tsx",
+    "components/blocks/marketing/faq-02.tsx",
+    "components/blocks/marketing/features-02.tsx",
+    "components/blocks/marketing/footer-02.tsx",
+    "components/blocks/marketing/hero-02.tsx",
+    "components/blocks/marketing/metrics-02.tsx",
+    "components/blocks/marketing/nav-02.tsx",
+    "components/blocks/marketing/social-proof-02.tsx",
+    "components/blocks/marketing/testimonials-02.tsx",
+  ];
+  const forbidden = [
+    "Kiwa UI",
+    "Your workflow, supercharged with AI",
+    "Start free trial",
+    "Book a demo",
+    "Trusted by product-led teams everywhere",
+    "We started Kiwa UI",
+    "hello@kiwaui.com",
+    "Frequently asked questions",
+    "Get in touch",
+    "Your Company",
+  ];
+  for (const file of files) {
+    const text = readFileSync(join(root, file), "utf8");
+    for (const needle of forbidden) {
+      if (text.includes(needle)) {
+        throw new Error(`${archetype} runtime still contains Kiwa demo copy: ${file}: ${needle}`);
+      }
+    }
   }
 }
 
