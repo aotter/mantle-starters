@@ -42,6 +42,7 @@ export type HomeSection = {
     | "testimonials"
     | "faq"
     | "contact"
+    | "form"
     | "contactForm"
     | "cta";
   readonly id?: string;
