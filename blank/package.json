@@ -1,6 +1,6 @@
 {
   "name": "mantle-starter-blank",
-  "version": "0.0.11-alpha.39",
+  "version": "0.0.11-alpha.40",
   "private": true,
   "description": "Mantle launch base with a small Kiwa public homepage plus API and MCP surfaces.",
   "type": "module",
@@ -19,7 +19,7 @@
     "deploy": "pnpm validate:deploy && pnpm check:styles && pnpm typecheck && wrangler deploy"
   },
   "dependencies": {
-    "@aotter/mantle": "0.0.11-alpha.38",
+    "@aotter/mantle": "0.0.11-alpha.40",
     "@kiwa-ui/enhance": "catalog:",
     "@cloudflare/workers-oauth-provider": "catalog:",
     "aws4fetch": "catalog:",
@@ -31,7 +31,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@aotter/mantle-spec": "0.0.11-alpha.38",
+    "@aotter/mantle-spec": "0.0.11-alpha.40",
     "@cloudflare/workers-types": "catalog:",
     "@types/node": "catalog:",
     "tailwindcss": "catalog:",
