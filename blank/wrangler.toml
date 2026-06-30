@@ -4,12 +4,22 @@ compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
 
 [vars]
-# Post-deploy provisioning writes PUBLIC_ORIGIN, GITHUB_CLIENT_ID,
-# and ADMIN_GITHUB_LOGIN here. Secrets stay in Cloudflare via
-# `wrangler secret put`.
+# Post-deploy provisioning writes PUBLIC_ORIGIN and the chosen auth
+# client metadata here. Secrets stay in Cloudflare via `wrangler secret put`.
+#
+# Mantle Platform hosted auth:
+# MANTLE_PLATFORM_AUTH_ISSUER = "https://platform.mantle.tools"
+# MANTLE_PLATFORM_AUTH_CLIENT_ID = "..."
+# MANTLE_SITE_OWNER_EMAIL = "owner@example.com"
+#
+# Self-hosted GitHub OAuth fallback:
+# GITHUB_CLIENT_ID = "..."
+# ADMIN_GITHUB_LOGIN = "..."
+#
 # Optional contact protection:
 # TURNSTILE_SITE_KEY = "0x..."
-# Set TURNSTILE_SECRET_KEY with `wrangler secret put TURNSTILE_SECRET_KEY`.
+# Set MANTLE_PLATFORM_AUTH_CLIENT_SECRET, BETTER_AUTH_SECRET, and optional
+# TURNSTILE_SECRET_KEY with `wrangler secret put`.
 
 [[d1_databases]]
 binding = "DB"

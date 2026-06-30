@@ -9,6 +9,7 @@ Public site: {{SITE_URL}}
 - Locale list: `{{LOCALES}}`
 - GitHub owner: `{{GITHUB_OWNER}}`
 - Admin login: `{{ADMIN_GITHUB_LOGIN}}`
+- Site owner email: `{{SITE_OWNER_EMAIL}}`
 - Purpose: {{DESCRIPTION}}
 - Summary: {{INSTALL_SUMMARY}}
 - Full after-launch skill: {{AFTER_LAUNCH_SKILL_URL}}

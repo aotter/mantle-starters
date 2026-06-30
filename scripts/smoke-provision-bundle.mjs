@@ -16,6 +16,7 @@ const replacements = {
   STARTER_REF: "smoke",
   GITHUB_OWNER: "aotter",
   ADMIN_GITHUB_LOGIN: "aotter",
+  SITE_OWNER_EMAIL: "owner@example.com",
   SITE_URL: "https://bundle-smoke.example",
   AFTER_LAUNCH_SKILL_URL: "https://mantle.tools/skill/after-launch?id=smoke",
   INSTALL_TIMESTAMP: "2026-01-01T00:00:00.000Z",

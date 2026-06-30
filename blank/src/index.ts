@@ -186,15 +186,32 @@ const homeJs = [
 const AUTH_NOT_CONFIGURED = {
   error: "setup_incomplete",
   message:
-    "Admin auth is not configured yet. Finish the Mantle landing provider setup to set BETTER_AUTH_SECRET and GitHub OAuth credentials.",
+    "Admin auth is not configured yet. Finish the Mantle landing provider setup to set either platform hosted auth or self-hosted GitHub OAuth credentials.",
 } as const;
 const ASSET_CACHE_CONTROL = "public, max-age=300";
+const PLATFORM_AUTH_PROVIDER_ID = "mantle-platform";
+const PLATFORM_AUTH_DISPLAY_NAME = "Mantle Platform";
 
 function buildAuthFromEnv(env: Env): Auth {
   if (!authSetupComplete(env)) return createSetupIncompleteAuth();
   const baseURL = env.PUBLIC_ORIGIN ?? "http://localhost:8787";
   const methods: AuthMethodConfig[] = [];
-  if (env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET) {
+  const platformIssuer = normalizedPlatformIssuer(env);
+  if (platformIssuer && env.MANTLE_PLATFORM_AUTH_CLIENT_ID) {
+    methods.push({
+      kind: "oauth",
+      providerId: PLATFORM_AUTH_PROVIDER_ID,
+      displayName: PLATFORM_AUTH_DISPLAY_NAME,
+      clientId: env.MANTLE_PLATFORM_AUTH_CLIENT_ID,
+      clientSecret: env.MANTLE_PLATFORM_AUTH_CLIENT_SECRET,
+      discoveryUrl: `${platformIssuer}/.well-known/openid-configuration`,
+      issuer: platformIssuer,
+      requireIssuerValidation: true,
+      scopes: ["openid", "profile", "email"],
+      redirectURI: `${baseURL}/api/auth/oauth2/callback/${PLATFORM_AUTH_PROVIDER_ID}`,
+      pkce: true,
+    });
+  } else if (env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET) {
     methods.push({
       kind: "social",
       provider: "github",
@@ -207,9 +224,11 @@ function buildAuthFromEnv(env: Env): Auth {
     baseURL,
     secret: env.BETTER_AUTH_SECRET,
     methods,
-    bootstrapOwner: env.ADMIN_GITHUB_LOGIN
-      ? { match: "github-login", value: env.ADMIN_GITHUB_LOGIN }
-      : undefined,
+    bootstrapOwner: platformIssuer
+      ? { match: "email", value: env.MANTLE_SITE_OWNER_EMAIL ?? "" }
+      : env.ADMIN_GITHUB_LOGIN
+        ? { match: "github-login", value: env.ADMIN_GITHUB_LOGIN }
+        : undefined,
   });
 }
 
@@ -227,6 +246,9 @@ function createSetupIncompleteAuth(): Auth {
       throw new Error(AUTH_NOT_CONFIGURED.message);
     },
     revokeInvite: async () => false,
+    registerOAuthClient: async () => {
+      throw new Error(AUTH_NOT_CONFIGURED.message);
+    },
   } as unknown as Auth;
 }
 
@@ -319,6 +341,10 @@ function authCacheKey(env: Env): string {
   return [
     env.PUBLIC_ORIGIN ?? "",
     env.BETTER_AUTH_SECRET ?? "",
+    env.MANTLE_PLATFORM_AUTH_ISSUER ?? "",
+    env.MANTLE_PLATFORM_AUTH_CLIENT_ID ?? "",
+    env.MANTLE_PLATFORM_AUTH_CLIENT_SECRET ?? "",
+    env.MANTLE_SITE_OWNER_EMAIL ?? "",
     env.GITHUB_CLIENT_ID ?? "",
     env.GITHUB_CLIENT_SECRET ?? "",
     env.ADMIN_GITHUB_LOGIN ?? "",
@@ -327,12 +353,30 @@ function authCacheKey(env: Env): string {
 }
 
 function authSetupComplete(env: Env): boolean {
+  return (
+    hostedAuthSetupComplete(env) ||
+    Boolean(
+      env.BETTER_AUTH_SECRET &&
+        env.GITHUB_CLIENT_ID &&
+        env.GITHUB_CLIENT_SECRET &&
+        env.ADMIN_GITHUB_LOGIN,
+    )
+  );
+}
+
+function hostedAuthSetupComplete(env: Env): boolean {
   return Boolean(
     env.BETTER_AUTH_SECRET &&
-      env.GITHUB_CLIENT_ID &&
-      env.GITHUB_CLIENT_SECRET &&
-      env.ADMIN_GITHUB_LOGIN,
+      normalizedPlatformIssuer(env) &&
+      env.MANTLE_PLATFORM_AUTH_CLIENT_ID &&
+      env.MANTLE_PLATFORM_AUTH_CLIENT_SECRET &&
+      env.MANTLE_SITE_OWNER_EMAIL,
   );
+}
+
+function normalizedPlatformIssuer(env: Env): string | null {
+  const issuer = env.MANTLE_PLATFORM_AUTH_ISSUER?.trim();
+  return issuer ? issuer.replace(/\/+$/, "") : null;
 }
 
 function blocksWhenAuthIsIncomplete(pathname: string): boolean {
