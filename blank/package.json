@@ -1,6 +1,6 @@
 {
   "name": "mantle-starter-blank",
-  "version": "0.0.11-alpha.38",
+  "version": "0.0.11-alpha.39",
   "private": true,
   "description": "Mantle launch base with a small Kiwa public homepage plus API and MCP surfaces.",
   "type": "module",
