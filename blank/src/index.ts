@@ -197,17 +197,20 @@ function buildAuthFromEnv(env: Env): Auth {
   const baseURL = env.PUBLIC_ORIGIN ?? "http://localhost:8787";
   const methods: AuthMethodConfig[] = [];
   const platformIssuer = normalizedPlatformIssuer(env);
-  if (platformIssuer && env.MANTLE_PLATFORM_AUTH_CLIENT_ID) {
+  const hostedAuth = platformIssuer && env.MANTLE_PLATFORM_AUTH_CLIENT_ID
+    ? { issuer: platformIssuer, clientId: env.MANTLE_PLATFORM_AUTH_CLIENT_ID }
+    : null;
+  if (hostedAuth) {
     methods.push({
       kind: "oauth",
       providerId: PLATFORM_AUTH_PROVIDER_ID,
       displayName: PLATFORM_AUTH_DISPLAY_NAME,
-      clientId: env.MANTLE_PLATFORM_AUTH_CLIENT_ID,
+      clientId: hostedAuth.clientId,
       ...(env.MANTLE_PLATFORM_AUTH_CLIENT_SECRET
         ? { clientSecret: env.MANTLE_PLATFORM_AUTH_CLIENT_SECRET }
         : {}),
-      discoveryUrl: `${platformIssuer}/.well-known/openid-configuration`,
-      issuer: platformIssuer,
+      discoveryUrl: `${hostedAuth.issuer}/.well-known/openid-configuration`,
+      issuer: hostedAuth.issuer,
       requireIssuerValidation: true,
       scopes: ["openid", "profile", "email"],
       redirectURI: `${baseURL}/api/auth/oauth2/callback/${PLATFORM_AUTH_PROVIDER_ID}`,
@@ -226,7 +229,7 @@ function buildAuthFromEnv(env: Env): Auth {
     baseURL,
     secret: env.BETTER_AUTH_SECRET,
     methods,
-    bootstrapOwner: platformIssuer
+    bootstrapOwner: hostedAuth
       ? { match: "email", value: env.MANTLE_SITE_OWNER_EMAIL ?? "" }
       : env.ADMIN_GITHUB_LOGIN
         ? { match: "github-login", value: env.ADMIN_GITHUB_LOGIN }

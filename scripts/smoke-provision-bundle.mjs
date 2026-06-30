@@ -35,6 +35,7 @@ for (const archetype of archetypes) {
     assertPublicHomeIsNotHandoff(tempRoot);
     assertMantleSiteSignature(tempRoot, archetype);
     assertStylesheetMounted(tempRoot, archetype);
+    assertAuthSwitchUsesSelectedProvider(tempRoot, archetype);
     assertRuntimeHasNoKiwaDemoCopy(tempRoot, archetype);
     const launchState = JSON.parse(readFileSync(join(tempRoot, ".mantle", "launch-state.json"), "utf8"));
     if (launchState.site_url !== replacements.SITE_URL) throw new Error(`${archetype} missing launch-state site_url`);
@@ -121,6 +122,16 @@ function assertStylesheetMounted(root, archetype) {
   }
   if (!css.includes("tailwindcss") || !css.includes(".bg-primary")) {
     throw new Error(`${archetype} generated stylesheet does not include Kiwa/Tailwind utilities`);
+  }
+}
+
+function assertAuthSwitchUsesSelectedProvider(root, archetype) {
+  const source = readFileSync(join(root, "src", "index.ts"), "utf8");
+  if (!/const hostedAuth = platformIssuer && env\.MANTLE_PLATFORM_AUTH_CLIENT_ID\s*\?/.test(source)) {
+    throw new Error(`${archetype} auth switch does not name the selected hosted provider mode`);
+  }
+  if (!source.includes("bootstrapOwner: hostedAuth")) {
+    throw new Error(`${archetype} auth bootstrap owner is not tied to the selected auth provider`);
   }
 }
 
