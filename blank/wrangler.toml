@@ -18,8 +18,8 @@ compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
 #
 # Optional contact protection:
 # TURNSTILE_SITE_KEY = "0x..."
-# Set MANTLE_PLATFORM_AUTH_CLIENT_SECRET, BETTER_AUTH_SECRET, and optional
-# TURNSTILE_SECRET_KEY with `wrangler secret put`.
+# Set BETTER_AUTH_SECRET and optional TURNSTILE_SECRET_KEY with
+# `wrangler secret put`.
 
 [[d1_databases]]
 binding = "DB"

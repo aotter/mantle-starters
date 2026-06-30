@@ -203,7 +203,9 @@ function buildAuthFromEnv(env: Env): Auth {
       providerId: PLATFORM_AUTH_PROVIDER_ID,
       displayName: PLATFORM_AUTH_DISPLAY_NAME,
       clientId: env.MANTLE_PLATFORM_AUTH_CLIENT_ID,
-      clientSecret: env.MANTLE_PLATFORM_AUTH_CLIENT_SECRET,
+      ...(env.MANTLE_PLATFORM_AUTH_CLIENT_SECRET
+        ? { clientSecret: env.MANTLE_PLATFORM_AUTH_CLIENT_SECRET }
+        : {}),
       discoveryUrl: `${platformIssuer}/.well-known/openid-configuration`,
       issuer: platformIssuer,
       requireIssuerValidation: true,
@@ -369,7 +371,6 @@ function hostedAuthSetupComplete(env: Env): boolean {
     env.BETTER_AUTH_SECRET &&
       normalizedPlatformIssuer(env) &&
       env.MANTLE_PLATFORM_AUTH_CLIENT_ID &&
-      env.MANTLE_PLATFORM_AUTH_CLIENT_SECRET &&
       env.MANTLE_SITE_OWNER_EMAIL,
   );
 }
