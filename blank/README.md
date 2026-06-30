@@ -81,10 +81,12 @@ cp .dev.vars.example .dev.vars
 > published since the lockfile was committed; the drift only surfaces
 > when CI rejects it.
 
-The headless `/` preview works without auth. Fill
-`BETTER_AUTH_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, and
-`ADMIN_GITHUB_LOGIN` only when you want to exercise `/api/auth/*` or
-Staff MCP locally. Then:
+The headless `/` preview works without auth. Mantle Platform hosted auth
+uses `MANTLE_PLATFORM_AUTH_ISSUER`, `MANTLE_PLATFORM_AUTH_CLIENT_ID`,
+`MANTLE_PLATFORM_AUTH_CLIENT_SECRET`, and `MANTLE_SITE_OWNER_EMAIL`.
+Standalone/self-hosted auth can still use `GITHUB_CLIENT_ID`,
+`GITHUB_CLIENT_SECRET`, and `ADMIN_GITHUB_LOGIN`. Fill one auth path only
+when you want to exercise `/api/auth/*` or Staff MCP locally. Then:
 
 ```bash
 pnpm dev      # safe wrangler dev — http://localhost:8787
@@ -98,10 +100,9 @@ Production repos are created by Mantle landing. Landing substitutes the
 launch placeholders, commits this bundle, and either connects Cloudflare
 Workers CI or records the provider action the user still needs to take.
 
-> **Note:** `blank` is the headless starter; there is no `/admin` UI and
-> the `GITHUB_*` / `ADMIN_GITHUB_LOGIN` placeholders in `.dev.vars` are
-> only consumed if you mount the optional MCP/admin auth surfaces. Plain
-> `/api/views/*` works without them.
+> **Note:** `blank` is the headless starter; there is no `/admin` UI.
+> Auth placeholders are only consumed by `/api/auth/*` and Staff MCP.
+> Plain `/api/views/*` works without them.
 
 ## Replacing the example
 

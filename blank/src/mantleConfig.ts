@@ -22,6 +22,10 @@ export interface Env {
   readonly GITHUB_CLIENT_ID?: string;
   readonly GITHUB_CLIENT_SECRET?: string;
   readonly ADMIN_GITHUB_LOGIN?: string;
+  readonly MANTLE_PLATFORM_AUTH_ISSUER?: string;
+  readonly MANTLE_PLATFORM_AUTH_CLIENT_ID?: string;
+  readonly MANTLE_PLATFORM_AUTH_CLIENT_SECRET?: string;
+  readonly MANTLE_SITE_OWNER_EMAIL?: string;
   readonly BETTER_AUTH_SECRET: string;
   readonly PUBLIC_ORIGIN?: string;
   readonly TURNSTILE_SITE_KEY?: string;
