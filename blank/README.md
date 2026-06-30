@@ -83,7 +83,9 @@ cp .dev.vars.example .dev.vars
 
 The headless `/` preview works without auth. Mantle Platform hosted auth
 uses `MANTLE_PLATFORM_AUTH_ISSUER`, `MANTLE_PLATFORM_AUTH_CLIENT_ID`,
-`MANTLE_PLATFORM_AUTH_CLIENT_SECRET`, and `MANTLE_SITE_OWNER_EMAIL`.
+and `MANTLE_SITE_OWNER_EMAIL`. Hosted clients use public PKCE by default;
+`MANTLE_PLATFORM_AUTH_CLIENT_SECRET` is only needed if you later register a
+confidential hosted client.
 Standalone/self-hosted auth can still use `GITHUB_CLIENT_ID`,
 `GITHUB_CLIENT_SECRET`, and `ADMIN_GITHUB_LOGIN`. Fill one auth path only
 when you want to exercise `/api/auth/*` or Staff MCP locally. Then:
