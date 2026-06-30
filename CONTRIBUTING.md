@@ -111,13 +111,16 @@ Use [`.github/pull_request_template.md`](./.github/pull_request_template.md). Li
 ## Release process
 
 Mantle landing consumes `provision-bundles/<type>.json` from the selected starters ref.
+The authoritative cross-repo release playbook lives in
+[`aotter/mantle/docs/release-process.md`](https://github.com/aotter/mantle/blob/develop/docs/release-process.md).
+This section only records the starters-specific expectations.
 
 Release process:
 
 1. Land changes on `develop`.
 2. Write the `CHANGELOG.md` entry for the new version. Aggregate the `git log` since the previous tag into Keep-a-Changelog buckets (`Added` / `Changed` / `Deprecated` / `Removed` / `Fixed` / `Security`). Prefix scope when relevant: `**transaction**: ...`. Cross-link the closing PR + issue. The entry lives under a new `## [vX.Y.Z] — YYYY-MM-DD` heading; no `[Unreleased]` placeholder.
-3. Pre-v0.1 alpha cadence: tag `v<version>` directly from `develop` (e.g. `v0.0.11-alpha.15`). Promotion to `main` happens when an alpha graduates to beta/stable — `main` updates intentionally lag the alpha cadence so the canonical "released" pointer doesn't churn daily. (Mirrors the parent `mantle` repo's release-process.md § "Pre-v0.1 alpha cadence".)
-4. CI release workflow builds and attaches private helper package tarballs when present.
+3. Normal alpha cadence is automated from the SDK release tag: `mantle/.github/workflows/release.yml` dispatches `bump-from-sdk.yml`; that workflow bumps package versions, refreshes lockfiles, rebuilds `provision-bundles/*.json`, opens and merges the release PR to `main`, tags `v<version>`, dispatches landing, then syncs `main` back to `develop`.
+4. Manual starter-only releases are exceptional. If needed, follow the parent release-process manual fallback and keep the same end state: `main` tagged, landing dispatched, and `main` merged back into `develop`.
 
 Per-starter `@aotter/mantle-*` version pins move on their own cadence — independent of the tarball tag.
 
