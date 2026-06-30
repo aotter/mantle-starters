@@ -136,6 +136,9 @@ jobs:
       - name: Regenerate standalone starter lockfiles
         run: pnpm refresh:starter-locks
 
+      - name: Regenerate provision bundles
+        run: pnpm build:provision-bundle
+
       - name: Validate (gate)
         run: |
           set -euo pipefail
