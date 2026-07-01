@@ -87,6 +87,7 @@ function sampleLaunch(type) {
     STARTER_REF: "local",
     GITHUB_OWNER: "aotter",
     ADMIN_GITHUB_LOGIN: "aotter",
+    SITE_OWNER_EMAIL: "owner@example.com",
     SITE_URL: `http://localhost:${port}`,
     AFTER_LAUNCH_SKILL_URL: "https://mantle.tools/skill/after-launch?id=local",
     INSTALL_TIMESTAMP: new Date(0).toISOString(),

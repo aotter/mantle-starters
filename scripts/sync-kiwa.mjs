@@ -121,10 +121,10 @@ async function sync() {
     "export const kiwaEnhanceAssets: Readonly<Record<string, string>> = " +
     JSON.stringify(enhanceAssets, null, 2) +
     ";\n";
-  writeOne("blank/src/kiwaEnhanceAssets.ts", enhanceModule);
+  writeOne("blank/src/web/client/kiwaEnhanceAssets.ts", enhanceModule);
   files.push(
     record(
-      "src/kiwaEnhanceAssets.ts",
+      "src/web/client/kiwaEnhanceAssets.ts",
       `https://unpkg.com/@kiwa-ui/enhance@${enhanceVersion}/dist/`,
       enhanceModule,
       ["blank"],

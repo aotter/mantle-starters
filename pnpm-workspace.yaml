@@ -2,6 +2,11 @@ packages:
   - "packages/*"
   - "blank"
 
+allowBuilds:
+  esbuild: true
+  sharp: true
+  workerd: true
+
 # Catalog centralizes shared third-party version specifiers so
 # dependabot edits one place per dependency and starter package.jsons
 # stop drifting. pnpm 9.5+ ships catalogs; dependabot supports the

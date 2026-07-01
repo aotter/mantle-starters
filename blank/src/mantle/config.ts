@@ -6,7 +6,7 @@ import {
   type CmsConfig,
 } from "@aotter/mantle/cloudflare";
 import { buildHandlers } from "./handlers/index.js";
-import { loadManifests } from "./loadManifests.js";
+import { loadManifests } from "./manifests.js";
 
 export interface Env {
   readonly DB: D1Database;
