@@ -22,9 +22,9 @@ jobs:
       matrix:
         starter: [blank]
     steps:
-      - uses: actions/checkout@v6.0.3
+      - uses: actions/checkout@v7.0.0
 
-      - uses: pnpm/action-setup@v6.0.8
+      - uses: pnpm/action-setup@v6.0.9
 
       - uses: actions/setup-node@v6
         with:
@@ -48,9 +48,9 @@ jobs:
     name: starter lockfiles
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6.0.3
+      - uses: actions/checkout@v7.0.0
 
-      - uses: pnpm/action-setup@v6.0.8
+      - uses: pnpm/action-setup@v6.0.9
 
       - uses: actions/setup-node@v6
         with:
@@ -77,7 +77,7 @@ jobs:
     name: starter safety
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6.0.3
+      - uses: actions/checkout@v7.0.0
       - uses: actions/setup-node@v6
         with:
           node-version: 22

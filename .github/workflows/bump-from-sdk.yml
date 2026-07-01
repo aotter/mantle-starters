@@ -67,12 +67,12 @@ jobs:
           echo "npm_tag=$NPM_TAG" >> "$GITHUB_OUTPUT"
           echo "Bumping starters to SDK version $VERSION (npm dist-tag $NPM_TAG)"
 
-      - uses: actions/checkout@v6.0.3
+      - uses: actions/checkout@v7.0.0
         with:
           token: ${{ secrets.RELEASE_FANOUT_TOKEN }}
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v6.0.8
+      - uses: pnpm/action-setup@v6.0.9
 
       - uses: actions/setup-node@v6
         with:
