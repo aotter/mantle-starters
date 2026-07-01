@@ -123,6 +123,7 @@ function buildBundleFiles(archetype) {
     "Next: clone/open this repo, read the launch files above, inspect the already-composed manifest/pages/seed, then make the smallest useful improvement and push.",
     "",
   ].join("\n");
+  applyProvisionedReadme(files, archetype);
   return files;
 }
 
@@ -200,6 +201,83 @@ function assertBundle(bundle, archetype) {
     }
   }
   assertLockfileMatchesPackageJson(bundle, archetype);
+  assertProvisionedReadme(bundle, archetype);
+}
+
+function applyProvisionedReadme(files, archetype) {
+  const base = files["README.md"];
+  if (!base) return;
+  const reusableStart = base.indexOf("## Kiwa UI Credit");
+  const reusableBody = reusableStart === -1 ? base : base.slice(reusableStart);
+  const manifestPath = archetype === "blank" ? "manifests/example.yaml" : `manifests/${archetype}.yaml`;
+  const overview = [
+    "# {{BRAND}}",
+    "",
+    "{{DESCRIPTION}}",
+    "",
+    "## Launch overview",
+    "",
+    "Mantle landing provisioned this repository as a Mantle site.",
+    "",
+    `- Launch type: \`{{ARCHETYPE}}\``,
+    "- Site: {{SITE_URL}}",
+    "- Site owner: {{SITE_OWNER_EMAIL}}",
+    `- Manifest: \`${manifestPath}\``,
+    "- Launch facts: `.mantle/launch-state.json`",
+    "- Agent handoff: `.mantle/handoff.md`",
+    ...(archetype === "blank"
+      ? ["- Type notes: this is the blank base with no seeded visible homepage sections"]
+      : [
+          `- Type notes: \`.mantle/overlays/${archetype}/handoff.md\``,
+          `- Layout notes: \`.mantle/overlays/${archetype}/layout.md\``,
+          `- Seed data: \`.mantle/overlays/${archetype}/seed.json\``,
+        ]),
+    "",
+    "## Type notes",
+    "",
+    archetype === "blank"
+      ? "`blank` is the base Mantle site: Cloudflare Worker runtime, Mantle API/MCP surfaces, Kiwa components, and an example manifest. It intentionally ships no visible homepage sections until a launch type or coding agent adds them."
+      : stripMarkdownTitle(files[`.mantle/overlays/${archetype}/handoff.md`] ?? ""),
+    "",
+    ...(archetype === "blank"
+      ? []
+      : [
+          "## Layout notes",
+          "",
+          stripMarkdownTitle(files[`.mantle/overlays/${archetype}/layout.md`] ?? ""),
+          "",
+        ]),
+  ].join("\n");
+  files["README.md"] = `${overview}\n${reusableBody}`;
+}
+
+function stripMarkdownTitle(text) {
+  return text.replace(/^# .*\n+/, "").trim();
+}
+
+function assertProvisionedReadme(bundle, archetype) {
+  const readme = bundle.files["README.md"] ?? "";
+  if (!readme.startsWith("# {{BRAND}}\n")) {
+    throw new Error(`${archetype} README must start with the provisioned brand placeholder`);
+  }
+  for (const required of ["## Launch overview", "## Type notes", ".mantle/handoff.md", ".mantle/launch-state.json"]) {
+    if (!readme.includes(required)) throw new Error(`${archetype} README missing ${required}`);
+  }
+  if (readme.includes("aotter/mantle-starters/blank")) {
+    throw new Error(`${archetype} README still reads like the source starter README`);
+  }
+  const manifestPath = archetype === "blank" ? "manifests/example.yaml" : `manifests/${archetype}.yaml`;
+  if (!readme.includes(manifestPath)) throw new Error(`${archetype} README missing manifest path`);
+  if (archetype !== "blank") {
+    for (const required of [
+      `.mantle/overlays/${archetype}/handoff.md`,
+      `.mantle/overlays/${archetype}/layout.md`,
+      `.mantle/overlays/${archetype}/seed.json`,
+      "## Layout notes",
+    ]) {
+      if (!readme.includes(required)) throw new Error(`${archetype} README missing ${required}`);
+    }
+  }
 }
 
 function ensureStarterStyles() {

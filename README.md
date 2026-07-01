@@ -85,3 +85,7 @@ scripts/
 Maintain bundles by editing `blank/`, `overlays/<type>/`, or `kiwa/`, then
 running `pnpm build:provision-bundle`. Do not hand-edit generated
 `provision-bundles/*.json`.
+
+Provisioned `README.md` files are generated from `blank/README.md` plus the
+selected overlay's `handoff.md` and `layout.md`, so the repo root explains both
+Mantle and the chosen launch type without maintaining seven copied READMEs.
