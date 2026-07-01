@@ -114,10 +114,10 @@ function assertStylesheetMounted(root, archetype) {
   if (!source.includes("stylesCss")) {
     throw new Error(`${archetype} worker does not mount generated stylesheet`);
   }
-  if (!source.includes("/assets/mantle-ocean-hero.svg")) {
+  if (!source.includes("/mantle-ocean-hero.svg")) {
     throw new Error(`${archetype} homepage does not mount Mantle ocean hero asset`);
   }
-  if (!source.includes("/assets/mantle-ocean-hero-dark.svg")) {
+  if (!source.includes("/mantle-ocean-hero-dark.svg")) {
     throw new Error(`${archetype} homepage does not support dark Mantle ocean hero switching`);
   }
   if (!css.includes("tailwindcss") || !css.includes(".bg-primary")) {
@@ -126,7 +126,7 @@ function assertStylesheetMounted(root, archetype) {
 }
 
 function assertAuthSwitchUsesSelectedProvider(root, archetype) {
-  const source = readFileSync(join(root, "src", "index.ts"), "utf8");
+  const source = readFileSync(join(root, "src", "worker", "auth.ts"), "utf8");
   if (!/const hostedAuth = platformIssuer && env\.MANTLE_PLATFORM_AUTH_CLIENT_ID\s*\?/.test(source)) {
     throw new Error(`${archetype} auth switch does not name the selected hosted provider mode`);
   }
@@ -137,9 +137,10 @@ function assertAuthSwitchUsesSelectedProvider(root, archetype) {
 
 function assertRuntimeHasNoKiwaDemoCopy(root, archetype) {
   const files = [
-    "src/home.tsx",
-    "src/homeContent.ts",
-    "src/siteContent.ts",
+    "src/web/pages/HomePage.tsx",
+    "src/web/sections/renderSection.tsx",
+    "src/web/content/homeContent.ts",
+    "src/web/content/siteContent.ts",
     "components/blocks/marketing/bento-02.tsx",
     "components/blocks/marketing/contact-02.tsx",
     "components/blocks/marketing/content-01.tsx",
@@ -176,8 +177,8 @@ function assertRuntimeHasNoKiwaDemoCopy(root, archetype) {
 }
 
 function assertOverlayManifestLoaded(root, archetype) {
-  const text = readFileSync(join(root, "src", "loadManifests.ts"), "utf8");
-  if (!text.includes(`../manifests/${archetype}.yaml`)) {
+  const text = readFileSync(join(root, "src", "mantle", "manifests.ts"), "utf8");
+  if (!text.includes(`../../manifests/${archetype}.yaml`)) {
     throw new Error(`${archetype} manifest is present but not loaded`);
   }
 }
@@ -192,7 +193,7 @@ function assertFourAtoms(root, archetype) {
 }
 
 function assertPresenceHandlerLoaded(root) {
-  const text = readFileSync(join(root, "src", "handlers", "index.ts"), "utf8");
+  const text = readFileSync(join(root, "src", "mantle", "handlers", "index.ts"), "utf8");
   if (!text.includes('"notify-contact": notifyContact')) {
     throw new Error("presence overlay did not install notify-contact handler");
   }
@@ -219,16 +220,16 @@ function assertPresenceContactForm(root) {
 }
 
 function assertPresenceSeedDrivenHome(root) {
-  const homeContent = readFileSync(join(root, "src", "homeContent.ts"), "utf8");
-  const siteContent = readFileSync(join(root, "src", "siteContent.ts"), "utf8");
-  const seedImport = '../.mantle/overlays/presence/seed.json';
+  const homeContent = readFileSync(join(root, "src", "web", "content", "homeContent.ts"), "utf8");
+  const siteContent = readFileSync(join(root, "src", "web", "content", "siteContent.ts"), "utf8");
+  const seedImport = '../../../.mantle/overlays/presence/seed.json';
   if (!homeContent.includes(seedImport) || !siteContent.includes(seedImport)) {
     throw new Error("presence homepage content is not driven by the overlay seed");
   }
 }
 
 function assertIntakeHandlerLoaded(root) {
-  const text = readFileSync(join(root, "src", "handlers", "index.ts"), "utf8");
+  const text = readFileSync(join(root, "src", "mantle", "handlers", "index.ts"), "utf8");
   if (!text.includes('"notify-intake": notifyIntake')) {
     throw new Error("intake overlay did not install notify-intake handler");
   }
@@ -252,9 +253,9 @@ function assertIntakeForm(root) {
 }
 
 function assertIntakeSeedDrivenHome(root) {
-  const homeContent = readFileSync(join(root, "src", "homeContent.ts"), "utf8");
-  const siteContent = readFileSync(join(root, "src", "siteContent.ts"), "utf8");
-  const seedImport = '../.mantle/overlays/intake/seed.json';
+  const homeContent = readFileSync(join(root, "src", "web", "content", "homeContent.ts"), "utf8");
+  const siteContent = readFileSync(join(root, "src", "web", "content", "siteContent.ts"), "utf8");
+  const seedImport = '../../../.mantle/overlays/intake/seed.json';
   if (!homeContent.includes(seedImport) || !siteContent.includes(seedImport)) {
     throw new Error("intake homepage content is not driven by the overlay seed");
   }
@@ -271,17 +272,17 @@ function assertPublicationSeed(root) {
 }
 
 function assertPublicationSeedDrivenHome(root) {
-  const homeContent = readFileSync(join(root, "src", "homeContent.ts"), "utf8");
-  const siteContent = readFileSync(join(root, "src", "siteContent.ts"), "utf8");
-  const seedImport = '../.mantle/overlays/publication/seed.json';
+  const homeContent = readFileSync(join(root, "src", "web", "content", "homeContent.ts"), "utf8");
+  const siteContent = readFileSync(join(root, "src", "web", "content", "siteContent.ts"), "utf8");
+  const seedImport = '../../../.mantle/overlays/publication/seed.json';
   if (!homeContent.includes(seedImport) || !siteContent.includes(seedImport)) {
     throw new Error("publication homepage content is not driven by the overlay seed");
   }
 }
 
 function assertBlankHomeDataIsBlank(root) {
-  const homeContent = readFileSync(join(root, "src", "homeContent.ts"), "utf8");
-  const siteContent = readFileSync(join(root, "src", "siteContent.ts"), "utf8");
+  const homeContent = readFileSync(join(root, "src", "web", "content", "homeContent.ts"), "utf8");
+  const siteContent = readFileSync(join(root, "src", "web", "content", "siteContent.ts"), "utf8");
   if (!homeContent.includes("sections: []")) {
     throw new Error("blank homepage should not seed visible sections");
   }
@@ -302,7 +303,16 @@ function assertNoBlankExampleManifest(root, archetype) {
 }
 
 function readSource(root) {
-  return ["src/index.ts", "src/home.tsx"]
+  return [
+    "src/index.ts",
+    "src/renderer.tsx",
+    "src/worker/app.ts",
+    "src/worker/routes/assets.ts",
+    "src/worker/routes/home.tsx",
+    "src/web/client/homeClient.ts",
+    "src/web/pages/HomePage.tsx",
+    "src/web/sections/renderSection.tsx",
+  ]
     .map((path) => {
       try {
         return readFileSync(join(root, path), "utf8");

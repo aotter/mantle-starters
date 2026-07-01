@@ -305,7 +305,7 @@
       "sha256": "cc415674b12bea27cf6e2255b94453c772ae1c9f26513ad6c51910e0d6049ed5"
     },
     {
-      "path": "src/kiwaEnhanceAssets.ts",
+      "path": "src/web/client/kiwaEnhanceAssets.ts",
       "mirrors": [
         "blank"
       ],

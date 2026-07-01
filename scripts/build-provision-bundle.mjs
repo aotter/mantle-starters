@@ -141,35 +141,35 @@ function assertBundle(bundle, archetype) {
     ".claude/skills/mantle-plugin/SKILL.md",
     ".claude/skills/mantle-theme/SKILL.md",
     ".claude/skills/mantle-update/SKILL.md",
-    "src/contentTypes.ts",
+    "src/web/content/types.ts",
     "kiwa/manifest.json",
     "styles/generated.css",
-    "src/mantleOceanHero.ts",
+    "src/web/mantleOceanHero.ts",
   ]) {
     if (!bundle.files[required]) throw new Error(`${archetype} bundle missing ${required}`);
   }
-  if (!bundle.files["src/index.ts"]?.includes("/assets/styles.css")) {
+  if (!bundle.files["src/worker/routes/assets.ts"]?.includes("/styles.css")) {
     throw new Error(`${archetype} bundle missing generated stylesheet route`);
   }
-  if (!bundle.files["src/index.ts"]?.includes("/assets/mantle-ocean-hero.svg")) {
+  if (!bundle.files["src/worker/routes/assets.ts"]?.includes("/mantle-ocean-hero.svg")) {
     throw new Error(`${archetype} bundle missing Mantle ocean hero asset route`);
   }
-  if (!bundle.files["src/index.ts"]?.includes("/assets/mantle-ocean-hero-dark.svg")) {
+  if (!bundle.files["src/worker/routes/assets.ts"]?.includes("/mantle-ocean-hero-dark.svg")) {
     throw new Error(`${archetype} bundle missing dark Mantle ocean hero asset route`);
   }
-  if (!bundle.files["src/home.tsx"]?.includes("/assets/mantle-ocean-hero-light.svg")) {
+  if (!bundle.files["src/web/sections/renderSection.tsx"]?.includes("/assets/mantle-ocean-hero-light.svg")) {
     throw new Error(`${archetype} homepage missing Mantle ocean hero image`);
   }
-  if (!bundle.files["src/index.ts"]?.includes("/assets/mantle-ocean-hero-light.svg', '/assets/mantle-ocean-hero-dark.svg")) {
+  if (!bundle.files["src/web/client/homeClient.ts"]?.includes("/assets/mantle-ocean-hero-light.svg', '/assets/mantle-ocean-hero-dark.svg")) {
     throw new Error(`${archetype} homepage hero image must support manual theme switching`);
   }
-  if (!bundle.files["src/home.tsx"]?.includes("assetBuild")) {
+  if (!bundle.files["src/web/assets.ts"]?.includes("assetBuild")) {
     throw new Error(`${archetype} homepage assets must be cache-busted`);
   }
   if (!bundle.files["styles/swirl-images.css"]?.includes("?v=")) {
     throw new Error(`${archetype} swirl images must be cache-busted`);
   }
-  if (!bundle.files["src/index.ts"]?.includes('const ASSET_CACHE_CONTROL = "public, max-age=300"')) {
+  if (!bundle.files["src/worker/routes/assets.ts"]?.includes('const ASSET_CACHE_CONTROL = "public, max-age=300"')) {
     throw new Error(`${archetype} homepage asset routes must avoid immutable caching`);
   }
   if (!bundle.files["pnpm-workspace.yaml"]?.includes('  - "."')) {
@@ -182,8 +182,8 @@ function assertBundle(bundle, archetype) {
     throw new Error(`${archetype} bundle should not include blank example manifest`);
   }
   if (archetype === "blank") {
-    const homeContent = bundle.files["src/homeContent.ts"] ?? "";
-    const siteContent = bundle.files["src/siteContent.ts"] ?? "";
+    const homeContent = bundle.files["src/web/content/homeContent.ts"] ?? "";
+    const siteContent = bundle.files["src/web/content/siteContent.ts"] ?? "";
     for (const forbidden of ["starts here", "contactForm", "Placeholder proof", "Start a conversation"]) {
       if (homeContent.includes(forbidden) || siteContent.includes(forbidden)) {
         throw new Error(`blank bundle contains seeded homepage copy: ${forbidden}`);
@@ -191,11 +191,11 @@ function assertBundle(bundle, archetype) {
     }
   }
   if (archetype === "presence" || archetype === "intake" || archetype === "publication") {
-    const seedImport = `../.mantle/overlays/${archetype}/seed.json`;
-    if (!bundle.files["src/homeContent.ts"]?.includes(seedImport)) {
+    const seedImport = `../../../.mantle/overlays/${archetype}/seed.json`;
+    if (!bundle.files["src/web/content/homeContent.ts"]?.includes(seedImport)) {
       throw new Error(`${archetype} homeContent must read the overlay seed`);
     }
-    if (!bundle.files["src/siteContent.ts"]?.includes(seedImport)) {
+    if (!bundle.files["src/web/content/siteContent.ts"]?.includes(seedImport)) {
       throw new Error(`${archetype} siteContent must read the overlay seed`);
     }
   }
@@ -249,11 +249,11 @@ function applyOverlaySeedContent(files, archetype, seedText) {
   } catch {
     return;
   }
-  const seedImport = `../.mantle/overlays/${archetype}/seed.json`;
+  const seedImport = `../../../.mantle/overlays/${archetype}/seed.json`;
   if (seed?.site) {
-    files["src/siteContent.ts"] = [
+    files["src/web/content/siteContent.ts"] = [
       `import seed from "${seedImport}";`,
-      'import type { SiteContent } from "./contentTypes.js";',
+      'import type { SiteContent } from "./types.js";',
       "",
       "type Seed = { readonly site?: SiteContent };",
       "const seedData = seed as Seed;",
@@ -267,9 +267,9 @@ function applyOverlaySeedContent(files, archetype, seedText) {
     ].join("\n");
   }
   if (Array.isArray(seed?.collections?.page)) {
-    files["src/homeContent.ts"] = [
+    files["src/web/content/homeContent.ts"] = [
       `import seed from "${seedImport}";`,
-      'import type { HomeContent, HomeSection } from "./contentTypes.js";',
+      'import type { HomeContent, HomeSection } from "./types.js";',
       "",
       "type SeedPage = { readonly type?: string; readonly sections?: readonly HomeSection[] };",
       "type Seed = { readonly collections?: { readonly page?: readonly SeedPage[] } };",
@@ -292,9 +292,9 @@ function walkIfExists(files, from, to) {
 
 function applyOverlayManifestLoader(files, archetype) {
   const bindingName = `${archetype.replace(/[^a-zA-Z0-9]/g, "_")}Yaml`;
-  files["src/loadManifests.ts"] = [
+  files["src/mantle/manifests.ts"] = [
     'import { parseManifestsOrThrow, type Manifest } from "@aotter/mantle/spec";',
-    `import ${bindingName} from "../manifests/${archetype}.yaml";`,
+    `import ${bindingName} from "../../manifests/${archetype}.yaml";`,
     "",
     "export function loadManifests(): readonly Manifest[] {",
     `  return parseManifestsOrThrow([${bindingName}], { context: "starters/${archetype}" });`,

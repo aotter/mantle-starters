@@ -15,7 +15,7 @@
     "pnpm": ">=9"
   },
   "scripts": {
-    "build": "pnpm -r --filter './packages/**' build",
+    "build": "corepack pnpm@9.15.0 -r --filter './packages/**' build",
     "build:provision-bundle": "node scripts/build-provision-bundle.mjs",
     "check:provision-bundle": "node scripts/build-provision-bundle.mjs --check",
     "check:styles": "node blank/scripts/build-styles.mjs --root blank --check",
@@ -28,8 +28,8 @@
     "check:wrangler-dev": "node scripts/check-wrangler-dev-wrapper.mjs",
     "sync:core-skills": "node scripts/sync-core-skills.mjs",
     "refresh:starter-locks": "node scripts/refresh-starter-locks.mjs",
-    "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test"
+    "typecheck": "corepack pnpm@9.15.0 -r typecheck",
+    "test": "corepack pnpm@9.15.0 -r test"
   },
   "packageManager": "pnpm@9.15.0"
 }

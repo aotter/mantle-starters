@@ -1,4 +1,4 @@
-import type { SiteContent } from "./contentTypes.js";
+import type { SiteContent } from "./types.js";
 
 export const siteContent: SiteContent = {
   brand: "{{BRAND}}",

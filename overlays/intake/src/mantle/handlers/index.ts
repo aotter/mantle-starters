@@ -1,6 +1,6 @@
 import type { AnyHandler } from "@aotter/mantle/runtime";
-import { notifyIntake } from "./notifyIntake.js";
-import { verifyIntakeTurnstile } from "./verifyIntakeTurnstile.js";
+import { notifyIntake } from "../../worker/features/intake/notifyIntake.js";
+import { verifyIntakeTurnstile } from "../../worker/features/intake/verifyIntakeTurnstile.js";
 
 /**
  * Intake Procedure handler registry.
