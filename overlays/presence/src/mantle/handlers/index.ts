@@ -1,6 +1,6 @@
 import type { AnyHandler } from "@aotter/mantle/runtime";
-import { notifyContact } from "./notifyContact.js";
-import { verifyContactTurnstile } from "./verifyContactTurnstile.js";
+import { notifyContact } from "../../worker/features/contact/notifyContact.js";
+import { verifyContactTurnstile } from "../../worker/features/contact/verifyContactTurnstile.js";
 
 /**
  * Presence Procedure handler registry.

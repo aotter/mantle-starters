@@ -1,4 +1,4 @@
-import type { HomeContent } from "./contentTypes.js";
+import type { HomeContent } from "./types.js";
 
 export const homeContent: HomeContent = {
   sections: [],

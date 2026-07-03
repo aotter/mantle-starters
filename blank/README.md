@@ -3,20 +3,21 @@
 > **This README ships with your scaffolded project.** If you're reading
 > it on GitHub at `aotter/mantle-starters/blank`, the
 > Getting-started block below **does not work on a raw clone** —
-> `src/mantleConfig.ts` contains literal `{{BRAND}}` / `{{LOCALES}}` /
+> `src/mantle/config.ts` contains literal `{{BRAND}}` / `{{LOCALES}}` /
 > `{{DESCRIPTION}}` placeholders that Mantle landing substitutes while
-> committing the provision bundle. A fresh-clone `pnpm dev` throws
-> `SyntaxError: Expected property name or '}' in JSON` at boot.
+> committing the provision bundle. Use Mantle landing provisioning to
+> evaluate the starter end-to-end.
 >
 > **To evaluate this starter end-to-end**, use the Mantle landing
 > provisioning flow. It fetches `provision-bundles/<type>.json`,
 > substitutes these placeholders, commits the repo, and starts
 > Cloudflare Workers CI.
 
-**Headless CMS starter.** Ships a small public homepage plus the Mantle
-API/MCP backend. Use this when you have your own frontend (Next.js,
-Astro, SvelteKit, native iOS/Android, partner integration) and want
-Mantle primarily as content + auth + MCP infrastructure.
+**Blank-first Mantle starter.** Ships a Hono/Cloudflare Worker runtime,
+Mantle API/MCP surfaces, and a seed-driven Hono JSX public page. `blank`
+has the full project skeleton but no visible homepage sections; typed
+launches such as `presence`, `publication`, and `intake` fill
+`src/web/content/*` and selected `manifests/*.yaml`.
 
 Type-specific bundles include the selected manifest, overlay notes, and
 seed prompt up front. Continue from the after-launch handoff shown by
@@ -29,6 +30,39 @@ primitives copied into `components/ui/`, plus `lib/utils.ts`,
 `styles/globals.css`, and `kiwa-ui.json`. Kiwa source is MIT licensed;
 see `kiwa/LICENSE` and `kiwa/manifest.json` for the copied files and
 upstream commit.
+
+## Project shape
+
+```txt
+src/
+  index.ts                    # Worker fetch entrypoint
+  renderer.tsx                # Hono JSX document renderer
+  worker/
+    app.ts                    # Hono app composition + OAuth/MCP wrapper
+    auth.ts                   # Better Auth setup boundary
+    routes/
+      home.tsx                # c.render(<HomePage />)
+      assets.ts               # generated CSS, SVGs, Kiwa enhance JS
+    features/                 # type overlays add server behavior here
+  web/
+    pages/HomePage.tsx        # public page body
+    content/                  # seed-driven site/home content modules
+    client/                   # browser behavior served as /assets/kiwa-home.js
+    mantleOceanHero.ts        # Mantle SVG assets
+  mantle/
+    config.ts                 # CmsConfig/env/bindings
+    manifests.ts              # loads root manifests/*.yaml
+    handlers/index.ts         # Procedure handler registry
+
+manifests/                    # 4 atoms: Schema, View, Procedure, Trigger
+components/, lib/, styles/     # Kiwa-managed convention; keep root-level
+.mantle/                      # launch state, overlay notes, handoff
+```
+
+`manifests/` is the authoritative Mantle model. `src/mantle/*` only
+wires those atoms to the Cloudflare adapter. Kiwa components stay at
+root because `kiwa-ui.json` follows Kiwa's `@/components` and
+`@/lib/utils` convention.
 
 ## URL surface
 
@@ -51,23 +85,6 @@ OAuth/DCR. This starter wires the dual MCP surface (`/mcp/staff` for
 staff authoring, `/mcp` for end-user/read tools), but ships only a small
 public homepage for `/`. Add your own frontend and policy surface before
 claiming a custom production workflow.
-
-## Layout
-
-```
-mantle-starters/blank/
-├── manifests/example.yaml     # one-file demo: Schema + View
-├── src/
-│   ├── index.ts               # worker entrypoint (routes + OAuth/MCP)
-│   ├── home.tsx               # small public homepage using Kiwa primitives
-│   ├── mantleConfig.ts        # env + manifests + handlers wiring
-│   ├── loadManifests.ts
-│   ├── handlers/index.ts      # empty registry — add Procedure handlers here
-│   └── types.d.ts
-├── package.json
-├── tsconfig.json
-└── wrangler.toml
-```
 
 ## Getting started
 
@@ -112,7 +129,7 @@ Workers CI or records the provider action the user still needs to take.
 2. Edit or replace the `Schema` and `View` to match your content.
 3. If you need server-side Procedures (form handlers, webhooks, etc.),
    add a `Procedure` atom, bind it with a `Trigger.source.kind: http`,
-   and register the handler in `src/handlers/index.ts`.
+   and register the handler in `src/mantle/handlers/index.ts`.
 4. Validate with `pnpm validate` (runs the spec CLI in preview phase — grammar + cross-Schema only). Before deploying, run `pnpm validate:deploy` (= `mantle validate --phase deploy`) for production-only checks. `pnpm run deploy` chains it in front of `wrangler deploy` automatically.
 
 ## What you get from the npm packages

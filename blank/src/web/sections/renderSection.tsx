@@ -1,15 +1,12 @@
 import type { Child, FC } from "hono/jsx";
-import { renderToString } from "hono/jsx/dom/server";
 import { Bento02 } from "@/components/blocks/marketing/bento-02";
 import { Contact02 } from "@/components/blocks/marketing/contact-02";
 import { Content01 } from "@/components/blocks/marketing/content-01";
 import { Cta02 } from "@/components/blocks/marketing/cta-02";
 import { Faq02 } from "@/components/blocks/marketing/faq-02";
 import { Features02 } from "@/components/blocks/marketing/features-02";
-import { Footer02 } from "@/components/blocks/marketing/footer-02";
 import { Hero02 } from "@/components/blocks/marketing/hero-02";
 import { Metrics02 } from "@/components/blocks/marketing/metrics-02";
-import { Nav02 } from "@/components/blocks/marketing/nav-02";
 import { SocialProof02 } from "@/components/blocks/marketing/social-proof-02";
 import { Testimonials02 } from "@/components/blocks/marketing/testimonials-02";
 import { Button } from "@/components/ui/button";
@@ -28,6 +25,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { asset } from "../assets.js";
 import type {
   HomeCondition,
   HomeField,
@@ -35,27 +33,11 @@ import type {
   HomeResult,
   HomeSection,
   HomeStep,
-} from "./contentTypes.js";
-import { homeContent } from "./homeContent.js";
-import { siteContent } from "./siteContent.js";
+} from "../content/types.js";
 
-const archetype = "{{ARCHETYPE}}" as string;
-const assetBuild = "mantle-starter-assets-20260629-theme-svg";
-const asset = (path: string) => `${path}?v=${assetBuild}`;
 const heroImage = {
   src: asset("/assets/mantle-ocean-hero-light.svg"),
   alt: "",
-};
-const themeBootScript = `(() => {
-  try {
-    const stored = localStorage.getItem("mantle-theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    document.documentElement.classList.toggle("dark", stored ? stored === "dark" : prefersDark);
-  } catch {}
-})();`;
-
-type HomePageProps = {
-  readonly turnstileSiteKey?: string;
 };
 
 const featureIcons: Record<string, FC<{ class?: string }>> = {
@@ -67,69 +49,7 @@ const featureIcons: Record<string, FC<{ class?: string }>> = {
   sparkles: SparklesIcon,
 };
 
-export function renderHome(options: HomePageProps = {}): string {
-  return "<!doctype html>" + renderToString(<HomePage {...options} />);
-}
-
-function HomePage({ turnstileSiteKey }: HomePageProps) {
-  const siteKey = turnstileSiteKey?.trim();
-  const hasNavigation = siteContent.navLinks.length > 0 || Boolean(siteContent.navAction);
-  const hasFooter = Boolean(
-    siteContent.footer.tagline ||
-      siteContent.footer.copyright ||
-      siteContent.footer.columns.length > 0 ||
-      siteContent.footer.socialLinks.length > 0 ||
-      siteContent.footer.bottomLinks.length > 0,
-  );
-  return (
-    <html lang="en">
-      <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="mantle:site" content="v1" />
-        <meta name="mantle:archetype" content={archetype} />
-        <title>{siteContent.brand}</title>
-        <meta name="description" content={siteContent.description} />
-        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
-        {siteKey && (
-          <script
-            src="https://challenges.cloudflare.com/turnstile/v0/api.js"
-            async
-            defer
-          ></script>
-        )}
-        <link rel="stylesheet" href={asset("/assets/styles.css")} />
-      </head>
-      <body class="min-h-screen bg-background text-foreground antialiased">
-        {hasNavigation && (
-          <Nav02
-            logo={siteContent.brand}
-            links={siteContent.navLinks.map((link) => ({ ...link }))}
-            ctaText={siteContent.navAction?.label}
-            ctaHref={siteContent.navAction?.href}
-          />
-        )}
-        <main>{homeContent.sections.map((section, index) => renderSection(section, index, siteKey))}</main>
-        {hasFooter && (
-          <Footer02
-            logo={{ text: siteContent.brand }}
-            tagline={siteContent.footer.tagline}
-            columns={siteContent.footer.columns.map((column) => ({
-              title: column.title,
-              links: column.links.map((link) => ({ ...link })),
-            }))}
-            socialLinks={siteContent.footer.socialLinks.map((link) => ({ ...link }))}
-            copyright={siteContent.footer.copyright}
-            bottomLinks={siteContent.footer.bottomLinks.map((link) => ({ ...link }))}
-          />
-        )}
-        <script type="module" src={asset("/assets/kiwa-home.js")} />
-      </body>
-    </html>
-  );
-}
-
-function renderSection(section: HomeSection, index: number, turnstileSiteKey?: string): Child {
+export function renderSection(section: HomeSection, index: number, turnstileSiteKey?: string): Child {
   const key = `${section.type}-${section.id ?? index}`;
   switch (section.type) {
     case "hero":
