@@ -27,7 +27,7 @@ MANTLE_SITE_OWNER_EMAIL={{SITE_OWNER_EMAIL}}
 
 # ── Self-hosted GitHub OAuth fallback ────────────────────────────────
 # Use this only when you are not using Mantle Platform hosted auth.
-# blank doesn't ship an /admin UI, but it does mount /api/auth/* + /mcp.
+# /admin, /api/auth/*, and /mcp/staff use whichever auth path is configured.
 # Fill this section when you want to exercise the standalone auth path locally.
 #
 #   1. Create a GitHub OAuth App at github.com/settings/developers
