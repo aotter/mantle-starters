@@ -119,9 +119,10 @@ Production repos are created by Mantle landing. Landing substitutes the
 launch placeholders, commits this bundle, and either connects Cloudflare
 Workers CI or records the provider action the user still needs to take.
 
-> **Note:** `blank` is the headless starter; there is no `/admin` UI.
-> Auth placeholders are only consumed by `/api/auth/*` and Staff MCP.
-> Plain `/api/views/*` works without them.
+> **Note:** `blank` has no visitor homepage sections, but it does mount
+> `/admin`, `/api/auth/*`, and Staff MCP. Those surfaces need either
+> Mantle Platform hosted auth or self-hosted GitHub OAuth. Plain
+> `/api/views/*` works without auth.
 
 ## Replacing the example
 
