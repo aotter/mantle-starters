@@ -1,7 +1,7 @@
 {
   "name": "mantle-starters",
   "private": true,
-  "version": "0.0.11-alpha.45",
+  "version": "0.0.11-alpha.46",
   "description": "Workspace root for the @aotter/mantle blank-first starter bundles, type overlays, and vendored Kiwa source.",
   "license": "MIT",
   "homepage": "https://mantle.tools/",
