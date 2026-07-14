@@ -15,12 +15,8 @@ permissions:
 
 jobs:
   starters:
-    name: starter ${{ matrix.starter }}
+    name: starter blank
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        starter: [blank]
     steps:
       - uses: actions/checkout@v6.0.3
 
@@ -30,18 +26,18 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: ${{ matrix.starter }}/pnpm-lock.yaml
+          cache-dependency-path: blank/pnpm-lock.yaml
 
       - name: Install
-        working-directory: ${{ matrix.starter }}
+        working-directory: blank
         run: pnpm install --frozen-lockfile
 
       - name: Validate manifests
-        working-directory: ${{ matrix.starter }}
+        working-directory: blank
         run: pnpm validate
 
       - name: Typecheck
-        working-directory: ${{ matrix.starter }}
+        working-directory: blank
         run: pnpm typecheck
 
   starter-locks:

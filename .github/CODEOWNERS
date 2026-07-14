@@ -2,13 +2,4 @@
 # Owners listed here are auto-requested as reviewers on touching PRs.
 # (Solo-maintainer phase — entries are forward-looking for when co-maintainers join.)
 
-# Default
 * @guyspy
-
-# Launch base and post-launch overlays
-/blank/                          @guyspy
-/overlays/                       @guyspy
-/kiwa/                           @guyspy
-
-# CI / governance
-/.github/                        @guyspy

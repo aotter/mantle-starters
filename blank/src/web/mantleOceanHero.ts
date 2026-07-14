@@ -1,4 +1,4 @@
-export const mantleOceanHeroSvg = String.raw`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Ocean themed Mantle starter visual">
+const mantleOceanHeroSvg = String.raw`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Ocean themed Mantle starter visual">
   <style>
     :root {
       color-scheme: light dark;
