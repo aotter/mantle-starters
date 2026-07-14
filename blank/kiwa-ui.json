@@ -12,7 +12,6 @@
   "components": [
     "accordion",
     "avatar",
-    "badge",
     "bento-02",
     "button",
     "contact-02",
@@ -28,7 +27,6 @@
     "label",
     "metrics-02",
     "nav-02",
-    "placeholder-data",
     "placeholder-gradient",
     "placeholder-logo",
     "social-icon",

@@ -151,8 +151,7 @@
     {
       "path": "components/ui/badge.tsx",
       "mirrors": [
-        "kiwa",
-        "blank"
+        "kiwa"
       ],
       "source": "https://registry.kiwaui.com/r/badge.json",
       "sha256": "9e7cea2ae7d205e2cb69bf6c5f3ccce54475543d9afed0a7ec16a4bb5d57407a"
@@ -289,8 +288,7 @@
     {
       "path": "lib/placeholder-data.ts",
       "mirrors": [
-        "kiwa",
-        "blank"
+        "kiwa"
       ],
       "source": "https://registry.kiwaui.com/r/placeholder-data.json",
       "sha256": "ddb04831d343d9ced77ee91f0035dd80e621a736f1844443508f5b2511f212df"

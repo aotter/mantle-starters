@@ -114,7 +114,7 @@ function assertStylesheetMounted(root, archetype) {
   if (!source.includes("stylesCss")) {
     throw new Error(`${archetype} worker does not mount generated stylesheet`);
   }
-  if (!source.includes("/mantle-ocean-hero.svg")) {
+  if (!source.includes("/mantle-ocean-hero-light.svg")) {
     throw new Error(`${archetype} homepage does not mount Mantle ocean hero asset`);
   }
   if (!source.includes("/mantle-ocean-hero-dark.svg")) {
