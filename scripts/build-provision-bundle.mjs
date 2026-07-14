@@ -2,6 +2,7 @@
 import { spawnSync } from "node:child_process";
 import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, posix } from "node:path";
+import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 
 const root = new URL("..", import.meta.url).pathname;
 const version = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version;
@@ -152,7 +153,7 @@ function assertBundle(bundle, archetype) {
   if (!bundle.files["src/worker/routes/assets.ts"]?.includes("/styles.css")) {
     throw new Error(`${archetype} bundle missing generated stylesheet route`);
   }
-  if (!bundle.files["src/worker/routes/assets.ts"]?.includes("/mantle-ocean-hero.svg")) {
+  if (!bundle.files["src/worker/routes/assets.ts"]?.includes("/mantle-ocean-hero-light.svg")) {
     throw new Error(`${archetype} bundle missing Mantle ocean hero asset route`);
   }
   if (!bundle.files["src/worker/routes/assets.ts"]?.includes("/mantle-ocean-hero-dark.svg")) {
@@ -397,13 +398,13 @@ function skip(name) {
 function resolveCatalogPackageJson(files) {
   const raw = files["package.json"];
   if (!raw) return;
-  const catalog = parseCatalog(readFileSync(join(root, "pnpm-workspace.yaml"), "utf8"));
+  const catalog = parseYaml(readFileSync(join(root, "pnpm-workspace.yaml"), "utf8"))?.catalog ?? {};
   const manifest = JSON.parse(raw);
-  for (const key of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]) {
+  for (const key of dependencySectionKeys) {
     const deps = manifest[key];
     if (!deps || typeof deps !== "object" || Array.isArray(deps)) continue;
     for (const [name, spec] of Object.entries(deps)) {
-      if (spec === "catalog:") deps[name] = catalog.get(name) ?? fail(`catalog missing ${name}`);
+      if (spec === "catalog:") deps[name] = catalog[name] ?? fail(`catalog missing ${name}`);
     }
   }
   files["package.json"] = JSON.stringify(manifest, null, 2) + "\n";
@@ -414,71 +415,25 @@ function resolveCatalogLockfile(files) {
   const manifestRaw = files["package.json"];
   if (!raw || !manifestRaw) return;
   const expected = collectPackageSpecifiers(JSON.parse(manifestRaw));
-  const lines = raw.split("\n");
-  let inImporters = false;
-  let inRootImporter = false;
-  let inDependencySection = false;
-  let dependencyName = null;
-
-  for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index];
-    if (line === "importers:") {
-      inImporters = true;
-      inRootImporter = false;
-      inDependencySection = false;
-      dependencyName = null;
-      continue;
-    }
-    if (!inImporters) continue;
-    if (/^\S/.test(line) && line.trim() && line !== "importers:") {
-      inImporters = false;
-      inRootImporter = false;
-      inDependencySection = false;
-      dependencyName = null;
-      continue;
-    }
-    if (line === "  .:") {
-      inRootImporter = true;
-      inDependencySection = false;
-      dependencyName = null;
-      continue;
-    }
-    if (!inRootImporter) continue;
-    if (/^  \S/.test(line) && line !== "  .:") {
-      inRootImporter = false;
-      inDependencySection = false;
-      dependencyName = null;
-      continue;
-    }
-
-    const sectionMatch = line.match(/^    ([A-Za-z]+Dependencies|dependencies):$/);
-    if (sectionMatch) {
-      inDependencySection = dependencySectionKeys.includes(sectionMatch[1]);
-      dependencyName = null;
-      continue;
-    }
-    if (!inDependencySection) continue;
-    const dependencyMatch = line.match(/^      (.+):$/);
-    if (dependencyMatch) {
-      dependencyName = parseLockfileKey(dependencyMatch[1]);
-      continue;
-    }
-    if (!dependencyName) continue;
-    if (/^        specifier:/.test(line) && expected.has(dependencyName)) {
-      lines[index] = `        specifier: ${formatLockfileScalar(expected.get(dependencyName))}`;
+  const lockfile = parseYaml(raw);
+  delete lockfile.catalogs;
+  const importer = lockfile.importers?.["."] ?? {};
+  for (const key of dependencySectionKeys) {
+    for (const [name, entry] of Object.entries(importer[key] ?? {})) {
+      if (expected.has(name)) entry.specifier = expected.get(name);
     }
   }
-
-  files["pnpm-lock.yaml"] = stripLockfileCatalogs(lines).join("\n");
+  files["pnpm-lock.yaml"] = stringifyYaml(lockfile, { lineWidth: 0, singleQuote: true });
 }
 
 function assertLockfileMatchesPackageJson(bundle, archetype) {
   const manifest = JSON.parse(bundle.files["package.json"]);
-  if (/^catalogs:\n/m.test(bundle.files["pnpm-lock.yaml"])) {
+  const lockfile = parseYaml(bundle.files["pnpm-lock.yaml"] ?? "") ?? {};
+  if (lockfile.catalogs) {
     throw new Error(`${archetype} bundle lockfile still contains workspace catalog metadata`);
   }
   const expected = collectPackageSpecifiers(manifest);
-  const actual = collectRootLockfileSpecifiers(bundle.files["pnpm-lock.yaml"]);
+  const actual = collectRootLockfileSpecifiers(lockfile);
   for (const [name, specifier] of expected) {
     const lockfileSpecifier = actual.get(name);
     if (lockfileSpecifier !== specifier) {
@@ -487,22 +442,6 @@ function assertLockfileMatchesPackageJson(bundle, archetype) {
       );
     }
   }
-}
-
-function stripLockfileCatalogs(lines) {
-  const next = [];
-  let skipping = false;
-  for (const line of lines) {
-    if (line === "catalogs:") {
-      skipping = true;
-      continue;
-    }
-    if (skipping && /^\S/.test(line) && line.trim()) {
-      skipping = false;
-    }
-    if (!skipping) next.push(line);
-  }
-  return next;
 }
 
 function collectPackageSpecifiers(manifest) {
@@ -517,96 +456,15 @@ function collectPackageSpecifiers(manifest) {
   return specifiers;
 }
 
-function collectRootLockfileSpecifiers(text) {
+function collectRootLockfileSpecifiers(lockfile) {
   const specifiers = new Map();
-  if (!text) return specifiers;
-  const lines = text.split("\n");
-  let inImporters = false;
-  let inRootImporter = false;
-  let inDependencySection = false;
-  let dependencyName = null;
-
-  for (const line of lines) {
-    if (line === "importers:") {
-      inImporters = true;
-      inRootImporter = false;
-      inDependencySection = false;
-      dependencyName = null;
-      continue;
-    }
-    if (!inImporters) continue;
-    if (/^\S/.test(line) && line.trim() && line !== "importers:") break;
-    if (line === "  .:") {
-      inRootImporter = true;
-      inDependencySection = false;
-      dependencyName = null;
-      continue;
-    }
-    if (!inRootImporter) continue;
-    if (/^  \S/.test(line) && line !== "  .:") break;
-
-    const sectionMatch = line.match(/^    ([A-Za-z]+Dependencies|dependencies):$/);
-    if (sectionMatch) {
-      inDependencySection = dependencySectionKeys.includes(sectionMatch[1]);
-      dependencyName = null;
-      continue;
-    }
-    if (!inDependencySection) continue;
-    const dependencyMatch = line.match(/^      (.+):$/);
-    if (dependencyMatch) {
-      dependencyName = parseLockfileKey(dependencyMatch[1]);
-      continue;
-    }
-    const specifierMatch = line.match(/^        specifier:\s+(.+)$/);
-    if (dependencyName && specifierMatch) {
-      specifiers.set(dependencyName, parseLockfileScalar(specifierMatch[1]));
+  const importer = lockfile.importers?.["."] ?? {};
+  for (const key of dependencySectionKeys) {
+    for (const [name, entry] of Object.entries(importer[key] ?? {})) {
+      specifiers.set(name, entry?.specifier);
     }
   }
   return specifiers;
-}
-
-function parseLockfileKey(value) {
-  return parseLockfileScalar(value.trim());
-}
-
-function parseLockfileScalar(value) {
-  const trimmed = value.trim();
-  if (trimmed.startsWith("'") && trimmed.endsWith("'")) {
-    return trimmed.slice(1, -1).replaceAll("''", "'");
-  }
-  if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
-    return JSON.parse(trimmed);
-  }
-  return trimmed;
-}
-
-function formatLockfileScalar(value) {
-  if (/^[A-Za-z0-9^~<>=.*| -]+$/.test(value) && !value.includes(":")) {
-    return value;
-  }
-  return `'${String(value).replaceAll("'", "''")}'`;
-}
-
-function parseCatalog(text) {
-  const catalog = new Map();
-  let inCatalog = false;
-  for (const line of text.split(/\r?\n/)) {
-    if (line.trim() === "catalog:") {
-      inCatalog = true;
-      continue;
-    }
-    if (!inCatalog) continue;
-    if (!line.startsWith("  ")) break;
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const separator = trimmed.indexOf(":");
-    if (separator === -1) continue;
-    catalog.set(
-      trimmed.slice(0, separator).trim().replace(/^['"]|['"]$/g, ""),
-      trimmed.slice(separator + 1).trim().replace(/\s+#.*$/, ""),
-    );
-  }
-  return catalog;
 }
 
 function fail(message) {

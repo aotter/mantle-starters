@@ -34,7 +34,11 @@ const enhanceFiles = [
   "chunk-XSYCANLE.js",
 ];
 const mirrorRoots = ["kiwa", "blank"];
+// Paths blank overrides with local versions or omits entirely; sync never
+// writes these into blank/ and check:kiwa only verifies the kiwa/ copy.
 const blankOverridePaths = new Set([
+  "components/ui/badge.tsx",
+  "lib/placeholder-data.ts",
   "components/blocks/marketing/bento-02.tsx",
   "components/blocks/marketing/contact-02.tsx",
   "components/blocks/marketing/content-01.tsx",

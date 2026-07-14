@@ -31,5 +31,8 @@
     "typecheck": "corepack pnpm@9.15.0 -r typecheck",
     "test": "corepack pnpm@9.15.0 -r test"
   },
+  "devDependencies": {
+    "yaml": "catalog:"
+  },
   "packageManager": "pnpm@9.15.0"
 }

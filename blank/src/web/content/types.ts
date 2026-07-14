@@ -24,10 +24,7 @@ export type SiteContent = {
   };
 };
 
-export type HomeAction = {
-  readonly label: string;
-  readonly href: string;
-};
+export type HomeAction = SiteAction;
 
 export type HomeItem = {
   readonly title?: string;
