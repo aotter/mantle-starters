@@ -32,7 +32,7 @@ catalog:
   lucide: ^0.554.0
   marked: ^18.0.4
   tailwind-merge: ^3.4.0
-  tailwindcss: ^4.1.18
+  tailwindcss: ^4.3.2
   worker-mailer: ^1.2.1
   yaml: ^2.9.0
   zod: ^4.4.2
