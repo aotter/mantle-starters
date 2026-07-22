@@ -37,7 +37,7 @@ jobs:
     if: github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6.0.3
+      - uses: actions/checkout@v7.0.0
         with:
           # Need history to compare against the base branch (for the
           # changed-file detection below) AND so the push back to the
@@ -64,9 +64,9 @@ jobs:
           # designed.
           token: ${{ secrets.DEPENDABOT_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
 
-      - uses: pnpm/action-setup@v6.0.8
+      - uses: pnpm/action-setup@v6.0.9
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v6.4.0
         with:
           node-version: 22
 
