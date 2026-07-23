@@ -1,17 +1,14 @@
 # `mantle-starters/blank`
 
-> **This README ships with your scaffolded project.** If you're reading
+> **This README ships with your materialized project.** If you're reading
 > it on GitHub at `aotter/mantle-starters/blank`, the
 > Getting-started block below **does not work on a raw clone** —
 > `src/mantle/config.ts` contains literal `{{BRAND}}` / `{{LOCALES}}` /
-> `{{DESCRIPTION}}` placeholders that Mantle landing substitutes while
-> committing the provision bundle. Use Mantle landing provisioning to
-> evaluate the starter end-to-end.
+> `{{DESCRIPTION}}` placeholders that the provision flow substitutes.
 >
-> **To evaluate this starter end-to-end**, use the Mantle landing
-> provisioning flow. It fetches `provision-bundles/<type>.json`,
-> substitutes these placeholders, commits the repo, and starts
-> Cloudflare Workers CI.
+> **To evaluate this starter end-to-end**, run `pnpm materialize <type>
+> --out <dir>` from the repository root, or use Mantle landing for the
+> hosted GitHub and Cloudflare flow.
 
 **Blank-first Mantle starter.** Ships a Hono/Cloudflare Worker runtime,
 Mantle API/MCP surfaces, and a seed-driven Hono JSX public page. `blank`
@@ -20,8 +17,8 @@ launches such as `presence`, `publication`, and `intake` fill
 `src/web/content/*` and selected `manifests/*.yaml`.
 
 Type-specific bundles include the selected manifest, overlay notes, and
-seed prompt up front. Continue from the after-launch handoff shown by
-Mantle landing.
+seed prompt up front. Continue from `.mantle/handoff.md` in the generated
+project.
 
 ## Kiwa UI Credit
 
@@ -115,9 +112,8 @@ Hit `GET http://localhost:8787/api/views/published-notes` to see the
 example View executing against an empty `notes` collection. Type-specific
 bundles replace that loader with their selected manifest.
 
-Production repos are created by Mantle landing. Landing substitutes the
-launch placeholders, commits this bundle, and either connects Cloudflare
-Workers CI or records the provider action the user still needs to take.
+For production, push the generated repo and configure Cloudflare, or use
+Mantle landing to automate the GitHub and Cloudflare steps.
 
 > **Note:** `blank` has no visitor homepage sections, but it does mount
 > `/admin`, `/api/auth/*`, and Staff MCP. Those surfaces need either

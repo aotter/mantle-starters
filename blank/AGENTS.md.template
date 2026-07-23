@@ -1,15 +1,12 @@
 # This site
 
-{{BRAND}} is a blank Mantle site created by Mantle landing.
+{{BRAND}} is a Mantle site materialized from a deterministic provision bundle.
 Public site: {{SITE_URL}}
 
 ## Launch facts
 
 - Type intent: `{{ARCHETYPE}}`
 - Locale list: `{{LOCALES}}`
-- GitHub owner: `{{GITHUB_OWNER}}`
-- Admin login: `{{ADMIN_GITHUB_LOGIN}}`
-- Site owner email: `{{SITE_OWNER_EMAIL}}`
 - Purpose: {{DESCRIPTION}}
 - Summary: {{INSTALL_SUMMARY}}
 - Full after-launch skill: {{AFTER_LAUNCH_SKILL_URL}}
@@ -28,12 +25,13 @@ skill contract.
 - [`.agent/skills/mantle-theme/SKILL.md`](.agent/skills/mantle-theme/SKILL.md)
 - [`.agent/skills/mantle-update/SKILL.md`](.agent/skills/mantle-update/SKILL.md)
 
-First task after landing succeeds:
+First task after materialization:
 
 ```text
 Read .mantle/launch-state.json, .mantle/features.json, and .mantle/handoff.md.
-Open {{SITE_URL}} and confirm the Worker boots. Then inspect the already
-composed type manifest, homepage, and seed files before making changes.
+Run the local preview, open {{SITE_URL}}, and confirm the Worker boots. Then
+inspect the already composed type manifest, homepage, and seed files before
+making changes.
 ```
 
 ## Commands
@@ -47,18 +45,13 @@ composed type manifest, homepage, and seed files before making changes.
 Daily content authoring should use the Staff MCP endpoint at
 `<SITE_URL>/mcp/staff`. Do not write directly to D1 or KV.
 
-Media uploads are optional post-launch work. Do not set up R2 unless the
-owner explicitly needs staff-managed images/files; R2 may require
-Cloudflare billing or a credit card. When media uploads are needed, read
-`node_modules/@aotter/mantle/docs/media-uploads.md` or
-https://raw.githubusercontent.com/aotter/mantle/develop/docs/media-uploads.md
-and use Claude Code or another local/non-sandboxed coding agent. Do not
-rely on Claude Cowork for R2 uploads.
+Media uploads are optional. Configure them only when requested, then read
+`node_modules/@aotter/mantle/docs/media-uploads.md`.
 
 ## Notes
 
-- This repo starts blank on purpose. Do not copy old full starter
-  directories into it.
+- This repo starts from the shared blank base; its selected type is already
+  composed. Do not copy old full starter directories into it.
 - Theme work happens later through `mantle:theme`; there is no launch
   theme picker.
 - Kiwa source in this repo is copied source material. The repo must keep
