@@ -8,7 +8,7 @@ import type { Env } from "../mantle/config.js";
 const AUTH_NOT_CONFIGURED = {
   error: "setup_incomplete",
   message:
-    "Admin auth is not configured yet. Finish the Mantle landing provider setup to set either platform hosted auth or self-hosted GitHub OAuth credentials.",
+    "Admin auth is not configured yet. Configure either Mantle hosted auth or self-hosted GitHub OAuth credentials.",
 } as const;
 const PLATFORM_AUTH_PROVIDER_ID = "mantle-platform";
 const PLATFORM_AUTH_DISPLAY_NAME = "Mantle Platform";

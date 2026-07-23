@@ -6,10 +6,10 @@ import { fileURLToPath } from "node:url";
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const coreRoot = resolve(root, "../mantle");
 const expected = [
-  ["mantle-develop", "mantle:develop", "skills/develop/SKILL.md"],
-  ["mantle-plugin", "mantle:plugin", "skills/plugin/SKILL.md"],
-  ["mantle-theme", "mantle:theme", "skills/theme/SKILL.md"],
-  ["mantle-update", "mantle:update", "skills/update/SKILL.md"],
+  ["mantle-develop", "develop", "skills/develop/SKILL.md"],
+  ["mantle-plugin", "plugin", "skills/plugin/SKILL.md"],
+  ["mantle-theme", "theme", "skills/theme/SKILL.md"],
+  ["mantle-update", "update", "skills/update/SKILL.md"],
 ];
 const failures = [];
 
@@ -67,14 +67,11 @@ function assertSkill(path, expectedName, expectedSourcePath) {
   if (actual !== expectedName) {
     failures.push(`${path} name is ${actual}; expected ${expectedName}`);
   }
-  if (!actual.startsWith("mantle:")) {
-    failures.push(`${path} name must start with mantle:`);
-  }
-  const source = text.match(/^source:\s*(.+)$/m)?.[1]?.trim().replace(/^["']|["']$/g, "");
+  const source = text.match(/^\s*source:\s*(.+)$/m)?.[1]?.trim().replace(/^["']|["']$/g, "");
   if (source !== "@aotter/mantle") {
     failures.push(`${path} source is ${source ?? "(missing)"}; expected @aotter/mantle`);
   }
-  const sourcePath = text.match(/^sourcePath:\s*(.+)$/m)?.[1]?.trim().replace(/^["']|["']$/g, "");
+  const sourcePath = text.match(/^\s*sourcePath:\s*(.+)$/m)?.[1]?.trim().replace(/^["']|["']$/g, "");
   if (sourcePath !== expectedSourcePath) {
     failures.push(`${path} sourcePath is ${sourcePath ?? "(missing)"}; expected ${expectedSourcePath}`);
   }

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -71,7 +72,48 @@ for (const archetype of archetypes) {
     rmSync(tempRoot, { recursive: true, force: true });
   }
 }
+smokeLocalMaterializer();
 console.log("provision bundle smoke passed");
+
+function smokeLocalMaterializer() {
+  const tempRoot = mkdtempSync(join(tmpdir(), "mantle-materialize-"));
+  const output = join(tempRoot, "northstar");
+  try {
+    const result = spawnSync(process.execPath, [
+      "scripts/dev-provision-bundle.mjs",
+      "presence",
+      "--out",
+      output,
+      "--brand",
+      "Northstar Studio",
+      "--description",
+      "A local Mantle presence site.",
+      "--locales",
+      "en,zh-TW",
+    ], { cwd: root, encoding: "utf8" });
+    if (result.status !== 0) {
+      throw new Error(`local materializer failed: ${result.stderr || result.stdout}`);
+    }
+    const launch = JSON.parse(readFileSync(join(output, ".mantle", "launch-state.json"), "utf8"));
+    if (launch.launch_source !== "mantle-local-v2") throw new Error("local launch source missing");
+    if (launch.authMode !== "self-managed") throw new Error("local auth mode missing");
+    if (launch.brand !== "Northstar Studio") throw new Error("local brand mismatch");
+    if (JSON.stringify(launch.locales) !== '["en","zh-TW"]') throw new Error("local locales mismatch");
+    const wrangler = readFileSync(join(output, "wrangler.toml"), "utf8");
+    if (!wrangler.includes('name = "northstar"')) throw new Error("local Worker name mismatch");
+    if (!wrangler.includes('database_name = "northstar-db"')) throw new Error("local D1 name mismatch");
+    if (!wrangler.includes('PUBLIC_ORIGIN = "http://localhost:8787"')) throw new Error("local origin missing");
+    const overwrite = spawnSync(process.execPath, [
+      "scripts/dev-provision-bundle.mjs",
+      "blank",
+      "--out",
+      output,
+    ], { cwd: root, encoding: "utf8" });
+    if (overwrite.status === 0) throw new Error("local materializer overwrote a non-empty directory");
+  } finally {
+    rmSync(tempRoot, { recursive: true, force: true });
+  }
+}
 
 function substitute(text, archetype) {
   return String(text).replace(/\{\{([A-Z_][A-Z0-9_]*)\}\}/g, (match, key) => {
