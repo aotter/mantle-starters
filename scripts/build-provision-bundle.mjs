@@ -51,7 +51,6 @@ function buildBundleFiles(archetype) {
   files[".mantle/launch-state.json.template"] = [
     "{",
     '  "schema_version": 2,',
-    '  "launch_source": "mantle-landing-v2",',
     '  "project_name": "{{PROJECT_NAME}}",',
     '  "archetype": "{{ARCHETYPE}}",',
     '  "brand": "{{BRAND}}",',

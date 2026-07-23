@@ -40,7 +40,6 @@ for (const archetype of archetypes) {
     assertAuthSwitchUsesSelectedProvider(tempRoot, archetype);
     assertRuntimeHasNoKiwaDemoCopy(tempRoot, archetype);
     const launchState = JSON.parse(readFileSync(join(tempRoot, ".mantle", "launch-state.json"), "utf8"));
-    if (launchState.launch_source !== "mantle-landing-v2") throw new Error(`${archetype} changed landing launch source`);
     if (launchState.github?.owner !== replacements.GITHUB_OWNER) throw new Error(`${archetype} missing landing GitHub owner`);
     if (launchState.site_url !== replacements.SITE_URL) throw new Error(`${archetype} missing launch-state site_url`);
     if (launchState.purpose !== replacements.DESCRIPTION) throw new Error(`${archetype} missing launch-state purpose`);
@@ -100,7 +99,6 @@ function smokeLocalMaterializer() {
       throw new Error(`local materializer failed: ${result.stderr || result.stdout}`);
     }
     const launch = JSON.parse(readFileSync(join(output, ".mantle", "launch-state.json"), "utf8"));
-    if ("launch_source" in launch) throw new Error("local project should not invent a launch source");
     if (launch.authMode !== "self-managed") throw new Error("local auth mode missing");
     if (launch.brand !== "Northstar Studio") throw new Error("local brand mismatch");
     if (JSON.stringify(launch.locales) !== '["en","zh-TW"]') throw new Error("local locales mismatch");
