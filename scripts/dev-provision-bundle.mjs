@@ -83,6 +83,10 @@ function valueAfter(flag) {
 
 function prepareTarget(path) {
   const target = resolve(path);
+  const sourceRoot = resolve(root);
+  if (target === sourceRoot || target.startsWith(`${sourceRoot}/`)) {
+    fail("output directory must be outside the mantle-starters checkout");
+  }
   if (existsSync(target) && readdirSync(target).length > 0) {
     fail(`output directory is not empty: ${target}`);
   }
