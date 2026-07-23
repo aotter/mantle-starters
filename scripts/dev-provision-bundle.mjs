@@ -164,9 +164,10 @@ function sampleLaunch(type) {
 function finishLocalProject(targetRoot, projectName) {
   const launchPath = join(targetRoot, ".mantle", "launch-state.json");
   const launch = JSON.parse(readFileSync(launchPath, "utf8"));
+  delete launch.launch_source;
   writeFileSync(
     launchPath,
-    `${JSON.stringify({ ...launch, launch_source: "mantle-local-v2", authMode: "self-managed" }, null, 2)}\n`,
+    `${JSON.stringify({ ...launch, authMode: "self-managed" }, null, 2)}\n`,
     "utf8",
   );
 

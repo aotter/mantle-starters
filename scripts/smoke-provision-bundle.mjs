@@ -100,7 +100,7 @@ function smokeLocalMaterializer() {
       throw new Error(`local materializer failed: ${result.stderr || result.stdout}`);
     }
     const launch = JSON.parse(readFileSync(join(output, ".mantle", "launch-state.json"), "utf8"));
-    if (launch.launch_source !== "mantle-local-v2") throw new Error("local launch source missing");
+    if ("launch_source" in launch) throw new Error("local project should not invent a launch source");
     if (launch.authMode !== "self-managed") throw new Error("local auth mode missing");
     if (launch.brand !== "Northstar Studio") throw new Error("local brand mismatch");
     if (JSON.stringify(launch.locales) !== '["en","zh-TW"]') throw new Error("local locales mismatch");
