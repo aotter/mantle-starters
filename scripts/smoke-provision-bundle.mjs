@@ -106,6 +106,7 @@ function smokeLocalMaterializer() {
     if (!wrangler.includes('name = "northstar"')) throw new Error("local Worker name mismatch");
     if (!wrangler.includes('database_name = "northstar-db"')) throw new Error("local D1 name mismatch");
     if (!wrangler.includes('PUBLIC_ORIGIN = "http://localhost:8787"')) throw new Error("local origin missing");
+    assertGeneratedStylesMatchStarterLock(output);
     const overwrite = spawnSync(process.execPath, [
       "scripts/dev-provision-bundle.mjs",
       "blank",
@@ -115,6 +116,16 @@ function smokeLocalMaterializer() {
     if (overwrite.status === 0) throw new Error("local materializer overwrote a non-empty directory");
   } finally {
     rmSync(tempRoot, { recursive: true, force: true });
+  }
+}
+
+function assertGeneratedStylesMatchStarterLock(root) {
+  const css = readFileSync(join(root, "styles", "generated.css"), "utf8");
+  const lock = readFileSync(join(root, "pnpm-lock.yaml"), "utf8");
+  const cssVersion = css.match(/tailwindcss v([^\s]+)/)?.[1];
+  const lockVersion = lock.match(/^\s+tailwindcss:\n\s+specifier:[^\n]+\n\s+version:\s+([^\s]+)/m)?.[1];
+  if (!cssVersion || !lockVersion || cssVersion !== lockVersion) {
+    throw new Error(`generated styles use Tailwind ${cssVersion ?? "unknown"}, starter lock uses ${lockVersion ?? "unknown"}`);
   }
 }
 

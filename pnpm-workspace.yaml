@@ -32,7 +32,8 @@ catalog:
   lucide: ^0.554.0
   marked: ^18.0.4
   tailwind-merge: ^3.4.0
-  tailwindcss: ^4.3.2
+  # generated.css must stay byte-for-byte reproducible from a fresh starter install.
+  tailwindcss: 4.3.3
   worker-mailer: ^1.2.1
   yaml: ^2.9.0
   zod: ^4.4.2
