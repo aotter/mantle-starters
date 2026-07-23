@@ -113,14 +113,13 @@ function buildBundleFiles(archetype) {
     "- Project: {{PROJECT_NAME}}",
     "- Site: {{SITE_URL}}",
     "- Type intent: {{ARCHETYPE}}",
+    "- Auth intent: {{AUTH_MODE}}",
     "- Purpose: {{DESCRIPTION}}",
     "- Full after-launch skill: {{AFTER_LAUNCH_SKILL_URL}}",
     "",
     "The public homepage is for visitors. The coding-agent handoff lives in this repo file.",
     "",
-    "Media uploads are optional post-launch work because R2 may require Cloudflare billing or a credit card. When the owner asks for staff-managed images/files, read node_modules/@aotter/mantle/docs/media-uploads.md or https://raw.githubusercontent.com/aotter/mantle/develop/docs/media-uploads.md, use Staff MCP upload sessions, preserve transparency/animation, PUT variants to signed URLs, then commit the asset. Use Claude Code or another local/non-sandboxed coding agent for that workflow; do not rely on Claude Cowork for R2 uploads. Never pass base64 bytes as MCP tool arguments or ask the user to run terminal uploads.",
-    "",
-    "Next: read the launch files above, inspect the already-composed manifest/pages/seed, then make the smallest useful improvement.",
+    "Next: inspect the manifest/pages/seed, then offer three paths tailored to the purpose: shape the visual experience, build the first real business workflow, or finish deploy/auth if incomplete. Do not present auth or seed data as the only next step.",
     "",
   ].join("\n");
   applyProvisionedReadme(files, archetype);

@@ -120,6 +120,7 @@ function localLaunch(type, targetRoot, version) {
   return {
     PROJECT_NAME: projectName,
     ARCHETYPE: type,
+    AUTH_MODE: "self-managed",
     BRAND: brand,
     DESCRIPTION: description,
     INSTALL_SUMMARY: description,
@@ -144,6 +145,7 @@ function sampleLaunch(type) {
   return {
     PROJECT_NAME: `${type}-preview`,
     ARCHETYPE: type,
+    AUTH_MODE: "self-managed",
     BRAND: brand,
     DESCRIPTION: description,
     INSTALL_SUMMARY: `Local ${type} provision bundle preview.`,

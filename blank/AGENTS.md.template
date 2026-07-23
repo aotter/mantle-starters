@@ -45,13 +45,8 @@ making changes.
 Daily content authoring should use the Staff MCP endpoint at
 `<SITE_URL>/mcp/staff`. Do not write directly to D1 or KV.
 
-Media uploads are optional post-launch work. Do not set up R2 unless the
-owner explicitly needs staff-managed images/files; R2 may require
-Cloudflare billing or a credit card. When media uploads are needed, read
-`node_modules/@aotter/mantle/docs/media-uploads.md` or
-https://raw.githubusercontent.com/aotter/mantle/develop/docs/media-uploads.md
-and use Claude Code or another local/non-sandboxed coding agent. Do not
-rely on Claude Cowork for R2 uploads.
+Media uploads are optional. Configure them only when requested, then read
+`node_modules/@aotter/mantle/docs/media-uploads.md`.
 
 ## Notes
 

@@ -9,6 +9,7 @@ const archetypes = ["blank", "presence", "intake", "publication", "transaction",
 const replacements = {
   PROJECT_NAME: "bundle-smoke",
   ARCHETYPE: "publication",
+  AUTH_MODE: "hosted",
   BRAND: "Bundle Smoke",
   DESCRIPTION: "Bundle smoke test.",
   INSTALL_SUMMARY: "Smoke generated from provision bundle.",
@@ -39,9 +40,13 @@ for (const archetype of archetypes) {
     assertAuthSwitchUsesSelectedProvider(tempRoot, archetype);
     assertRuntimeHasNoKiwaDemoCopy(tempRoot, archetype);
     const launchState = JSON.parse(readFileSync(join(tempRoot, ".mantle", "launch-state.json"), "utf8"));
+    if (launchState.launch_source !== "mantle-landing-v2") throw new Error(`${archetype} changed landing launch source`);
+    if (launchState.github?.owner !== replacements.GITHUB_OWNER) throw new Error(`${archetype} missing landing GitHub owner`);
     if (launchState.site_url !== replacements.SITE_URL) throw new Error(`${archetype} missing launch-state site_url`);
     if (launchState.purpose !== replacements.DESCRIPTION) throw new Error(`${archetype} missing launch-state purpose`);
     if (launchState.after_launch_skill_url !== replacements.AFTER_LAUNCH_SKILL_URL) throw new Error(`${archetype} missing after-launch skill URL`);
+    const handoff = readFileSync(join(tempRoot, ".mantle", "handoff.md"), "utf8");
+    if (!handoff.includes(`Auth intent: ${replacements.AUTH_MODE}`)) throw new Error(`${archetype} missing auth intent handoff`);
 
     const features = JSON.parse(readFileSync(join(tempRoot, ".mantle", "features.json"), "utf8"));
     if (features?.archetype?.name !== archetype) throw new Error(`${archetype} features archetype mismatch`);
