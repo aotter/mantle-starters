@@ -41,7 +41,7 @@ export function buildCmsConfig(env: Env, auth: Auth): CmsConfig {
       title: "{{BRAND}}",
       description: "{{DESCRIPTION}}",
       origin: "https://example.com",
-      // `{{LOCALES}}` is substituted by Mantle landing during provision.
+      // `{{LOCALES}}` is substituted while materializing the provision bundle.
       // JSON.parse keeps this file TS-valid pre-substitution
       // so contributors can `pnpm typecheck` the starter directly; the runtime
       // cost is one tiny parse at worker cold-start.

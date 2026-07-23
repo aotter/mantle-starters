@@ -5,7 +5,8 @@ Blank-first starter source for Mantle provisioning.
 Current launch contract:
 
 - `blank/` is the only first-launch base.
-- `provision-bundles/<type>.json` are generated artifacts landing fetches.
+- `provision-bundles/<type>.json` are generated artifacts used by landing and
+  local cold starts.
 - `overlays/<type>/` contains small type intent overlays applied while
   building each matching bundle.
 - `kiwa/` vendors selected free Kiwa source for deterministic generated
@@ -44,6 +45,7 @@ repos boot without registry access. Kiwa source is MIT licensed; keep
 pnpm install --frozen-lockfile
 pnpm build:provision-bundle
 pnpm check:provision-bundle
+pnpm materialize presence --out ../my-site --brand "My Site"
 pnpm check:kiwa
 pnpm check:repo-local-skills
 pnpm check:starter-locks
@@ -85,6 +87,10 @@ scripts/
 Maintain bundles by editing `blank/`, `overlays/<type>/`, or `kiwa/`, then
 running `pnpm build:provision-bundle`. Do not hand-edit generated
 `provision-bundles/*.json`.
+
+`pnpm materialize <type> --out <dir>` writes one generated bundle to a local
+project directory without installing dependencies, creating a remote repo, or
+touching Cloudflare. The output directory must be empty.
 
 Provisioned `README.md` files are generated from `blank/README.md` plus the
 selected overlay's `handoff.md` and `layout.md`, so the repo root explains both

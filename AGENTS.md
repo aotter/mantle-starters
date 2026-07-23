@@ -7,7 +7,8 @@ over new framework, and do not rebuild the old full-starter/theme path.
 
 Current contract:
 
-- Landing provisions `provision-bundles/<type>.json`.
+- Landing and local cold starts materialize the same
+  `provision-bundles/<type>.json`.
 - `blank/` owns the shared generated repo base, including repo-local
   Mantle skills.
 - `overlays/` are source inputs applied while building each type bundle.

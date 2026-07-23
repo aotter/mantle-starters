@@ -1,7 +1,7 @@
 {
   "name": "mantle-starters",
   "private": true,
-  "version": "0.0.11-alpha.49",
+  "version": "0.0.11-alpha.50",
   "description": "Workspace root for the @aotter/mantle blank-first starter bundles, type overlays, and vendored Kiwa source.",
   "license": "MIT",
   "homepage": "https://mantle.tools/",
@@ -20,6 +20,7 @@
     "check:provision-bundle": "node scripts/build-provision-bundle.mjs --check",
     "check:styles": "node blank/scripts/build-styles.mjs --root blank --check",
     "dev:bundle": "node scripts/dev-provision-bundle.mjs",
+    "materialize": "node scripts/dev-provision-bundle.mjs",
     "smoke:provision-bundle": "node scripts/smoke-provision-bundle.mjs",
     "check:kiwa": "node scripts/sync-kiwa.mjs --check",
     "check:starter-locks": "node scripts/refresh-starter-locks.mjs --check",
