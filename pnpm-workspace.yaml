@@ -39,7 +39,7 @@ catalog:
   zod: ^4.4.2
   # Toolchain — every starter and (most) packages/.
   '@cloudflare/workers-types': ^4.20260702.1
-  '@types/node': ^25
+  '@types/node': ^26
   tsx: ^4.22.3
   typescript: ^6.0.3
   vitest: ^2.1.4
