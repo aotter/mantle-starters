@@ -28,8 +28,8 @@ catalogs:
       specifier: ^4.12.27
       version: 4.12.28
     lucide:
-      specifier: ^0.554.0
-      version: 0.554.0
+      specifier: ^1.23.0
+      version: 1.26.0
     tailwind-merge:
       specifier: ^3.4.0
       version: 3.6.0
@@ -70,7 +70,7 @@ importers:
         version: 4.12.28
       lucide:
         specifier: 'catalog:'
-        version: 0.554.0
+        version: 1.26.0
       tailwind-merge:
         specifier: 'catalog:'
         version: 3.6.0
@@ -1066,8 +1066,8 @@ packages:
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
-  lucide@0.554.0:
-    resolution: {integrity: sha512-heltqxp+r6FbXs5FKMwARbE9aiDLLz9rlAlOU48NYHU4nWi2oVkQIz+Uv7LHZNsFVfgtgLBv7VOjM7QUvT6F3A==}
+  lucide@1.26.0:
+    resolution: {integrity: sha512-koKiuPC/3VLiIGY+hXn9pSurD4b54LgvkNqb9FjF8A4l5ftgRwFgmpPHoOnMLPbNj8oiDjMfMsnU3FITuxZ6Mw==}
 
   miniflare@4.20260721.0:
     resolution: {integrity: sha512-fBLaCxZ2i/nPH8iyLzvza0C8/sSF4sjD1ma1Skf+pkZVK0TlaW5ujHJlUHwcwR66v2JZt+Q28d4DCX/oaLG0cA==}
@@ -1952,7 +1952,7 @@ snapshots:
     dependencies:
       react: 19.2.7
 
-  lucide@0.554.0: {}
+  lucide@1.26.0: {}
 
   miniflare@4.20260721.0:
     dependencies:
