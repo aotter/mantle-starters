@@ -1,5 +1,6 @@
 import {
   createAuth,
+  createSetupIncompleteAuth,
   type Auth,
   type AuthMethodConfig,
 } from "@aotter/mantle/cloudflare";
@@ -14,7 +15,12 @@ const PLATFORM_AUTH_PROVIDER_ID = "mantle-platform";
 const PLATFORM_AUTH_DISPLAY_NAME = "Mantle Platform";
 
 export function buildAuthFromEnv(env: Env): Auth {
-  if (!authSetupComplete(env)) return createSetupIncompleteAuth();
+  if (!authSetupComplete(env)) {
+    return createSetupIncompleteAuth({
+      message: AUTH_NOT_CONFIGURED.message,
+      response: setupIncompleteResponse,
+    });
+  }
   const baseURL = env.PUBLIC_ORIGIN ?? "http://localhost:8787";
   const methods: AuthMethodConfig[] = [];
   const platformIssuer = normalizedPlatformIssuer(env);
@@ -118,24 +124,4 @@ export function setupIncompleteResponse(): Response {
     status: 503,
     headers: { "cache-control": "no-store" },
   });
-}
-
-function createSetupIncompleteAuth(): Auth {
-  return {
-    handler: async () => setupIncompleteResponse(),
-    getSession: async () => null,
-    getUserRole: async () => null,
-    methods: [],
-    listLinkedAccounts: async () => [],
-    unlinkAccount: async () => false,
-    listUsers: async () => [],
-    setUserRole: async () => false,
-    inviteUser: async () => {
-      throw new Error(AUTH_NOT_CONFIGURED.message);
-    },
-    revokeInvite: async () => false,
-    registerOAuthClient: async () => {
-      throw new Error(AUTH_NOT_CONFIGURED.message);
-    },
-  } as unknown as Auth;
 }
