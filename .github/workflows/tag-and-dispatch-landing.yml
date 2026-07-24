@@ -79,7 +79,7 @@ jobs:
     if: needs.gate.outputs.should_release == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6.0.3
+      - uses: actions/checkout@v7.0.0
         with:
           fetch-depth: 0
           token: ${{ secrets.RELEASE_FANOUT_TOKEN }}
